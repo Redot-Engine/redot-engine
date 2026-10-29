@@ -13,6 +13,7 @@ This tool rewrites the ISA bitmap of the X86_ISA_1_NEEDED property in place
 """
 
 import argparse
+import os
 import struct
 
 NT_GNU_PROPERTY_TYPE_0 = 5
@@ -45,7 +46,7 @@ def sections(data):
         yield n, offset, size
 
 
-def fix(path, level):
+def fix(path, level, report_only=False):
     want = ISA_LEVEL_BITS[level]
     with open(path, "rb") as f:
         data = bytearray(f.read())
@@ -75,18 +76,49 @@ def fix(path, level):
                 if pr_type == GNU_PROPERTY_X86_ISA_1_NEEDED:
                     seen += 1
                     old = struct.unpack_from("<I", desc, j + 4)[0]
+                    if report_only:
+                        if old > want:
+                            print(f"{path}: ISA_1_NEEDED = {old:#x} (ABOVE {want:#x})")
+                        else:
+                            print(f"{path}: ISA_1_NEEDED = {old:#x}")
+                        continue
                     if old == want:
                         print(f"{path}: ISA_1_NEEDED already {want:#x}")
                         continue
                     struct.pack_into("<I", data, desc_off + j + 4, want)
                     print(f"{path}: ISA_1_NEEDED {old:#x} -> {want:#x}")
                     patched += 1
-    if patched:
+    if report_only:
+        if seen == 0:
+            print(f"{path}: no ISA requirement declared")
+    elif patched:
         with open(path, "wb") as f:
             f.write(data)
     elif seen == 0:
         print(f"{path}: no X86_ISA_1_NEEDED property found")
     return True
+
+
+def scan_tree(path, level):
+    # Walks a shipped build directory and reports every ELF's declared ISA
+    # requirement -- the objects glibc's loader would refuse with "CPU ISA
+    # level is lower than required" on a weaker CPU.
+    flagged = 0
+    for root, _, files in os.walk(path):
+        for fname in files:
+            full = os.path.join(root, fname)
+            try:
+                with open(full, "rb") as f:
+                    magic = f.read(5)
+                if magic[:4] != b"\x7fELF" or magic[4:5] != b"\x02":
+                    continue
+            except OSError:
+                continue
+            print(f"-- {full}")
+            fix(full, level, report_only=True)
+            flagged += 1
+    if flagged == 0:
+        print(f"no ELF64 objects found under {path}")
 
 
 def main():
@@ -98,10 +130,18 @@ def main():
         choices=sorted(ISA_LEVEL_BITS),
         help="ISA level to declare (default: 1 = baseline x86-64)",
     )
-    ap.add_argument("files", nargs="+", help="ELF objects to fix in place")
+    ap.add_argument(
+        "--report",
+        action="store_true",
+        help="only report declared ISA requirements (directories are walked recursively); nothing is modified",
+    )
+    ap.add_argument("files", nargs="+", help="ELF objects (or directories with --report) to process")
     args = ap.parse_args()
     for path in args.files:
-        fix(path, args.level)
+        if args.report and os.path.isdir(path):
+            scan_tree(path, args.level)
+        else:
+            fix(path, args.level, report_only=args.report)
 
 
 if __name__ == "__main__":
