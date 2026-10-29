@@ -1102,7 +1102,8 @@ void WorldScape3DInstancer::copy_paste_dfr(const WorldScape3DRegion *p_src_regio
 	for (int m = 0; m < mesh_types.size(); m++) {
 		TypedArray<Transform3D> xforms;
 		PackedColorArray colors;
-		Dictionary cell_inst_dict = p_src_region->get_instances()[m];
+		int mesh_id = mesh_types[m];
+		Dictionary cell_inst_dict = mesh_inst_dict[mesh_id];
 		Array cell_locs = cell_inst_dict.keys();
 		for (int c = 0; c < cell_locs.size(); c++) {
 			if (cells_to_copy.has(cell_locs[c])) {
@@ -1120,7 +1121,7 @@ void WorldScape3DInstancer::copy_paste_dfr(const WorldScape3DRegion *p_src_regio
 		if (xforms.size() == 0) {
 			continue;
 		}
-		append_region(Ref<WorldScape3DRegion>(p_dst_region), m, xforms, colors, false);
+		append_region(Ref<WorldScape3DRegion>(p_dst_region), mesh_id, xforms, colors, false);
 	}
 }
 
