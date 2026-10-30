@@ -32,7 +32,10 @@
 
 #pragma once
 
+#include "core/input/input.h"
 #include "scene/gui/text_edit.h"
+#include "scene/main/timer.h"
+#include "scene/main/viewport.h"
 
 #include "tests/test_macros.h"
 
@@ -1778,6 +1781,70 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			CHECK(text_edit->get_caret_line() == 0);
 			CHECK(text_edit->get_caret_column() == 8);
 			CHECK(text_edit->is_dragging_cursor());
+		}
+
+		SUBCASE("[TextEdit] held mouse drag select from pushed input") {
+			// A SubViewport takes the mouse position from pushed events, and the physical button stays up.
+			SEND_GUI_MOUSE_BUTTON_RELEASED_EVENT(Point2i(), MouseButton::LEFT, MouseButtonMask::NONE, Key::NONE);
+			REQUIRE_FALSE(Input::get_singleton()->is_mouse_button_pressed(MouseButton::LEFT));
+
+			SubViewport *sub_viewport = memnew(SubViewport);
+			sub_viewport->set_size(Size2i(300, 300));
+			SceneTree::get_singleton()->get_root()->add_child(sub_viewport);
+			TextEdit *pushed_text_edit = memnew(TextEdit);
+			pushed_text_edit->set_size(Size2(200, 200));
+			sub_viewport->add_child(pushed_text_edit);
+			pushed_text_edit->set_text("this is some text\nfor selection");
+			MessageQueue::get_singleton()->flush();
+
+			Timer *click_select_held = nullptr;
+			for (int i = 0; i < pushed_text_edit->get_child_count(true); i++) {
+				Timer *timer = Object::cast_to<Timer>(pushed_text_edit->get_child(i, true));
+				if (timer && Math::is_equal_approx(timer->get_wait_time(), 0.05)) {
+					click_select_held = timer;
+					break;
+				}
+			}
+			REQUIRE(click_select_held);
+
+			Ref<InputEventMouseButton> press;
+			press.instantiate();
+			press->set_position(pushed_text_edit->get_rect_at_line_column(1, 0).get_center());
+			press->set_button_index(MouseButton::LEFT);
+			press->set_button_mask(MouseButtonMask::LEFT);
+			press->set_pressed(true);
+			sub_viewport->push_input(press);
+			MessageQueue::get_singleton()->flush();
+			CHECK_FALSE(click_select_held->is_stopped());
+
+			// The timer extends the selection to the latest pushed position.
+			Ref<InputEventMouseMotion> motion;
+			motion.instantiate();
+			motion->set_position(pushed_text_edit->get_rect_at_line_column(1, 5).get_center() + Point2i(2, 0));
+			sub_viewport->push_input(motion);
+			click_select_held->emit_signal(SNAME("timeout"));
+			CHECK(pushed_text_edit->get_selected_text() == "for s");
+			CHECK_FALSE(click_select_held->is_stopped());
+
+			// Releasing the pushed button ends it.
+			Ref<InputEventMouseButton> release = press->duplicate();
+			release->set_position(motion->get_position());
+			release->set_button_mask(MouseButtonMask::NONE);
+			release->set_pressed(false);
+			sub_viewport->push_input(release);
+			MessageQueue::get_singleton()->flush();
+			CHECK(click_select_held->is_stopped());
+
+			// Leaving the tree sends no release, so it ends there too.
+			pushed_text_edit->deselect();
+			sub_viewport->push_input(press);
+			MessageQueue::get_singleton()->flush();
+			CHECK_FALSE(click_select_held->is_stopped());
+			sub_viewport->remove_child(pushed_text_edit);
+			CHECK(click_select_held->is_stopped());
+			sub_viewport->add_child(pushed_text_edit);
+
+			memdelete(sub_viewport);
 		}
 
 		SUBCASE("[TextEdit] mouse word select") {
