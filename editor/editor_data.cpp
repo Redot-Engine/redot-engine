@@ -663,7 +663,9 @@ void EditorData::remove_scene(int p_idx) {
 	}
 
 	if (!edited_scene[p_idx].path.is_empty()) {
-		EditorNode::get_singleton()->emit_signal("scene_closed", edited_scene[p_idx].path);
+		// Notify through the scene manager, which owns the "scene_closed" signal
+		// (editor plugins connect to it there).
+		EditorSceneManager::get_singleton()->emit_signal("scene_closed", edited_scene[p_idx].path);
 	}
 
 	if (undo_redo_manager->has_history(edited_scene[p_idx].history_id)) { // Might not exist if scene failed to load.
@@ -770,6 +772,11 @@ void EditorData::set_edited_scene(int p_idx) {
 
 Node *EditorData::get_edited_scene_root(int p_idx) {
 	if (p_idx < 0) {
+		// No scene is open (e.g. during editor startup); return silently so
+		// polling callers do not spam the error log.
+		if (edited_scene.is_empty()) {
+			return nullptr;
+		}
 		ERR_FAIL_INDEX_V(current_edited_scene, edited_scene.size(), nullptr);
 		return edited_scene[current_edited_scene].root;
 	} else {

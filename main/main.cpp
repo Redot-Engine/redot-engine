@@ -5125,7 +5125,7 @@ bool Main::iteration() {
 			ERR_FAIL_V_MSG(true,
 					"Command line option --build-solutions was passed, but no project is being edited. Aborting.");
 		}
-		if (!EditorNode::get_singleton()->call_build()) {
+		if (!EditorCore::get_singleton()->get_shell()->call_build()) {
 			OS::get_singleton()->set_exit_code(EXIT_FAILURE);
 			ERR_FAIL_V_MSG(true,
 					"Command line option --build-solutions was passed, but the build callback failed. Aborting.");
@@ -5134,7 +5134,7 @@ bool Main::iteration() {
 #endif
 
 #ifdef TOOLS_ENABLED
-	if (exit && quit_after_timeout && EditorNode::get_singleton()) {
+	if (exit && quit_after_timeout && EditorCore::get_singleton()->get_shell()) {
 		EditorCore::get_singleton()->get_editor_plugin_manager()->unload_editor_addons();
 	}
 #endif

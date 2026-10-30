@@ -916,7 +916,13 @@ void VersionControlEditorPlugin::fetch_available_vcs_plugin_names() {
 }
 
 void VersionControlEditorPlugin::register_editor() {
-	EditorDockManager::get_singleton()->add_dock(version_commit_dock, "", EditorDockManager::DOCK_SLOT_RIGHT_UL, ED_SHORTCUT_AND_COMMAND("docks/open_version_control", TTRC("Open Version Control Dock")));
+	if (EditorDockManager::get_singleton()) {
+		EditorDockManager::get_singleton()->add_dock(version_commit_dock, "", EditorDockManager::DOCK_SLOT_RIGHT_UL, ED_SHORTCUT_AND_COMMAND("docks/open_version_control", TTRC("Open Version Control Dock")));
+	} else {
+		// Shell without the static dock system (e.g. AreaEditorNode):
+		// expose the commit dock in the bottom panel instead.
+		EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(TTRC("VCS Commit"), version_commit_dock, ED_SHORTCUT_AND_COMMAND("docks/open_version_control", TTRC("Open Version Control Dock")));
+	}
 
 	version_control_dock_button = EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(TTRC("Version Control"), version_control_dock, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_version_control_bottom_panel", TTRC("Toggle Version Control Bottom Panel")));
 
@@ -936,7 +942,11 @@ void VersionControlEditorPlugin::shut_down() {
 	memdelete(EditorVCSInterface::get_singleton());
 	EditorVCSInterface::set_singleton(nullptr);
 
-	EditorDockManager::get_singleton()->remove_dock(version_commit_dock);
+	if (EditorDockManager::get_singleton()) {
+		EditorDockManager::get_singleton()->remove_dock(version_commit_dock);
+	} else {
+		EditorCore::get_singleton()->get_shell()->get_bottom_panel()->remove_item(version_commit_dock);
+	}
 	EditorCore::get_singleton()->get_shell()->get_bottom_panel()->remove_item(version_control_dock);
 
 	_set_vcs_ui_state(false);

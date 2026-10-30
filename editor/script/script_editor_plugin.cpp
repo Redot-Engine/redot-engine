@@ -1869,9 +1869,9 @@ void ScriptEditor::_notification(int p_what) {
 
 			get_tree()->connect("tree_changed", callable_mp(this, &ScriptEditor::_tree_changed));
 			InspectorDock::get_singleton()->connect("request_help", callable_mp(this, &ScriptEditor::_help_class_open));
-			EditorNode::get_singleton()->connect("request_help_search", callable_mp(this, &ScriptEditor::_help_search));
+			EditorCore::get_singleton()->get_shell()->connect("request_help_search", callable_mp(this, &ScriptEditor::_help_search));
 			EditorSceneManager::get_singleton()->connect("scene_closed", callable_mp(this, &ScriptEditor::_close_builtin_scripts_from_scene));
-			EditorNode::get_singleton()->connect("script_add_function_request", callable_mp(this, &ScriptEditor::_add_callback));
+			EditorCore::get_singleton()->get_shell()->connect("script_add_function_request", callable_mp(this, &ScriptEditor::_add_callback));
 			EditorCore::get_singleton()->connect("resource_saved", callable_mp(this, &ScriptEditor::_res_saved_callback));
 			EditorSceneManager::get_singleton()->connect("scene_saved", callable_mp(this, &ScriptEditor::_scene_saved_callback));
 			FileSystemDock::get_singleton()->connect("files_moved", callable_mp(this, &ScriptEditor::_files_moved));

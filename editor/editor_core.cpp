@@ -39,6 +39,7 @@
 #include "editor/animation/animation_player_editor_plugin.h"
 #include "editor/asset_library/asset_library_editor_plugin.h"
 #include "editor/audio/editor_audio_buses.h"
+#include "editor/debugger/debugger_editor_plugin.h"
 #include "editor/run/game_view_plugin.h"
 #include "editor/scene/3d/node_3d_editor_plugin.h"
 #include "editor/script/script_text_editor.h"
@@ -162,8 +163,9 @@ void EditorCore::_initialize_engine() {
 
 void EditorCore::_create_builtin_plugins() {
 	// Register built-in editor plugins with the plugin manager.
-	// This must happen after editor_plugin_manager is created and before
-	// any code calls get_editor_by_name() or get_spatial_editor().
+	// This must happen after editor_plugin_manager is created AND after the
+	// shell is fully constructed (bottom_panel, docks, etc.), because plugins
+	// often register items in the bottom panel or docks in their constructors.
 
 	// Animation editors
 	editor_plugin_manager->add_editor_plugin(memnew(AnimationPlayerEditorPlugin));
@@ -173,6 +175,11 @@ void EditorCore::_create_builtin_plugins() {
 	// Scene editors
 	editor_plugin_manager->add_editor_plugin(memnew(CanvasItemEditorPlugin));
 	editor_plugin_manager->add_editor_plugin(memnew(Node3DEditorPlugin));
+
+	// Debugger - must be created before ScriptEditorPlugin, which calls
+	// EditorDebuggerNode::get_singleton() in its constructor. Pass nullptr
+	// for the debug menu (AreaEditorNode has no menu bar).
+	editor_plugin_manager->add_editor_plugin(memnew(DebuggerEditorPlugin(nullptr)));
 
 	// Script editor
 	editor_plugin_manager->add_editor_plugin(memnew(ScriptEditorPlugin));
@@ -200,6 +207,12 @@ void EditorCore::_create_builtin_plugins() {
 	editor_plugin_manager->add_editor_plugin(VersionControlEditorPlugin::get_singleton());
 }
 
+void EditorCore::initialize_plugins() {
+	// Initialize built-in plugins. Must be called after the shell is created
+	// so that plugins can register their UI elements (bottom panel items, docks, etc.)
+	_create_builtin_plugins();
+}
+
 void EditorCore::_initialize_services() {
 	add_child(memnew(EditorPropertyNameProcessor));
 
@@ -218,9 +231,10 @@ void EditorCore::_initialize_services() {
 	}
 	editor_scene_manager->set_plugin_manager(editor_plugin_manager);
 
-	// Create built-in editor plugins before creating any docks or other
-	// components that look them up via get_editor_by_name().
-	_create_builtin_plugins();
+	// Plugins are NOT created here. They must be created AFTER the shell is
+	// constructed (bottom_panel, docks, etc.), because plugins register items
+	// in the bottom panel and docks in their constructors. The shell's
+	// constructor calls EditorCore::initialize_plugins() at the end.
 
 	editor_selection = memnew(EditorSelection);
 

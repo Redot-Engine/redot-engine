@@ -10194,6 +10194,9 @@ struct _GizmoPluginNameComparator {
 void Node3DEditor::add_gizmo_plugin(Ref<EditorNode3DGizmoPlugin> p_plugin) {
 	ERR_FAIL_COND(p_plugin.is_null());
 
+	// Set the Node3DEditor reference so plugins can add children (e.g. timers).
+	p_plugin->node_3d_editor = this;
+
 	gizmo_plugins_by_priority.push_back(p_plugin);
 	gizmo_plugins_by_priority.sort_custom<_GizmoPluginPriorityComparator>();
 

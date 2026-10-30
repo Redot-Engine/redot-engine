@@ -78,7 +78,7 @@ SceneExporterGLTFPlugin::SceneExporterGLTFPlugin() {
 }
 
 void SceneExporterGLTFPlugin::_popup_gltf_export_dialog() {
-	Node *root = EditorNode::get_singleton()->get_tree()->get_edited_scene_root();
+	Node *root = EditorCore::get_singleton()->get_shell()->get_tree()->get_edited_scene_root();
 	if (!root) {
 		EditorCore::get_singleton()->get_shell()->show_accept(TTR("This operation can't be done without a scene."), TTR("OK"));
 		return;
@@ -98,7 +98,7 @@ void SceneExporterGLTFPlugin::_popup_gltf_export_dialog() {
 }
 
 void SceneExporterGLTFPlugin::_export_scene_as_gltf(const String &p_file_path) {
-	Node *root = EditorNode::get_singleton()->get_tree()->get_edited_scene_root();
+	Node *root = EditorCore::get_singleton()->get_shell()->get_tree()->get_edited_scene_root();
 	if (!root) {
 		EditorCore::get_singleton()->get_shell()->show_accept(TTR("This operation can't be done without a scene."), TTR("OK"));
 		return;

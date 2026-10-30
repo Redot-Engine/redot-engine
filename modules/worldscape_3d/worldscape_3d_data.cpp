@@ -1298,8 +1298,11 @@ void WorldScape3DData::select_data_directory() {
 	file_dialog->set_transient(false);
 	file_dialog->set_exclusive(true);
 	file_dialog->set_flag(Window::Flags::FLAG_POPUP, true);
-	EditorNode::get_singleton()->add_child(file_dialog);
-	file_dialog->popup_centered();
+	file_dialog->connect("dir_selected", callable_mp(this, &WorldScape3DData::on_data_dir_selected).bind(file_dialog));
+	file_dialog->connect("canceled", callable_mp(this, &WorldScape3DData::on_data_dir_dialog_closed).bind(file_dialog));
+	file_dialog->set_visible(true);
+	EditorCore::get_singleton()->get_shell()->add_child(file_dialog);
+	file_dialog->move_to_center();
 }
 
 void WorldScape3DData::on_data_dir_selected(const String &path, EditorFileDialog *dialog) {

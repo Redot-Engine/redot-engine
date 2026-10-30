@@ -95,12 +95,12 @@ Button *EditorPlugin::add_control_to_bottom_panel(Control *p_control, const Stri
 
 void EditorPlugin::add_control_to_dock(DockSlot p_slot, Control *p_control, const Ref<Shortcut> &p_shortcut) {
 	ERR_FAIL_NULL(p_control);
-	EditorDockManager::get_singleton()->add_dock(p_control, String(), EditorDockManager::DockSlot(p_slot), p_shortcut);
+	EditorCore::get_singleton()->get_shell()->add_control_to_dock(p_slot, p_control, p_shortcut);
 }
 
 void EditorPlugin::remove_control_from_docks(Control *p_control) {
 	ERR_FAIL_NULL(p_control);
-	EditorDockManager::get_singleton()->remove_dock(p_control);
+	EditorCore::get_singleton()->get_shell()->remove_control_from_docks(p_control);
 }
 
 void EditorPlugin::remove_control_from_bottom_panel(Control *p_control) {
@@ -110,7 +110,7 @@ void EditorPlugin::remove_control_from_bottom_panel(Control *p_control) {
 
 void EditorPlugin::set_dock_tab_icon(Control *p_control, const Ref<Texture2D> &p_icon) {
 	ERR_FAIL_NULL(p_control);
-	EditorDockManager::get_singleton()->set_dock_tab_icon(p_control, p_icon);
+	EditorCore::get_singleton()->get_shell()->set_dock_tab_icon(p_control, p_icon);
 }
 
 void EditorPlugin::add_control_to_container(CustomControlContainer p_location, Control *p_control) {

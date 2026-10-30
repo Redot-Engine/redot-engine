@@ -322,7 +322,7 @@ void EditorExportPlatformAndroid::_check_for_changes_poll_thread(void *ud) {
 		String adb = get_adb_path();
 		// adb.exe was locking the editor_doc_cache file on startup. Adding a check for is_editor_ready provides just enough time
 		// to regenerate the doc cache.
-		if (ea->has_runnable_preset.is_set() && FileAccess::exists(adb) && EditorNode::get_singleton()->is_editor_ready()) {
+		if (ea->has_runnable_preset.is_set() && FileAccess::exists(adb) && EditorCore::get_singleton()->get_shell()->is_editor_ready()) {
 			String devices;
 			List<String> args;
 			args.push_back("devices");
@@ -4254,7 +4254,7 @@ void EditorExportPlatformAndroid::resolve_platform_feature_priorities(const Ref<
 }
 
 EditorExportPlatformAndroid::EditorExportPlatformAndroid() {
-	if (EditorNode::get_singleton()) {
+	if (EditorCore::get_singleton()->get_shell()) {
 		Ref<Image> img = memnew(Image);
 		const bool upsample = !Math::is_equal_approx(Math::round(EDSCALE), EDSCALE);
 

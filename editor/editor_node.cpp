@@ -3487,8 +3487,7 @@ void EditorNode::_bind_methods() {
 
 	ClassDB::bind_method("stop_child_process", &EditorNode::stop_child_process);
 
-	ADD_SIGNAL(MethodInfo("request_help_search"));
-	ADD_SIGNAL(MethodInfo("script_add_function_request", PropertyInfo(Variant::OBJECT, "obj"), PropertyInfo(Variant::STRING, "function"), PropertyInfo(Variant::PACKED_STRING_ARRAY, "args")));
+	// NOTE: "request_help_search" and "script_add_function_request" are declared on EditorShell.
 	ADD_SIGNAL(MethodInfo("resource_saved", PropertyInfo(Variant::OBJECT, "obj")));
 	ADD_SIGNAL(MethodInfo("preview_locale_changed"));
 }
@@ -4921,6 +4920,24 @@ EditorNode::EditorNode() {
 	add_child(system_theme_timer);
 	system_theme_timer->set_owner(get_owner());
 	system_theme_timer->set_autostart(true);
+}
+
+void EditorNode::add_control_to_dock(int p_slot, Control *p_control, const Ref<Shortcut> &p_shortcut) {
+	ERR_FAIL_NULL(p_control);
+	ERR_FAIL_NULL(editor_dock_manager);
+	editor_dock_manager->add_dock(p_control, String(), EditorDockManager::DockSlot(p_slot), p_shortcut);
+}
+
+void EditorNode::remove_control_from_docks(Control *p_control) {
+	ERR_FAIL_NULL(p_control);
+	ERR_FAIL_NULL(editor_dock_manager);
+	editor_dock_manager->remove_dock(p_control);
+}
+
+void EditorNode::set_dock_tab_icon(Control *p_control, const Ref<Texture2D> &p_icon) {
+	ERR_FAIL_NULL(p_control);
+	ERR_FAIL_NULL(editor_dock_manager);
+	editor_dock_manager->set_dock_tab_icon(p_control, p_icon);
 }
 
 EditorNode::~EditorNode() {

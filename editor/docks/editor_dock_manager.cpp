@@ -439,7 +439,7 @@ void EditorDockManager::_open_dock_in_window(Control *p_dock, bool p_show_window
 		_update_layout();
 		if (p_reset_size) {
 			// Use a default size of one third the current window size.
-			Size2i popup_size = EditorNode::get_singleton()->get_window()->get_size() / 3.0;
+			Size2i popup_size = EditorCore::get_singleton()->get_shell()->get_window()->get_size() / 3.0;
 			p_dock->get_window()->set_size(popup_size);
 			p_dock->get_window()->move_to_center();
 		}

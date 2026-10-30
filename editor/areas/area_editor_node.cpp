@@ -10,14 +10,18 @@
 #include "editor/editor_main_screen.h"
 #include "editor/file_system/dependency_editor.h"
 #include "editor/gui/editor_bottom_panel.h"
+#include "editor/doc/editor_help.h"
 #include "editor/gui/editor_file_dialog.h"
+#include "editor/settings/editor_settings.h"
 #include "editor/gui/editor_title_bar.h"
+#include "editor/gui/progress_dialog.h"
 #include "editor/scene/editor_scene_tabs.h"
 #include "editor/run/editor_run_bar.h"
 #include "editor/docks/scene_tree_dock.h"
 #include "editor/docks/filesystem_dock.h"
 #include "editor/docks/inspector_dock.h"
 #include "editor/docks/node_dock.h"
+#include "editor/docks/import_dock.h"
 #include "scene/gui/button.h"
 #include "scene/gui/color_rect.h"
 #include "scene/gui/control.h"
@@ -261,6 +265,12 @@ void AreaEditorNode::_add_test_pane() {
 void AreaEditorNode::_notification(int p_what) {
 	if (p_what == NOTIFICATION_ENTER_TREE) {
 		set_process(false);
+	} else if (p_what == NOTIFICATION_POSTINITIALIZE) {
+		// Generate documentation (must happen before CreateDialog is shown).
+		EditorHelp::generate_doc();
+#if defined(MODULE_GDSCRIPT_ENABLED) || defined(MODULE_MONO_ENABLED)
+		EditorHelpHighlighter::create_singleton();
+#endif
 	} else if (p_what != NOTIFICATION_PROCESS) {
 		return;
 	}
@@ -709,6 +719,13 @@ AreaEditorNode::AreaEditorNode() {
 	ERR_FAIL_NULL(EditorCore::get_singleton());
 	EditorCore::get_singleton()->set_shell(this);
 
+	// Register editor shortcuts before plugins are initialized.
+	ED_SHORTCUT("editor/lock_selected_nodes", TTRC("Lock Selected Node(s)"), KeyModifierMask::CMD_OR_CTRL | Key::L);
+	ED_SHORTCUT("editor/unlock_selected_nodes", TTRC("Unlock Selected Node(s)"), KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::SHIFT | Key::L);
+	ED_SHORTCUT("editor/group_selected_nodes", TTRC("Group Selected Node(s)"), KeyModifierMask::CMD_OR_CTRL | Key::G);
+	ED_SHORTCUT("editor/ungroup_selected_nodes", TTRC("Ungroup Selected Node(s)"), KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::SHIFT | Key::G);
+	ED_SHORTCUT("canvas_item_editor/pan_view", TTRC("Pan View"), Key::SPACE);
+
 	// Initialize dialogs (including ProjectSettingsEditor singleton) before docks
 	EditorCore::get_singleton()->initialize_dialogs();
 
@@ -772,6 +789,15 @@ AreaEditorNode::AreaEditorNode() {
 	editor_main_screen = memnew(EditorMainScreen);
 	bottom_panel = memnew(EditorBottomPanel);
 
+	// Set up the button container for main editor tabs (2D, 3D, Script, etc.)
+	// This must be done before plugins are initialized, as add_main_plugin()
+	// adds buttons to this container.
+	HBoxContainer *main_editor_button_hb = memnew(HBoxContainer);
+	main_editor_button_hb->set_mouse_filter(Control::MOUSE_FILTER_STOP);
+	main_editor_button_hb->set_name("EditorMainScreenButtons");
+	editor_main_screen->set_button_container(main_editor_button_hb);
+	editor_main_screen->get_control()->add_child(main_editor_button_hb);
+
 	AreaPane *main_screen_pane = memnew(AreaPane);
 	main_screen_pane->set_pane_title("");
 	main_screen_pane->set_pane_content(editor_main_screen);
@@ -806,6 +832,30 @@ AreaEditorNode::AreaEditorNode() {
 	// Store the splits that need initial offsets set
 	splits_needing_offset.push_back(left_center_split);
 	splits_needing_offset.push_back(root_split);
+
+	// Create the progress dialog before plugins are initialized.
+	// Some plugins (e.g. ScriptEditorPlugin via WindowWrapper) call
+	// ProgressDialog::get_singleton() in their constructors.
+	progress_dialog = memnew(ProgressDialog);
+	add_child(progress_dialog);
+
+	// Create project_run_bar before plugins are initialized.
+	// EditorDebuggerNode constructor calls EditorRunBar::get_singleton()->get_pause_button()->connect(...).
+	if (!project_run_bar) {
+		project_run_bar = memnew(EditorRunBar);
+	}
+	add_child(project_run_bar);
+
+	// Create ImportDock singleton before plugins are initialized.
+	// FileSystemDock and other components call ImportDock::get_singleton() in their methods.
+	if (!ImportDock::get_singleton()) {
+		memnew(ImportDock);
+	}
+
+	// Initialize built-in editor plugins AFTER the shell is fully constructed.
+	// Plugins register bottom panel items, docks, etc. in their constructors,
+	// so the shell must exist first.
+	EditorCore::get_singleton()->initialize_plugins();
 
 	is_ready = true;
 }

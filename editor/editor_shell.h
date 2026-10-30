@@ -39,6 +39,7 @@
 #include "core/variant/dictionary.h"
 #include "core/variant/variant.h"
 
+#include "editor/docks/editor_dock_manager.h"
 #include "editor/editor_core.h"
 #include "editor/editor_scene_manager.h"
 #include "editor/plugins/editor_plugin_manager.h"
@@ -90,9 +91,13 @@ class EditorShell : public Node {
 	GDCLASS(EditorShell, Node);
 
 protected:
-	/// `EditorShell` is an abstract base class; it declares no script-visible
-	/// properties or methods of its own, so there is nothing to bind.
-	static void _bind_methods() {}
+	/// Signals shared by all shells. Plugins connect to these through the
+	/// active shell (`EditorCore::get_singleton()->get_shell()`) instead of a
+	/// concrete editor type.
+	static void _bind_methods() {
+		ADD_SIGNAL(MethodInfo("request_help_search"));
+		ADD_SIGNAL(MethodInfo("script_add_function_request", PropertyInfo(Variant::OBJECT, "obj"), PropertyInfo(Variant::STRING, "function"), PropertyInfo(Variant::PACKED_STRING_ARRAY, "args")));
+	}
 
 public:
 	virtual ~EditorShell() = default;
@@ -482,6 +487,37 @@ public:
 	/// to fix it if invalid.
 	/// @return `true` if the directory is valid (or no custom directory is in use).
 	virtual bool validate_custom_directory() = 0;
+
+	// ── Plugin dock integration ───────────────────────────────────────────
+
+	/// Adds a plugin dock control to the given dock slot (see `EditorDockManager::DockSlot`).
+	/// The default implementation routes the dock to the shared `EditorDockManager`
+	/// (floating dock windows); `EditorNode` overrides it to use its embedded slots.
+	virtual void add_control_to_dock(int p_slot, Control *p_control, const Ref<Shortcut> &p_shortcut) {
+		EditorDockManager *dm = EditorDockManager::get_singleton();
+		if (!dm) {
+			ERR_PRINT("Cannot add dock: no EditorDockManager is available for this shell.");
+			return;
+		}
+		dm->add_dock(p_control, String(), EditorDockManager::DockSlot(p_slot), p_shortcut);
+	}
+	/// Removes a plugin dock control from all dock slots.
+	virtual void remove_control_from_docks(Control *p_control) {
+		if (EditorDockManager::get_singleton()) {
+			EditorDockManager::get_singleton()->remove_dock(p_control);
+		}
+	}
+	/// Sets the tab icon of a plugin dock control.
+	virtual void set_dock_tab_icon(Control *p_control, const Ref<Texture2D> &p_icon) {
+		if (EditorDockManager::get_singleton()) {
+			EditorDockManager::get_singleton()->set_dock_tab_icon(p_control, p_icon);
+		}
+	}
+
+	/// Enables or disables the low-processor-usage mode applied while the
+	/// editor window is unfocused. The default does nothing; `EditorNode`
+	/// overrides it.
+	virtual void set_unfocused_low_processor_usage_mode_enabled(bool p_enabled) { (void)p_enabled; }
 
 	// ── Drag / drop ───────────────────────────────────────────────────────
 

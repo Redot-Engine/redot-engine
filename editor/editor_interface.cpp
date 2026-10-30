@@ -258,7 +258,7 @@ void EditorInterface::make_scene_preview(const String &p_path, Node *p_scene, in
 	world.instantiate();
 	sub_viewport_node->set_world_3d(world);
 
-	EditorNode::get_singleton()->add_child(sub_viewport_node);
+	EditorCore::get_singleton()->get_shell()->add_child(sub_viewport_node);
 	Ref<Environment> env;
 	env.instantiate();
 	env->set_background(Environment::BG_CLEAR_COLOR);
@@ -428,19 +428,19 @@ float EditorInterface::get_editor_scale() const {
 }
 
 void EditorInterface::popup_dialog(Window *p_dialog, const Rect2i &p_screen_rect) {
-	p_dialog->popup_exclusive(EditorNode::get_singleton(), p_screen_rect);
+	p_dialog->popup_exclusive(EditorCore::get_singleton()->get_shell(), p_screen_rect);
 }
 
 void EditorInterface::popup_dialog_centered(Window *p_dialog, const Size2i &p_minsize) {
-	p_dialog->popup_exclusive_centered(EditorNode::get_singleton(), p_minsize);
+	p_dialog->popup_exclusive_centered(EditorCore::get_singleton()->get_shell(), p_minsize);
 }
 
 void EditorInterface::popup_dialog_centered_ratio(Window *p_dialog, float p_ratio) {
-	p_dialog->popup_exclusive_centered_ratio(EditorNode::get_singleton(), p_ratio);
+	p_dialog->popup_exclusive_centered_ratio(EditorCore::get_singleton()->get_shell(), p_ratio);
 }
 
 void EditorInterface::popup_dialog_centered_clamped(Window *p_dialog, const Size2i &p_size, float p_fallback_ratio) {
-	p_dialog->popup_exclusive_centered_clamped(EditorNode::get_singleton(), p_size, p_fallback_ratio);
+	p_dialog->popup_exclusive_centered_clamped(EditorCore::get_singleton()->get_shell(), p_size, p_fallback_ratio);
 }
 
 String EditorInterface::get_current_feature_profile() const {

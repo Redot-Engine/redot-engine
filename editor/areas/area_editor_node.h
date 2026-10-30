@@ -22,6 +22,7 @@ class Button;
 class PopupMenu;
 class SubViewport;
 class VSplitContainer;
+class ProgressDialog;
 
 /**
  * Area-based editor shell implementing the EditorShell interface.
@@ -57,6 +58,7 @@ class AreaEditorNode : public EditorShell {
 	DependencyErrorDialog *dependency_error = nullptr;
 	DependencyEditor *dependency_fixer = nullptr;
 	EditorFileDialog *file_dialog = nullptr;
+	ProgressDialog *progress_dialog = nullptr;
 	Button *new_inherited_button = nullptr;
 	PopupMenu *file_menu = nullptr;
 	PopupMenu *export_as_menu = nullptr;

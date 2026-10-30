@@ -544,7 +544,7 @@ public:
 	EditorRunBar *get_project_run_bar() override { return project_run_bar; } ///< @returns The run bar (play/stop controls).
 
 	/// Toggles low-processor-usage mode when the editor window loses focus, to save CPU/battery in the background.
-	void set_unfocused_low_processor_usage_mode_enabled(bool p_enabled);
+	void set_unfocused_low_processor_usage_mode_enabled(bool p_enabled) override;
 
 	int execute_and_show_output(const String &p_title, const String &p_path, const List<String> &p_arguments, bool p_close_on_ok, bool p_close_on_errors, String *r_output) override;
 
@@ -585,6 +585,13 @@ public:
 	void restart_editor(bool p_goto_project_manager = false);
 
 	void open_setting_override(const String &p_property) override; ///< Opens the Project Settings dialog focused on an override property.
+
+	/// Adds a dock control to one of EditorNode's embedded dock slots.
+	void add_control_to_dock(int p_slot, Control *p_control, const Ref<Shortcut> &p_shortcut) override;
+	/// Removes a dock control from all dock slots.
+	void remove_control_from_docks(Control *p_control) override;
+	/// Sets the tab icon for a dock control.
+	void set_dock_tab_icon(Control *p_control, const Ref<Texture2D> &p_icon) override;
 
 	void dim_editor(bool p_dimming); ///< Dims or undims the editor UI (e.g. while a modal is open).
 	bool is_editor_dimmed() const; ///< Returns true if the editor UI is currently dimmed.

@@ -836,7 +836,9 @@ bool FileSystemDock::_update_filtered_items(TreeItem *p_tree_item) {
 void FileSystemDock::navigate_to_path(const String &p_path) {
 	file_list_search_box->clear();
 	// Try to set the FileSystem dock visible.
-	EditorDockManager::get_singleton()->focus_dock(this);
+	if (EditorDockManager::get_singleton()) {
+		EditorDockManager::get_singleton()->focus_dock(this);
+	}
 	_navigate_to_path(p_path, false, is_visible_in_tree());
 
 	import_dock_needs_update = true;

@@ -36,6 +36,7 @@
 #include "run_icon_svg.gen.h"
 
 #include "core/config/project_settings.h"
+#include "editor/editor_core.h"
 #include "editor/editor_string_names.h"
 #include "editor/export/editor_export.h"
 #include "editor/import/resource_importer_texture_settings.h"
@@ -919,7 +920,7 @@ Ref<Texture2D> EditorExportPlatformWeb::get_run_icon() const {
 }
 
 EditorExportPlatformWeb::EditorExportPlatformWeb() {
-	if (EditorNode::get_singleton()) {
+	if (EditorCore::get_singleton()->get_shell()) {
 		server.instantiate();
 
 		Ref<Image> img = memnew(Image);

@@ -102,7 +102,7 @@ static void _editor_init() {
 		EditorFileSystem::get_singleton()->add_import_format_support_query(blend_import_query);
 	}
 	memnew(EditorImportBlendRunner);
-	EditorNode::get_singleton()->add_child(EditorImportBlendRunner::get_singleton());
+	EditorCore::get_singleton()->get_shell()->add_child(EditorImportBlendRunner::get_singleton());
 }
 #endif // TOOLS_ENABLED
 

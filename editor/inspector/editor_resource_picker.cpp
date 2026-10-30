@@ -440,7 +440,7 @@ void EditorResourcePicker::_edit_menu_cbk(int p_which) {
 				return;
 			}
 			Callable resource_saved = callable_mp(this, &EditorResourcePicker::_resource_saved);
-			if (!EditorNode::get_singleton()->is_connected("resource_saved", resource_saved)) {
+			if (!EditorCore::get_singleton()->is_connected("resource_saved", resource_saved)) {
 				EditorCore::get_singleton()->connect("resource_saved", resource_saved);
 			}
 			EditorCore::get_singleton()->save_resource_as(edited_resource);
@@ -961,8 +961,8 @@ void EditorResourcePicker::_notification(int p_what) {
 
 		case NOTIFICATION_EXIT_TREE: {
 			Callable resource_saved = callable_mp(this, &EditorResourcePicker::_resource_saved);
-			if (EditorNode::get_singleton()->is_connected("resource_saved", resource_saved)) {
-				EditorNode::get_singleton()->disconnect("resource_saved", resource_saved);
+			if (EditorCore::get_singleton()->is_connected("resource_saved", resource_saved)) {
+				EditorCore::get_singleton()->disconnect("resource_saved", resource_saved);
 			}
 		} break;
 	}

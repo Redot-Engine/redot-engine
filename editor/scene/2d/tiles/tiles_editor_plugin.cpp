@@ -141,7 +141,7 @@ void TilesEditorUtils::_thread() {
 				tile_map_layer->set_position(-(scale * encompassing_rect.get_center()) + thumbnail_size2 / 2);
 
 				// Add the viewport to the scene tree (deferred to avoid rendering too early).
-				callable_mp((Node *)EditorNode::get_singleton(), &Node::add_child).call_deferred(viewport, false, Node::INTERNAL_MODE_DISABLED);
+				callable_mp((Node *)EditorCore::get_singleton()->get_shell(), &Node::add_child).call_deferred(viewport, false, Node::INTERNAL_MODE_DISABLED);
 
 				// Register a callback to be notified when the frame is drawn.
 				RS::get_singleton()->connect(SNAME("frame_pre_draw"), callable_mp(this, &TilesEditorUtils::_preview_frame_started), Object::CONNECT_ONE_SHOT);

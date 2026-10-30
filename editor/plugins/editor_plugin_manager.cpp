@@ -180,7 +180,7 @@ void EditorPluginManager::add_editor_plugin(EditorPlugin *p_editor, bool p_confi
 		shell->get_editor_main_screen()->add_main_plugin(p_editor);
 	}
 	core->get_editor_data().add_editor_plugin(p_editor);
-	EditorNode::get_singleton()->add_child(p_editor);
+	shell->get_gui_base()->add_child(p_editor);
 	if (p_config_changed) {
 		p_editor->enable_plugin();
 	}
@@ -199,7 +199,7 @@ void EditorPluginManager::remove_editor_plugin(EditorPlugin *p_editor, bool p_co
 	editor_plugins_over->remove_plugin(p_editor);
 	editor_plugins_force_over->remove_plugin(p_editor);
 	editor_plugins_force_input_forwarding->remove_plugin(p_editor);
-	EditorNode::get_singleton()->remove_child(p_editor);
+	shell->get_gui_base()->remove_child(p_editor);
 	core->get_editor_data().remove_editor_plugin(p_editor);
 
 	for (KeyValue<ObjectID, HashSet<EditorPlugin *>> &kv : active_plugins) {

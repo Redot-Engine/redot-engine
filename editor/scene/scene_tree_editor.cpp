@@ -203,7 +203,9 @@ void SceneTreeEditor::_cell_button_pressed(Object *p_item, int p_column, int p_i
 
 		set_selected(n);
 
-		EditorDockManager::get_singleton()->focus_dock(NodeDock::get_singleton());
+		if (EditorDockManager::get_singleton()) {
+			EditorDockManager::get_singleton()->focus_dock(NodeDock::get_singleton());
+		}
 		NodeDock::get_singleton()->show_connections();
 	} else if (p_id == BUTTON_GROUPS) {
 		editor_selection->clear();
@@ -211,7 +213,9 @@ void SceneTreeEditor::_cell_button_pressed(Object *p_item, int p_column, int p_i
 
 		set_selected(n);
 
-		EditorDockManager::get_singleton()->focus_dock(NodeDock::get_singleton());
+		if (EditorDockManager::get_singleton()) {
+			EditorDockManager::get_singleton()->focus_dock(NodeDock::get_singleton());
+		}
 		NodeDock::get_singleton()->show_groups();
 	} else if (p_id == BUTTON_UNIQUE) {
 		bool ask_before_revoking_unique_name = EDITOR_GET("docks/scene_tree/ask_before_revoking_unique_name");

@@ -963,7 +963,7 @@ Error EditorExportPlatformWindows::run(const Ref<EditorExportPreset> &p_preset, 
 	if (!da->dir_exists(dest)) {
 		Error err = da->make_dir_recursive(dest);
 		if (err != OK) {
-			EditorNode::get_singleton()->show_warning(TTR("Could not create temp directory:") + "\n" + dest);
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("Could not create temp directory:") + "\n" + dest);
 			return err;
 		}
 	}
@@ -1097,7 +1097,7 @@ Error EditorExportPlatformWindows::run(const Ref<EditorExportPreset> &p_preset, 
 }
 
 EditorExportPlatformWindows::EditorExportPlatformWindows() {
-	if (EditorNode::get_singleton()) {
+	if (EditorCore::get_singleton()->get_shell()) {
 		Ref<Image> img = memnew(Image);
 		const bool upsample = !Math::is_equal_approx(Math::round(EDSCALE), EDSCALE);
 

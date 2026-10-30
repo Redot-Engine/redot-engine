@@ -92,7 +92,7 @@ void AnimationTrackKeyEdit::_fix_node_path(Variant &value) {
 		return;
 	}
 
-	Node *root = EditorNode::get_singleton()->get_tree()->get_root();
+	Node *root = EditorCore::get_singleton()->get_shell()->get_tree()->get_root();
 
 	Node *np_node = root->get_node_or_null(np);
 	ERR_FAIL_NULL(np_node);
@@ -710,7 +710,7 @@ void AnimationMultiTrackKeyEdit::_fix_node_path(Variant &value, NodePath &base) 
 		return;
 	}
 
-	Node *root = EditorNode::get_singleton()->get_tree()->get_root();
+	Node *root = EditorCore::get_singleton()->get_shell()->get_tree()->get_root();
 
 	Node *np_node = root->get_node_or_null(np);
 	ERR_FAIL_NULL(np_node);

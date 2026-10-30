@@ -299,6 +299,11 @@ public:
 	/// theme/EditorNode singleton. Called from EditorNode's constructor.
 	void initialize_dialogs();
 
+	/// Initializes built-in editor plugins. Must be called after the shell is
+	/// created (so plugins can register bottom panel items, docks, etc.) and
+	/// after `initialize_dialogs()`. Called by the shell's constructor.
+	void initialize_plugins();
+
 	/// Removes the print handler to prevent EditorLog from receiving messages
 	/// during shutdown. Call before destroying the EditorNode.
 
