@@ -42,6 +42,7 @@
 #include "physx_blast_authoring.h"
 
 #include "../physx_server.h"
+#include "physx_blast_runtime.h"
 
 #include "core/io/image.h"
 #include "core/object/class_db.h"
@@ -293,6 +294,9 @@ void PhysXBlastAuthoring::_bind_methods() {
 }
 
 Ref<PhysXBlastAsset> PhysXBlastAuthoring::fracture_mesh(const Ref<Mesh> &p_mesh, int p_site_count, int p_seed, FracturePattern p_pattern, const Ref<Texture2D> &p_cutout_pattern) {
+	if (!blast_runtime_load()) {
+		return _fail("PhysXBlastAuthoring: the Blast runtime libraries are not installed; install the PhysX runtime bundle first.");
+	}
 	last_error = String();
 	last_warnings.clear();
 	if (p_mesh.is_null() || p_mesh->get_surface_count() < 1) {
@@ -507,10 +511,10 @@ Ref<PhysXBlastAsset> PhysXBlastAuthoring::fracture_mesh(const Ref<Mesh> &p_mesh,
 				// this has to be ruled out before ever calling cutout().
 				if (cutout_pattern_has_floating_wall_island(gray, pw, ph)) {
 					_error("PhysXBlastAuthoring: cutout_pattern rejected -- it has a crack/wall shape that "
-							  "doesn't reach the image edge (a 'floating island'). Every crack line needs to "
-							  "reach the pattern's boundary, the same way a real broken pane's cracks do -- "
-							  "otherwise the fill region wraps around it with a hole in the middle, which is "
-							  "known to crash the underlying Blast SDK's Cutout code rather than fail cleanly.");
+						   "doesn't reach the image edge (a 'floating island'). Every crack line needs to "
+						   "reach the pattern's boundary, the same way a real broken pane's cracks do -- "
+						   "otherwise the fill region wraps around it with a hole in the middle, which is "
+						   "known to crash the underlying Blast SDK's Cutout code rather than fail cleanly.");
 					frac_result = -1;
 				} else {
 					Nv::Blast::CutoutSet *cutout_set = NvBlastExtAuthoringCreateCutoutSet();

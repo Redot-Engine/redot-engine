@@ -41,6 +41,8 @@
 
 #include "physx_destructible_3d.h"
 
+#include "physx_blast_runtime.h"
+
 #include "core/config/engine.h"
 #include "core/io/file_access.h"
 #include "core/math/triangle_mesh.h"
@@ -584,6 +586,9 @@ void PhysXDestructible3D::_notification(int p_what) {
 }
 
 bool PhysXDestructible3D::_load_asset_bytes(const PackedByteArray &p_bytes) {
+	if (!blast_runtime_load()) {
+		ERR_FAIL_V_MSG(false, "PhysXDestructible3D: the Blast runtime is not installed; the destructible stays disabled until the PhysX runtime bundle is installed.");
+	}
 	// BLAST-4: the block is handed to NvBlast as an opaque NvBlastAsset —
 	// validate the cheapest structural facts here so truncated/garbage bytes
 	// fail cleanly instead of as undefined behavior inside the SDK. Every
@@ -910,6 +915,9 @@ void PhysXDestructible3D::_spawn_intact() {
 
 void PhysXDestructible3D::_spawn_piece(uint32_t p_chunk_index, const Transform3D &p_transform, const Vector3 &p_linear_velocity, bool p_physics, NvBlastActor *p_actor,
 		PhysicsServer3D::BodyMode p_body_mode, RID p_attach_body) {
+	if (!blast_runtime_load()) {
+		return; // Unreachable: pieces only exist after a successful build.
+	}
 	ERR_FAIL_INDEX((int)p_chunk_index, (int)chunk_points.size());
 	const PackedVector3Array &points = chunk_points[p_chunk_index];
 	const uint32_t tri_count = points.size() / 3;
@@ -1050,6 +1058,10 @@ uint32_t PhysXDestructible3D::get_piece_chunk(int p_index) const {
 }
 
 bool PhysXDestructible3D::_actor_has_live_piece(NvBlastActor *p_actor) const {
+	// Unreachable with the runtime missing: pieces only exist after a build.
+	if (!blast_runtime_load()) {
+		return false;
+	}
 	HashMap<NvBlastActor *, LocalVector<uint32_t>>::ConstIterator actor_entry = actor_pieces.find(p_actor);
 	if (!actor_entry) {
 		return false;
@@ -1065,6 +1077,9 @@ bool PhysXDestructible3D::_actor_has_live_piece(NvBlastActor *p_actor) const {
 }
 
 void PhysXDestructible3D::_retire_actor(NvBlastActor *p_actor) {
+	if (!blast_runtime_load()) {
+		return; // Unreachable: actors only exist after a successful build.
+	}
 	if (!p_actor) {
 		return;
 	}
@@ -1081,6 +1096,9 @@ void PhysXDestructible3D::_retire_actor(NvBlastActor *p_actor) {
 }
 
 void PhysXDestructible3D::_free_pieces_of_actor(NvBlastActor *p_actor) {
+	if (!blast_runtime_load()) {
+		return; // Unreachable: pieces only exist after a successful build.
+	}
 	HashMap<NvBlastActor *, LocalVector<uint32_t>>::Iterator actor_entry = actor_pieces.find(p_actor);
 	if (!actor_entry) {
 		return;
@@ -1139,6 +1157,9 @@ void PhysXDestructible3D::_record_piece_velocities() {
 }
 
 void PhysXDestructible3D::_sync_transforms() {
+	if (!blast_runtime_load()) {
+		return; // Unreachable: transforms only sync for built destructibles.
+	}
 	PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
 	RenderingServer *rs = RenderingServer::get_singleton();
 	// Backwards so remove_at_unordered() (swaps in the last element) doesn't
@@ -1262,6 +1283,7 @@ void PhysXDestructible3D::_check_impact_fracture() {
 }
 
 int PhysXDestructible3D::apply_radial_damage(const Vector3 &p_world_position, float p_damage, float p_min_radius, float p_max_radius) {
+	ERR_FAIL_COND_V_MSG(!blast_runtime_load(), 0, "PhysXDestructible3D: the Blast runtime is not installed; damage ignored until the PhysX runtime bundle is installed.");
 	ERR_FAIL_NULL_V_MSG(family, 0, "PhysXDestructible3D: node not loaded (missing/invalid asset_path or chunks_path?).");
 
 	const Vector3 local_position = get_global_transform().affine_inverse().xform(p_world_position);

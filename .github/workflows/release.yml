@@ -41,6 +41,9 @@ jobs:
           scons platform=linuxbsd production=yes
           rm -rf bin/obj
 
+      # Package the distribution zip here: actions/upload-artifact does not
+      # preserve the executable bit, and the release assets are attached from
+      # these artifacts -- zipping in-workflow keeps `chmod +x` meaningful.
       - name: Upload Linux dev artifact
         uses: actions/upload-artifact@v7
         with:
@@ -471,20 +474,60 @@ jobs:
         id: date
         run: echo "CURRENT_DATE=$(date +'%Y%m%d%H')" >> $GITHUB_ENV
 
-      - name: Zip the dev artifact
+      - name: Install patchelf
         run: |
-          zip -r -9 redot-linuxbsd.zip redot-linux-dev/*
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq patchelf
+
+      - name: Collect the release assets
+        run: |
+          # The PhysX module stages its runtime libraries next to the Linux
+          # editor binary for development. The RELEASED editor does not ship
+          # them (matching Windows, where the DLLs are delay-loaded and only
+          # the runtime bundle carries them): patchelf removes the binary's
+          # five NEEDED entries -- every Blast import is a lazily-bound
+          # function and the GPU runtime is loaded by the SDK itself, so
+          # nothing binds eagerly and the editor starts without the files --
+          # the libraries are split into the Linux runtime bundle, and the
+          # physx editor plugin offers that bundle for download when a
+          # project uses PhysX. Templates KEEP their libraries: the export
+          # plugin stages them into exported games from the template
+          # directory.
+          mkdir -p physx-runtime-linux
+          for dir in redot-linux-dev redot-linux-editor-mono; do
+            for bin in "$dir"/redot.*; do
+              strip "$bin"
+              chmod +x "$bin"
+              for lib in libPhysXGpu_64.so libNvBlast.so libNvBlastGlobals.so libNvBlastExtAuthoring.so libNvBlastExtShaders.so; do
+                patchelf --remove-needed "$lib" "$bin"
+              done
+            done
+            mv "$dir"/*.so physx-runtime-linux/
+          done
+          # upload-artifact does not preserve the executable bit: strip/chmod
+          # here and zip in-workflow so the attached release assets carry it.
+          strip redot-linux-template/redot.* redot-linux-template-mono/redot.*
+          chmod +x redot-linux-template/redot.* redot-linux-template-mono/redot.*
+          zip -r -9 redot-linuxbsd.zip redot-linux-dev
+          zip -r -9 redot-linux-mono.zip redot-linux-editor-mono
+          zip -r -9 redot-linux-template.zip redot-linux-template
+          zip -r -9 redot-linux-template-mono.zip redot-linux-template-mono
+          zip -r -9 physx-runtime-linux.zip physx-runtime-linux
+          # Windows/macOS artifacts are plain directories (no modes to lose).
           zip -r -9 redot-windowsx64.zip redot-windows-dev/*
           zip -r -9 redot-macos-x64.zip redot-macos-x64-dev/*
           zip -r -9 redot-macos-arm64.zip redot-macos-arm64-dev/*
-          zip -r -9 redot-linux-template.zip redot-linux-template/*
-          zip -r -9 redot-linux-mono.zip redot-linux-editor-mono/*
-          zip -r -9 redot-linux-template-mono.zip redot-linux-template-mono/*
           zip -r -9 redot-windows-template.zip redot-windows-template/*
           zip -r -9 redot-windows-mono.zip redot-windows-editor-mono/*
           zip -r -9 redot-windows-template-mono.zip redot-windows-template-mono/*
           zip -r -9 redot-macos-x64-template.zip redot-macos-x64-template/*
           zip -r -9 redot-macos-arm64-template.zip redot-macos-arm64-template/*
+
+      - name: Upload the Linux runtime bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: physx-runtime-linux
+          path: physx-runtime-linux.zip
 
       # - name: Upload release artifacts
       #   uses: actions/upload-artifact@v7
