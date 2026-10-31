@@ -55,6 +55,8 @@
 
 #define RB_SCOPE_FORWARD_CLUSTERED SNAME("forward_clustered")
 
+#define RB_TEX_ALBEDO SNAME("albedo")
+#define RB_TEX_ALBEDO_MSAA SNAME("albedo_msaa")
 #define RB_TEX_SPECULAR SNAME("specular")
 #define RB_TEX_SPECULAR_MSAA SNAME("specular_msaa")
 #define RB_TEX_NORMAL_ROUGHNESS SNAME("normal_roughness")
@@ -127,6 +129,12 @@ public:
 
 		RID render_sdfgi_uniform_set;
 
+		void ensure_albedo();
+		bool has_albedo() const { return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_ALBEDO); }
+		RID get_albedo() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_ALBEDO); }
+		RID get_albedo(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_ALBEDO, p_layer, 0); }
+		RID get_albedo_msaa(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_ALBEDO_MSAA, p_layer, 0); }
+
 		void ensure_specular();
 		bool has_specular() const { return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR); }
 		RID get_specular() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR); }
@@ -163,6 +171,8 @@ public:
 		virtual void configure(RenderSceneBuffersRD *p_render_buffers) override;
 		virtual void free_data() override;
 
+		static RD::DataFormat get_albedo_format();
+		static uint32_t get_albedo_usage_bits(bool p_resolve, bool p_msaa, bool p_storage);
 		static RD::DataFormat get_specular_format();
 		static uint32_t get_specular_usage_bits(bool p_resolve, bool p_msaa, bool p_storage);
 		static RD::DataFormat get_normal_roughness_format();
@@ -211,8 +221,9 @@ private:
 	enum ColorPassFlags {
 		COLOR_PASS_FLAG_TRANSPARENT = 1 << 0,
 		COLOR_PASS_FLAG_SEPARATE_SPECULAR = 1 << 1,
-		COLOR_PASS_FLAG_MULTIVIEW = 1 << 2,
-		COLOR_PASS_FLAG_MOTION_VECTORS = 1 << 3,
+		COLOR_PASS_FLAG_ALBEDO = 1 << 2,
+		COLOR_PASS_FLAG_MULTIVIEW = 1 << 3,
+		COLOR_PASS_FLAG_MOTION_VECTORS = 1 << 4,
 	};
 
 	struct GeometryInstanceSurfaceDataCache;
@@ -622,6 +633,7 @@ private:
 			struct {
 				uint32_t texture_samples : 3;
 				uint32_t use_reflection_probes : 1;
+				uint32_t use_albedo : 1;
 				uint32_t use_separate_specular : 1;
 				uint32_t use_motion_vectors : 1;
 				uint32_t use_normal_and_roughness : 1;

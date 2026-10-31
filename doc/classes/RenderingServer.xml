@@ -5362,7 +5362,10 @@
 		<constant name="COMPOSITOR_EFFECT_FLAG_NEEDS_ROUGHNESS" value="8" enum="CompositorEffectFlags">
 			The rendering effect requires normals and roughness g-buffer to be produced (Forward+ only).
 		</constant>
-		<constant name="COMPOSITOR_EFFECT_FLAG_NEEDS_SEPARATE_SPECULAR" value="16" enum="CompositorEffectFlags">
+		<constant name="COMPOSITOR_EFFECT_FLAG_NEEDS_ALBEDO" value="16" enum="CompositorEffectFlags">
+			The rendering effect requires albedo data to be produced (Forward+ only).
+		</constant>
+		<constant name="COMPOSITOR_EFFECT_FLAG_NEEDS_SEPARATE_SPECULAR" value="32" enum="CompositorEffectFlags">
 			The rendering effect requires specular data to be separated out (Forward+ only).
 		</constant>
 		<constant name="COMPOSITOR_EFFECT_CALLBACK_TYPE_PRE_OPAQUE" value="0" enum="CompositorEffectCallbackType">
