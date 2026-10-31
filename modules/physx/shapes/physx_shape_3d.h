@@ -73,6 +73,15 @@ public:
 	bool has_owner(PhysXShapedObject3D *p_owner) const;
 	const HashMap<PhysXShapedObject3D *, int> &get_owners() const { return owners; }
 
+	// Sums count_shapes_with_callback() over every registered owner: the
+	// reference count an attached PxShape-embedded external object (a
+	// PxCustomGeometry callback instance) needs before it may be freed.
+	// Public so a delegated shape can count through ANOTHER shape's owners --
+	// PhysXCustomShapeType's inner shapes register no owners themselves
+	// (they register on the wrapper) but their callbacks live in the
+	// wrapper's owners' PxShapes.
+	int count_owner_shape_references(const void *p_callbacks) const;
+
 	// --- RID Management ---
 	void set_rid(const RID &p_rid) { physx_rid.set_rid(p_rid); }
 	RID get_rid() const { return physx_rid.get_rid(); }
@@ -128,6 +137,19 @@ public:
 	// destruction when the blueprint holds external pointers (e.g.
 	// PxCustomGeometry callbacks) that must not outlive those instances.
 	virtual void detach_from_owners();
+
+	// Whether an attached PxShape still embeds this shape's externally-owned
+	// state (PxCustomGeometry callback instances). Plain geometries own no
+	// such state and answer false; the custom-geometry shapes count their
+	// per-scale callback instances through the owners (their own, or the
+	// delegating wrapper's -- see count_owner_shape_references). A retired
+	// inner shape may only be destroyed once this is false.
+	virtual bool has_referenced_geometry_instances() const { return false; }
+
+	// Redirects that counting to p_source's owners -- the wrapper owning an
+	// inner shape calls it on the inner (owners register on the wrapper, so
+	// the inner's own map stays empty). No-op for plain geometries.
+	virtual void set_owners_source(const PhysXShape3D *p_source) {}
 
 	virtual float get_solver_bias() const {
 		return default_solver_bias;

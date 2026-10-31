@@ -42,10 +42,17 @@ void PhysXVehicleWheel3D::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE: {
 			// Capture the authored hardpoint BEFORE the parent vehicle ever
-			// simulates (it starts owning this transform once live).
-			_authored_position = get_position();
-			_authored_basis = get_transform().basis;
-			_authored_valid = true;
+			// simulates (it starts owning this transform once live) -- and only
+			// once: a live parent writes the jounce/steer/spin pose into this
+			// node every tick, so a later re-enter (reparent, pooled vehicle
+			// re-added) must not recapture that live pose as the authored
+			// hardpoint (the next build would configure from a tilted
+			// suspension basis).
+			if (!_authored_valid) {
+				_authored_position = get_position();
+				_authored_basis = get_transform().basis;
+				_authored_valid = true;
+			}
 			if (PhysXVehicle3D *v = Object::cast_to<PhysXVehicle3D>(get_parent())) {
 				vehicle = v;
 				v->wheels.push_back(this);
@@ -73,6 +80,11 @@ void PhysXVehicleWheel3D::_notification(int p_what) {
 				tank->wheels.erase(this);
 				tank->_rebuild_if_live();
 				tank = nullptr;
+			}
+			// Leave with the authored pose: the parent owned this transform
+			// while registered, so anything else it left there isn't ours.
+			if (_authored_valid) {
+				set_transform(Transform3D(_authored_basis, _authored_position));
 			}
 		} break;
 	}

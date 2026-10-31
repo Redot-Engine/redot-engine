@@ -1021,7 +1021,7 @@ static bool _sweep_hit_is_mesh(const physx::PxShape *p_shape) {
 
 // True contact normal of a round mover (capsule/sphere) at a sweep touch:
 // from the touch point to the nearest point of the mover's core (the capsule
-// axis segment, or the sphere centre), evaluated at the mover pose advanced
+// axis segment, or the sphere center), evaluated at the mover pose advanced
 // to the hit. A mesh's facet normal makes a low lip's vertical face a wall
 // and a tall step's top a floor; the core normal tilts with the lip height
 // instead, so low lips are walked up and tall steps stop the body (as on
@@ -1029,13 +1029,13 @@ static bool _sweep_hit_is_mesh(const physx::PxShape *p_shape) {
 // sits on the core itself.
 static physx::PxVec3 _round_sweep_contact_normal(const physx::PxGeometry &p_geom, const physx::PxTransform &p_pose,
 		const physx::PxVec3 &p_dir, float p_distance, const physx::PxVec3 &p_touch, const physx::PxVec3 &p_fallback) {
-	const physx::PxVec3 centre = p_pose.p + p_dir * physx::PxMax(p_distance, 0.0f);
-	physx::PxVec3 a = centre;
+	const physx::PxVec3 center = p_pose.p + p_dir * physx::PxMax(p_distance, 0.0f);
+	physx::PxVec3 a = center;
 	physx::PxVec3 ab(0.0f, 0.0f, 0.0f);
 	if (p_geom.getType() == physx::PxGeometryType::eCAPSULE) {
 		// PhysX capsules lie along their local X axis.
 		const physx::PxVec3 half = p_pose.q.getBasisVector0() * static_cast<const physx::PxCapsuleGeometry &>(p_geom).halfHeight;
-		a = centre - half;
+		a = center - half;
 		ab = half * 2.0f;
 	}
 	const physx::PxReal len2 = ab.magnitudeSquared();
@@ -1050,7 +1050,7 @@ static physx::PxVec3 _round_sweep_contact_normal(const physx::PxGeometry &p_geom
 // the mover's core — normal from the triangle point to the core, depth =
 // radius minus that distance (<= 0: only touching). PhysX's own result for a
 // sweep that starts overlapping a mesh is an axis-pick push whose position can
-// be a vertex metres away, so a character crossing the seam between two floor
+// be a vertex meters away, so a character crossing the seam between two floor
 // pieces was pushed out along the wrong axis by that depth and snapped
 // sideways. Triangle lookups cap at ROUND_MESH_MAX_TRIANGLES per touch; deeper
 // triangles beyond the cap are left unchecked.
@@ -1086,7 +1086,7 @@ static RoundMeshContact _round_mesh_contact(const physx::PxGeometry &p_mover_geo
 		return ROUND_MESH_CONTACT_NONE;
 	}
 
-	// The mover's core: a capsule's segment along its local X axis, a sphere's centre point.
+	// The mover's core: a capsule's segment along its local X axis, a sphere's center point.
 	physx::PxVec3 core_start = p_mover_pose.p;
 	physx::PxVec3 core_span(0.0f, 0.0f, 0.0f);
 	float mover_radius = 0.0f;
@@ -1519,9 +1519,16 @@ bool PhysXDirectSpaceState3D::_body_motion_recover(const PhysXBody3D &p_body, co
 					if (is_pen && effective_depth > MIN_PENETRATION_THRESHOLD) {
 						// One-sided concave meshes (backface_collision off) are
 						// exempt from back-side recovery (see
-						// _skip_one_sided_overlap).
+						// _skip_one_sided_overlap). The HIT shape's blueprint
+						// decides sidedness: the mover's own shape is irrelevant
+						// (a capsule mover is never concave; a concave mover's
+						// blueprint would make the helper reinterpret a non-mesh
+						// hit geometry as a triangle mesh).
+						const PhysXShape3D *hit_blueprint = overlap.shape && overlap.shape->userData
+								? static_cast<const PhysXShape3D *>(overlap.shape->userData)
+								: nullptr;
 						const physx::PxVec3 px_motion_dir(p_motion_dir.x, p_motion_dir.y, p_motion_dir.z);
-						if (overlap.shape && _skip_one_sided_overlap(ref.shape_blueprint, overlap.shape, physx::PxShapeExt::getGlobalPose(*overlap.shape, *overlap.actor), penetration_depth, mtd_dir, px_motion_dir, body_geom.any(), global_shape_pose)) {
+						if (overlap.shape && _skip_one_sided_overlap(hit_blueprint, overlap.shape, physx::PxShapeExt::getGlobalPose(*overlap.shape, *overlap.actor), penetration_depth, mtd_dir, px_motion_dir, body_geom.any(), global_shape_pose)) {
 							continue;
 						}
 						penetrating_in_this_iter = true;
@@ -1784,7 +1791,12 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 						if (_round_mesh_contact(geom.any(), shape_pose, touch.shape, mesh_pose, push_normal, push_point, pen) == ROUND_MESH_CONTACT_NONE) {
 							continue; // no overlapped triangle after all: disregard
 						}
-						if (_skip_one_sided_overlap(shape_ref.shape_blueprint, touch.shape, mesh_pose,
+						// Sidedness is the HIT mesh's (touch.shape), not the
+						// mover's blueprint (see _skip_one_sided_overlap).
+						const PhysXShape3D *hit_blueprint = touch.shape && touch.shape->userData
+								? static_cast<const PhysXShape3D *>(touch.shape->userData)
+								: nullptr;
+						if (_skip_one_sided_overlap(hit_blueprint, touch.shape, mesh_pose,
 									-1.0f, push_normal, px_dir, geom.any(), shape_pose)) {
 							continue;
 						}
@@ -1841,9 +1853,12 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 					// on query-margin inflation.)
 					// One-sided concave meshes (backface_collision off) are exempt
 					// from the stuck verdict when approached from their back (see
-					// _skip_one_sided_overlap).
+					// _skip_one_sided_overlap) -- the HIT shape's blueprint decides.
+					const PhysXShape3D *hit_blueprint = touch.shape && touch.shape->userData
+							? static_cast<const PhysXShape3D *>(touch.shape->userData)
+							: nullptr;
 					if (-touch.distance > p_rest_slack && touch.actor && touch.shape &&
-							_skip_one_sided_overlap(shape_ref.shape_blueprint, touch.shape,
+							_skip_one_sided_overlap(hit_blueprint, touch.shape,
 									physx::PxShapeExt::getGlobalPose(*touch.shape, *touch.actor),
 									-touch.distance, touch.normal, px_dir, geom.any(), shape_pose)) {
 						continue;
@@ -1880,10 +1895,15 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 					// hit whose triangle front normal points ALONG the motion is a
 					// hit on the face's BACK (the mover approached from behind) —
 					// Godot's one-sided trimeshes don't block from the back, so
-					// disregard it. Sidedness is the triangle's, not the contact's.
-					if (shape_ref.shape_blueprint &&
-							shape_ref.shape_blueprint->get_type() == PhysicsServer3D::SHAPE_CONCAVE_POLYGON &&
-							!shape_ref.shape_blueprint->has_backface_collision()) {
+					// disregard it. Sidedness is the triangle's, not the contact's,
+					// and the HIT shape's blueprint decides (the mover's own shape
+					// is irrelevant here).
+					const PhysXShape3D *mesh_hit_blueprint = touch.shape && touch.shape->userData
+							? static_cast<const PhysXShape3D *>(touch.shape->userData)
+							: nullptr;
+					if (mesh_hit_blueprint &&
+							mesh_hit_blueprint->get_type() == PhysicsServer3D::SHAPE_CONCAVE_POLYGON &&
+							!mesh_hit_blueprint->has_backface_collision()) {
 						if (!_sweep_hit_face_normal(touch, face_normal)) {
 							face_normal = touch.normal;
 						}
@@ -1900,9 +1920,13 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 					// whose triangle front normal points ALONG the motion is a hit on
 					// the face's BACK (the mover approached from behind) — Godot's
 					// one-sided trimeshes don't block from the back, so disregard it.
-					if (shape_ref.shape_blueprint &&
-							shape_ref.shape_blueprint->get_type() == PhysicsServer3D::SHAPE_CONCAVE_POLYGON &&
-							!shape_ref.shape_blueprint->has_backface_collision() &&
+					// The HIT shape's blueprint decides sidedness (see above).
+					const PhysXShape3D *hit_blueprint = touch.shape && touch.shape->userData
+							? static_cast<const PhysXShape3D *>(touch.shape->userData)
+							: nullptr;
+					if (hit_blueprint &&
+							hit_blueprint->get_type() == PhysicsServer3D::SHAPE_CONCAVE_POLYGON &&
+							!hit_blueprint->has_backface_collision() &&
 							face_normal.dot(px_dir) > 0.0f) {
 						continue; // back-face hit on a one-sided mesh: not a block
 					}
@@ -2125,11 +2149,16 @@ bool PhysXDirectSpaceState3D::_body_motion_collide(const PhysXBody3D &p_body, co
 				// One-sided concave meshes (backface_collision off) are exempt
 				// from back-side contacts (see _skip_one_sided_overlap) -- a
 				// character jumping up through a one-way platform must not be
-				// caught by the platform's top face while straddling it.
+				// caught by the platform's top face while straddling it. The HIT
+				// shape's blueprint decides sidedness (the mover's own shape is
+				// irrelevant).
 				const Vector3 motion_dir_n = p_motion == Vector3() ? Vector3() : (p_motion / p_motion.length());
 				const physx::PxVec3 px_motion_dir(motion_dir_n.x, motion_dir_n.y, motion_dir_n.z);
+				const PhysXShape3D *hit_blueprint = overlap.shape && overlap.shape->userData
+						? static_cast<const PhysXShape3D *>(overlap.shape->userData)
+						: nullptr;
 				if (is_pen && (real_t)penetration_depth >= (real_t)p_min_allowed_depth &&
-						_skip_one_sided_overlap(shape_ref.shape_blueprint, overlap.shape,
+						_skip_one_sided_overlap(hit_blueprint, overlap.shape,
 								physx::PxShapeExt::getGlobalPose(*overlap.shape, *overlap.actor),
 								penetration_depth, mtd_dir, px_motion_dir, body_geom.any(), global_shape_pose)) {
 					continue;

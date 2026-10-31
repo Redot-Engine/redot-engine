@@ -169,11 +169,15 @@ bool PhysXConcavePolygonShape3D::_ensure_triangle_mesh() const {
 	mesh_desc.triangles.stride = 3 * sizeof(physx::PxU32);
 	mesh_desc.triangles.data = px_indices.ptr();
 
-	// 3. Fetch singletons
-	const physx::PxCookingParams &cooking_params = PhysXServer3D::get_singleton()->get_cooking_params();
-	physx::PxPhysics &physics = PhysXServer3D::get_singleton()->get_physics();
-
-	ERR_FAIL_NULL_V_MSG(&physics, false, "PhysX PxPhysics is not initialized.");
+	// 3. Fetch singletons -- a real pointer check: ERR_FAIL_NULL on the address
+	// of a reference is dead code (and a -Wtautological-undefined-compare
+	// error under werror), while get_physics() dereferences before it runs.
+	PhysXServer3D *server = PhysXServer3D::get_singleton();
+	ERR_FAIL_NULL_V(server, false);
+	physx::PxPhysics *physics_ptr = server->try_get_physics();
+	ERR_FAIL_NULL_V_MSG(physics_ptr, false, "PhysX PxPhysics is not initialized.");
+	const physx::PxCookingParams &cooking_params = server->get_cooking_params();
+	physx::PxPhysics &physics = *physics_ptr;
 
 	// 4. Cook the mesh directly — no cooking object, just params + insertion callback
 	triangle_mesh = PxCreateTriangleMesh(cooking_params, mesh_desc, physics.getPhysicsInsertionCallback());

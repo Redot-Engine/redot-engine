@@ -80,6 +80,15 @@ bool PhysXShape3D::has_owner(PhysXShapedObject3D *p_owner) const {
 	return owners.has(p_owner);
 }
 
+int PhysXShape3D::count_owner_shape_references(const void *p_callbacks) const {
+	int refs = 0;
+	MutexLock lock(owners_mutex);
+	for (const KeyValue<PhysXShapedObject3D *, int> &E : owners) {
+		refs += E.key->count_shapes_with_callback(p_callbacks);
+	}
+	return refs;
+}
+
 void PhysXShape3D::set_margin(float p_margin) {
 	margin = p_margin;
 	_notify_shape_changed();

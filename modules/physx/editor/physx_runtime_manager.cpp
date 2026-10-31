@@ -62,15 +62,16 @@ extern "C" PfnDliHook __pfnDliFailHook2 = physx_dli_fail_hook;
 #endif
 
 #ifdef WINDOWS_ENABLED
-// The full set of runtime DLLs staged next to the editor executable (see the
-// SCsub staging lists). The first five are hard-imported by the editor
-// binary (delay-loaded); the rest are load-time dependencies of the Blast
-// DLLs -- all of them must be present for PhysX/Blast to work. The nvflow
-// pair is NVIDIA Flow's closed-source runtime, LoadLibrary'd by the loader:
-// without it every Flow node renders nothing. Keep this list in step with
-// the runtime bundle's manifest "files" (redot-physx-runtime).
+// The runtime DLLs staged next to the editor executable (see the SCsub
+// staging lists), minus what this build never stages: SCsub copies
+// PhysXGpu_64.dll in every Windows configuration, but the Blast and nvflow
+// sets are staged only when the blast=yes / flow=yes code is compiled in --
+// requiring them here would pop the download dialog forever in those builds.
+// Keep this list in step with the runtime bundle's manifest "files"
+// (redot-physx-runtime).
 static const char *required_runtime_files[] = {
 	"PhysXGpu_64.dll",
+#ifdef GODOT_PHYSX_BLAST
 	"NvBlast.dll",
 	"NvBlastGlobals.dll",
 	"NvBlastExtAuthoring.dll",
@@ -80,21 +81,30 @@ static const char *required_runtime_files[] = {
 	"NvBlastExtStress.dll",
 	"NvBlastExtTkSerialization.dll",
 	"NvBlastTk.dll",
+#endif
+#ifdef GODOT_PHYSX_FLOW
 	"nvflow.dll",
 	"nvflowext.dll",
+#endif
 };
 #endif
 
 #ifdef __linux__
-// The full set of runtime .so files staged next to the editor executable (see
-// the SCsub staging lists). The nine Blast libraries are hard-linked into the
+// The runtime .so files staged next to the editor executable (see the SCsub
+// staging lists), minus what this build never stages: libPhysXGpu_64.so only
+// goes to bin/ with physx_gpu=yes (the CPU libs' GPU dispatch references
+// resolve from the stub instead), and the Blast / nvflow sets follow
+// blast=yes / flow=yes. The nine Blast libraries are hard-linked into the
 // editor binary ($ORIGIN rpath, no delay-load on Linux): without them the
 // engine cannot start at all, so the download offer can only fire when the
 // Blast set is present but the lazily-loaded PhysXGpu / Flow runtimes are
 // missing -- the bundle otherwise serves manual installs. Keep this list in
 // step with the runtime bundle's manifest "files" (redot-physx-runtime).
 static const char *required_runtime_files[] = {
+#ifdef GODOT_PHYSX_GPU
 	"libPhysXGpu_64.so",
+#endif
+#ifdef GODOT_PHYSX_BLAST
 	"libNvBlast.so",
 	"libNvBlastGlobals.so",
 	"libNvBlastExtAuthoring.so",
@@ -104,8 +114,11 @@ static const char *required_runtime_files[] = {
 	"libNvBlastExtStress.so",
 	"libNvBlastExtTkSerialization.so",
 	"libNvBlastTk.so",
+#endif
+#ifdef GODOT_PHYSX_FLOW
 	"libnvflow.so",
 	"libnvflowext.so",
+#endif
 };
 #endif
 
@@ -271,14 +284,23 @@ Error PhysXRuntimeManager::extract_bundle(const String &p_zip_path, const Dictio
 	}
 
 	Error result = OK;
+	// Names this call actually wrote, for the failure cleanup below.
+	PackedStringArray written;
 	// Extract manifest-listed files one by one, hashing each as it lands so a
 	// corrupted download is caught before the editor ever uses it. On any
-	// failure the just-written file is removed; previously written ones stay
-	// (the next install attempt rewrites them anyway).
+	// failure the files this call wrote are removed; ones it never got to
+	// (and working files from an earlier install) stay.
 	for (int i = 0; i < files.size() && result == OK; i++) {
 		Dictionary entry = files[i];
 		String name = entry.get("name", String());
 		String want_hash = entry.get("sha256", String());
+		// Manifest entries are plain file names next to the executable: a
+		// separator or ".." would write wherever the name points.
+		if (name.is_empty() || name.contains("/") || name.contains("\\") || name.contains("..")) {
+			ERR_PRINT(vformat("PhysX: invalid bundle file name '%s'.", name));
+			result = ERR_INVALID_DATA;
+			break;
+		}
 		String target = p_target_dir.path_join(name);
 
 		if (godot_unzip_locate_file(zip, name) != UNZ_OK) {
@@ -299,6 +321,7 @@ Error PhysXRuntimeManager::extract_bundle(const String &p_zip_path, const Dictio
 			result = ERR_FILE_CANT_WRITE;
 			break;
 		}
+		written.push_back(name);
 
 		CryptoCore::SHA256Context ctx;
 		ctx.start();
@@ -339,13 +362,11 @@ Error PhysXRuntimeManager::extract_bundle(const String &p_zip_path, const Dictio
 	unzClose(zip);
 	if (result != OK) {
 		// Remove every file this call wrote so a failed install leaves no
-		// half-updated mix of DLLs behind.
-		for (int i = 0; i < files.size(); i++) {
-			Dictionary entry = files[i];
-			String name = entry.get("name", String());
-			if (!name.is_empty()) {
-				dir->remove(name);
-			}
+		// half-updated mix of DLLs behind. Entries after the failing one were
+		// never written, and files that were already there before this call
+		// only disappear here if this call had actually replaced them.
+		for (const String &name : written) {
+			dir->remove(name);
 		}
 	}
 	return result;

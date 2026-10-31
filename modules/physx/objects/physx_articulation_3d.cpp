@@ -224,6 +224,9 @@ int PhysXArticulation3D::add_link(int p_parent_index,
 	} else if (space && px_articulation->getNbLinks() == 1) {
 		// First link of an articulation whose space deferred the attach
 		// (zero-link articulations stay out of the scene — see set_space).
+		// addArticulation below mutates the scene — fetch an in-flight solve
+		// first (async stepping), like the removeArticulation path above.
+		space->ensure_synced();
 		if (PxScene *attach_scene = space->get_px_scene()) {
 			attach_scene->addArticulation(*px_articulation);
 		}

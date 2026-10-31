@@ -37,6 +37,7 @@
 #include "physx_flow_collider_3d.h"
 #include "physx_flow_emitter_3d.h"
 #include "physx_flow_render_effect.h"
+#include "physx_server.h"
 
 #include "core/config/engine.h"
 #include "core/object/callable_method_pointer.h"
@@ -50,10 +51,6 @@
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
 #include "scene/main/window.h"
-#include "scene/3d/camera_3d.h"
-#include "scene/3d/light_3d.h"
-#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "scene/resources/3d/box_shape_3d.h"
 #include "scene/resources/3d/concave_polygon_shape_3d.h"
 #include "scene/resources/3d/convex_polygon_shape_3d.h"
@@ -61,11 +58,37 @@
 #include "scene/resources/3d/world_3d.h"
 #include "scene/resources/environment.h"
 #include "servers/physics_3d/physics_server_3d.h"
+#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
+#include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server.h"
 #include "servers/rendering/rendering_server_default.h"
 
 PhysXFlowSimulation3D::~PhysXFlowSimulation3D() {
+	if (scatter != nullptr) {
+		RenderingServer *rs = RenderingServer::get_singleton();
+		RenderingDevice *rd = rs != nullptr ? rs->get_rendering_device() : nullptr;
+		FlowScatterRD *s = scatter;
+		scatter = nullptr;
+		if (rs != nullptr && rd != nullptr) {
+			// The per-node FlowScatterRD owns RenderingDevice resources: free
+			// it on the render thread that owns the device, like
+			// PhysXFlowRenderEffect::free_shared() does for the shared effect.
+			// The callable carries the work in the functor -- bind()'s args are
+			// Variants and cannot hold raw pointers (see
+			// FlowSimulation::_destroy_grid() for the same idiom).
+			rs->call_on_render_thread(Callable(memnew(GodotPhysXQueuedCall([s, rd]() {
+				s->free(rd);
+				memdelete(s);
+			}))));
+			rs->sync();
+		} else {
+			// No render thread / device (headless or late shutdown): the RIDs
+			// are gone with the device; free() no-ops on a null one.
+			s->free(rd);
+			memdelete(s);
+		}
+	}
 	if (simulation != nullptr) {
 		memdelete(simulation);
 		simulation = nullptr;
@@ -157,7 +180,11 @@ void PhysXFlowSimulation3D::_resolve_emitters(LocalVector<FlowEmitterData> &r_em
 			e.enabled = true;
 			e.is_box = fe->shape == PhysXFlowEmitter3D::SHAPE_BOX;
 			e.world_xform = xf;
-			e.velocity = xf.basis.get_rotation_quaternion().xform(fe->velocity);
+			// Node-local: _rt_step() hands Flow the emitter's basis as
+			// localToWorldVelocity (velocityIsWorldSpace = NV_FLOW_FALSE), so
+			// Flow applies the rotation itself -- rotating here doubled it (a
+			// 45-degree emitter shot at 90).
+			e.velocity = fe->velocity;
 			e.radius = fe->radius;
 			e.half_size = fe->size * 0.5f;
 			e.divergence = fe->divergence;
@@ -179,7 +206,9 @@ void PhysXFlowSimulation3D::_resolve_emitters(LocalVector<FlowEmitterData> &r_em
 			e.enabled = true;
 			e.is_box = false;
 			e.world_xform = node->get_global_transform();
-			e.velocity = node->get_global_transform().basis.get_rotation_quaternion().xform(Vector3(0, 2, 0));
+			// Node-local (+Z), like PhysXFlowEmitter3D's above: Flow applies
+			// the world_xform basis itself.
+			e.velocity = Vector3(0, 2, 0);
 			e.radius = 0.4f;
 			e.temperature = 0.0f;
 			e.fuel = 0.0f;

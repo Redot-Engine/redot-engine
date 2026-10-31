@@ -55,6 +55,13 @@
  * and the callbacks are already freed.) After detachment releases all owner
  * shapes, no PxCustomGeometry references the instances and they are freed.
  *
+ * WRAPPER DELEGATION: when this shape is the inner shape of a
+ * PhysXCustomShapeType, owners register on the WRAPPER and this shape's own
+ * owners map stays empty — set_owners_source() redirects the reference
+ * counting (the sweep and has_referenced_geometry_instances) through the
+ * wrapper's owners, and the wrapper parks a replaced inner shape until no
+ * attached PxShape embeds its callbacks anymore.
+ *
  * GPU DYNAMICS NOTE (verified — do not re-investigate without cause):
  * PhysX documentation historically described PxCustomGeometry as unsupported
  * by the GPU pipeline, suggesting bodies with custom geometry could lose
@@ -84,6 +91,28 @@ public:
 	PhysXCustomGeometryCallback() :
 			PhysXShape3D() {}
 
+	// SHAPE-2: when this shape is the INNER shape of a wrapper
+	// (PhysXCustomShapeType), owners register on the wrapper and this shape's
+	// own owners map stays empty -- callback reference counting must go
+	// through the wrapper's owners, or the sweep below frees callbacks that
+	// the wrapper's owners' PxShapes still reference (use-after-free on the
+	// next collision/query). The base no-op restores counting through our own
+	// map (directly-attached custom shapes).
+	void set_owners_source(const PhysXShape3D *p_source) override { owners_source = p_source; }
+
+	// True while any per-scale instance is still embedded in an attached
+	// PxShape (counted through owners_source's owners). The complement of the
+	// sweep: callers outside this class use it to decide whether the whole
+	// shape -- with all its callbacks -- may be destroyed at all.
+	virtual bool has_referenced_geometry_instances() const override {
+		for (uint32_t i = 0; i < scaled_instances.size(); i++) {
+			if (_count_references(scaled_instances[i].second) > 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	virtual ~PhysXCustomGeometryCallback() override {
 		// Most-derived destructor body: dynamic type is the concrete class, so
 		// detach_from_owners() dispatches to the override below (the base
@@ -111,6 +140,18 @@ protected:
 	// One heap instance per distinct quantized scale, alive while any owner's
 	// attached PxShape references it (released when the last owner detaches).
 	mutable LocalVector<std::pair<physx::PxVec3, CallbackT *>> scaled_instances;
+
+	// The shape whose owners define callback liveness: this shape, unless a
+	// wrapper delegates (see set_owners_source). Mutex is recursive, so
+	// counting through the wrapper while IT iterates its owners notifying
+	// shape_changed() re-locks safely.
+	const PhysXShape3D *owners_source = nullptr;
+
+	int _count_references(const void *p_callbacks) const {
+		return owners_source
+				? owners_source->count_owner_shape_references(p_callbacks)
+				: count_owner_shape_references(p_callbacks);
+	}
 
 	// Subclasses return a dynamically allocated, strongly-typed callback pointer
 	virtual CallbackT *_create_callbacks() const = 0;
@@ -155,23 +196,18 @@ protected:
 	}
 
 	// Deletes every instance no owner's PxShape references (both the
-	// simulation shape and the area detection shape count).
+	// simulation shape and the area detection shape count). Owners register
+	// on the shape whose owners_source points at (the wrapper for an inner
+	// shape), so the count goes through there.
 	void _release_unreferenced_instances() const {
 		for (uint32_t i = 0; i < scaled_instances.size();) {
 			CallbackT *cb = scaled_instances[i].second;
-			int refs = 0;
-			{
-				MutexLock lock(owners_mutex);
-				for (const KeyValue<PhysXShapedObject3D *, int> &E : owners) {
-					refs += E.key->count_shapes_with_callback(cb);
-				}
-			}
-			if (refs == 0) {
-				delete cb;
-				scaled_instances.remove_at(i);
-			} else {
+			if (_count_references(cb) > 0) {
 				i++;
+				continue;
 			}
+			delete cb;
+			scaled_instances.remove_at(i);
 		}
 	}
 

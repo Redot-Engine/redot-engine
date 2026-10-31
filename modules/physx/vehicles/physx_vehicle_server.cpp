@@ -988,7 +988,6 @@ bool PhysXVehicleServer::adopt(physx::PxRigidDynamic *p_chassis, PhysXBody3D *p_
 	}
 	_apply_cached_anti_roll();
 	_regroup_axles_from_poses();
-	_reseed_tire_rest_load();
 
 	// vehicle2 applies gravity through the simulation context, so the chassis
 	// must be gravity-disabled. Mark the body as a vehicle chassis so its
@@ -1019,6 +1018,10 @@ bool PhysXVehicleServer::adopt(physx::PxRigidDynamic *p_chassis, PhysXBody3D *p_
 	if (!space && chassis_body) {
 		space = chassis_body->get_space();
 	}
+	// After the adoption above: on the default setup path (no explicit
+	// vehicle_set_space) space is still null earlier in this function, so a
+	// reseed there would miss the scene's gravity and fall back to 9.81.
+	_reseed_tire_rest_load();
 	if (space) {
 		space->register_vehicle(this);
 	}

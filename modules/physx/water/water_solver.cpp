@@ -650,6 +650,27 @@ void WaterSolverGPU::rt_reinit_spectrum(Ref<WaterSolverGPU> p_self, float p_wind
 	_rt_dispatch_spectrum_init();
 }
 
+void WaterSolverGPU::rt_clear_ripples(Ref<WaterSolverGPU> p_self) {
+	if (rd == nullptr || !built.is_set()) {
+		return;
+	}
+	const int cells = grid_resolution * grid_resolution;
+	Vector<uint8_t> zeros;
+	zeros.resize(cells * 4 * sizeof(float));
+	memset(zeros.ptrw(), 0, zeros.size());
+	rd->buffer_update(buf_state_a, 0, zeros.size(), zeros.ptr());
+	rd->buffer_update(buf_state_b, 0, zeros.size(), zeros.ptr());
+	zeros.resize(cells * sizeof(float));
+	memset(zeros.ptrw(), 0, zeros.size());
+	rd->buffer_update(buf_height, 0, zeros.size(), zeros.ptr());
+	// The readback cache would otherwise hand the old square's heights back to
+	// sample_height() until the next step's readback lands. (A readback already
+	// in flight can still repopulate once -- accepted, it lands a frame later
+	// with the zeroed state.)
+	MutexLock lock(cache_mtx);
+	ripple_height_cache.clear();
+}
+
 void WaterSolverGPU::_rt_build_caustics_grid() {
 	const int caustics_grid_size = MAX(ocean_grid_resolution * 4, CAUSTICS_GRID_MIN_RESOLUTION);
 	const int vertex_count = caustics_grid_size * caustics_grid_size;
@@ -1214,6 +1235,12 @@ void WaterSolver::recenter(const Vector2 &p_grid_center) {
 	// grid_center is CPU-side state: sphere/impulse world positions are made
 	// relative to it at pack time, nothing on the GPU knows it.
 	settings.grid_center = p_grid_center;
+	// The GPU ping-pong state and the CPU readback cache still hold the old
+	// square's heights; without this they get drawn at (and sampled for) the
+	// new square's position until the next readback replaces them.
+	if (!gpu.is_null()) {
+		_dispatch(callable_mp(gpu.ptr(), &WaterSolverGPU::rt_clear_ripples).bind(gpu));
+	}
 }
 
 void WaterSolver::reinit_spectrum(float p_wind_speed, Vector2 p_wind_direction, float p_wave_amplitude, float p_fetch, float p_depth) {

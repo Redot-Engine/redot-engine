@@ -162,11 +162,15 @@ bool PhysXConvexPolygonShape3D::_ensure_convex_mesh(bool p_mirrored) const {
 	mesh_desc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX | physx::PxConvexFlag::eQUANTIZE_INPUT |
 			physx::PxConvexFlag::eDISABLE_MESH_VALIDATION;
 
-	// 3. Fetch singletons
-	const physx::PxCookingParams &cooking_params = PhysXServer3D::get_singleton()->get_cooking_params();
-	physx::PxPhysics &physics = PhysXServer3D::get_singleton()->get_physics();
-
-	ERR_FAIL_NULL_V_MSG(&physics, false, "PhysX PxPhysics is not initialized.");
+	// 3. Fetch singletons -- a real pointer check: ERR_FAIL_NULL on the address
+	// of a reference is dead code (and a -Wtautological-undefined-compare
+	// error under werror), while get_physics() dereferences before it runs.
+	PhysXServer3D *server = PhysXServer3D::get_singleton();
+	ERR_FAIL_NULL_V(server, false);
+	physx::PxPhysics *physics_ptr = server->try_get_physics();
+	ERR_FAIL_NULL_V_MSG(physics_ptr, false, "PhysX PxPhysics is not initialized.");
+	const physx::PxCookingParams &cooking_params = server->get_cooking_params();
+	physx::PxPhysics &physics = *physics_ptr;
 
 	// 4. Cook the convex mesh. PhysX caps cooked hulls at 255 polygons; dense
 	// point clouds can exceed it and fail outright. ePLANE_SHIFTING is the

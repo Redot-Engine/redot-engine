@@ -204,9 +204,14 @@ bool PhysXHeightMapShape3D::_ensure_physx_height_field() const {
 	hf_desc.samples.stride = sizeof(physx::PxHeightFieldSample);
 	// thickness removed for PhysX 5 compatibility
 
-	physx::PxPhysics &physics = PhysXServer3D::get_singleton()->get_physics();
-
-	ERR_FAIL_NULL_V_MSG(&physics, false, "PhysX PxPhysics is not initialized.");
+	// A real pointer check: ERR_FAIL_NULL on the address of a reference is
+	// dead code (and a -Wtautological-undefined-compare error under werror),
+	// while get_physics() dereferences before the check could run.
+	PhysXServer3D *server = PhysXServer3D::get_singleton();
+	ERR_FAIL_NULL_V(server, false);
+	physx::PxPhysics *physics_ptr = server->try_get_physics();
+	ERR_FAIL_NULL_V_MSG(physics_ptr, false, "PhysX PxPhysics is not initialized.");
+	physx::PxPhysics &physics = *physics_ptr;
 	ERR_FAIL_COND_V_MSG(!hf_desc.isValid(), false, "Invalid PhysX heightfield descriptor.");
 
 	// 3. Create the HeightField (Stateless global function)

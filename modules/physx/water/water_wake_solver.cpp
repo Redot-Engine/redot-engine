@@ -231,8 +231,13 @@ WaterWakeSolver::~WaterWakeSolver() {
 			gpu->rd = nullptr;
 		} else {
 			RenderingServer *rs = RenderingServer::get_singleton();
-			rs->call_on_render_thread(callable_mp(gpu.ptr(), &WaterWakeSolverGPU::rt_free).bind(gpu));
-			rs->sync();
+			// ~WaterSolver()'s own guard: the singleton can be gone when this
+			// runs at shutdown; skip the render-thread handoff and let the
+			// Ref drop without the (already unreachable) rt_free post.
+			if (rs != nullptr) {
+				rs->call_on_render_thread(callable_mp(gpu.ptr(), &WaterWakeSolverGPU::rt_free).bind(gpu));
+				rs->sync();
+			}
 		}
 	}
 	gpu.unref();

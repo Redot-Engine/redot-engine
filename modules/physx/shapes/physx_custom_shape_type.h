@@ -34,6 +34,7 @@
 
 #include "core/string/string_name.h"
 #include "core/templates/hash_map.h"
+#include "core/templates/local_vector.h"
 
 #include "physx_shape_3d.h"
 
@@ -43,7 +44,19 @@
 class PhysXCustomShapeType : public PhysXShape3D {
 private:
 	StringName current_type;
-	std::unique_ptr<PhysXShape3D, void (*)(PhysXShape3D *)> internal_shape{ nullptr, memdelete_shape };
+	using InnerShapePtr = std::unique_ptr<PhysXShape3D, void (*)(PhysXShape3D *)>;
+	InnerShapePtr internal_shape{ nullptr, memdelete_shape };
+
+	// SHAPE-2: inner shapes replaced by a type switch, parked while some
+	// owner's PxShape may still embed their PxCustomGeometry callbacks. An
+	// unknown new type has no geometry to rebind those PxShapes to, so the
+	// old callbacks must outlive the switch; _purge_retiring() frees a parked
+	// shape once nothing references it (a valid type rebound the PxShapes,
+	// the owners detached, or the wrapper is dying). Raw owned pointers:
+	// LocalVector's member templates default-construct T, which unique_ptr
+	// cannot do.
+	LocalVector<PhysXShape3D *> retiring_inner_shapes;
+	void _purge_retiring();
 
 	static void memdelete_shape(PhysXShape3D *p_shape) {
 		if (p_shape) {

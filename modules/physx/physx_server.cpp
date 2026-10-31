@@ -2118,7 +2118,11 @@ RID PhysXServer3D::cloth_create() {
 
 void PhysXServer3D::cloth_set_space(RID p_cloth, RID p_space) {
 	if (!can_touch_scene()) {
-		run_on_physics_thread([=]() { cloth_set_space(p_cloth, p_space); });
+		// p_wait: cloth_build() runs immediately (e.g. from
+		// NOTIFICATION_ENTER_WORLD on the main thread, right after this) and
+		// must see the new space -- an async queue left it null and the node
+		// freed its GPU cloth for the CPU solver.
+		run_on_physics_thread([=]() { cloth_set_space(p_cloth, p_space); }, true);
 		return;
 	}
 	MutexLock lock(api_mutex);

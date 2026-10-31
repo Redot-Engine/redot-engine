@@ -152,6 +152,10 @@ void MPMFluidSolver::_free_buffers() {
 		rd->free(uset_mesh);
 		uset_mesh = RID();
 	}
+	// The mesh buffers below are freed with the rest; clear the lazy-alloc
+	// flag so _ensure_mesh_buffers() recreates them on the next want_surface
+	// step instead of silently leaving the isosurface dead after a reconfigure.
+	_mesh_buffers_ready = false;
 	RID *bufs[] = { &buf_params, &buf_particles, &buf_grid_i, &buf_grid_v, &buf_colliders, &buf_cimp, &buf_mm, &buf_surf, &buf_mverts, &buf_mnorms, &buf_mcount, &buf_foam, &buf_foam_meta, &buf_foam_norm };
 	for (RID *b : bufs) {
 		if (b->is_valid()) {

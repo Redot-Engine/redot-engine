@@ -697,6 +697,12 @@ void PhysXWaterSurface3D::set_depth(float p_depth) {
 void PhysXWaterSurface3D::set_water_level(float p_level) {
 	water_level = p_level;
 	solver.set_step_constants(depth, damping, water_level, ripple_amplitude);
+	// _rebuild() also sets this uniform; a runtime change must reach the
+	// material too, or the blend outside the ripple square / the ground clamp
+	// keep using the old level and the surface steps at the ripple edge.
+	if (water_material.is_valid()) {
+		water_material->set_shader_parameter("water_level", water_level);
+	}
 }
 
 void PhysXWaterSurface3D::set_damping(float p_damping) {
@@ -876,6 +882,17 @@ void PhysXWaterSurface3D::set_water_material(const Ref<ShaderMaterial> &p_materi
 	water_material = p_material;
 	if (mesh_instance != nullptr && water_material.is_valid()) {
 		mesh_instance->set_material_override(water_material);
+		// _rebuild() pushed these into the previous material only -- a
+		// replacement assigned at runtime starts with the shader defaults.
+		water_material->set_shader_parameter("ripple_domain_size", active_domain_size);
+		water_material->set_shader_parameter("ocean_domain_size", ocean_domain_size);
+		water_material->set_shader_parameter("grid_center", grid_center);
+		water_material->set_shader_parameter("water_level", water_level);
+		water_material->set_shader_parameter("choppiness", choppiness);
+		water_material->set_shader_parameter("per_pixel_normals", normal_mode == NORMAL_MODE_PER_PIXEL);
+		// _bind_textures() likewise targeted the old material; _update()
+		// rebinds the solver textures into this one.
+		textures_bound = false;
 	}
 }
 
@@ -947,6 +964,12 @@ void PhysXWaterSurface3D::_rebuild() {
 	active_domain_size = domain_size;
 	footprint_mask.clear();
 	cell_depth.clear();
+	// Resized from cell_depth by _update_cell_fade(), which only runs in
+	// _configure_solver() -- with seabed_from_floor that waits for the first
+	// physics tick, so a stale grid here would let sample_height() index it
+	// with the new grid_resolution. The empty check at the call sites covers
+	// the window.
+	cell_fade.clear();
 	footprint_extent = 0.0;
 	water_mesh.unref();
 	if (surface_mesh.is_valid()) {

@@ -1702,6 +1702,12 @@ PhysXParticleFluid3D::SolverBackend PhysXParticleFluid3D::_shown_solver() const 
 	if (solver != SOLVER_AUTO) {
 		return solver;
 	}
+	// Match _resolved_solver(): Auto never picks PBD for a granular node or
+	// one with foam enabled, so the Inspector must not label them "Auto (PBD
+	// here)" either (that also hides the mpm_* settings they actually use).
+	if (_is_granular() || foam_enabled) {
+		return SOLVER_MPM;
+	}
 	PhysXServer3D *server = PhysXServer3D::get_singleton();
 	const bool gpu_pbd = server && server->is_gpu_dynamics_enabled() && server->particle_fluid_supports_diffuse();
 	return gpu_pbd ? SOLVER_PBD : SOLVER_MPM;
@@ -1806,7 +1812,12 @@ void PhysXParticleFluid3D::set_surface_mesh(bool p_enabled) {
 	}
 	surface_mesh = p_enabled;
 	// Rebuild so the isosurface extractor and ArrayMesh come up (or tear down).
-	if (fluid.is_valid()) {
+	// Same guard as set_solver(): on the MPM path `fluid` is always null and
+	// the backend lives behind `multimesh`, so switching render mode on a
+	// running MPM fluid never rebuilt anything (the isosurface stayed empty
+	// with surface_mesh set, and the MultiMesh stayed hidden after switching
+	// back to Particles).
+	if (fluid.is_valid() || multimesh.is_valid()) {
 		const bool was_spawned = spawned || emitting;
 		_free_fluid();
 		if (is_inside_tree() && !Engine::get_singleton()->is_editor_hint()) {

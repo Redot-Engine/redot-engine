@@ -195,6 +195,10 @@ public:
 	// left the sea undrawn for a frame); the waves keep their phases.
 	// No-op before the first rt_build().
 	void rt_reinit_spectrum(Ref<WaterSolverGPU> p_self, float p_wind_speed, Vector2 p_wind_direction, float p_wave_amplitude, float p_gravity, float p_fetch, float p_depth);
+	// Zero-fills the ripple ping-pong state and the composed height after a
+	// no-rebuild recenter(): the old square's heights are not the new one's.
+	// No-op before the first rt_build() (a rebuild zero-fills them anyway).
+	void rt_clear_ripples(Ref<WaterSolverGPU> p_self);
 	// p_spheres/p_impulses: flat, 4 floats/entry (world_x, world_z, radius,
 	// strength), packed on the calling thread into an immutable value-copy
 	// snapshot before dispatch -- same thread-safety pattern
