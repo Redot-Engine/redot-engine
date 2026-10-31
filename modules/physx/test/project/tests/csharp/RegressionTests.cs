@@ -168,7 +168,7 @@ internal static class RegressionTests
 		var a = w.MakeBody(shared, new Vector3(0, 2, 0));
 		var b = w.MakeBody(shared, new Vector3(3, 2, 0));
 		yield return Wait.Frames(20);
-		PhysicsServer3D.FreeRid(shared);
+		w.Free(shared);
 		yield return Wait.Frames(30);
 		Assert.Expect(PhysxWorld.Finite(w.Pos(a)) && PhysxWorld.Finite(w.Pos(b)), "both users finite after shared shape free");
 		var canary = w.MakeBody(w.Box(0.3f), new Vector3(6, 3, 0));

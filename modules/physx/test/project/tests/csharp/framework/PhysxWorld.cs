@@ -207,6 +207,31 @@ public sealed class PhysxWorld : IDisposable
 	// ------------------------------------------------------------------ vehicles
 	public Rid TrackVehicle(Rid v) { _vehicles.Add(v); return v; }
 
+	/// <summary>
+	/// Removes a tracked RID from cleanup tracking. For tests that free a
+	/// tracked resource mid-test (stale-RID robustness, op storms): without
+	/// this, <see cref="FreeAll"/> frees it a second time and the server
+	/// prints an "attempted to free unknown RID" error per dead RID, drowning
+	/// real diagnostics. A no-op for RIDs that were never tracked.
+	/// </summary>
+	public void Forget(Rid r)
+	{
+		_joints.Remove(r);
+		_areas.Remove(r);
+		_bodies.Remove(r);
+		_shapes.Remove(r);
+		_vehicles.Remove(r);
+		TrackedSpaces.Remove(r);
+	}
+
+	/// <summary>Frees a tracked RID and forgets it — the one correct way for
+	/// a test to free a tracked resource mid-test.</summary>
+	public void Free(Rid r)
+	{
+		Forget(r);
+		PhysicsServer3D.FreeRid(r);
+	}
+
 	// ------------------------------------------------------------------ state
 	public Transform3D Pos(Rid b) => PhysicsServer3D.BodyGetState(b, PhysicsServer3D.BodyState.Transform).AsTransform3D();
 	public Vector3 Vel(Rid b) => PhysicsServer3D.BodyGetState(b, PhysicsServer3D.BodyState.LinearVelocity).AsVector3();

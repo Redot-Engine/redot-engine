@@ -182,7 +182,7 @@ internal static class SpaceTests
 			var sh = w.Box(0.3f);
 			PhysicsServer3D.BodyAddShape(b, sh, Transform3D.Identity);
 			PhysicsServer3D.FreeRid(b);
-			PhysicsServer3D.FreeRid(sh);
+			w.Free(sh);
 			PhysicsServer3D.FreeRid(sp);
 			if (i % 10 == 9)
 			{

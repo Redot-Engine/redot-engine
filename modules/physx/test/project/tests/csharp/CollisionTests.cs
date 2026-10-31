@@ -178,7 +178,7 @@ internal static class CollisionTests
 		var b = w.MakeBody(w.Box(0.4f), new Vector3(0, 7, 0));
 		PhysicsServer3D.BodyAddCollisionException(b, pad);
 		yield return Wait.Frames(10);
-		PhysicsServer3D.FreeRid(pad); // excepted body destroyed
+		w.Free(pad); // excepted body destroyed
 		PhysicsServer3D.BodyRemoveCollisionException(b, pad);
 		yield return Wait.Frames(30);
 		Assert.Expect(PhysxWorld.Finite(w.Pos(b)), "state finite after destroying excepted body");
@@ -194,7 +194,7 @@ internal static class CollisionTests
 		PhysicsServer3D.BodyAddCollisionException(b1, pad);
 		PhysicsServer3D.BodyAddCollisionException(b2, b1);
 		yield return Wait.Frames(10);
-		PhysicsServer3D.FreeRid(b1); // owner of one exception destroyed
+		w.Free(b1); // owner of one exception destroyed
 		yield return Wait.Frames(60);
 		Assert.Expect(PhysxWorld.Finite(w.Pos(b2)), "other body finite after owner destruction");
 		// Gate well below the exact rest height (5.8 = pad top + half extent):

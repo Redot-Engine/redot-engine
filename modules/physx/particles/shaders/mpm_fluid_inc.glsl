@@ -270,7 +270,11 @@ void sym_eigen(mat3 A, out mat3 V, out vec3 d) {
 				continue;
 			}
 			float th = (A[q][q] - A[p][p]) / (2.0 * apq);
-			float t = sign(th) / (abs(th) + sqrt(th * th + 1.0));
+			// GLSL sign(0.0) is 0.0, which would skip the rotation when the
+			// diagonal entries are equal -- the standard Jacobi step applies
+			// the 45-degree rotation in that case (t = 1).
+			float sgn = th >= 0.0 ? 1.0 : -1.0;
+			float t = sgn / (abs(th) + sqrt(th * th + 1.0));
 			float c = inversesqrt(t * t + 1.0);
 			float sn = t * c;
 			mat3 J = mat3(1.0);

@@ -44,7 +44,7 @@ internal static class LifecycleTests
 		var a = w.MakeBody(shared, new Vector3(0, 2, 0));
 		var b = w.MakeBody(shared, new Vector3(2, 2, 0));
 		yield return Wait.Frames(20);
-		PhysicsServer3D.FreeRid(shared);
+		w.Free(shared);
 		yield return Wait.Frames(40);
 		Assert.Expect(PhysxWorld.Finite(w.Pos(a)) && PhysxWorld.Finite(w.Pos(b)), "referencing bodies finite after shared shape free");
 		yield return Canary(w, "shared shape freed");
@@ -57,7 +57,7 @@ internal static class LifecycleTests
 		var j = w.TrackJoint(PhysicsServer3D.JointCreate());
 		PhysicsServer3D.JointMakePin(j, a, Vector3.Zero, b, Vector3.Zero);
 		yield return Wait.Frames(20);
-		PhysicsServer3D.FreeRid(b); // joint still exists
+		w.Free(b); // joint still exists
 		yield return Wait.Frames(40);
 		Assert.Expect(PhysxWorld.Finite(w.Pos(a)), "static peer finite");
 		yield return Canary(w, "jointed body freed");
@@ -70,7 +70,7 @@ internal static class LifecycleTests
 		PhysicsServer3D.AreaSetMonitorCallback(area, Callable.From((Variant s, Variant r, Variant i, Variant a2, Variant b2) => events++));
 		var b = w.MakeBody(w.Box(0.3f), new Vector3(0, 5, 0));
 		yield return Wait.Frames(20);
-		PhysicsServer3D.FreeRid(b); // area still monitors this body
+		w.Free(b); // area still monitors this body
 		yield return Wait.Frames(40);
 		// The area itself must still work: a new body entering must be detected.
 		int after = events;
@@ -86,7 +86,7 @@ internal static class LifecycleTests
 		PhysicsServer3D.AreaSetMonitorCallback(area, Callable.From((Variant s, Variant r, Variant i, Variant a2, Variant b2) => events++));
 		var b = w.MakeBody(w.Box(0.3f), new Vector3(0, 5, 0));
 		yield return Wait.Frames(10);
-		PhysicsServer3D.FreeRid(area); // callback exists, area destroyed
+		w.Free(area); // callback exists, area destroyed
 		yield return Wait.Frames(30);
 		int after = events;
 		yield return Wait.Frames(30);
@@ -125,7 +125,7 @@ internal static class LifecycleTests
 		VehicleApi.SetVehicleSpace(v, w.Space);
 		VehicleApi.SetWheelCount(v, 4);
 		yield return Wait.Frames(20);
-		PhysicsServer3D.FreeRid(v);
+		w.Free(v);
 		yield return Wait.Frames(40);
 		Assert.Expect(PhysxWorld.Finite(w.Pos(chassis)), "chassis finite after vehicle free");
 		yield return Canary(w, "vehicle freed");
@@ -137,11 +137,11 @@ internal static class LifecycleTests
 		var v = w.TrackVehicle(VehicleApi.CreateVehicle(0));
 		VehicleApi.SetChassisBody(v, chassis);
 		// Free the chassis BEFORE wheel configuration completes.
-		PhysicsServer3D.FreeRid(chassis);
+		w.Free(chassis);
+		w.Forget(v); // the server auto-releases the vehicle with its chassis
 		yield return Wait.Frames(10);
-		VehicleApi.SetWheelCount(v, 4);
+		VehicleApi.SetWheelCount(v, 4); // op on the stale vehicle RID
 		yield return Wait.Frames(30);
-		PhysicsServer3D.FreeRid(v);
 		yield return Canary(w, "chassis freed before vehicle config finished");
 	}
 	static IEnumerator FreeOrphanShape()
@@ -207,10 +207,10 @@ internal static class LifecycleTests
 		var area = w.MakeArea(w.Box(1, 1, 1), new Vector3(5, 3, 0));
 		var j = w.TrackJoint(PhysicsServer3D.JointCreate());
 		PhysicsServer3D.JointMakePin(j, b, Vector3.Zero, b, Vector3.Zero);
-		PhysicsServer3D.FreeRid(b);
-		PhysicsServer3D.FreeRid(sh);
-		PhysicsServer3D.FreeRid(area);
-		PhysicsServer3D.FreeRid(j);
+		w.Free(b);
+		w.Free(sh);
+		w.Free(area);
+		w.Free(j);
 		yield return Wait.Frame();
 		// Ops on freed RIDs: the contract is "no native crash, no corruption of
 		// live state"; return values are undefined.
@@ -234,7 +234,7 @@ internal static class LifecycleTests
 		PhysicsServer3D.BodySetParam(b, PhysicsServer3D.BodyParameter.GravityScale, 0f);
 		yield return Wait.Frames(5);
 		w.SetVel(b, new Vector3(1, 0, 0));   // op
-		PhysicsServer3D.FreeRid(b);          // destroy mid-frame
+		w.Free(b);                           // destroy mid-frame
 		var c = w.MakeBody(w.Box(0.3f), new Vector3(2, 3, 0)); // create right after
 		yield return Wait.Frames(30);
 		Assert.Expect(PhysxWorld.Finite(w.Pos(c)), "body created right after destruction finite");
@@ -266,7 +266,7 @@ internal static class LifecycleTests
 		}));
 		var b = w.MakeBody(w.Box(0.3f), new Vector3(0, 5, 0));
 		yield return Wait.Frames(10);
-		foreach (var v in victims) PhysicsServer3D.FreeRid(v);
+		foreach (var v in victims) w.Free(v);
 		yield return Wait.Frames(30);
 		yield return Canary(w, "bodies freed after monitor callback");
 	}

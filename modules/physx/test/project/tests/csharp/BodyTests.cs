@@ -837,7 +837,7 @@ internal static class BodyTests
 		yield return Wait.UntilOrFail(() => w.Sleeping(support) && w.Sleeping(dependent), 900, "two-box stack sleeps");
 
 		var startY = w.Pos(dependent).Origin.Y;
-		PhysicsServer3D.FreeRid(support);
+		w.Free(support);
 		yield return Wait.UntilOrFail(() => w.Pos(dependent).Origin.Y < startY - 0.5f, 240,
 			"dependent wakes and falls after its support is removed");
 		Assert.Expect(PhysxWorld.Finite(w.Pos(dependent)), "dependent remains finite after support removal");

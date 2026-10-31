@@ -258,8 +258,14 @@ void WaterWakeSolver::build(int p_cells, float p_size) {
 	grid_size = MAX(p_cells, 16);
 	size = MAX(p_size, 1.0f);
 	have_origin = false;
+	// The constructor unrefs gpu when no rendering device is available
+	// (--headless, or a failed local device): building the callable would
+	// dereference null before _dispatch()'s own guard could run.
+	if (gpu.is_null()) {
+		return;
+	}
 	_dispatch(callable_mp(gpu.ptr(), &WaterWakeSolverGPU::rt_build).bind(gpu, grid_size));
-	if (gpu.is_valid() && !gpu->local) {
+	if (!gpu->local) {
 		// The texture RID must exist before the caller wraps it.
 		RenderingServer::get_singleton()->sync();
 	}

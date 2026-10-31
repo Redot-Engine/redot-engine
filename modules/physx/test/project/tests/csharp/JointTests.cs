@@ -341,7 +341,7 @@ internal static class JointTests
 		using var w = new PhysxWorld(false);
 		var (a, b, j) = MakePinnedPair(w, new Vector3(0, 8, 0));
 		yield return Wait.Frames(30);
-		PhysicsServer3D.FreeRid(j);
+		w.Free(j);
 		yield return Wait.Frames(60);
 		Assert.Expect(w.Pos(b).Origin.Y < 5f, $"body free-falls after joint destroyed (y={w.Pos(b).Origin.Y:F2})");
 		Assert.Expect(PhysxWorld.Finite(w.Pos(b)), "state finite after joint destruction");
@@ -351,7 +351,7 @@ internal static class JointTests
 		using var w = new PhysxWorld(false);
 		var (a, b, j) = MakePinnedPair(w, new Vector3(0, 8, 0));
 		yield return Wait.Frames(30);
-		PhysicsServer3D.FreeRid(a);
+		w.Free(a);
 		yield return Wait.Frames(60);
 		Assert.Expect(w.Pos(b).Origin.Y < 5f, "body B falls after body A destroyed");
 		Assert.Expect(PhysxWorld.Finite(w.Pos(b)), "body B finite");
@@ -362,7 +362,7 @@ internal static class JointTests
 		var (a, b, j) = MakePinnedPair(w, new Vector3(0, 8, 0));
 		var c = w.MakeBody(w.Box(0.3f), new Vector3(5, 8, 0));
 		yield return Wait.Frames(30);
-		PhysicsServer3D.FreeRid(b);
+		w.Free(b);
 		yield return Wait.Frames(60);
 		Assert.Expect(PhysxWorld.Finite(w.Pos(c)), "unrelated body finite after jointed body destroyed");
 		Assert.Expect(w.Pos(c).Origin.Y < 6f, "unrelated body still falls");
@@ -372,11 +372,11 @@ internal static class JointTests
 		using var w = new PhysxWorld(false);
 		var (a, b, j) = MakePinnedPair(w, new Vector3(0, 8, 0));
 		yield return Wait.Frames(10);
-		PhysicsServer3D.FreeRid(a);
-		PhysicsServer3D.FreeRid(b);
+		w.Free(a);
+		w.Free(b);
 		yield return Wait.Frames(10);
 		// Joint's bodies are gone; freeing it now must be safe.
-		PhysicsServer3D.FreeRid(j);
+		w.Free(j);
 		yield return Wait.Frames(30);
 		var canary = w.MakeBody(w.Box(0.3f), new Vector3(0, 5, 0));
 		yield return Wait.Frames(30);
@@ -386,7 +386,7 @@ internal static class JointTests
 	{
 		using var w = new PhysxWorld(false);
 		var (a, b, j) = MakePinnedPair(w, new Vector3(0, 8, 0));
-		PhysicsServer3D.FreeRid(j);
+		w.Free(j);
 		yield return Wait.Frame();
 		// Ops on the stale joint RID must not crash or corrupt anything.
 		PhysicsServer3D.PinJointSetParam(j, PhysicsServer3D.PinJointParam.Bias, 0.1f);
@@ -555,7 +555,7 @@ internal static class JointTests
 	{
 		using var w = new PhysxWorld(false);
 		var (a, b, j) = MakePinnedPair(w, new Vector3(0, 8, 0));
-		PhysicsServer3D.FreeRid(b); // joint loses one side; the wrapper must survive
+		w.Free(b); // joint loses one side; the wrapper must survive
 		yield return Wait.Frame();
 		Assert.Expect(PhysicsServer3D.JointGetType(j) == PhysicsServer3D.JointType.Pin,
 			"joint type still reported after the connected body was freed");

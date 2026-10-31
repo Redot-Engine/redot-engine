@@ -569,7 +569,6 @@ internal static class ShapeTests
 		var left = new Vector3[] { new(-4, 0.5f, 0), new(0, 2, 0), new(-4, 0.5f, 2), new(-4, 0.5f, 2), new(0, 2, 0), new(0, 2, 2) };
 		var right = new Vector3[] { new(4, 0.5f, 0), new(4, 0.5f, 2), new(0, 2, 0), new(4, 0.5f, 2), new(0, 2, 2), new(0, 2, 0) };
 		var roof = w.Concave(left);
-		w.AdoptShape(roof);
 		var roof2 = w.Concave(right);
 		w.MakeStatic(roof, Vector3.Zero);
 		w.MakeStatic(roof2, Vector3.Zero);

@@ -34,12 +34,12 @@
 
 #ifdef GODOT_PHYSX_FLOW
 
+#include "../physx_server.h"
+#include "core/config/project_settings.h"
 #include "core/math/math_funcs.h"
 #include "core/os/os.h"
 #include "core/os/time.h"
 #include "core/templates/vector.h"
-#include "../physx_server.h"
-#include "core/config/project_settings.h"
 #include "servers/rendering/rendering_server.h"
 
 #include <string.h>
@@ -209,7 +209,6 @@ void FlowSimulation::_rt_configure() {
 	if (!runtime->is_available()) {
 		return;
 	}
-
 
 	// The grid runs on Godot's own RenderingDevice whenever one exists (the
 	// gas never leaves VRAM; Flow's ray marcher composites it into the scene
@@ -655,7 +654,7 @@ void FlowSimulation::_rt_step(double p_absolute_time, float p_delta,
 			constexpr float FLOOR_HALF_W = 4096.0f;
 			constexpr float FLOOR_HALF_T = 64.0f;
 			NvFlowGridEmitterBoxParams p = NvFlowEmitterBoxParams_default;
-			p.luid = 0x464c4f52; // "FLOr"-style stable id; no node stands behind it
+			p.luid = 0x464c4f52; // ASCII bytes 'F', 'L', 'O', 'R': a stable id no node stands behind
 			p.enabled = NV_FLOW_TRUE;
 			p.localToWorld = _to_flow_matrix(Transform3D(Basis(), Vector3(center.x, p_settings.floor_height - FLOOR_HALF_T, center.z)));
 			p.localToWorldVelocity = _to_flow_velocity_matrix(Transform3D(Basis(), Vector3(center.x, p_settings.floor_height - FLOOR_HALF_T, center.z)), Vector3(), Vector3());
@@ -1008,14 +1007,13 @@ bool FlowSimulation::_record_readback_copies(ReadbackSlot &r_slot, NvFlowContext
 	r_slot.inflight.texture_height = level.dim.y;
 	r_slot.inflight.texture_depth = level.dim.z;
 	r_slot.inflight.table_bytes = table_bytes;
-	return true;
-
 	if (diag_flags & DIAG_SPARSE_LAYOUT) {
 		print_line(vformat("[Flow] sparse layout: dim=%d,%d,%d locations=%d/%d layers=%d blockSize=%f tableBytes=%d texBytes=%d",
 				(int)level.dim.x, (int)level.dim.y, (int)level.dim.z, (int)level.numLocations, (int)level.maxLocations,
 				(int)sp.layerCount, (float)(sp.layers ? sp.layers[0].blockSizeWorld.y : 0.0f),
 				(int64_t)table_bytes, (int64_t)texture_bytes));
 	}
+	return true;
 }
 
 // ---- Readback buffers ----------------------------------------------------

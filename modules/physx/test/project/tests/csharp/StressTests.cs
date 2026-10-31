@@ -100,7 +100,7 @@ internal static class StressTests
 							if (shapes.Count > 0)
 							{
 								int i = rnd.Next(shapes.Count); var s = shapes[i]; shapes.RemoveAt(i);
-								PhysicsServer3D.FreeRid(s); desc = $"free shape idx {i}";
+								w.Free(s); desc = $"free shape idx {i}";
 							}
 							break;
 						}
@@ -115,7 +115,7 @@ internal static class StressTests
 							if (bodies.Count > 0)
 							{
 								int i = rnd.Next(bodies.Count); var b = bodies[i]; bodies.RemoveAt(i);
-								PhysicsServer3D.FreeRid(b); desc = $"free body idx {i}";
+								w.Free(b); desc = $"free body idx {i}";
 							}
 							break;
 						}
@@ -165,7 +165,7 @@ internal static class StressTests
 							if (areas.Count > 0)
 							{
 								int i = rnd.Next(areas.Count); var a = areas[i]; areas.RemoveAt(i);
-								PhysicsServer3D.FreeRid(a); desc = "free area";
+								w.Free(a); desc = "free area";
 							}
 							break;
 						}
@@ -187,7 +187,7 @@ internal static class StressTests
 							if (joints.Count > 0)
 							{
 								int i = rnd.Next(joints.Count); var j2 = joints[i]; joints.RemoveAt(i);
-								PhysicsServer3D.FreeRid(j2); desc = "free joint";
+								w.Free(j2); desc = "free joint";
 							}
 							break;
 						}

@@ -49,6 +49,12 @@ func reg(rid: RID) -> RID:
 	_ctx["rids"].append(rid)
 	return rid
 
+func forget(rid: RID) -> void:
+	# Untrack a resource the test freed itself: _cleanup_ctx() would otherwise
+	# free it a second time and the server prints an "attempted to free
+	# unknown RID" error for every dead RID.
+	_ctx["rids"].erase(rid)
+
 func mkspace() -> RID:
 	var s := reg(PhysicsServer3D.space_create())
 	PhysicsServer3D.space_set_active(s, true)
@@ -972,6 +978,7 @@ func t_lifetime_stale(c: Dictionary) -> bool:
 		c["space"] = mkspace()
 		var b := mkbody(c["space"], mkshape_box(Vector3(0.4, 0.4, 0.4)), Vector3(0, 5, 0))
 		PhysicsServer3D.free_rid(b)
+		forget(b)  # freed deliberately; cleanup must not free it again
 		c["dead"] = b
 		return false
 	# Use-after-free calls must not corrupt the engine.

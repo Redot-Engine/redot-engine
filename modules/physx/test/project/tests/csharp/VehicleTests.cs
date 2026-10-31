@@ -195,7 +195,8 @@ internal static class VehicleTests
 		using var w = new PhysxWorld();
 		var (chassis, v) = MakeVehicle(w);
 		yield return Wait.Frames(30);
-		PhysicsServer3D.FreeRid(chassis); // vehicle must be auto-released
+		w.Free(chassis); // vehicle must be auto-released
+		w.Forget(v);     // the server releases the vehicle with its chassis
 		yield return Wait.Frames(60);
 		var canary = w.MakeBody(w.Box(0.3f), new Vector3(5, 3, 0));
 		yield return Wait.Frames(30);
@@ -206,7 +207,7 @@ internal static class VehicleTests
 		using var w = new PhysxWorld();
 		var (chassis, v) = MakeVehicle(w);
 		yield return Wait.Frames(30);
-		PhysicsServer3D.FreeRid(v); // chassis must survive
+		w.Free(v); // chassis must survive
 		yield return Wait.Frames(30);
 		Assert.Expect(PhysxWorld.Finite(w.Pos(chassis)), "chassis finite after vehicle freed");
 		yield return Wait.UntilOrFail(() => w.Pos(chassis).Origin.Y < 1.0f, 300, "chassis falls/rests as plain body");
@@ -478,7 +479,7 @@ internal static class VehicleTests
 		yield return Wait.Frames(30); // wheels settle onto the ground
 		VehicleApi.SetControlInputs(v, 0.8f, 0f, 0f, 0f);
 		yield return Wait.Frames(30); // drive with the grip table active
-		PhysicsServer3D.FreeRid(ground); // dangle the table pre-fix
+		w.Free(ground); // dangle the table pre-fix
 		yield return Wait.Frames(90); // keep simulating on the (now default) grip
 		var canary = w.MakeBody(w.Box(0.3f), new Vector3(5, 3, 0));
 		yield return Wait.Frames(30);
