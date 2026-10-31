@@ -164,6 +164,10 @@ void FlowSimulation::_destroy_grid_now() {
 		runtime->get_grid_params_interface()->unmapParamsDesc(grid_params, mapped_snapshot);
 		mapped_snapshot = nullptr;
 	}
+	// The desc's storage went with grid_params: a rebuilt grid must not be
+	// rendered through the stale descriptor (render() checks desc_active).
+	desc_active = false;
+	mapped_desc = {};
 	if (grid_params != nullptr && runtime != nullptr) {
 		runtime->get_grid_params_interface()->destroyGridParams(grid_params);
 		grid_params = nullptr;
@@ -585,13 +589,14 @@ void FlowSimulation::_rt_step(double p_absolute_time, float p_delta,
 			for (int t = 0; t < tri_count; t++) {
 				arrays.face_counts[t] = 3;
 			}
-			p.meshPositions = arrays.positions.ptr();
+			// NOTE: the buffer pointers are bound AFTER the loop, once the
+			// arrays live in mesh_arrays -- binding them to the local copy
+			// here would dangle the moment this iteration ends (and any
+			// later mesh_arrays growth would leave earlier pointers stale).
 			p.meshPositionCount = vtx_count;
 			p.meshPositionVersion++;
-			p.meshFaceVertexIndices = arrays.indices.ptr();
 			p.meshFaceVertexIndexCount = vtx_count;
 			p.meshFaceVertexIndexVersion++;
-			p.meshFaceVertexCounts = arrays.face_counts.ptr();
 			p.meshFaceVertexCountCount = tri_count;
 			p.meshFaceVertexCountVersion++;
 			// Godot meshes are CCW-front left-handed... Flow expects
@@ -687,6 +692,13 @@ void FlowSimulation::_rt_step(double p_absolute_time, float p_delta,
 	}
 	for (const NvFlowGridEmitterBoxParams &p : box_params) {
 		box_ptrs.push_back(const_cast<NvFlowGridEmitterBoxParams *>(&p));
+	}
+	// Bind the mesh buffer pointers now that the arrays live in their final
+	// storage (see the NOTE in the collider loop above).
+	for (uint32_t i = 0; i < mesh_params.size(); i++) {
+		mesh_params[i].meshPositions = mesh_arrays[i].positions.ptr();
+		mesh_params[i].meshFaceVertexIndices = mesh_arrays[i].indices.ptr();
+		mesh_params[i].meshFaceVertexCounts = mesh_arrays[i].face_counts.ptr();
 	}
 	for (const NvFlowGridEmitterMeshParams &p : mesh_params) {
 		mesh_ptrs.push_back(const_cast<NvFlowGridEmitterMeshParams *>(&p));

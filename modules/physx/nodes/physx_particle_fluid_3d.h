@@ -88,9 +88,13 @@ private:
 	// PART-5: impulse routing registry -- maps collider ids to the sources
 	// that submitted them; async-reaped impulses (one frame late) route
 	// through here so a reshuffled collider list cannot misroute reactions.
+	// Sources are kept as ObjectIDs, NOT raw pointers: registry entries live
+	// up to 64 frames past their last refresh, and async reaps return the
+	// previous frame's impulses -- a freed node in between must resolve to
+	// null (skip) instead of a dangling pointer.
 	struct MPMSourceEntry {
-		Node3D *node = nullptr;
-		PhysXChunkEmitter3D *chunk_emitter = nullptr;
+		ObjectID node_id;
+		ObjectID chunk_emitter_id;
 		uint64_t chunk_id = 0;
 		Vector3 extents;
 		uint64_t last_seen = 0;

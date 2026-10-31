@@ -295,8 +295,10 @@ void XPBDClothSolver::set_rest_length_scale(float p_scale) {
 	// The volume constraint's target must shrink with the edges, or the
 	// pressure term fights the shrink: _mesh_volume() measures the ORIGINAL
 	// rest positions (unchanged by the scale), so scale the cached value by
-	// p_scale^3 instead of recomputing it.
-	rest_volume *= p_scale * p_scale * p_scale;
+	// the RELATIVE factor cubed -- rest_volume already reflects
+	// applied_rest_scale, and compounding the absolute scale would shrink
+	// it twice (0.5 then 0.8 would land at ~0.064x instead of 0.512x).
+	rest_volume *= rel * rel * rel;
 }
 
 void XPBDClothSolver::_solve_volume(float p_sdt) {

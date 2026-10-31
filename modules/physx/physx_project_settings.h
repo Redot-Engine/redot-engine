@@ -149,11 +149,14 @@ public:
 	// physics/physx_3d/flow/device_api
 	//
 	// GPU backend for the NVIDIA Flow runtime (PhysXFlowSimulation3D nodes).
-	// Flow owns its own GPU device/queue (its SDK is deliberately not a PhysX
-	// subsystem), independent of the renderer's device. 0 = Auto (Vulkan,
-	// falling back to the CPU context when no Vulkan device can be created),
-	// 1 = Vulkan only, 2 = CPU only (slow, for machines without usable GPU
-	// drivers). Read when the first Flow simulation initializes.
+	// Applies only when Flow runs on its own GPU device/queue -- i.e. on
+	// headless or Compatibility runs, where the simulation falls back to the
+	// runtime's own context because no RenderingDevice exists. A Forward+ /
+	// Mobile run always puts Flow on the renderer's RenderingDevice and
+	// ignores these settings (the sparse grid shares its device). 0 = Auto
+	// (Vulkan, falling back to the CPU context when no Vulkan device can be
+	// created), 1 = Vulkan only, 2 = CPU only (slow, for machines without
+	// usable GPU drivers). Read when the first Flow simulation initializes.
 	inline static int flow_device_api = 0;
 
 	// physics/physx_3d/flow/device_index

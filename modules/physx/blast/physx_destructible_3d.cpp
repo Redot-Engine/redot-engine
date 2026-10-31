@@ -58,6 +58,11 @@
 
 namespace {
 
+// Sanity bound for a single chunk's triangle count in the .chunks sidecar:
+// the writer emits one text line per triangle, so a count beyond this is a
+// corrupt file, not a chunk (a 1M-triangle chunk would be ~40 MB of text).
+constexpr int64_t CHUNK_TRI_COUNT_MAX = 1000000;
+
 void blast_log(int32_t p_type, const char *p_msg, const char *p_file, int32_t p_line) {
 	if (p_type <= 1) {
 		ERR_PRINT(vformat("Blast: %s (%s:%d)", p_msg, p_file, p_line));
@@ -680,25 +685,56 @@ bool PhysXDestructible3D::_load() {
 	}
 
 	Ref<FileAccess> cf = FileAccess::open(chunks_path, FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(cf.is_null(), false, vformat("PhysXDestructible3D: cannot open chunks_path '%s'.", chunks_path));
+	if (cf.is_null()) {
+		// The asset bytes loaded; a dead sidecar must not leave the family
+		// half-loaded (every failure past _load_asset_bytes unwinds it).
+		_unload_native_state();
+		ERR_FAIL_V_MSG(false, vformat("PhysXDestructible3D: cannot open chunks_path '%s'.", chunks_path));
+	}
 
 	const Vector<String> header = cf->get_line().split(" ", false);
-	ERR_FAIL_COND_V_MSG(header.size() != 2 || header[0] != "chunks", false, "PhysXDestructible3D: malformed chunks file header.");
-	const uint32_t chunk_count = header[1].to_int();
+	if (header.size() != 2 || header[0] != "chunks") {
+		_unload_native_state();
+		ERR_FAIL_V_MSG(false, "PhysXDestructible3D: malformed chunks file header.");
+	}
+	// The sidecar has no structural validation upstream (unlike the asset
+	// block, BLAST-4): a truncated/corrupt file must not reach the resizes
+	// below with a wrapped negative or absurd count.
+	const int64_t chunk_count_i = header[1].to_int();
+	if (chunk_count_i < 0 || (uint32_t)chunk_count_i > asset_chunk_count) {
+		_unload_native_state();
+		ERR_FAIL_V_MSG(false, vformat("PhysXDestructible3D: chunks file declares %s chunks (asset has %u).", header[1], asset_chunk_count));
+	}
+	const uint32_t chunk_count = (uint32_t)chunk_count_i;
 	chunk_points.resize(chunk_count);
 
 	for (uint32_t i = 0; i < chunk_count && !cf->eof_reached(); i++) {
 		const Vector<String> chunk_header = cf->get_line().split(" ", false);
-		ERR_FAIL_COND_V_MSG(chunk_header.size() != 3 || chunk_header[0] != "chunk", false, "PhysXDestructible3D: malformed chunk header line.");
-		const uint32_t chunk_index = chunk_header[1].to_int();
-		const uint32_t tri_count = chunk_header[2].to_int();
-		ERR_FAIL_COND_V(chunk_index >= chunk_count, false);
+		if (chunk_header.size() != 3 || chunk_header[0] != "chunk") {
+			_unload_native_state();
+			ERR_FAIL_V_MSG(false, "PhysXDestructible3D: malformed chunk header line.");
+		}
+		const int64_t chunk_index_i = chunk_header[1].to_int();
+		const int64_t tri_count_i = chunk_header[2].to_int();
+		if (chunk_index_i < 0 || (uint32_t)chunk_index_i >= chunk_count) {
+			_unload_native_state();
+			ERR_FAIL_V_MSG(false, vformat("PhysXDestructible3D: chunk index %s out of range.", chunk_header[1]));
+		}
+		if (tri_count_i < 0 || tri_count_i > CHUNK_TRI_COUNT_MAX) {
+			_unload_native_state();
+			ERR_FAIL_V_MSG(false, vformat("PhysXDestructible3D: chunk triangle count %s is out of range.", chunk_header[2]));
+		}
+		const uint32_t chunk_index = (uint32_t)chunk_index_i;
+		const uint32_t tri_count = (uint32_t)tri_count_i;
 
 		PackedVector3Array points;
 		points.resize(tri_count * 3);
 		for (uint32_t t = 0; t < tri_count; t++) {
 			const Vector<String> fields = cf->get_line().split(" ", false);
-			ERR_FAIL_COND_V_MSG(fields.size() != 9, false, "PhysXDestructible3D: malformed triangle line.");
+			if (fields.size() != 9) {
+				_unload_native_state();
+				ERR_FAIL_V_MSG(false, "PhysXDestructible3D: malformed triangle line.");
+			}
 			for (int v = 0; v < 3; v++) {
 				points.write[t * 3 + v] = Vector3(
 						fields[v * 3 + 0].to_float(),
@@ -899,7 +935,14 @@ void PhysXDestructible3D::_spawn_intact() {
 	// could ever own this piece's transform, so it's the last clean read of
 	// the node's real intended scale.
 	spawn_scale = get_global_transform().basis.get_scale();
+	const uint32_t pieces_before = (uint32_t)pieces.size();
 	_spawn_piece(0, get_global_transform(), Vector3(), physics, live_actors.is_empty() ? nullptr : live_actors[0]);
+	if ((uint32_t)pieces.size() > pieces_before) {
+		// Mark the intact piece so apply_radial_damage() retires exactly it
+		// (and nothing that may have been spawned since) on the first split.
+		pieces[pieces.size() - 1].placeholder = true;
+		placeholder_alive = true;
+	}
 	if (physics) {
 		PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
 		if (dynamic) {
@@ -1007,6 +1050,9 @@ void PhysXDestructible3D::_spawn_piece(uint32_t p_chunk_index, const Transform3D
 	piece.actor = p_actor;
 	piece.last_linear_velocity = p_linear_velocity;
 	piece.born = piece_clock;
+	// An anchored-island chunk contributes its hull to the shared static body
+	// and owns no body of its own (piece.body stays RID()).
+	piece.anchored = p_attach_body.is_valid();
 	pieces.push_back(piece);
 }
 
@@ -1041,6 +1087,7 @@ void PhysXDestructible3D::_free_all_pieces() {
 	}
 	pieces.clear();
 	actor_pieces.clear();
+	placeholder_alive = false;
 }
 
 Transform3D PhysXDestructible3D::get_piece_transform(int p_index) const {
@@ -1166,6 +1213,13 @@ void PhysXDestructible3D::_sync_transforms() {
 	// skip the piece it just moved into the current slot.
 	for (int64_t i = (int64_t)pieces.size() - 1; i >= 0; i--) {
 		ChunkVisual &piece = pieces[i];
+		if (!piece.body.is_valid()) {
+			// Anchored-island chunk: its hull is a shape on the shared static
+			// body, so it has no direct body state of its own -- and it must
+			// not age like debris either (freeing the first island chunk
+			// would free the shared island body out from under the rest).
+			continue;
+		}
 		PhysicsDirectBodyState3D *state = ps->body_get_direct_state(piece.body);
 		if (!state) {
 			continue;
@@ -1457,8 +1511,8 @@ int PhysXDestructible3D::apply_radial_damage(const Vector3 &p_world_position, fl
 							island_mass += _chunk_mass(m);
 						}
 					}
+					spawned++;
 				}
-				spawned++;
 			}
 			if (island_static && island_body.is_valid()) {
 				PhysicsServer3D::get_singleton()->body_set_param(island_body, PhysicsServer3D::BODY_PARAM_MASS, island_mass);
@@ -1476,10 +1530,11 @@ int PhysXDestructible3D::apply_radial_damage(const Vector3 &p_world_position, fl
 	// be re-spawned, only (maybe) surfaced later once accumulated bond
 	// damage from a subsequent hit finally cleared a split -- exactly the
 	// "bounces off, then randomly disappears or breaks" behavior reported
-	// against a single static sphere. `pieces[0]` is guaranteed to still be
-	// exactly that placeholder here: nothing else could have been in
-	// `pieces` before this call while `!fractured`.
-	if (!fractured && spawned > 0) {
+	// against a single static sphere. `pieces[0]` is the placeholder only
+	// while placeholder_alive holds: a kill-floor drop or a partial load
+	// failure clears the flag without committing to "fractured", so this
+	// block can never retire a freshly spawned fragment instead.
+	if (!fractured && spawned > 0 && placeholder_alive) {
 		PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
 		RenderingServer *rs = RenderingServer::get_singleton();
 		const ChunkVisual &placeholder = pieces[0];
@@ -1492,6 +1547,7 @@ int PhysXDestructible3D::apply_radial_damage(const Vector3 &p_world_position, fl
 		rs->free(placeholder.instance);
 		rs->free(placeholder.mesh);
 		pieces.remove_at_unordered(0);
+		placeholder_alive = false;
 		fractured = true;
 		set_physics_process_internal(true);
 	}

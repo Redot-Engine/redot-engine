@@ -40,6 +40,7 @@
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/object/class_db.h"
+#include "core/object/object.h"
 #include "core/templates/hash_map.h"
 #include "scene/3d/physics/animatable_body_3d.h"
 #include "scene/3d/physics/collision_object_3d.h"
@@ -484,8 +485,8 @@ void PhysXParticleFluid3D::_mpm_step(double p_delta) {
 			entry_ptr = _mpm_source_registry.getptr(id);
 		}
 		MPMSourceEntry &entry = *entry_ptr;
-		entry.node = col_src[i].node;
-		entry.chunk_emitter = col_src[i].chunk_emitter;
+		entry.node_id = col_src[i].node != nullptr ? col_src[i].node->get_instance_id() : ObjectID();
+		entry.chunk_emitter_id = col_src[i].chunk_emitter != nullptr ? col_src[i].chunk_emitter->get_instance_id() : ObjectID();
 		entry.chunk_id = col_src[i].chunk_id;
 		entry.extents = cols[i].extents;
 		entry.last_seen = _mpm_frame;
@@ -501,19 +502,23 @@ void PhysXParticleFluid3D::_mpm_step(double p_delta) {
 		if (src == nullptr) {
 			continue; // collider left the registry before its (lagged) impulse arrived
 		}
-		if (src->chunk_emitter != nullptr) {
+		if (src->chunk_emitter_id.is_valid()) {
+			PhysXChunkEmitter3D *emitter = ObjectDB::get_instance<PhysXChunkEmitter3D>(src->chunk_emitter_id);
+			if (emitter == nullptr) {
+				continue; // emitter freed while its (lagged) impulse was in flight
+			}
 			Vector3 imp = hit.impulse;
 			const float m = MAX(src->extents.x * src->extents.y * src->extents.z * 8.0f * 1200.0f, 0.001f);
 			const float cap = m * 20.0f;
 			if (imp.length() > cap) {
 				imp = imp.normalized() * cap;
 			}
-			src->chunk_emitter->apply_chunk_impulse(src->chunk_id, imp);
+			emitter->apply_chunk_impulse(src->chunk_id, imp);
 			continue;
 		}
-		RigidBody3D *rb = Object::cast_to<RigidBody3D>(src->node);
+		RigidBody3D *rb = ObjectDB::get_instance<RigidBody3D>(src->node_id);
 		if (rb == nullptr || rb->is_freeze_enabled()) {
-			continue;
+			continue; // freed or frozen while the impulse was in flight
 		}
 		Vector3 imp = hit.impulse;
 		// A liquid splash can legitimately shove a body hard; a granular bed can

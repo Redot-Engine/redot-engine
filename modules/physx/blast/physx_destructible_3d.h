@@ -433,6 +433,14 @@ private:
 		double born = 0.0;
 		bool frozen = false;
 		bool shrinking = false;
+		// Anchored-island chunk: its hull lives on the SHARED static body and
+		// piece.body is RID() -- such a piece has no direct body state to sync
+		// and must be exempt from the debris lifecycle (freeing it would free
+		// the shared island body out from under the other chunks).
+		bool anchored = false;
+		// True only for the intact placeholder piece spawned by _spawn_intact
+		// (see PhysXDestructible3D::placeholder_alive).
+		bool placeholder = false;
 		// The live NvBlast actor this piece stands for (the intact placeholder
 		// records live_actors[0]; see _spawn_intact). Lets the kill_y cleanup
 		// retire an actor once none of its chunks has a live piece left (see
@@ -455,6 +463,12 @@ private:
 
 	bool loaded = false;
 	bool fractured = false;
+	// The intact placeholder piece (chunk 0, spawned by _spawn_intact) is
+	// still alive in `pieces`: apply_radial_damage() retires exactly that
+	// piece when the first split commits. Kill-floor drops and partial-load
+	// failures clear this WITHOUT setting fractured, so the placeholder
+	// removal can never touch a real fragment.
+	bool placeholder_alive = false;
 	// Debris clean-up, all off by default: a piece is removed debris_lifetime
 	// seconds after it spawned (0 = never), shrinking to nothing over the
 	// last debris_shrink seconds of them instead of popping out;

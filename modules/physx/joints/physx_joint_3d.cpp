@@ -586,11 +586,11 @@ void PhysXJoint3D::_apply_params() {
 				_apply_g6dof_axis_drive(d6, axis, false);
 				_apply_g6dof_axis_drive(d6, axis, true);
 			}
-				_apply_g6dof_drive_position();
-				// Velocity targets only matter for axes whose resolved drive is a
-				// motor (a spring ignores them); harmless when none.
-				d6->setDriveVelocity(cached_g6dof_lin_drive_vel, cached_g6dof_ang_drive_vel, true);
-			} break;
+			_apply_g6dof_drive_position();
+			// Velocity targets only matter for axes whose resolved drive is a
+			// motor (a spring ignores them); harmless when none.
+			d6->setDriveVelocity(cached_g6dof_lin_drive_vel, cached_g6dof_ang_drive_vel, true);
+		} break;
 
 		default:
 			break;
@@ -1540,6 +1540,11 @@ void PhysXJoint3D::set_g6dof_flag(Vector3::Axis p_axis, PhysicsServer3D::G6DOFJo
 			flags.angular_limit = p_enable;
 			if (d6) {
 				d6->setMotion(ang_axis, p_enable ? physx::PxD6Motion::eLIMITED : physx::PxD6Motion::eFREE);
+				// The swing pyramid is built from BOTH swing axes' angular_limit
+				// flags (an axis with the flag off gets the near-full range):
+				// enabling one axis later must rebuild it, or that axis reports
+				// eLIMITED while the pyramid still holds the near-full span.
+				_apply_g6dof_angular_limit(d6, p_axis);
 				_apply_g6dof_axis_drive(d6, p_axis, true); // re-free spring axes
 			}
 			break;
