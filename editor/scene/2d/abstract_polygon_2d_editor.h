@@ -69,10 +69,6 @@ class AbstractPolygon2DEditor : public HBoxContainer {
 
 		int polygon = -1;
 		int vertex = -1;
-
-		uint32_t hash() const {
-			return hash_murmur3_buffer(this, sizeof(Vertex));
-		}
 	};
 
 	struct VertexHasher {
@@ -103,6 +99,7 @@ class AbstractPolygon2DEditor : public HBoxContainer {
 	/// @{
 	HashSet<Vertex, VertexHasher> selected_points;
 	HashMap<Vertex, Point2, VertexHasher> multi_move_start_positions; ///< Per-vertex position snapshot at drag-start.
+	HashMap<int, Vector<Vector2>> multi_move_polygons; ///< Pre-drag snapshot per selected polygon (for undo).
 
 	bool box_selecting = false;
 	bool box_select_additive = false; ///< True = Shift held when the box-select drag started; preserves prior selection instead of replacing it.
