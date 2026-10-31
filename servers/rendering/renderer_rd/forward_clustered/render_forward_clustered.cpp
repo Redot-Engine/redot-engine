@@ -54,6 +54,18 @@ using namespace RendererSceneRenderImplementation;
 
 #define FADE_ALPHA_PASS_THRESHOLD 0.999
 
+void RenderForwardClustered::RenderBufferDataForwardClustered::ensure_albedo() {
+	ERR_FAIL_NULL(render_buffers);
+
+	if (!render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_ALBEDO)) {
+		bool msaa = render_buffers->get_msaa_3d() != RS::VIEWPORT_MSAA_DISABLED;
+		render_buffers->create_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_ALBEDO, get_albedo_format(), get_albedo_usage_bits(msaa, false, render_buffers->get_can_be_storage()));
+		if (msaa) {
+			render_buffers->create_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_ALBEDO_MSAA, get_albedo_format(), get_albedo_usage_bits(false, msaa, render_buffers->get_can_be_storage()), render_buffers->get_texture_samples());
+		}
+	}
+}
+
 void RenderForwardClustered::RenderBufferDataForwardClustered::ensure_specular() {
 	ERR_FAIL_NULL(render_buffers);
 
@@ -188,6 +200,12 @@ RID RenderForwardClustered::RenderBufferDataForwardClustered::get_color_pass_fb(
 	int v_count = (p_color_pass_flags & COLOR_PASS_FLAG_MULTIVIEW) ? render_buffers->get_view_count() : 1;
 	RID color = use_msaa ? render_buffers->get_texture(RB_SCOPE_BUFFERS, RB_TEX_COLOR_MSAA) : render_buffers->get_internal_texture();
 
+	RID albedo;
+	if (p_color_pass_flags & COLOR_PASS_FLAG_ALBEDO) {
+		ensure_albedo();
+		albedo = render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, use_msaa ? RB_TEX_ALBEDO_MSAA : RB_TEX_ALBEDO);
+	}
+
 	RID specular;
 	if (p_color_pass_flags & COLOR_PASS_FLAG_SEPARATE_SPECULAR) {
 		ensure_specular();
@@ -204,9 +222,9 @@ RID RenderForwardClustered::RenderBufferDataForwardClustered::get_color_pass_fb(
 
 	if (render_buffers->has_texture(RB_SCOPE_VRS, RB_TEXTURE)) {
 		RID vrs_texture = render_buffers->get_texture(RB_SCOPE_VRS, RB_TEXTURE);
-		return FramebufferCacheRD::get_singleton()->get_cache_multiview(v_count, color, specular, velocity_buffer, depth, vrs_texture);
+		return FramebufferCacheRD::get_singleton()->get_cache_multiview(v_count, color, albedo, specular, velocity_buffer, depth, vrs_texture);
 	} else {
-		return FramebufferCacheRD::get_singleton()->get_cache_multiview(v_count, color, specular, velocity_buffer, depth);
+		return FramebufferCacheRD::get_singleton()->get_cache_multiview(v_count, color, albedo, specular, velocity_buffer, depth);
 	}
 }
 
@@ -256,6 +274,14 @@ RID RenderForwardClustered::RenderBufferDataForwardClustered::get_velocity_only_
 	RID velocity = render_buffers->get_texture(RB_SCOPE_BUFFERS, use_msaa ? RB_TEX_VELOCITY_MSAA : RB_TEX_VELOCITY);
 
 	return FramebufferCacheRD::get_singleton()->get_cache_multiview(render_buffers->get_view_count(), velocity);
+}
+
+RD::DataFormat RenderForwardClustered::RenderBufferDataForwardClustered::get_albedo_format() {
+	return RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
+}
+
+uint32_t RenderForwardClustered::RenderBufferDataForwardClustered::get_albedo_usage_bits(bool p_resolve, bool p_msaa, bool p_storage) {
+	return RenderSceneBuffersRD::get_color_usage_bits(p_resolve, p_msaa, p_storage);
 }
 
 RD::DataFormat RenderForwardClustered::RenderBufferDataForwardClustered::get_specular_format() {
@@ -449,6 +475,10 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
 					pipeline_key.color_pass_flags |= SceneShaderForwardClustered::PIPELINE_COLOR_PASS_FLAG_LIGHTMAP;
 				} else {
 					pipeline_specialization.use_forward_gi = element_info.uses_forward_gi;
+				}
+
+				if constexpr ((p_color_pass_flags & COLOR_PASS_FLAG_ALBEDO) != 0) {
+					pipeline_key.color_pass_flags |= SceneShaderForwardClustered::PIPELINE_COLOR_PASS_FLAG_ALBEDO;
 				}
 
 				if constexpr ((p_color_pass_flags & COLOR_PASS_FLAG_SEPARATE_SPECULAR) != 0) {
@@ -649,6 +679,14 @@ void RenderForwardClustered::_render_list(RenderingDevice::DrawListID p_draw_lis
 				VALID_FLAG_COMBINATION(COLOR_PASS_FLAG_MOTION_VECTORS);
 				VALID_FLAG_COMBINATION(COLOR_PASS_FLAG_SEPARATE_SPECULAR | COLOR_PASS_FLAG_MULTIVIEW | COLOR_PASS_FLAG_MOTION_VECTORS);
 				VALID_FLAG_COMBINATION(COLOR_PASS_FLAG_TRANSPARENT | COLOR_PASS_FLAG_MULTIVIEW | COLOR_PASS_FLAG_MOTION_VECTORS);
+				VALID_FLAG_COMBINATION(COLOR_PASS_FLAG_ALBEDO);
+				VALID_FLAG_COMBINATION(COLOR_PASS_FLAG_ALBEDO | COLOR_PASS_FLAG_MULTIVIEW);
+				VALID_FLAG_COMBINATION(COLOR_PASS_FLAG_ALBEDO | COLOR_PASS_FLAG_MOTION_VECTORS);
+				VALID_FLAG_COMBINATION(COLOR_PASS_FLAG_ALBEDO | COLOR_PASS_FLAG_SEPARATE_SPECULAR);
+				VALID_FLAG_COMBINATION(COLOR_PASS_FLAG_ALBEDO | COLOR_PASS_FLAG_SEPARATE_SPECULAR | COLOR_PASS_FLAG_MULTIVIEW);
+				VALID_FLAG_COMBINATION(COLOR_PASS_FLAG_ALBEDO | COLOR_PASS_FLAG_SEPARATE_SPECULAR | COLOR_PASS_FLAG_MOTION_VECTORS);
+				VALID_FLAG_COMBINATION(COLOR_PASS_FLAG_ALBEDO | COLOR_PASS_FLAG_MULTIVIEW | COLOR_PASS_FLAG_MOTION_VECTORS);
+				VALID_FLAG_COMBINATION(COLOR_PASS_FLAG_ALBEDO | COLOR_PASS_FLAG_SEPARATE_SPECULAR | COLOR_PASS_FLAG_MULTIVIEW | COLOR_PASS_FLAG_MOTION_VECTORS);
 				default: {
 					ERR_FAIL_MSG("Invalid color pass flag combination " + itos(p_params->color_pass_flags));
 				}
@@ -1701,6 +1739,7 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 	// get info about our rendering effects
 	bool ce_needs_motion_vectors = _compositor_effects_has_flag(p_render_data, RS::COMPOSITOR_EFFECT_FLAG_NEEDS_MOTION_VECTORS);
 	bool ce_needs_normal_roughness = _compositor_effects_has_flag(p_render_data, RS::COMPOSITOR_EFFECT_FLAG_NEEDS_ROUGHNESS);
+	bool ce_needs_albedo = _compositor_effects_has_flag(p_render_data, RS::COMPOSITOR_EFFECT_FLAG_NEEDS_ALBEDO);
 	bool ce_needs_separate_specular = _compositor_effects_has_flag(p_render_data, RS::COMPOSITOR_EFFECT_FLAG_NEEDS_SEPARATE_SPECULAR);
 
 	// sdfgi first
@@ -1871,6 +1910,10 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 			global_pipeline_data_required.use_multiview = true;
 		}
 
+		if (ce_needs_albedo) {
+			color_pass_flags |= COLOR_PASS_FLAG_ALBEDO;
+		}
+
 		color_framebuffer = rb_data->get_color_pass_fb(color_pass_flags);
 		color_only_framebuffer = rb_data->get_color_only_fb();
 		samplers = rb->get_samplers();
@@ -1952,12 +1995,16 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 		rb_data->ensure_specular();
 	}
 
+	if (ce_needs_albedo && !is_reflection_probe) {
+		rb_data->ensure_albedo();
+	}
+
 	if (global_surface_data.normal_texture_used && !is_reflection_probe) {
 		rb_data->ensure_normal_roughness_texture();
 	}
 
-	if (using_sss || using_separate_specular || scene_state.used_lightmap || using_voxelgi || global_surface_data.sss_used) {
-		scene_shader.enable_advanced_shader_group(scene_data->view_count > 1);
+	if (using_sss || ce_needs_albedo || using_separate_specular || scene_state.used_lightmap || using_voxelgi || global_surface_data.sss_used) {
+		scene_shader.enable_advanced_shader_group(p_render_data->scene_data->view_count > 1);
 	}
 
 	// Update the global pipeline requirements with all the features found to be in use in this scene.
@@ -1975,6 +2022,10 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 
 	if (using_separate_specular || global_surface_data.sss_used) {
 		global_pipeline_data_required.use_separate_specular = true;
+	}
+
+	if (ce_needs_albedo) {
+		global_pipeline_data_required.use_albedo = true;
 	}
 
 	// Update the compiled pipelines if any of the requirements have changed.
@@ -2187,6 +2238,7 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 				c.push_back(cc);
 
 				if (rb_data.is_valid()) {
+					c.push_back(Color(0, 0, 0, 0)); // Albedo
 					c.push_back(Color(0, 0, 0, 0)); // Separate specular.
 					c.push_back(Color(0, 0, 0, 0)); // Motion vector. Pushed to the clear color vector even if the framebuffer isn't bound.
 				}
@@ -2239,6 +2291,12 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 		if (ce_post_opaque_resolved_depth) {
 			for (uint32_t v = 0; v < rb->get_view_count(); v++) {
 				resolve_effects->resolve_depth(rb->get_depth_msaa(v), rb->get_depth_texture(v), rb->get_internal_size(), texture_multisamples[msaa]);
+			}
+		}
+
+		if (ce_needs_albedo && use_msaa) {
+			for (uint32_t v = 0; v < rb->get_view_count(); v++) {
+				RD::get_singleton()->texture_resolve_multisample(rb_data->get_albedo_msaa(v), rb_data->get_albedo(v));
 			}
 		}
 
@@ -2402,7 +2460,7 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 	_setup_environment(p_render_data, is_reflection_probe, screen_size, p_default_bg_color, false);
 
 	{
-		uint32_t transparent_color_pass_flags = (color_pass_flags | uint32_t(COLOR_PASS_FLAG_TRANSPARENT)) & ~uint32_t(COLOR_PASS_FLAG_SEPARATE_SPECULAR);
+		uint32_t transparent_color_pass_flags = (color_pass_flags | uint32_t(COLOR_PASS_FLAG_TRANSPARENT)) & ~uint32_t(COLOR_PASS_FLAG_ALBEDO) & ~uint32_t(COLOR_PASS_FLAG_SEPARATE_SPECULAR);
 		// Motion vectors should not be overwritten by transparent objects.
 		transparent_color_pass_flags &= ~uint32_t(COLOR_PASS_FLAG_MOTION_VECTORS);
 
@@ -4360,7 +4418,7 @@ void RenderForwardClustered::_geometry_instance_update(RenderGeometryInstance *p
 	ginstance->dirty_list_element.remove_from_list();
 }
 
-static RD::FramebufferFormatID _get_color_framebuffer_format_for_pipeline(RD::DataFormat p_color_format, bool p_can_be_storage, RD::TextureSamples p_samples, bool p_specular, bool p_velocity, uint32_t p_view_count) {
+static RD::FramebufferFormatID _get_color_framebuffer_format_for_pipeline(RD::DataFormat p_color_format, bool p_can_be_storage, RD::TextureSamples p_samples, bool p_albedo, bool p_specular, bool p_velocity, uint32_t p_view_count) {
 	const bool multisampling = p_samples > RD::TEXTURE_SAMPLES_1;
 	RD::AttachmentFormat attachment;
 	attachment.samples = p_samples;
@@ -4375,6 +4433,14 @@ static RD::FramebufferFormatID _get_color_framebuffer_format_for_pipeline(RD::Da
 	attachment.format = p_color_format;
 	attachment.usage_flags = RenderSceneBuffersRD::get_color_usage_bits(false, multisampling, p_can_be_storage);
 	attachments.push_back(attachment);
+
+	if (p_albedo) {
+		attachment.format = RenderForwardClustered::RenderBufferDataForwardClustered::get_albedo_format();
+		attachment.usage_flags = RenderForwardClustered::RenderBufferDataForwardClustered::get_albedo_usage_bits(false, multisampling, p_can_be_storage);
+		attachments.push_back(attachment);
+	} else {
+		attachments.push_back(unused_attachment);
+	}
 
 	if (p_specular) {
 		attachment.format = RenderForwardClustered::RenderBufferDataForwardClustered::get_specular_format();
@@ -4558,32 +4624,39 @@ void RenderForwardClustered::_mesh_compile_pipelines_for_surface(const SurfacePi
 
 				// View count is assumed to be 2 as the configuration is dependent on the viewport. It's likely a safe assumption for stereo rendering.
 				uint32_t view_count = multiview ? 2 : 1;
-				pipeline_key.framebuffer_format_id = _get_color_framebuffer_format_for_pipeline(buffers_color_format, buffers_can_be_storage, RD::TextureSamples(p_global.texture_samples), false, false, view_count);
+				pipeline_key.framebuffer_format_id = _get_color_framebuffer_format_for_pipeline(buffers_color_format, buffers_can_be_storage, RD::TextureSamples(p_global.texture_samples), false, false, false, view_count);
 				_mesh_compile_pipeline_for_surface(p_surface.shader, p_surface.mesh_surface, true, p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
 
 				// Generate all the possible variants used during the advanced color passes.
+				const uint32_t albedo_iterations = p_global.use_albedo ? 2 : 1;
 				const uint32_t separate_specular_iterations = p_global.use_separate_specular ? 2 : 1;
 				const uint32_t motion_vectors_iterations = p_global.use_motion_vectors ? 2 : 1;
 				uint32_t base_color_pass_flags = pipeline_key.color_pass_flags;
-				for (uint32_t separate_specular = 0; separate_specular < separate_specular_iterations; separate_specular++) {
-					for (uint32_t motion_vectors = 0; motion_vectors < motion_vectors_iterations; motion_vectors++) {
-						if (!separate_specular && !motion_vectors) {
-							// This case was already generated.
-							continue;
+				for (uint32_t albedo = 0; albedo < albedo_iterations; albedo++) {
+					for (uint32_t separate_specular = 0; separate_specular < separate_specular_iterations; separate_specular++) {
+						for (uint32_t motion_vectors = 0; motion_vectors < motion_vectors_iterations; motion_vectors++) {
+							if (!albedo && !separate_specular && !motion_vectors) {
+								// This case was already generated.
+								continue;
+							}
+
+							pipeline_key.color_pass_flags = base_color_pass_flags;
+
+							if (albedo) {
+								pipeline_key.color_pass_flags |= SceneShaderForwardClustered::PIPELINE_COLOR_PASS_FLAG_ALBEDO;
+							}
+
+							if (separate_specular) {
+								pipeline_key.color_pass_flags |= SceneShaderForwardClustered::PIPELINE_COLOR_PASS_FLAG_SEPARATE_SPECULAR;
+							}
+
+							if (motion_vectors) {
+								pipeline_key.color_pass_flags |= SceneShaderForwardClustered::PIPELINE_COLOR_PASS_FLAG_MOTION_VECTORS;
+							}
+
+							pipeline_key.framebuffer_format_id = _get_color_framebuffer_format_for_pipeline(buffers_color_format, buffers_can_be_storage, RD::TextureSamples(p_global.texture_samples), albedo, separate_specular, motion_vectors, view_count);
+							_mesh_compile_pipeline_for_surface(p_surface.shader, p_surface.mesh_surface, true, p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
 						}
-
-						pipeline_key.color_pass_flags = base_color_pass_flags;
-
-						if (separate_specular) {
-							pipeline_key.color_pass_flags |= SceneShaderForwardClustered::PIPELINE_COLOR_PASS_FLAG_SEPARATE_SPECULAR;
-						}
-
-						if (motion_vectors) {
-							pipeline_key.color_pass_flags |= SceneShaderForwardClustered::PIPELINE_COLOR_PASS_FLAG_MOTION_VECTORS;
-						}
-
-						pipeline_key.framebuffer_format_id = _get_color_framebuffer_format_for_pipeline(buffers_color_format, buffers_can_be_storage, RD::TextureSamples(p_global.texture_samples), separate_specular, motion_vectors, view_count);
-						_mesh_compile_pipeline_for_surface(p_surface.shader, p_surface.mesh_surface, true, p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
 					}
 				}
 			}

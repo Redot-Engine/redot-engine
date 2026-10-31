@@ -42,6 +42,15 @@
 		<member name="enabled" type="bool" setter="set_enabled" getter="get_enabled" default="true">
 			If [code]true[/code] this rendering effect is applied to any viewport it is added to.
 		</member>
+		<member name="needs_albedo" type="bool" setter="set_needs_albedo" getter="get_needs_albedo">
+			If [code]true[/code], albedo data is written to a separate buffer during the opaque rendering pass, only applicable for the Forward+ renderer.
+			The buffer is available from [constant EFFECT_CALLBACK_TYPE_POST_OPAQUE] onward and does not include transparent objects. If MSAA is enabled, the buffer is resolved after the opaque rendering pass.
+			[b]Note:[/b] In [method _render_callback], to access the albedo buffer use:
+			[codeblock]
+			var render_scene_buffers = render_data.get_render_scene_buffers()
+			var albedo_buffer = render_scene_buffers.get_texture("forward_clustered", "albedo")
+			[/codeblock]
+		</member>
 		<member name="needs_motion_vectors" type="bool" setter="set_needs_motion_vectors" getter="get_needs_motion_vectors" default="false">
 			If [code]true[/code] this triggers motion vectors being calculated during the opaque render state.
 			[b]Note:[/b] In [method _render_callback], to access the motion vector buffer use:

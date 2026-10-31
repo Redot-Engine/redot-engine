@@ -307,6 +307,10 @@ uint16_t SceneShaderForwardClustered::ShaderData::_get_shader_version(PipelineVe
 				shader_flags |= SHADER_COLOR_PASS_FLAG_UBERSHADER;
 			}
 
+			if (p_color_pass_flags & PIPELINE_COLOR_PASS_FLAG_ALBEDO) {
+				shader_flags |= SHADER_COLOR_PASS_FLAG_ALBEDO;
+			}
+
 			if (p_color_pass_flags & PIPELINE_COLOR_PASS_FLAG_SEPARATE_SPECULAR) {
 				shader_flags |= SHADER_COLOR_PASS_FLAG_SEPARATE_SPECULAR;
 			}
@@ -347,11 +351,11 @@ void SceneShaderForwardClustered::ShaderData::_create_pipeline(PipelineKey p_pip
 			"WIREFRAME:", p_pipeline_key.wireframe);
 #endif
 
-	// Color pass -> attachment 0: Color/Diffuse, attachment 1: Separate Specular, attachment 2: Motion Vectors
+	// Color pass -> attachment 0: Color/Diffuse, attachment 1: Albedo, attachment 2: Separate Specular, attachment 3: Motion Vectors
 	RD::PipelineColorBlendState::Attachment blend_attachment = blend_mode_to_blend_attachment(BlendMode(blend_mode));
 	RD::PipelineColorBlendState blend_state_color_blend;
-	blend_state_color_blend.attachments = { blend_attachment, RD::PipelineColorBlendState::Attachment(), RD::PipelineColorBlendState::Attachment() };
-	RD::PipelineColorBlendState blend_state_color_opaque = RD::PipelineColorBlendState::create_disabled(3);
+	blend_state_color_blend.attachments = { blend_attachment, RD::PipelineColorBlendState::Attachment(), RD::PipelineColorBlendState::Attachment(), RD::PipelineColorBlendState::Attachment() };
+	RD::PipelineColorBlendState blend_state_color_opaque = RD::PipelineColorBlendState::create_disabled(4);
 	RD::PipelineColorBlendState blend_state_depth_normal_roughness = RD::PipelineColorBlendState::create_disabled(1);
 	RD::PipelineColorBlendState blend_state_depth_normal_roughness_giprobe = RD::PipelineColorBlendState::create_disabled(2);
 
@@ -647,6 +651,7 @@ void SceneShaderForwardClustered::init(const String p_defines) {
 
 		Vector<String> color_pass_flags = {
 			"\n#define UBERSHADER\n", // SHADER_COLOR_PASS_FLAG_UBERSHADER
+			"\n#define MODE_ALBEDO\n", // SHADER_COLOR_PASS_FLAG_ALBEDO
 			"\n#define MODE_SEPARATE_SPECULAR\n", // SHADER_COLOR_PASS_FLAG_SEPARATE_SPECULAR
 			"\n#define USE_LIGHTMAP\n", // SHADER_COLOR_PASS_FLAG_LIGHTMAP
 			"\n#define USE_MULTIVIEW\n", // SHADER_COLOR_PASS_FLAG_MULTIVIEW
@@ -663,7 +668,7 @@ void SceneShaderForwardClustered::init(const String p_defines) {
 
 			// Assign a group based on what features this pass contains.
 			ShaderGroup group = SHADER_GROUP_BASE;
-			bool advanced_group = (i & SHADER_COLOR_PASS_FLAG_SEPARATE_SPECULAR) || (i & SHADER_COLOR_PASS_FLAG_LIGHTMAP) || (i & SHADER_COLOR_PASS_FLAG_MOTION_VECTORS);
+			bool advanced_group = (i & SHADER_COLOR_PASS_FLAG_ALBEDO) || (i & SHADER_COLOR_PASS_FLAG_SEPARATE_SPECULAR) || (i & SHADER_COLOR_PASS_FLAG_LIGHTMAP) || (i & SHADER_COLOR_PASS_FLAG_MOTION_VECTORS);
 			bool multiview_group = i & SHADER_COLOR_PASS_FLAG_MULTIVIEW;
 			if (advanced_group && multiview_group) {
 				group = SHADER_GROUP_ADVANCED_MULTIVIEW;
