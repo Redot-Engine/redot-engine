@@ -1360,7 +1360,7 @@ bool FlowSimulation::_decode_slot(ReadbackSlot &r_slot, FlowReadbackFrame &r_fra
 // ---- Render (Flow's own ray marcher, RenderingDevice path only) ------------
 
 uint64_t FlowSimulation::render(const float p_view[16], const float p_projection[16], uint32_t p_width, uint32_t p_height,
-		uint64_t p_depth_rid, uint32_t p_depth_width, uint32_t p_depth_height, uint64_t p_color_rid, FlowScatterSource *r_scatter) {
+		uint64_t p_depth_rid, uint32_t p_depth_width, uint32_t p_depth_height, uint64_t p_color_rid, FlowScatterSource *r_scatter, bool p_lighting_pass) {
 	if (!is_using_rd() || grid == nullptr || runtime == nullptr || p_width == 0 || p_height == 0) {
 		return 0;
 	}
@@ -1396,8 +1396,12 @@ uint64_t FlowSimulation::render(const float p_view[16], const float p_projection
 	NvFlowTextureTransient *out = nullptr;
 	// offscreen() colorizes the grid (colormap + shadowing from the committed
 	// offscreen layer), render() raymarches it with the scene depth for
-	// occlusion and composites over the color.
-	gi->offscreen(fc, grid, &params_desc);
+	// occlusion and composites over the color. The colorized volume is
+	// view-independent: under XR the first view runs it and the rest raymarch
+	// the same output.
+	if (p_lighting_pass) {
+		gi->offscreen(fc, grid, &params_desc);
+	}
 	gi->render(fc, grid, &params_desc, &view, &projection, &projection,
 			p_width, p_height, p_depth_width, p_depth_height,
 			1.0f, depth, eNvFlowFormat_r16g16b16a16_float, color, &out);

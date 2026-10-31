@@ -261,9 +261,11 @@ public:
 	// scene depth (RID id p_depth_rid at its own size). view/projection are
 	// row-vector 4x4 world->clip matrices in Flow units (Godot's units, so
 	// no scaling). Returns the RID id of the composited color texture -- copy
-	// it over the scene color before render_finish() -- or 0.
+	// it over the scene color before render_finish() -- or 0. The offscreen
+	// colorize pass is view-independent: under XR only the first view runs it
+	// (p_lighting_pass), the rest raymarch the same colorized volume.
 	uint64_t render(const float p_view[16], const float p_projection[16], uint32_t p_width, uint32_t p_height,
-			uint64_t p_depth_rid, uint32_t p_depth_width, uint32_t p_depth_height, uint64_t p_color_rid, FlowScatterSource *r_scatter = nullptr);
+			uint64_t p_depth_rid, uint32_t p_depth_width, uint32_t p_depth_height, uint64_t p_color_rid, FlowScatterSource *r_scatter = nullptr, bool p_lighting_pass = true);
 	// Ends the render's Flow frame; call after the result has been copied.
 	void render_finish();
 	// The volume/table the last render() read, for the light scattering pass

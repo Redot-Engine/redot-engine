@@ -779,14 +779,15 @@ void PhysXFlowSimulation3D::_fill_render_settings(FlowRenderSettings &r_settings
 void PhysXFlowSimulation3D::render_rd(PhysXFlowRenderEffect *p_effect, RenderingDevice *p_rd,
 		const float p_view[16], const float p_projection[16], const Size2i &p_size,
 		const RID &p_depth, const RID &p_color, const Projection &p_inv_view_projection,
-		const Vector3 &p_camera, const PagedArray<RID> *p_lights, const RID &p_shadow_atlas) {
+		const Vector3 &p_camera, const PagedArray<RID> *p_lights, const RID &p_shadow_atlas, bool p_lighting_pass) {
 	if (simulation == nullptr || !simulation->is_using_rd() || p_rd != rendering_device) {
 		return;
 	}
 	_gather_scatter_lights();
 	const uint64_t out = simulation->render(p_view, p_projection, p_size.x, p_size.y,
 			p_depth.get_id(), p_size.x, p_size.y, p_color.get_id(),
-			(light_scattering && !scatter_lights.is_empty()) ? &scatter_source : nullptr);
+			(light_scattering && !scatter_lights.is_empty()) ? &scatter_source : nullptr,
+			p_lighting_pass);
 	render_calls++;
 	render_outputs += out != 0 ? 1 : 0;
 	if (out != 0 && out != p_color.get_id()) {

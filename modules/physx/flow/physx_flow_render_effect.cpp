@@ -355,24 +355,23 @@ void PhysXFlowRenderEffect::_render(int p_callback_type, const RenderData *p_ren
 		return;
 	}
 
-	// The projection the depth buffer was rendered with: Godot's camera
-	// projection already carries its depth correction (reverse Z in 0..1, Y
-	// as this target needs) and TAA jitter, so Flow reconstructs scene
-	// positions from depth exactly.
-	Projection projection = scene->get_cam_projection();
+	// An XR camera renders its eyes as the layers of one frame, each with its
+	// own projection (on top of the shared camera transform): every eye gets
+	// its own pass, on its own slice of the color and depth. Non-XR draws one
+	// view with the whole frame.
+	const uint32_t view_count = MAX(buffers->get_view_count(), 1u);
+
 	// Flow reads its targets with row 0 at clip-space +Y; Godot's are the
 	// other way up (checked on screen: without this the plume is upside
 	// down).
 	Projection y_flip;
 	y_flip.columns[1][1] = -1.0;
-	projection = y_flip * projection;
-	// A grid's world is the node's world: one Godot unit is one Flow unit,
-	// so the view is the camera's world->view transform directly.
+	// A grid's world is the node's world: one Godot unit is one Flow unit, so
+	// the view is the camera's world->view transform (shared by the eyes;
+	// each eye's offset rides in its projection).
 	const Projection view = Projection(scene->get_cam_transform().affine_inverse());
 	float view_f[16];
-	float projection_f[16];
 	to_flow_matrix(view, view_f);
-	to_flow_matrix(projection, projection_f);
 
 	// Each flow composites over what's drawn so far, so far ones go first.
 	const Vector3 eye = scene->get_cam_transform().origin;
@@ -389,15 +388,33 @@ void PhysXFlowRenderEffect::_render(int p_callback_type, const RenderData *p_ren
 			SWAP(sorted[j - 1], sorted[j]);
 		}
 	}
-	for (PhysXFlowSimulation3D *flow : sorted) {
+	// The frame's lights and shadow atlas, for the scattering pass's shadows.
+	const RenderDataRD *render_data_rd = dynamic_cast<const RenderDataRD *>(p_render_data);
+
+	for (uint32_t v = 0; v < view_count; v++) {
+		const RID view_color = view_count > 1 ? buffers->get_internal_texture(v) : color;
+		const RID view_depth = view_count > 1 ? buffers->get_depth_texture(v) : depth;
+		if (!view_color.is_valid() || !view_depth.is_valid()) {
+			continue;
+		}
+		// The projection the depth buffer was rendered with: Godot's camera
+		// projection already carries its depth correction (reverse Z in 0..1,
+		// Y as this target needs) and TAA jitter, so Flow reconstructs scene
+		// positions from depth exactly. An eye's has the eye's offset in it.
+		const Projection camera_projection = view_count > 1 ? scene->get_view_projection(v) : scene->get_cam_projection();
+		float projection_f[16];
+		to_flow_matrix(y_flip * camera_projection, projection_f);
 		// For the light scattering pass: clip space (as the depth buffer has it)
-		// straight back to world meters, plus the frame's lights and shadow
-		// atlas for the scattering pass's shadows.
-		const Projection inv_view_projection = (projection * view).inverse();
-		const RenderDataRD *render_data_rd = dynamic_cast<const RenderDataRD *>(p_render_data);
-		flow->render_rd(this, rd, view_f, projection_f, size, depth, color, inv_view_projection, eye,
-				render_data_rd != nullptr ? render_data_rd->lights : nullptr,
-				render_data_rd != nullptr ? render_data_rd->shadow_atlas : RID());
+		// straight back to world meters.
+		const Projection inv_view_projection = (camera_projection * view).inverse();
+		const Vector3 view_eye = view_count > 1 ? scene->get_cam_transform().xform(scene->get_view_eye_offset(v)) : eye;
+
+		for (PhysXFlowSimulation3D *flow : sorted) {
+			flow->render_rd(this, rd, view_f, projection_f, size, view_depth, view_color, inv_view_projection, view_eye,
+					render_data_rd != nullptr ? render_data_rd->lights : nullptr,
+					render_data_rd != nullptr ? render_data_rd->shadow_atlas : RID(),
+					v == 0);
+		}
 	}
 }
 

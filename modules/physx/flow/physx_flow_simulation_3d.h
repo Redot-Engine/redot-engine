@@ -202,7 +202,7 @@ class PhysXFlowSimulation3D : public Node3D {
 	friend class PhysXFlowRenderEffect;
 	void render_rd(PhysXFlowRenderEffect *p_effect, RenderingDevice *p_rd, const float p_view[16], const float p_projection[16],
 			const Size2i &p_size, const RID &p_depth, const RID &p_color, const Projection &p_inv_view_projection,
-			const Vector3 &p_camera, const PagedArray<RID> *p_lights, const RID &p_shadow_atlas);
+			const Vector3 &p_camera, const PagedArray<RID> *p_lights, const RID &p_shadow_atlas, bool p_lighting_pass);
 	void _gather_scatter_lights();
 	void _fill_scatter_shadows(LocalVector<FlowScatterRD::Light> &r_lights, const PagedArray<RID> *p_instances, const RID &p_shadow_atlas, uint32_t p_flags) const;
 	FlowScatterRD &get_scatter();
