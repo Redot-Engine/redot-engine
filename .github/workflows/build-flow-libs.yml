@@ -1,0 +1,133 @@
+name: 🌊 Build Flow SDK libs (nvflow)
+
+# Builds NVIDIA Flow (nvflow / nvflowext) from the upstream NVIDIA-Omniverse/PhysX
+# monorepo on GitHub runners.
+# - Windows: build.bat needs `CL=/wd4756` (MSVC 14.44 emits C4756 in nvflowext;
+#   the premake projects treat warnings as errors).
+# - Linux: builds only the library targets (nvfloweditor needs GL/GLFW/X11 dev
+#   packages we don't install).
+
+on:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    name: Windows (nvflow.dll, nvflowext.dll)
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout NVIDIA-Omniverse/PhysX
+        uses: actions/checkout@v4
+        with:
+          repository: NVIDIA-Omniverse/PhysX
+          ref: main
+          path: physx-sdk
+
+      - name: Checkout engine repo (module SDK patches)
+        uses: actions/checkout@v4
+        with:
+          path: engine
+
+      - name: Apply module SDK patches
+        shell: pwsh
+        run: |
+          # 0004 teaches build.bat the VS 2026 + v143 fallback; a no-op while
+          # the runner image ships VS 2022 (and skipped when already applied
+          # after an upstream change lands it).
+          $patch = "engine/modules/physx/misc/physx_patches/0004-vs2026-v143.patch"
+          if (Select-String -Path physx-sdk/flow/build.bat -Pattern "godot_physx: the vs2022 projects ask" -Quiet) {
+            "0004 already applied"
+          } else {
+            git apply "$patch"
+            "0004 applied"
+          }
+
+      - name: Build Flow (debug + release)
+        shell: cmd
+        run: |
+          cd physx-sdk\flow
+          set CL=/wd4756
+          build.bat
+
+      - name: Stage binaries
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path stage | Out-Null
+          Get-ChildItem -Recurse physx-sdk/flow -Include `
+            nvflow.dll, nvflowext.dll, nvflow_rtx.dll, nvflowext_rtx.dll,
+            nvflow.pdb, nvflowext.pdb, nvflow_rtx.pdb, nvflowext_rtx.pdb |
+            Where-Object { $_.FullName -match 'release' } |
+            Copy-Item -Destination stage
+          Get-ChildItem stage
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flow-libs-windows-x64
+          path: stage/
+
+  linux:
+    name: Linux (libnvflow.so, libnvflowext.so)
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Install GL/X11 dev headers (safety for SDK projects)
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libx11-dev libxext-dev libxi-dev libxcursor-dev
+
+      - name: Checkout NVIDIA-Omniverse/PhysX
+        uses: actions/checkout@v4
+        with:
+          repository: NVIDIA-Omniverse/PhysX
+          ref: main
+          path: physx-sdk
+
+      - name: Checkout engine repo (module SDK patches)
+        uses: actions/checkout@v4
+        with:
+          path: engine
+
+      - name: Fetch packman dependencies (includes Linux premake)
+        shell: bash
+        run: |
+          cd physx-sdk/flow
+          chmod +x build.sh generate_projects.sh buildtools/packman/packman
+          ./buildtools/packman/packman pull ./dependencies.xml -p linux-x86_64
+
+      - name: Build Flow library targets (release)
+        shell: bash
+        run: |
+          cd physx-sdk/flow
+          chmod +x external/premake/linux-x86_64/premake5 generate_projects.sh
+          ./generate_projects.sh
+          cd _compiler/gmake2
+          # Library targets only: nvfloweditor needs GL/GLFW/X11 and is not
+          # part of the engine runtime.
+          make config=release_x86_64 nvflow nvflowext nvflowshadertool nvflow_rtx nvflowext_rtx
+
+      - name: Clear the spurious x86-64-v3 ISA requirement
+        shell: bash
+        run: |
+          # Flow's premake emits an X86_ISA_1_NEEDED = v3 note (no AVX
+          # instruction in the code); glibc 2.41+ refuses the libraries on
+          # pre-v3 CPUs. Demote the note to baseline (see the tool's doc).
+          find physx-sdk/flow/_build -name "libnvflow*.so" \
+            | xargs python3 engine/modules/physx/misc/fix_elf_isa_note.py --level 1
+
+      - name: Stage binaries
+        shell: bash
+        run: |
+          mkdir -p stage
+          find physx-sdk/flow/_build -name "libnvflow.so" -o \
+               -name "libnvflowext.so" | xargs -I{} cp {} stage/
+          ls -la stage
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flow-libs-linux-x64
+          path: stage/

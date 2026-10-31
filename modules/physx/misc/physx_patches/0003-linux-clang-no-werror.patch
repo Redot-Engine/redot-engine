@@ -1,0 +1,22 @@
+Don't turn warnings into errors in the Linux clang build.
+
+The Linux CMake builds PhysX with -Werror -Weverything. -Weverything enables
+every warning the compiler knows, so each new clang release adds warnings the
+pinned PhysX source doesn't silence, and the build fails on a toolchain newer
+than the one NVIDIA tested with (clang 22: -Wmissing-include-dirs, -Wnrvo,
+-Wformat-signedness). Keep the warnings, drop -Werror, so the SDK builds with
+any current clang.
+
+diff --git a/physx/source/compiler/cmake/linux/CMakeLists.txt b/physx/source/compiler/cmake/linux/CMakeLists.txt
+index 312cf89..4f389b3 100644
+--- a/physx/source/compiler/cmake/linux/CMakeLists.txt
++++ b/physx/source/compiler/cmake/linux/CMakeLists.txt
+@@ -27,7 +27,7 @@
+ STRING(TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_LOWERCASE)
+ 
+ #TODO: Fix warnings
+-SET(CLANG_WARNINGS "-ferror-limit=0 -Wall -Wextra -Werror -Weverything\
++SET(CLANG_WARNINGS "-ferror-limit=0 -Wall -Wextra -Weverything\
+     -Wno-unused-but-set-variable \
+     -Wno-switch-default \
+     -Wno-cast-qual \

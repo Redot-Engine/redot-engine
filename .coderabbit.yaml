@@ -13,8 +13,10 @@ reviews:
     enabled: true
     drafts: false
     base_branches:
-      - "dev"
+      - "master"
   path_filters:
     - "!thirdparty/**"
+    - "!modules/physx/test/**"
+    - "!modules/physx/doc_classes/**"
 chat:
   auto_reply: true

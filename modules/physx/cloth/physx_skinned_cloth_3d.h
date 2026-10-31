@@ -1,0 +1,222 @@
+/**************************************************************************/
+/*  physx_skinned_cloth_3d.h                                              */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#pragma once
+
+#include "skinned_cloth_solver.h"
+
+#include "core/templates/local_vector.h"
+#include "scene/3d/node_3d.h"
+
+class MeshInstance3D;
+class Skeleton3D;
+class ShaderMaterial;
+class Texture2DRD;
+
+// Cloth on a region of a character's skinned mesh -- a robe, cape or skirt
+// that's part of the character, not a separate pinned sheet. Each vertex has
+// a max distance it may stray from where the animation puts it: 0 follows the
+// animation exactly (shoulders, waistband), larger values swing freely (hem,
+// cape tail). The mesh is simulated on the GPU with compute shaders (any GPU)
+// and collides with capsules on the character's bones. The source mesh is
+// hidden and drawn instead from the simulated positions.
+class PhysXSkinnedCloth3D : public Node3D {
+	GDCLASS(PhysXSkinnedCloth3D, Node3D);
+
+	NodePath mesh_instance_path;
+	NodePath body_mesh_path; // optional: fit the body capsules to this skinned mesh
+	int surface = 0;
+	PackedFloat32Array max_distances; // per vertex of the surface; empty = auto from height
+	float pin_height = 1.3f; // auto paint: at/above this bind-space height the cloth follows the animation
+	float max_distance = 0.4f; // auto paint: max distance at the lowest point, ramping up from pin_height
+	bool use_vertex_color = false; // unpainted: the mesh's vertex colour red channel x max_distance
+	int substeps = 8;
+	float stiffness = 0.9f;
+	float bend_stiffness = 0.3f;
+	float damping = 0.05f;
+	float thickness = 0.012f;
+	float backstop = 0.02f;
+	float animation_drive = 0.0f;
+	bool self_collision = false;
+	float self_collision_thickness = 0.02f;
+	float collision_radius_scale = 1.0f;
+	bool collide_with_body = true;
+	bool simulating = true;
+	// Gravity: the world's (this node's physics space default gravity -- the
+	// project setting) unless use_world_gravity is off (then fixed_gravity),
+	// plus extra_acceleration (the game's force fields, wind, on top).
+	bool use_world_gravity = true;
+	Vector3 fixed_gravity = Vector3(0, -9.8f, 0);
+	Vector3 extra_acceleration;
+
+	SkinnedClothSolver *solver = nullptr;
+	MeshInstance3D *render_instance = nullptr;
+	ObjectID render_instance_id;
+	Ref<ShaderMaterial> render_material;
+	Ref<Texture2DRD> pos_texture;
+	Ref<Texture2DRD> nrm_texture;
+	ObjectID source_id;
+	ObjectID skeleton_id;
+	Vector<int> bind_bones; // skeleton bone index per skin bind
+	Vector<Transform3D> bind_poses;
+	struct Capsule {
+		// Automatic: between two bones' heads. From a physical bone: a
+		// capsule (or sphere) shape fixed to one bone, or a box (is_box).
+		int bone_a = -1;
+		int bone_b = -1;
+		float radius_a = 0.05f;
+		float radius_b = 0.05f;
+		bool from_shape = false;
+		bool is_box = false;
+		bool active = true;
+		ObjectID shape_id; // the CollisionShape3D a from_shape record re-reads
+		ObjectID body_id; // the PhysicalBone3D carrying it
+		Transform3D shape_local; // bone space: body_offset * shape transform
+		float half_length = 0.0f; // along the shape's local Y
+		Vector3 half_extents; // is_box: the box's half extents
+	};
+	bool using_physical_bones = false;
+	Vector<Capsule> capsules;
+	PackedFloat32Array prev_capsules; // last frame's capsule ends, for blending across substeps
+	int particle_count = 0;
+	bool built = false;
+	bool build_pending = false;
+
+	void _try_build();
+	void _clear();
+	void _find_capsules(Skeleton3D *p_skeleton);
+	bool _find_physical_bone_shapes(Skeleton3D *p_skeleton);
+	void _fit_capsules(Skeleton3D *p_skeleton, MeshInstance3D *p_body);
+	// The skeleton's FINAL pose (after any SkeletonModifier3D) is only live
+	// inside its skeleton_updated window: capture the poses there and step on
+	// them; a frame without a skeleton update steps late on the last capture
+	// (_late_step), placed where the skeleton is now.
+	LocalVector<Transform3D> captured_poses; // per bind bone, skeleton-local pose * bind pose
+	LocalVector<Transform3D> captured_capsule_poses_a; // per capsule, skeleton-local
+	LocalVector<Transform3D> captured_capsule_poses_b;
+	PackedFloat32Array captured_bones; // placed solver input: world-space bone matrices
+	// The simulated surface is drawn by the render twin; the source's own
+	// copy of it is hidden -- the whole node when the mesh has one surface,
+	// only that surface (an override material that draws nothing) when the
+	// mesh has others. The user's own override goes back when the cloth does.
+	bool hid_source_node = false;
+	int hidden_surface = -1;
+	Ref<Material> saved_surface_override;
+	static Ref<ShaderMaterial> hide_material;
+	void _hide_source(MeshInstance3D *p_source);
+	void _unhide_source();
+
+	bool has_capture = false;
+	uint64_t last_step_frame = 0;
+	double pending_delta = 0.0;
+
+	void _connect_skeleton(Skeleton3D *p_skeleton);
+	void _disconnect_skeleton();
+	void _capture_pose(Skeleton3D *p_skeleton);
+	void _place_capture(Skeleton3D *p_skeleton);
+	// The live size and placement of a physical-bone shape; false (and
+	// inactive) when it is gone, disabled or no longer a shape the cloth
+	// collides with.
+	bool _read_shape(Capsule &r_c);
+	void _step();
+	void _late_step();
+	void _on_skeleton_updated();
+
+protected:
+	void _notification(int p_what);
+	static void _bind_methods();
+
+public:
+	void set_mesh_instance_path(const NodePath &p_path);
+	NodePath get_mesh_instance_path() const { return mesh_instance_path; }
+	void set_body_mesh_path(const NodePath &p_path);
+	NodePath get_body_mesh_path() const { return body_mesh_path; }
+	void set_surface(int p_surface);
+	int get_surface() const { return surface; }
+	void set_max_distances(const PackedFloat32Array &p_distances);
+	PackedFloat32Array get_max_distances() const { return max_distances; }
+	void set_pin_height(float p_height);
+	float get_pin_height() const { return pin_height; }
+	void set_max_distance(float p_distance);
+	float get_max_distance() const { return max_distance; }
+	void set_use_vertex_color(bool p_enabled);
+	bool get_use_vertex_color() const { return use_vertex_color; }
+
+	// The source MeshInstance3D / surface arrays, and the max distance each of
+	// its vertices gets: painted (max_distances), else the vertex colour red
+	// channel (use_vertex_color), else the height ramp. Also used by the
+	// editor's paint tool.
+	MeshInstance3D *get_source_mesh_instance() const;
+	PackedFloat32Array get_effective_max_distances() const;
+	PackedFloat32Array compute_height_ramp() const;
+	void set_substeps(int p_substeps);
+	int get_substeps() const { return substeps; }
+	void set_stiffness(float p_stiffness);
+	float get_stiffness() const { return stiffness; }
+	void set_bend_stiffness(float p_stiffness);
+	float get_bend_stiffness() const { return bend_stiffness; }
+	void set_damping(float p_damping);
+	float get_damping() const { return damping; }
+	void set_thickness(float p_thickness);
+	float get_thickness() const { return thickness; }
+	void set_backstop(float p_distance);
+	float get_backstop() const { return backstop; }
+	void set_self_collision(bool p_enabled);
+	bool get_self_collision() const { return self_collision; }
+	void set_self_collision_thickness(float p_thickness);
+	float get_self_collision_thickness() const { return self_collision_thickness; }
+	void set_animation_drive(float p_drive);
+	float get_animation_drive() const { return animation_drive; }
+	void set_collide_with_body(bool p_enabled);
+	bool get_collide_with_body() const { return collide_with_body; }
+	void set_collision_radius_scale(float p_scale);
+	float get_collision_radius_scale() const { return collision_radius_scale; }
+	void set_simulating(bool p_simulating);
+	bool is_simulating() const { return simulating; }
+
+	void set_use_world_gravity(bool p_enabled);
+	bool get_use_world_gravity() const { return use_world_gravity; }
+	void set_fixed_gravity(const Vector3 &p_gravity);
+	Vector3 get_fixed_gravity() const { return fixed_gravity; }
+	void set_extra_acceleration(const Vector3 &p_acceleration);
+	Vector3 get_extra_acceleration() const { return extra_acceleration; }
+	// The gravity the cloth steps with right now (world or fixed, + extra_acceleration), m/s^2.
+	Vector3 get_effective_gravity() const;
+
+	void rebuild();
+	void reset();
+	int get_particle_count() const { return particle_count; }
+	Array get_body_capsules() const;
+
+	PhysXSkinnedCloth3D();
+	~PhysXSkinnedCloth3D();
+};
