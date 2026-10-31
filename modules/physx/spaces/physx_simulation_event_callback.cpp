@@ -84,8 +84,10 @@ static void _fill_body_contact(PhysXBody3D *p_body, const physx::PxContactPairPo
 	bc.local_normal = Vector3(sign * p_cp.normal.x, sign * p_cp.normal.y, sign * p_cp.normal.z);
 	bc.impulse = Vector3(sign * p_cp.impulse.x, sign * p_cp.impulse.y, sign * p_cp.impulse.z);
 	bc.local_shape = p_local_shape >= 0 ? p_local_shape : 0;
-	bc.collider = p_collider_data->rid;
-	bc.collider_id = p_collider_data->object_id;
+	// A removed side carries no data: the contact is still reported, with an
+	// empty collider identity.
+	bc.collider = p_collider_data != nullptr ? p_collider_data->rid : RID();
+	bc.collider_id = p_collider_data != nullptr ? p_collider_data->object_id : ObjectID();
 	bc.collider_shape = p_collider_shape >= 0 ? p_collider_shape : 0;
 	bc.collider_position = Vector3(p_cp.position.x, p_cp.position.y, p_cp.position.z);
 	bc.penetration_depth = -p_cp.separation; // negative separation == penetration depth
@@ -121,25 +123,27 @@ void PhysXSimulationEventCallback::onContact(const physx::PxContactPairHeader &p
 		return;
 	}
 
-	// When a pair requested eNOTIFY_TOUCH_LOST / eNOTIFY_THRESHOLD_FORCE_LOST,
-	// PhysX keeps notifying it after one side is deleted and passes the now
-	// dangling actor pointer with eREMOVED_ACTOR_0/1 set. The SDK contract
-	// (PxContactPairHeader::actors) forbids dereferencing a deleted actor's
-	// pointer, and the cross-referenced data (rid, shape index, velocity) is
-	// unreadable once the wrapper is freed, so such pairs are skipped whole.
+	// A body freed since the last step still gets its pairs' final report
+	// here, with the header flagged eREMOVED_ACTOR_0/1: its actor may already
+	// be released and the wrapper behind its userData deleted, so the SDK
+	// contract (PxContactPairHeader::actors) forbids dereferencing that side.
+	// It resolves to no body and no data, its shape pairs are skipped below as
+	// removed shapes, and the surviving side keeps its report and the debug
+	// contacts.
 	const physx::PxU32 header_flags = pairHeader.flags;
-	if (header_flags & (physx::PxU32)(physx::PxContactPairHeaderFlag::eREMOVED_ACTOR_0 | physx::PxContactPairHeaderFlag::eREMOVED_ACTOR_1)) {
+	const bool removed_actor0 = (header_flags & (physx::PxU32)physx::PxContactPairHeaderFlag::eREMOVED_ACTOR_0) != 0;
+	const bool removed_actor1 = (header_flags & (physx::PxU32)physx::PxContactPairHeaderFlag::eREMOVED_ACTOR_1) != 0;
+
+	PhysXActorUserData *a0 = removed_actor0 ? nullptr : static_cast<PhysXActorUserData *>(pairHeader.actors[0]->userData);
+	PhysXActorUserData *a1 = removed_actor1 ? nullptr : static_cast<PhysXActorUserData *>(pairHeader.actors[1]->userData);
+	// A live side without userData resolves to nothing (as before); a removed
+	// side is the only legitimate null here.
+	if ((!a0 && !removed_actor0) || (!a1 && !removed_actor1)) {
 		return;
 	}
 
-	PhysXActorUserData *a0 = static_cast<PhysXActorUserData *>(pairHeader.actors[0]->userData);
-	PhysXActorUserData *a1 = static_cast<PhysXActorUserData *>(pairHeader.actors[1]->userData);
-	if (!a0 || !a1) {
-		return;
-	}
-
-	PhysXBody3D *body0 = (a0->object && a0->object->get_type() == PhysXObject3D::OBJECT_TYPE_BODY) ? static_cast<PhysXBody3D *>(a0->object) : nullptr;
-	PhysXBody3D *body1 = (a1->object && a1->object->get_type() == PhysXObject3D::OBJECT_TYPE_BODY) ? static_cast<PhysXBody3D *>(a1->object) : nullptr;
+	PhysXBody3D *body0 = (a0 && a0->object && a0->object->get_type() == PhysXObject3D::OBJECT_TYPE_BODY) ? static_cast<PhysXBody3D *>(a0->object) : nullptr;
+	PhysXBody3D *body1 = (a1 && a1->object && a1->object->get_type() == PhysXObject3D::OBJECT_TYPE_BODY) ? static_cast<PhysXBody3D *>(a1->object) : nullptr;
 
 	// Debug-contact recording is independent of per-body contact reporting:
 	// "Visible Collision Shapes" wants every contact point, even when neither
@@ -152,8 +156,9 @@ void PhysXSimulationEventCallback::onContact(const physx::PxContactPairHeader &p
 	}
 
 	// Pre-resolve the dynamic actors once per pair header for velocity lookups.
-	physx::PxRigidDynamic *dyn0 = pairHeader.actors[0]->is<physx::PxRigidDynamic>();
-	physx::PxRigidDynamic *dyn1 = pairHeader.actors[1]->is<physx::PxRigidDynamic>();
+	// A removed side's actor is dangling — not read.
+	physx::PxRigidDynamic *dyn0 = removed_actor0 ? nullptr : pairHeader.actors[0]->is<physx::PxRigidDynamic>();
+	physx::PxRigidDynamic *dyn1 = removed_actor1 ? nullptr : pairHeader.actors[1]->is<physx::PxRigidDynamic>();
 
 	for (physx::PxU32 p = 0; p < nbPairs; p++) {
 		const physx::PxContactPair &pair = pairs[p];
