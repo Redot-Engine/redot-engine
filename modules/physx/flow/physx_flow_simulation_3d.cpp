@@ -39,6 +39,7 @@
 #include "physx_flow_render_effect.h"
 
 #include "core/config/engine.h"
+#include "core/object/callable_method_pointer.h"
 #include "core/object/class_db.h"
 #include "core/object/object_id.h"
 #include "core/os/os.h"
@@ -599,6 +600,96 @@ void PhysXFlowSimulation3D::_step(double p_delta) {
 
 // ---- Light + render settings -------------------------------------------------
 
+// The scene's Light3Ds, indexed once for all flows: one find_children sweep
+// when the first flow enters the tree, then kept current from the SceneTree's
+// node_added / node_removed. A lookup takes one class's lights under its own
+// root in tree order — the same pick a per-flow find_children walk produced,
+// without walking a 100k-node scene every 60 steps per flow (a 225 ms frame
+// there). The directional search runs on the step thread and the scattering
+// search on the render thread while the signals fire on the main thread, so
+// the index is mutex-guarded and Node access stays outside the lock.
+static Mutex flow_lights_mutex;
+static ObjectID flow_lights_tree;
+static uint32_t flow_lights_users = 0;
+static LocalVector<ObjectID> flow_directional_lights;
+static LocalVector<ObjectID> flow_omni_lights;
+static LocalVector<ObjectID> flow_spot_lights;
+
+// Dispatches one light into its class vector; flow_lights_mutex must be held.
+// The find guard lets the fill sweep run with the signals already live.
+static void _flow_light_index(Node *p_light, const ObjectID &p_id) {
+	if (Object::cast_to<DirectionalLight3D>(p_light) != nullptr) {
+		if (flow_directional_lights.find(p_id) < 0) {
+			flow_directional_lights.push_back(p_id);
+		}
+	} else if (Object::cast_to<OmniLight3D>(p_light) != nullptr) {
+		if (flow_omni_lights.find(p_id) < 0) {
+			flow_omni_lights.push_back(p_id);
+		}
+	} else if (Object::cast_to<SpotLight3D>(p_light) != nullptr) {
+		if (flow_spot_lights.find(p_id) < 0) {
+			flow_spot_lights.push_back(p_id);
+		}
+	}
+}
+
+static void _flow_light_added(Node *p_node) {
+	const ObjectID id = p_node->get_instance_id();
+	MutexLock lock(flow_lights_mutex);
+	_flow_light_index(p_node, id);
+}
+
+// An id lives in at most one class vector, so erasing scans all three without
+// a class check (node_removed fires for every node, lights or not).
+static void _flow_light_removed(Node *p_node) {
+	const ObjectID id = p_node->get_instance_id();
+	MutexLock lock(flow_lights_mutex);
+	for (LocalVector<ObjectID> *ids : { &flow_directional_lights, &flow_omni_lights, &flow_spot_lights }) {
+		const int64_t at = ids->find(id);
+		if (at >= 0) {
+			ids->remove_at((uint32_t)at);
+			break;
+		}
+	}
+}
+
+static void _flow_lights_watch(SceneTree *p_tree) {
+	MutexLock lock(flow_lights_mutex);
+	if (flow_lights_users++ > 0) {
+		return;
+	}
+	flow_lights_tree = p_tree->get_instance_id();
+	p_tree->connect("node_added", callable_mp_static(&_flow_light_added));
+	p_tree->connect("node_removed", callable_mp_static(&_flow_light_removed));
+	TypedArray<Node> found = p_tree->get_root()->find_children("*", "Light3D", true, false);
+	for (int i = 0; i < found.size(); i++) {
+		Node *light = Object::cast_to<Node>(found[i]);
+		_flow_light_index(light, light->get_instance_id());
+	}
+}
+
+static void _flow_lights_unwatch() {
+	MutexLock lock(flow_lights_mutex);
+	if (flow_lights_users == 0 || --flow_lights_users > 0) {
+		return;
+	}
+	SceneTree *tree = Object::cast_to<SceneTree>(ObjectDB::get_instance(flow_lights_tree));
+	if (tree != nullptr) {
+		tree->disconnect("node_added", callable_mp_static(&_flow_light_added));
+		tree->disconnect("node_removed", callable_mp_static(&_flow_light_removed));
+	}
+	flow_lights_tree = ObjectID();
+	flow_directional_lights.clear();
+	flow_omni_lights.clear();
+	flow_spot_lights.clear();
+}
+
+// The indexed lights of one class, copied for lock-free Node access.
+static LocalVector<ObjectID> _flow_lights_snapshot(const LocalVector<ObjectID> &p_ids) {
+	MutexLock lock(flow_lights_mutex);
+	return p_ids;
+}
+
 // The first visible DirectionalLight3D in the scene, re-found every ~60
 // steps; the gas self-shadows along its -Z (toward the light is +Z).
 void PhysXFlowSimulation3D::_gather_light(Vector3 &r_direction, Color &r_color, Color &r_ambient) {
@@ -611,14 +702,20 @@ void PhysXFlowSimulation3D::_gather_light(Vector3 &r_direction, Color &r_color, 
 			root = get_tree()->get_current_scene();
 		}
 		if (root != nullptr) {
-			TypedArray<Node> lights = root->find_children("*", "DirectionalLight3D", true, false);
-			for (int i = 0; i < lights.size(); i++) {
-				DirectionalLight3D *l = Object::cast_to<DirectionalLight3D>(lights[i]);
-				if (l != nullptr && l->is_visible_in_tree()) {
-					light = l;
-					break;
+			// Tree order is the walk's order: the visible light with the
+			// smallest tree order is the one find_children listed first.
+			const LocalVector<ObjectID> indexed = _flow_lights_snapshot(flow_directional_lights);
+			DirectionalLight3D *first_visible = nullptr;
+			for (const ObjectID &id : indexed) {
+				DirectionalLight3D *l = Object::cast_to<DirectionalLight3D>(ObjectDB::get_instance(id));
+				if (l == nullptr || !l->is_inside_tree() || !l->is_visible_in_tree() || !root->is_ancestor_of(l)) {
+					continue;
+				}
+				if (first_visible == nullptr || first_visible->is_greater_than(l)) {
+					first_visible = l;
 				}
 			}
+			light = first_visible;
 		}
 		light_id = light != nullptr ? light->get_instance_id() : ObjectID();
 	}
@@ -755,10 +852,15 @@ void PhysXFlowSimulation3D::_gather_scatter_lights() {
 				root = main_root;
 			}
 			if (root != nullptr) {
-				for (const char *type : { "OmniLight3D", "SpotLight3D" }) {
-					TypedArray<Node> found = root->find_children("*", type, true, false);
-					for (int i = 0; i < found.size(); i++) {
-						scatter_light_ids.push_back(Object::cast_to<Node>(found[i])->get_instance_id());
+				// Omni list then spot list, as the two walks ordered them.
+				const LocalVector<ObjectID> omni = _flow_lights_snapshot(flow_omni_lights);
+				const LocalVector<ObjectID> spot = _flow_lights_snapshot(flow_spot_lights);
+				for (const LocalVector<ObjectID> *ids : { &omni, &spot }) {
+					for (const ObjectID &id : *ids) {
+						Light3D *l = Object::cast_to<Light3D>(ObjectDB::get_instance(id));
+						if (l != nullptr && root->is_ancestor_of(l)) {
+							scatter_light_ids.push_back(id);
+						}
 					}
 				}
 			}
@@ -902,6 +1004,18 @@ void PhysXFlowSimulation3D::_update_render() {
 
 void PhysXFlowSimulation3D::_notification(int p_what) {
 	switch (p_what) {
+		case NOTIFICATION_ENTER_TREE: {
+			// The light index is a game-side facility: the searches only run
+			// when a simulation steps (never under the editor hint, FLOW-9).
+			if (!Engine::get_singleton()->is_editor_hint()) {
+				_flow_lights_watch(get_tree());
+			}
+		} break;
+		case NOTIFICATION_EXIT_TREE: {
+			if (!Engine::get_singleton()->is_editor_hint()) {
+				_flow_lights_unwatch();
+			}
+		} break;
 		case NOTIFICATION_ENTER_WORLD: {
 			// FLOW-9 editor guard (matches the water node's post-crash hard
 			// guard): opening a scene used to load nvflow, create a Vulkan
