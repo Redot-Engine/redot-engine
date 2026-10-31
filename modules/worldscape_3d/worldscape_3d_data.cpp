@@ -413,7 +413,9 @@ void WorldScape3DData::load_directory(const String &p_dir) {
 		return;
 	}
 
-	_clear();
+	// Load everything first so unsupported data leaves the terrain untouched
+	Vector<Ref<WorldScape3DRegion>> loaded;
+	Vector<String> loaded_paths;
 	for (int i = 0; i < files.size(); i++) {
 		String fname = files[i];
 		String path = p_dir + String("/") + fname;
@@ -429,19 +431,27 @@ void WorldScape3DData::load_directory(const String &p_dir) {
 			continue;
 		}
 		LOG(DEBUG, "Loaded region: ", loc, " size: ", region->get_region_size());
-		if (_regions.is_empty()) {
-			_terrain->set_region_size(static_cast<WorldScape3D::RegionSize>(region->get_region_size()));
-		} else {
-			if (_terrain->get_region_size() != static_cast<WorldScape3D::RegionSize>(region->get_region_size())) {
-				LOG(ERROR, "Region size mismatch. First loaded: ", _terrain->get_region_size(), " next: ",
-						region->get_region_size(), " in file: ", path);
-				return;
-			}
+		if (region->get_region_size() < WorldScape3D::SIZE_512) {
+			LOG(ERROR, "Region size ", region->get_region_size(), " in file ", path, " is not supported. Nothing loaded");
+			return;
 		}
-		region->set_path(path, true);
+		if (!loaded.is_empty() && loaded[0]->get_region_size() != region->get_region_size()) {
+			LOG(ERROR, "Region size mismatch. First loaded: ", loaded[0]->get_region_size(), " next: ",
+					region->get_region_size(), " in file: ", path, ". Nothing loaded");
+			return;
+		}
 		region->set_location(loc);
-		region->set_version(CURRENT_VERSION); // Sends upgrade warning if old version
-		add_region(region, false);
+		loaded.push_back(region);
+		loaded_paths.push_back(path);
+	}
+	_clear();
+	for (int i = 0; i < loaded.size(); i++) {
+		if (_regions.is_empty()) {
+			_terrain->set_region_size(static_cast<WorldScape3D::RegionSize>(loaded[i]->get_region_size()));
+		}
+		loaded[i]->set_path(loaded_paths[i], true);
+		loaded[i]->set_version(CURRENT_VERSION); // Sends upgrade warning if old version
+		add_region(loaded[i], false);
 	}
 	update_maps(TYPE_MAX, true, false);
 }
@@ -457,6 +467,10 @@ void WorldScape3DData::load_region(const Vector2i &p_region_loc, const String &p
 	Ref<WorldScape3DRegion> region = ResourceLoader::load(path, "WorldScape3DRegion", ResourceFormatLoader::CacheMode::CACHE_MODE_IGNORE);
 	if (region.is_null()) {
 		LOG(ERROR, "Cannot load region at ", path);
+		return;
+	}
+	if (region->get_region_size() < WorldScape3D::SIZE_512) {
+		LOG(ERROR, "Region size ", region->get_region_size(), " in file ", path, " is not supported");
 		return;
 	}
 	if (_regions.is_empty()) {
