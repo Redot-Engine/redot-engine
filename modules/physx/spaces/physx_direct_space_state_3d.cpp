@@ -53,6 +53,8 @@
 #include "geometry/PxGeometryQuery.h"
 #include "geometry/PxMeshQuery.h"
 
+#include "core/math/face3.h"
+#include "core/math/geometry_3d.h"
 #include "core/templates/sort_array.h"
 
 // Orders motion contacts deepest-first (godot_space_3d _rest_cbk_result keeps
@@ -1043,6 +1045,120 @@ static physx::PxVec3 _round_sweep_contact_normal(const physx::PxGeometry &p_geom
 	return dist > 1e-4f ? to_core / dist : p_fallback;
 }
 
+// Real contact of a round mover (capsule/sphere) that overlaps a triangle mesh
+// or height field: the deepest of the overlapped triangles' closest pairs to
+// the mover's core — normal from the triangle point to the core, depth =
+// radius minus that distance (<= 0: only touching). PhysX's own result for a
+// sweep that starts overlapping a mesh is an axis-pick push whose position can
+// be a vertex metres away, so a character crossing the seam between two floor
+// pieces was pushed out along the wrong axis by that depth and snapped
+// sideways. Triangle lookups cap at ROUND_MESH_MAX_TRIANGLES per touch; deeper
+// triangles beyond the cap are left unchecked.
+constexpr physx::PxU32 ROUND_MESH_MAX_TRIANGLES = 64;
+
+enum RoundMeshContact {
+	ROUND_MESH_CONTACT_NONE, // the sweep's overlap found no triangle
+	ROUND_MESH_CONTACT_CORE, // the core crosses a triangle: no direction to push out along
+	ROUND_MESH_CONTACT_FOUND,
+};
+
+static RoundMeshContact _round_mesh_contact(const physx::PxGeometry &p_mover_geom, const physx::PxTransform &p_mover_pose,
+		const physx::PxShape *p_mesh_shape, const physx::PxTransform &p_mesh_pose,
+		physx::PxVec3 &r_normal, physx::PxVec3 &r_point, float &r_depth) {
+	const physx::PxGeometry &mesh_geom = p_mesh_shape->getGeometry();
+	const physx::PxGeometryType::Enum mesh_type = mesh_geom.getType();
+
+	physx::PxU32 triangle_ids[ROUND_MESH_MAX_TRIANGLES];
+	bool overflow = false;
+	physx::PxU32 nb_triangles = 0;
+	if (mesh_type == physx::PxGeometryType::eTRIANGLEMESH) {
+		nb_triangles = physx::PxMeshQuery::findOverlapTriangleMesh(p_mover_geom, p_mover_pose,
+				static_cast<const physx::PxTriangleMeshGeometry &>(mesh_geom), p_mesh_pose,
+				triangle_ids, ROUND_MESH_MAX_TRIANGLES, 0, overflow);
+	} else if (mesh_type == physx::PxGeometryType::eHEIGHTFIELD) {
+		nb_triangles = physx::PxMeshQuery::findOverlapHeightField(p_mover_geom, p_mover_pose,
+				static_cast<const physx::PxHeightFieldGeometry &>(mesh_geom), p_mesh_pose,
+				triangle_ids, ROUND_MESH_MAX_TRIANGLES, 0, overflow);
+	} else {
+		return ROUND_MESH_CONTACT_NONE;
+	}
+	if (nb_triangles == 0) {
+		return ROUND_MESH_CONTACT_NONE;
+	}
+
+	// The mover's core: a capsule's segment along its local X axis, a sphere's centre point.
+	physx::PxVec3 core_start = p_mover_pose.p;
+	physx::PxVec3 core_span(0.0f, 0.0f, 0.0f);
+	float mover_radius = 0.0f;
+	if (p_mover_geom.getType() == physx::PxGeometryType::eCAPSULE) {
+		const physx::PxCapsuleGeometry &capsule = static_cast<const physx::PxCapsuleGeometry &>(p_mover_geom);
+		const physx::PxVec3 half = p_mover_pose.q.getBasisVector0() * capsule.halfHeight;
+		core_start -= half;
+		core_span = half * 2.0f;
+		mover_radius = capsule.radius;
+	} else {
+		mover_radius = static_cast<const physx::PxSphereGeometry &>(p_mover_geom).radius;
+	}
+
+	const Vector3 core_start_g(core_start.x, core_start.y, core_start.z);
+	const Vector3 core_end_g(core_start.x + core_span.x, core_start.y + core_span.y, core_start.z + core_span.z);
+	const bool segment_core = core_span.magnitudeSquared() > 1e-8f;
+
+	real_t best_dist2 = Math::INF;
+	Vector3 best_core_g;
+	Vector3 best_triangle_g;
+	for (physx::PxU32 i = 0; i < nb_triangles; ++i) {
+		physx::PxTriangle triangle;
+		if (mesh_type == physx::PxGeometryType::eTRIANGLEMESH) {
+			physx::PxMeshQuery::getTriangle(static_cast<const physx::PxTriangleMeshGeometry &>(mesh_geom), p_mesh_pose, triangle_ids[i], triangle);
+		} else {
+			physx::PxMeshQuery::getTriangle(static_cast<const physx::PxHeightFieldGeometry &>(mesh_geom), p_mesh_pose, triangle_ids[i], triangle);
+		}
+		const Face3 triangle_face(Vector3(triangle.verts[0].x, triangle.verts[0].y, triangle.verts[0].z),
+				Vector3(triangle.verts[1].x, triangle.verts[1].y, triangle.verts[1].z),
+				Vector3(triangle.verts[2].x, triangle.verts[2].y, triangle.verts[2].z));
+		if (segment_core && Geometry3D::segment_intersects_triangle(core_start_g, core_end_g, triangle_face.vertex[0], triangle_face.vertex[1], triangle_face.vertex[2])) {
+			return ROUND_MESH_CONTACT_CORE;
+		}
+		// Closest pair: a core end against the face, or the core segment against one of the face's edges.
+		const Vector3 core_ends_g[2] = { core_start_g, core_end_g };
+		for (int end = 0; end < 2; ++end) {
+			const Vector3 on_face = triangle_face.get_closest_point_to(core_ends_g[end]);
+			const real_t dist2 = core_ends_g[end].distance_squared_to(on_face);
+			if (dist2 < best_dist2) {
+				best_dist2 = dist2;
+				best_core_g = core_ends_g[end];
+				best_triangle_g = on_face;
+			}
+		}
+		if (segment_core) {
+			for (int edge = 0; edge < 3; ++edge) {
+				Vector3 on_core;
+				Vector3 on_edge;
+				Geometry3D::get_closest_points_between_segments(core_start_g, core_end_g, triangle_face.vertex[edge], triangle_face.vertex[(edge + 1) % 3], on_core, on_edge);
+				const real_t dist2 = on_core.distance_squared_to(on_edge);
+				if (dist2 < best_dist2) {
+					best_dist2 = dist2;
+					best_core_g = on_core;
+					best_triangle_g = on_edge;
+				}
+			}
+		}
+	}
+
+	const real_t contact_dist = Math::sqrt(best_dist2);
+	if (contact_dist < (real_t)1e-4) {
+		return ROUND_MESH_CONTACT_CORE;
+	}
+	r_normal = physx::PxVec3(
+			(float)((best_core_g.x - best_triangle_g.x) / contact_dist),
+			(float)((best_core_g.y - best_triangle_g.y) / contact_dist),
+			(float)((best_core_g.z - best_triangle_g.z) / contact_dist));
+	r_point = physx::PxVec3((float)best_triangle_g.x, (float)best_triangle_g.y, (float)best_triangle_g.z);
+	r_depth = mover_radius - (float)contact_dist;
+	return ROUND_MESH_CONTACT_FOUND;
+}
+
 bool PhysXDirectSpaceState3D::body_test_motion(const PhysXBody3D &p_body, const PhysicsServer3D::MotionParameters &p_parameters, PhysicsServer3D::MotionResult *r_result) const {
 	_ensure_space_synced(space);
 	if (!space) {
@@ -1543,14 +1659,25 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 	// Mesh press-outs for a round mover (capsule/sphere) against
 	// triangle-mesh/heightfield terrain — the recover phase cannot
 	// depenetrate those geometries (computePenetration rejects them). The
-	// mover is pushed out along the true contact normal; a push that opposes
-	// the horizontal motion triggers a second sweep from the pushed-out pose
-	// (a sweep from inside reports only the push-out, and following that
-	// sideways along a step's edge lifts the body over steps far too tall to
-	// walk up).
+	// mover is pushed out along the true contact normal, and every mesh
+	// press-out triggers a second sweep from the pushed-out pose (a sweep
+	// that starts overlapping a mesh reports only that overlap and hides
+	// what else of the mesh lies ahead).
 	Vector3 mtd_recover;
 	bool resweep = false;
 	bool mtd_stop = false;
+
+	// The pass-0 floor press-out, kept for a second sweep that finds nothing:
+	// from the pushed-out pose the floor no longer overlaps, and without this
+	// the frame would report no contact at all — a grounded character airborne
+	// for a step.
+	bool resting_floor = false;
+	Vector3 resting_position;
+	Vector3 resting_normal;
+	real_t resting_depth = 0.0;
+	int resting_local_shape = -1;
+	const physx::PxRigidActor *resting_actor = nullptr;
+	const physx::PxShape *resting_shape = nullptr;
 
 	// The pose is constant through the cast phase (transform + quaternion).
 	const Quaternion cast_q = p_transform.basis.get_rotation_quaternion();
@@ -1565,6 +1692,16 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 			if (!resweep) {
 				break;
 			}
+			// A pass 0 whose only report is floor-like press-outs (nothing
+			// clamped the travel) hands that contact to this sweep's fallback
+			// below.
+			resting_floor = has_report && !mtd_stop && !hit_any;
+			resting_position = report_position;
+			resting_normal = report_normal;
+			resting_depth = report_depth;
+			resting_local_shape = report_local_shape;
+			resting_actor = report_actor;
+			resting_shape = report_shape;
 			hit_any = false;
 			min_hit_distance = motion_length;
 			stuck = false;
@@ -1631,28 +1768,46 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 					// stuck verdict — the recover phase was powerless here,
 					// and blocking every motion while pressed would freeze a
 					// walking character.
-					if (round_mover && -touch.distance > p_rest_slack && touch.actor && touch.shape && _sweep_hit_is_mesh(touch.shape)) {
-						const float pen = -touch.distance;
-						const physx::PxVec3 push_normal = _round_sweep_contact_normal(geom.any(), shape_pose, px_dir, touch.distance, touch.position, touch.normal);
-						if (_skip_one_sided_overlap(shape_ref.shape_blueprint, touch.shape,
-									physx::PxShapeExt::getGlobalPose(*touch.shape, *touch.actor),
+					if (round_mover && touch.actor && touch.shape && _sweep_hit_is_mesh(touch.shape)) {
+						// The sweep's own contact for an initial overlap is an
+						// axis-pick push against a chosen vertex — a seam
+						// between two floor pieces read as a 30 cm shove
+						// sideways. The overlapped triangles give the real
+						// contact: the closest pair to the mover's core. The
+						// sweep's fields stay as the fallback (ROUND_MESH_CONTACT_CORE:
+						// the core inside a triangle has no push direction),
+						// and the helper only writes on ROUND_MESH_CONTACT_FOUND.
+						const physx::PxTransform mesh_pose = physx::PxShapeExt::getGlobalPose(*touch.shape, *touch.actor);
+						physx::PxVec3 push_normal = touch.normal;
+						physx::PxVec3 push_point = touch.position;
+						float pen = -touch.distance;
+						if (_round_mesh_contact(geom.any(), shape_pose, touch.shape, mesh_pose, push_normal, push_point, pen) == ROUND_MESH_CONTACT_NONE) {
+							continue; // no overlapped triangle after all: disregard
+						}
+						if (_skip_one_sided_overlap(shape_ref.shape_blueprint, touch.shape, mesh_pose,
 									-1.0f, push_normal, px_dir, geom.any(), shape_pose)) {
 							continue;
 						}
 						mtd_recover += Vector3(push_normal.x, push_normal.y, push_normal.z) * (pen + p_margin);
-						// Only a push-out that pushes back against the way the
-						// body moves (sideways) needs the second sweep — an
-						// edge or a step it walks into. Resting on a floor
-						// pushes straight up and is handled with one sweep.
 						const float push_back = -(push_normal.x * px_dir.x + push_normal.z * px_dir.z);
-						if (pass == 0 && push_back > 0.02f) {
+						// A sweep that starts overlapping a mesh reports only
+						// that overlap — a step's edge ahead in the same mesh
+						// stays hidden — so pass 0 re-sweeps from the pushed-out
+						// pose for every mesh press-out. A push that opposes the
+						// motion (an edge or a step it walks into) is left to
+						// that second sweep.
+						if (pass == 0) {
 							resweep = true;
-						} else if (!mtd_stop && push_normal.y > 0.3f) {
+							if (push_back > 0.02f) {
+								continue;
+							}
+						}
+						if (!mtd_stop && push_normal.y > 0.3f) {
 							// A floor-like press-out only reports (keeps the
 							// character grounded); it must not clamp the
 							// travel.
 							has_report = true;
-							report_position = Vector3(touch.position.x, touch.position.y, touch.position.z);
+							report_position = Vector3(push_point.x, push_point.y, push_point.z);
 							report_normal = Vector3(push_normal.x, push_normal.y, push_normal.z);
 							report_depth = pen;
 							report_local_shape = (int)s;
@@ -1667,7 +1822,7 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 							// out over its top.
 							mtd_stop = true;
 							has_report = true;
-							report_position = Vector3(touch.position.x, touch.position.y, touch.position.z);
+							report_position = Vector3(push_point.x, push_point.y, push_point.z);
 							report_normal = Vector3(push_normal.x, push_normal.y, push_normal.z);
 							report_depth = pen;
 							report_local_shape = (int)s;
@@ -1766,6 +1921,17 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 				}
 			}
 			stuck = stuck || shape_overlapped;
+		}
+		if (pass == 1 && resting_floor && !has_report) {
+			// The second sweep found nothing: the pass-0 floor press-out is
+			// the frame's contact, keeping the character grounded.
+			has_report = true;
+			report_position = resting_position;
+			report_normal = resting_normal;
+			report_depth = resting_depth;
+			report_local_shape = resting_local_shape;
+			report_actor = resting_actor;
+			report_shape = resting_shape;
 		}
 	}
 
