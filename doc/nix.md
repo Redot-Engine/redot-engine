@@ -6,7 +6,7 @@ If you have the Nix package manager installed, you can build and run the editor 
 nix run .
 ```
 
-This automatically installs the required build dependencies and compiles Redot if a matching binary does not already exist.
+This automatically installs the required build dependencies and compiles Nova Engine if a matching binary does not already exist.
 
 ## Passing SCons build flags
 
@@ -27,7 +27,7 @@ Argument handling works like this:
 
 - The first `--` is consumed by Nix.
 - Arguments before the next `--` are passed to `scons`.
-- Arguments after the next `--` are passed to the built Redot binary.
+- Arguments after the next `--` are passed to the built Nova Engine binary.
 
 For a quick reminder of the wrapper syntax, run:
 
@@ -47,7 +47,7 @@ For full manual control over the build process:
 # Enter the Nix development environment.
 nix develop
 
-# Build Redot (use 'macos' on macOS, 'linuxbsd' on Linux).
+# Build Nova Engine (use 'macos' on macOS, 'linuxbsd' on Linux).
 scons platform=linuxbsd  # or: scons platform=macos
 
 # Example with extra build flags.

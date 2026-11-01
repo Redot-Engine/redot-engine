@@ -1,12 +1,12 @@
-short_name = "redot"
-name = "Redot Engine"
+short_name = "nova"
+name = "Nova Engine"
 major = 26
 minor = 4
 patch = 0
 status = "alpha"
 status_version = 0
 module_config = ""
-website = "https://redotengine.org"
+website = "https://github.com/BigBoss316Max/nova-engine"
 docs = "latest"
 godot_major = 4
 godot_minor = 5
