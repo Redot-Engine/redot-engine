@@ -377,8 +377,13 @@ void AnimationNodeStateMachineEditor::_state_machine_gui_input(const Ref<InputEv
 	if (mb.is_valid() && mb->get_button_index() == MouseButton::LEFT && !mb->is_pressed() && box_selecting) {
 		box_selecting = false;
 		state_machine_draw->queue_redraw();
-		if (!any_inside_selection) { // During box selection, we add/remove to this variable, if nothing occurred, we can assume we can clear.
-			selected_nodes.clear();
+		// During box selection, we add/remove to this variable, if nothing occurred, we can assume we can clear.
+		if (!any_inside_selection) {
+			if (mb->is_shift_pressed() || mb->is_command_or_control_pressed()) {
+				selected_nodes = previous_selected;
+			} else {
+				selected_nodes.clear();
+			}
 		}
 		any_inside_selection = false;
 		_update_mode();
