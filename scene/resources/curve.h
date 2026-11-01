@@ -342,6 +342,11 @@ public:
 	Vector3 get_point_in(int p_index) const;
 	void set_point_out(int p_index, const Vector3 &p_out);
 	Vector3 get_point_out(int p_index) const;
+
+	void reset_point_handles(int p_index);
+	void reset_all_points_handles();
+	void smooth_all_points();
+
 	void remove_point(int p_index);
 	void clear_points();
 
