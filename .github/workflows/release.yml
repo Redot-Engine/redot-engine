@@ -41,6 +41,15 @@ jobs:
           scons platform=linuxbsd production=yes
           rm -rf bin/obj
 
+      # Belt and braces: the 24.04 toolchain emits baseline x86-64 and no ISA
+      # requirement, but if the runner ever moves forward again, a stamped
+      # x86-64-v2/v3 requirement would make glibc refuse the editor on older
+      # CPUs ("CPU ISA level is lower than required"). Demote it to baseline
+      # here, in the job that has the repository checkout.
+      - name: Demote ISA requirement to baseline
+        run: |
+          python3 modules/physx/misc/fix_elf_isa_note.py --level 1 bin/redot.*
+
       # Package the distribution zip here: actions/upload-artifact does not
       # preserve the executable bit, and the release assets are attached from
       # these artifacts -- zipping in-workflow keeps `chmod +x` meaningful.
@@ -81,6 +90,10 @@ jobs:
           scons platform=linuxbsd target=template_release physx_config=release
           rm -rf bin/obj
 
+      - name: Demote ISA requirement to baseline
+        run: |
+          python3 modules/physx/misc/fix_elf_isa_note.py --level 1 bin/redot.*
+
       - name: Upload Linux Template Artifact
         uses: actions/upload-artifact@v7
         with:
@@ -110,6 +123,10 @@ jobs:
         run: |
           scons platform=linuxbsd production=yes module_mono_enabled=yes
           rm -rf bin/obj
+
+      - name: Demote ISA requirement to baseline
+        run: |
+          python3 modules/physx/misc/fix_elf_isa_note.py --level 1 bin/redot.*
 
       - name: Generate Mono Glue
         run: |
@@ -143,6 +160,10 @@ jobs:
         run: |
           scons platform=linuxbsd target=template_release physx_config=release module_mono_enabled=yes
           rm -rf bin/obj
+
+      - name: Demote ISA requirement to baseline
+        run: |
+          python3 modules/physx/misc/fix_elf_isa_note.py --level 1 bin/redot.*
 
       - name: Upload Linux Mono Template artifact
         uses: actions/upload-artifact@v7
@@ -504,11 +525,8 @@ jobs:
             done
             mv "$dir"/*.so physx-runtime-linux/
           done
-          # Demote any ISA requirement the toolchain stamped into the Linux
-          # binaries to baseline: a x86-64-v2/v3 marker would make glibc
-          # refuse the editor on older CPUs ("CPU ISA level is lower than
-          # required") even though the engine code itself is baseline.
-          python3 modules/physx/misc/fix_elf_isa_note.py --level 1             redot-linux-dev/redot.* redot-linux-editor-mono/redot.*
+          # The ISA requirement was already demoted to baseline in the build
+          # jobs (which have the repository checkout for the demote tool).
           # upload-artifact does not preserve the executable bit: strip/chmod
           # here and zip in-workflow so the attached release assets carry it.
           strip redot-linux-template/redot.* redot-linux-template-mono/redot.*
