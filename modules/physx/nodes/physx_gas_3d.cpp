@@ -587,9 +587,11 @@ void PhysXGas3D::_update_point_cloud_render() {
 	const int n = MIN((int)positions.size(), multimesh_cap);
 	// Packed buffer upload (PART-3): one multimesh_set_buffer call instead of
 	// 2 RS calls PER CELL per tick. Layout for MULTIMESH_TRANSFORM_3D + color:
-	// 12 floats basis+origin, then 4 floats color.
+	// 12 floats basis+origin, then 4 floats color. The buffer must span the
+	// FULL allocated instance count (multimesh_set_buffer rejects any other
+	// size); multimesh_set_visible_instances below hides the unwritten tail.
 	PackedFloat32Array buffer;
-	buffer.resize(n * 16);
+	buffer.resize(multimesh_cap * 16);
 	float *w = buffer.ptrw();
 	for (int i = 0; i < n; i++) {
 		float *t = w + i * 16;

@@ -97,9 +97,12 @@ void PhysXArticulation3D::_destroy() {
 		// first (async stepping).
 		if (space) {
 			space->ensure_synced();
-			if (PxScene *scene = space->get_px_scene()) {
-				scene->removeArticulation(*px_articulation);
-			}
+		}
+		// Membership truth is the articulation's own scene pointer, not the
+		// cached space: a zero-link articulation is deliberately NOT in its
+		// scene (see set_space), and removing it there logs a PhysX error.
+		if (PxScene *scene = px_articulation->getScene()) {
+			scene->removeArticulation(*px_articulation);
 		}
 		px_articulation->release();
 		px_articulation = nullptr;

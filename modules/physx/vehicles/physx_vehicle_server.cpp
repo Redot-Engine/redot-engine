@@ -1353,6 +1353,10 @@ void PhysXVehicleServer::_rebuild() {
 	}
 	const bool was_registered = (space != nullptr);
 	if (space) {
+		// PxVehicleConstraintsDestroy below releases constraints bound to the
+		// chassis's scene — forbidden while a solve is in flight (async
+		// stepping). Fetch first, same as adopt() and release().
+		space->ensure_synced();
 		space->unregister_vehicle(this);
 	}
 	if (v2) {
@@ -2038,6 +2042,19 @@ void PhysXVehicleServer::set_anti_roll_params(const Dictionary &p_params) {
 	if (!p_params.has("stiffness")) {
 		return;
 	}
+	PackedFloat32Array stiffness = p_params["stiffness"];
+	PackedInt32Array wheel_ids = p_params.get("wheel_ids", PackedInt32Array());
+	int nb_bars = wheel_ids.size() / 2 < stiffness.size() ? wheel_ids.size() / 2 : stiffness.size();
+	if (nb_bars > wheel_count) {
+		nb_bars = wheel_count;
+	}
+	// Validate every wheel id before ANY state write: a mid-loop
+	// ERR_FAIL_INDEX would leave live bars and the cache mixing the old and
+	// new configurations.
+	for (int i = 0; i < nb_bars; i++) {
+		ERR_FAIL_INDEX_MSG(wheel_ids[i * 2], wheel_count, "PhysX: anti-roll wheel id out of range.");
+		ERR_FAIL_INDEX_MSG(wheel_ids[i * 2 + 1], wheel_count, "PhysX: anti-roll wheel id out of range.");
+	}
 	// Cache FIRST (VEH-2): the configuration must survive wheel-count rebuilds
 	// like every other tuning dictionary, and buffering here also makes
 	// pre-adopt calls (v2 == nullptr) take effect at adopt time instead of
@@ -2052,19 +2069,9 @@ void PhysXVehicleServer::set_anti_roll_params(const Dictionary &p_params) {
 	if (!v2) {
 		return;
 	}
-	PackedFloat32Array stiffness = p_params["stiffness"];
-	PackedInt32Array wheel_ids = p_params.get("wheel_ids", PackedInt32Array());
-	int nb_bars = wheel_ids.size() / 2 < stiffness.size() ? wheel_ids.size() / 2 : stiffness.size();
-	if (nb_bars > wheel_count) {
-		nb_bars = wheel_count;
-	}
 	for (int i = 0; i < nb_bars; i++) {
-		const int w0 = wheel_ids[i * 2];
-		const int w1 = wheel_ids[i * 2 + 1];
-		ERR_FAIL_INDEX_MSG(w0, wheel_count, "PhysX: anti-roll wheel id out of range.");
-		ERR_FAIL_INDEX_MSG(w1, wheel_count, "PhysX: anti-roll wheel id out of range.");
-		v2->anti_roll_params[i].wheel0 = (physx::PxU32)w0;
-		v2->anti_roll_params[i].wheel1 = (physx::PxU32)w1;
+		v2->anti_roll_params[i].wheel0 = (physx::PxU32)wheel_ids[i * 2];
+		v2->anti_roll_params[i].wheel1 = (physx::PxU32)wheel_ids[i * 2 + 1];
 		v2->anti_roll_params[i].stiffness = stiffness[i];
 	}
 	v2->nb_anti_roll_bars = nb_bars;

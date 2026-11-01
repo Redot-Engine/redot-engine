@@ -81,12 +81,20 @@ void PhysXHeightMapShape3D::set_data(const Variant &p_data) {
 
 	ERR_FAIL_COND(!data.has("width") || !data.has("depth") || !data.has("heights"));
 
-	width = data["width"];
-	depth = data["depth"];
-	heights = data["heights"];
+	// Validate into locals first: assigning members before the checks left the
+	// shape with new dimensions and stale/mismatched heights -- _ensure_physx_
+	// height_field then indexes past the end of the array, and get_local_pose
+	// mixes new extents with the old cooked field.
+	const int new_width = data["width"];
+	const int new_depth = data["depth"];
+	const PackedFloat32Array new_heights = data["heights"];
 
-	ERR_FAIL_COND(width <= 1 || depth <= 1);
-	ERR_FAIL_COND(heights.size() != width * depth);
+	ERR_FAIL_COND(new_width <= 1 || new_depth <= 1);
+	ERR_FAIL_COND(new_heights.size() != new_width * new_depth);
+
+	width = new_width;
+	depth = new_depth;
+	heights = new_heights;
 
 	// Calculate bounds and quantization scale
 	min_height = heights[0];

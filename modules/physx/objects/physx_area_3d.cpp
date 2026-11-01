@@ -126,25 +126,10 @@ void PhysXArea3D::set_space(PhysXSpace3D *p_space) {
 		}
 		overlapping_bodies.clear();
 
-		for (unsigned int i = 0; i < overlapping_areas.size(); i++) {
-			PhysXArea3D *other_area = overlapping_areas[i];
-			// Remove this area from the other area's overlap list.
-			other_area->remove_overlapping_area(this);
-			// Queue the area_monitor dispatch for flush_queries().
-			if (space) {
-				PhysXSpace3D::TriggerEvent ev;
-				ev.trigger_area = this;
-				ev.other_area = other_area;
-				ev.other_area_rid = other_area->get_rid();
-				ev.other_area_id = other_area->get_instance_id();
-				ev.status = PhysicsServer3D::AREA_BODY_REMOVED;
-				ev.other_shape_idx = 0;
-				ev.area_shape_idx = 0;
-				ev.is_area_vs_area = true;
-				space->queue_trigger(ev);
-			}
-		}
-		overlapping_areas.clear();
+		// Both perspectives -- this area's monitor AND the other area's monitor
+		// (its Area3D::area_exited never fired from the single-sided event
+		// loop that used to live here; see _emit_area_exit_events()).
+		_emit_area_exit_events();
 
 		space->unregister_area(this);
 
@@ -168,6 +153,14 @@ void PhysXArea3D::set_space(PhysXSpace3D *p_space) {
 
 void PhysXArea3D::set_transform(const Transform3D &p_transform) {
 	transform = p_transform;
+
+	// setKinematicTarget/setGlobalPose below, and a scale change's
+	// refresh_shape_scaling() (PxShape::setGeometry), are forbidden while a
+	// solve is in flight (async stepping). Fetch first -- same guard as
+	// PhysXBody3D::set_state(BODY_STATE_TRANSFORM).
+	if (space) {
+		space->ensure_synced();
+	}
 
 	// Same node-scale bake as bodies (see PhysXBody3D::set_state): the
 	// trigger/override geometry is re-baked against the captured scale (PhysX

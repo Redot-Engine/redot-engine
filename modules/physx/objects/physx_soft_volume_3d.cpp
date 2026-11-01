@@ -300,6 +300,11 @@ void PhysXSoftVolume3D::apply_params(const Params &p_params) {
 	if (!volume) {
 		return;
 	}
+	// Solver/filter-data writes below are legal only between steps
+	// (async stepping); same guard as PhysXGPUCloth3D.
+	if (space && space->is_stepping()) {
+		space->ensure_synced();
+	}
 	if (material) {
 		material->setYoungsModulus(p_params.youngs_modulus);
 		material->setPoissons(CLAMP(p_params.poisson_ratio, 0.0f, 0.49f));
@@ -380,6 +385,11 @@ void PhysXSoftVolume3D::set_pins(const Vector<int> &p_welded_indices, const Vect
 	if (!volume || base_inv_mass.is_empty()) {
 		return;
 	}
+	// Host<->device copies below are legal only between steps (async
+	// stepping); same guard as PhysXGPUCloth3D.
+	if (space && space->is_stepping()) {
+		space->ensure_synced();
+	}
 	const uint32_t sim_nv = base_inv_mass.size();
 	if (!sim_pos_scratch) {
 		sim_pos_scratch = PX_EXT_PINNED_MEMORY_ALLOC(PxVec4, *cuda, sim_nv);
@@ -415,6 +425,11 @@ void PhysXSoftVolume3D::add_central_impulse(const Vector3 &p_impulse) {
 	if (!volume || base_inv_mass.is_empty()) {
 		return;
 	}
+	// Host<->device copies below are legal only between steps (async
+	// stepping); same guard as PhysXGPUCloth3D.
+	if (space && space->is_stepping()) {
+		space->ensure_synced();
+	}
 	const uint32_t sim_nv = base_inv_mass.size();
 	const PxVec3 dv = godot_to_px(p_impulse / total_mass);
 	if (!sim_vel_scratch) {
@@ -439,6 +454,11 @@ void PhysXSoftVolume3D::add_central_impulse(const Vector3 &p_impulse) {
 void PhysXSoftVolume3D::add_point_impulse(uint32_t p_welded_index, const Vector3 &p_impulse) {
 	if (!volume || p_welded_index >= welded_to_coll.size()) {
 		return;
+	}
+	// Host<->device copies below are legal only between steps (async
+	// stepping); same guard as PhysXGPUCloth3D.
+	if (space && space->is_stepping()) {
+		space->ensure_synced();
 	}
 	const uint32_t s = welded_to_coll[p_welded_index];
 	if (base_inv_mass[s] <= 0.0f) {
@@ -492,6 +512,11 @@ void PhysXSoftVolume3D::set_exception_slot(uint32_t p_slot) {
 physx::PxDeformableAttachment *PhysXSoftVolume3D::create_rigid_attachment(const Vector<int> &p_welded_indices, physx::PxRigidActor *p_rigid) {
 	if (!volume || !p_rigid || p_welded_indices.is_empty()) {
 		return nullptr;
+	}
+	// The device position read below is legal only between steps (async
+	// stepping); same guard as PhysXGPUCloth3D.
+	if (space && space->is_stepping()) {
+		space->ensure_synced();
 	}
 	// Translate welded render indices -> sim (collision) mesh vertex indices,
 	// the same mapping set_pins() consumes. Rigid side: per SDK table 2 the

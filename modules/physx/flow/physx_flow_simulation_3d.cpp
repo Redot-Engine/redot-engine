@@ -138,11 +138,21 @@ void PhysXFlowSimulation3D::_ensure_simulation() {
 			rendering_device = RenderingServer::get_singleton()->get_rendering_device();
 		}
 		if (rendering_device != nullptr && get_world_3d().is_valid()) {
-			// Registers with the render effect and installs it on this world
-			// (idempotent; re-run every step so swapped compositors keep it).
+			// Registers with the render effect and installs it on this world.
+			// attach_world() refcounts per node: attach only on a world change
+			// so state.flows stays balanced with the single detach from
+			// NOTIFICATION_EXIT_WORLD / set_volumetric_render(false). The
+			// install() below still re-runs every step so swapped compositors
+			// keep the effect.
 			PhysXFlowRenderEffect::register_flow(this);
-			PhysXFlowRenderEffect::attach_world(get_world_3d().ptr());
-			attached_world = get_world_3d()->get_instance_id();
+			const ObjectID world_id = get_world_3d()->get_instance_id();
+			if (attached_world != world_id) {
+				if (attached_world.is_valid()) {
+					PhysXFlowRenderEffect::detach_world(attached_world);
+				}
+				PhysXFlowRenderEffect::attach_world(get_world_3d().ptr());
+				attached_world = world_id;
+			}
 			PhysXFlowRenderEffect::install(get_world_3d().ptr(),
 					get_viewport() != nullptr ? get_viewport()->get_camera_3d() : nullptr);
 		}
@@ -202,6 +212,9 @@ void PhysXFlowSimulation3D::_resolve_emitters(LocalVector<FlowEmitterData> &r_em
 			}
 		} else {
 			FlowEmitterData e;
+			// Keep the pruning pass (which keeps luid entries only for ids in
+			// active_emitter_ids) from churning this node's luid every tick.
+			active_emitter_ids.insert(node->get_instance_id());
 			e.luid = _luid_for(node->get_instance_id());
 			e.enabled = true;
 			e.is_box = false;

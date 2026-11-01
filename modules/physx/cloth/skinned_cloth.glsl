@@ -195,10 +195,10 @@ vec2 closest_segments(vec3 p1, vec3 q1, vec3 p2, vec3 q2) {
 // crossed a capsule -- carried past a limb by the max-distance limit or by
 // the limb itself moving -- is stopped at the surface on the side it came
 // from, instead of ending up through the limb.
-// Keeps p outside the body boxes (oriented): the axes' lengths carry the
-// shape's scale, so the world_to_local basis already includes it. Per box
-// (4 vec4): world_to_local basis columns (origin components in w), then
-// half extents (xyz) and friction (w).
+// Keeps p outside the body boxes (oriented): the axes are pure rotation
+// (transpose == inverse) and the shape's scale is folded into the half
+// extents. Per box (4 vec4): world_to_local basis columns (world-space box
+// center in w), then world-space half extents (xyz) and friction (w).
 void project_boxes(inout vec3 p, vec3 prev_p) {
 	float thickness = gravity.w;
 	for (int b = 0; b < counts2.w; b++) {
@@ -219,7 +219,7 @@ void project_boxes(inout vec3 p, vec3 prev_p) {
 			// face by it would shove the particle through to the far side).
 			int axis = (d.x > d.y) ? ((d.x > d.z) ? 0 : 2) : ((d.y > d.z) ? 1 : 2);
 			float side = local_p[axis] != 0.0 ? sign(local_p[axis])
-				: (local_prev[axis] != 0.0 ? sign(local_prev[axis]) : 1.0);
+											  : (local_prev[axis] != 0.0 ? sign(local_prev[axis]) : 1.0);
 			local_p[axis] = side * (he.xyz[axis] + thickness);
 			vec3 n = vec3(0.0);
 			n[axis] = side;

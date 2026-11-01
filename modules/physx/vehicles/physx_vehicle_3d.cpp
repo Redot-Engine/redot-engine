@@ -712,7 +712,9 @@ PackedFloat32Array PhysXVehicle3D::get_gear_ratios() const {
 }
 
 void PhysXVehicle3D::set_gear_final_ratio(real_t p_v) {
-	gear_final_ratio = MAX(abs((float)p_v), 0.1f);
+	// Math::abs, not unqualified abs: the C overload set can pick abs(int),
+	// truncating 3.5 to 3 (clamped 0.1) and silently changing the ratio.
+	gear_final_ratio = MAX((float)Math::abs(p_v), 0.1f);
 	_rebuild_if_live();
 }
 
@@ -836,6 +838,11 @@ void PhysXVehicle3D::apply_torque(const Vector3 &p_torque) {
 void PhysXVehicle3D::_ensure_exception_synced() {
 	if (is_inside_world() && get_world_3d().is_valid()) {
 		PhysXServer3D *server = PhysXServer3D::get_singleton();
+		// Bound entry points reach this whether or not the vehicle is built;
+		// with PhysX not the active physics backend the singleton is null.
+		if (!server) {
+			return;
+		}
 		if (PhysXSpace3D *space = server->get_space(get_world_3d()->get_space())) {
 			space->ensure_synced();
 		}

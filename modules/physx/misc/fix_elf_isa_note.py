@@ -27,8 +27,9 @@ also repairs such malformed notes (glibc skips any property whose datasz is
 not 4, so they gate nothing, but they are not the note we meant to write).
 
 The ISA requirement is read from the PT_GNU_PROPERTY program segment (what
-the loader itself walks) when the ELF carries no section-header table --
-a valid stripped ELF can omit sections while keeping the segment.
+the loader itself walks) when the section walk finds no .note.gnu.property
+descriptors -- a valid stripped ELF can omit sections (or the section entry)
+while keeping the segment.
 """
 
 import argparse
@@ -69,7 +70,7 @@ def _sections(data):
     for i in range(e_shnum):
         name, offset, size = sh(i)
         base = shstr_off + name
-        end = data.index(b"\0", base)
+        end = data.find(b"\0", base)
         if end == -1:
             continue
         yield data[base:end].decode(), offset, size
@@ -104,12 +105,11 @@ def _phdr_gnu_property_notes(data):
 
 def _property_notes(data):
     """Collects GNU property note descriptors, preferring the section view and
-    falling back to the program-segment view (stripped binaries). Yields
-    (absolute_desc_offset, desc_bytes) pairs."""
+    falling back to the program-segment view when the section walk found no
+    descriptors (stripped binaries). Yields (absolute_desc_offset, desc_bytes)
+    pairs."""
     descriptors = []
-    has_sections = False
     for name, offset, size in _sections(data):
-        has_sections = True
         if name != ".note.gnu.property":
             continue
         blob = data[offset : offset + size]
@@ -124,7 +124,7 @@ def _property_notes(data):
             pos += (descsz + 3) & ~3
             if namesz != 4 or name_bytes != b"GNU\x00" or ntype != NT_GNU_PROPERTY_TYPE_0:
                 descriptors.pop()
-    if descriptors or has_sections is False:
+    if not descriptors:
         # Fall back to the program-segment view when the section walk found
         # nothing but the file may still carry the loader-visible note.
         for desc_off, desc in _phdr_gnu_property_notes(data):

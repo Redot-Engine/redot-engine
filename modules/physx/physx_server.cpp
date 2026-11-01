@@ -1656,6 +1656,13 @@ uint32_t PhysXServer3D::soft_body_get_collision_mask(RID p_body) const {
 void PhysXServer3D::soft_body_add_collision_exception(RID p_body, RID p_excepted_body) {
 	PhysXSoftBody3D *soft_body = soft_body_owner.get_or_null(p_body);
 	ERR_FAIL_NULL(soft_body);
+	// Same mid-flight discipline as body_add_collision_exception: the registry
+	// write below is read by the GPU filter shader during the solve, and
+	// refresh_collision_filters mutates shape filter data — both forbidden
+	// while a solve is in flight (async stepping).
+	if (soft_body->get_space()) {
+		soft_body->get_space()->ensure_synced();
+	}
 	soft_body->add_collision_exception(p_excepted_body);
 
 	// GPU path: route the exception through the filter-shader registry — the
@@ -1665,6 +1672,9 @@ void PhysXServer3D::soft_body_add_collision_exception(RID p_body, RID p_excepted
 	PhysXBody3D *other = body_owner.get_or_null(p_excepted_body);
 	if (!other) {
 		return;
+	}
+	if (other->get_space() && other->get_space() != soft_body->get_space()) {
+		other->get_space()->ensure_synced();
 	}
 	const uint32_t soft_slot = soft_body->get_or_alloc_exception_slot();
 	const uint32_t body_slot = other->get_or_alloc_exception_slot();
@@ -1676,9 +1686,17 @@ void PhysXServer3D::soft_body_add_collision_exception(RID p_body, RID p_excepted
 void PhysXServer3D::soft_body_remove_collision_exception(RID p_body, RID p_excepted_body) {
 	PhysXSoftBody3D *soft_body = soft_body_owner.get_or_null(p_body);
 	ERR_FAIL_NULL(soft_body);
+	// Same mid-flight discipline as soft_body_add_collision_exception: the
+	// registry entry below is read by the GPU filter shader during the solve.
+	if (soft_body->get_space()) {
+		soft_body->get_space()->ensure_synced();
+	}
 	soft_body->remove_collision_exception(p_excepted_body);
 	PhysXBody3D *other = body_owner.get_or_null(p_excepted_body);
 	if (other && soft_body->get_exception_slot() != 0 && other->get_exception_slot() != 0) {
+		if (other->get_space() && other->get_space() != soft_body->get_space()) {
+			other->get_space()->ensure_synced();
+		}
 		g_physx_soft_exceptions.remove(soft_body->get_exception_slot(), other->get_exception_slot());
 	}
 }

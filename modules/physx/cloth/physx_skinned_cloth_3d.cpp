@@ -43,8 +43,8 @@
 #include "scene/3d/physics/physical_bone_3d.h"
 #include "scene/3d/physics/physical_bone_simulator_3d.h"
 #include "scene/3d/skeleton_3d.h"
-#include "scene/resources/3d/capsule_shape_3d.h"
 #include "scene/resources/3d/box_shape_3d.h"
+#include "scene/resources/3d/capsule_shape_3d.h"
 #include "scene/resources/3d/skin.h"
 #include "scene/resources/3d/sphere_shape_3d.h"
 #include "scene/resources/3d/world_3d.h"
@@ -1099,13 +1099,17 @@ void PhysXSkinnedCloth3D::_step() {
 				continue;
 			}
 			if (cap.is_box) {
-				// World frame: bone pose * body offset * shape placement; the
-				// basis column lengths carry the shape's scale.
+				// World frame: bone pose * body offset * shape placement. The
+				// shader works in pure-rotation coordinates: transpose of an
+				// orthonormal basis is its inverse, and the shape's scale goes
+				// into the world-space half extents instead (inv.origin would
+				// double-apply the rotation to the offset -- any box away from
+				// the world origin collided in the wrong place).
 				const Transform3D world = skeleton->get_global_transform() * captured_capsule_poses_a[c] * cap.shape_local;
-				const Transform3D inv = world.affine_inverse();
-				const Basis w2l = inv.basis;
-				const Vector3 origin = inv.origin;
-				const Vector3 half = cap.half_extents;
+				const Vector3 scale = world.basis.get_scale_abs();
+				const Basis w2l = world.basis.orthonormalized().transposed();
+				const Vector3 origin = world.origin; // shader computes w2l * (p - origin)
+				const Vector3 half = cap.half_extents * scale;
 				const float box_friction = 0.2f; // matches the capsule path's authored-shape feel
 				bw2[bi * 16 + 0] = w2l.get_column(0).x;
 				bw2[bi * 16 + 1] = w2l.get_column(0).y;

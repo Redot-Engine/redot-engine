@@ -33,12 +33,13 @@
 #include "physx_vehicle_exceptions.h"
 
 #include "../objects/physx_body_3d.h"
-#include "physx_motorcycle_3d.h"
 #include "../physx_server.h"
 #include "../spaces/physx_space_3d.h"
+#include "core/object/object.h"
+#include "core/templates/local_vector.h"
+#include "physx_motorcycle_3d.h"
 #include "physx_tank_3d.h"
 #include "physx_vehicle_3d.h"
-#include "core/object/object.h"
 #include "scene/3d/node_3d.h"
 #include "scene/3d/physics/physics_body_3d.h"
 
@@ -59,11 +60,16 @@ void PhysXVehicleExceptions::_stamp_shapes(physx::PxRigidDynamic *p_chassis) {
 		return;
 	}
 	const physx::PxU32 nb_shapes = p_chassis->getNbShapes();
-	physx::PxShape *shapes[8];
-	if (nb_shapes == 0 || nb_shapes > 8) {
+	if (nb_shapes == 0) {
 		return;
 	}
-	p_chassis->getShapes(shapes, nb_shapes);
+	// PxVehiclePhysXActorCreate attaches one chassis box plus one shape per
+	// wheel: an 8-wheel tank carries 9 shapes. Size from nb_shapes so every
+	// chassis shape gets the slot -- an unstamped chassis contact pair never
+	// matches the filter shader and the exception silently does nothing.
+	LocalVector<physx::PxShape *> shapes;
+	shapes.resize(nb_shapes);
+	p_chassis->getShapes(shapes.ptr(), nb_shapes);
 	for (physx::PxU32 i = 0; i < nb_shapes; i++) {
 		if (!(shapes[i]->getFlags() & physx::PxShapeFlag::eSIMULATION_SHAPE)) {
 			continue;
@@ -86,7 +92,11 @@ void PhysXVehicleExceptions::add(physx::PxRigidDynamic *p_chassis, Node *p_other
 
 	if (PhysicsBody3D *body_node = Object::cast_to<PhysicsBody3D>(p_other)) {
 		body_rid = body_node->get_rid();
-		PhysXBody3D *body = PhysXServer3D::get_singleton()->get_body(body_rid);
+		// The singleton is null when PhysX is not the active physics backend
+		// (the wrappers' _ensure_exception_synced bails on exactly that case).
+		PhysXServer3D *server = PhysXServer3D::get_singleton();
+		ERR_FAIL_NULL_MSG(server, "PhysX vehicle: collision exceptions require the PhysX physics backend.");
+		PhysXBody3D *body = server->get_body(body_rid);
 		ERR_FAIL_NULL_MSG(body, "PhysX vehicle: collision exception target is not a PhysX body.");
 		if (body->get_space()) {
 			body->get_space()->ensure_synced();
