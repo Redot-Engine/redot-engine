@@ -275,11 +275,31 @@ jobs:
         run: |
           python modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin
 
+      # Same as the regular Windows build: the PhysX/Blast/Flow runtime DLLs
+      # are delay-loaded, so the mono editor starts without them and the physx
+      # editor plugin offers the download-and-restart flow when a project uses
+      # PhysX. The bundle content is identical to the regular build's (same
+      # SDK configuration), packaged here so this job stays self-contained.
+      - name: Package PhysX runtime bundle
+        run: |
+          New-Item -ItemType Directory -Force -Path physx-runtime | Out-Null
+          Move-Item bin\PhysXGpu_64.dll physx-runtime\ -Force
+          Move-Item bin\NvBlast*.dll physx-runtime\ -Force
+          Move-Item -Path bin\nvflow*.dll -Destination physx-runtime\ -Force
+          Compress-Archive -Path 'physx-runtime/*' -DestinationPath physx-runtime-windows-mono.zip -Force
+          Remove-Item physx-runtime -Recurse -Force
+
       - name: Upload Windows Mono editor artifact
         uses: actions/upload-artifact@v7
         with:
           name: redot-windows-editor-mono
           path: bin
+
+      - name: Upload PhysX runtime bundle artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: physx-runtime-windows-mono
+          path: physx-runtime-windows-mono.zip
 
   build-windows-template-mono:
     runs-on: windows-latest
