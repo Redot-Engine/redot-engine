@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXGas3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		A sparse-grid Eulerian smoke/gas volume, provided by the PhysX module.
+	</brief_description>
+	<description>
+		An early, v1 volumetric gas/smoke solver: a persistent velocity+density field on a block-sparse hash grid, advected with trilinear semi-Lagrangian sampling, driven by [member buoyancy] and real vorticity confinement, and continuously fed from [member emitters]. Runs on plain compute shaders (a private local [RenderingDevice]), not CUDA -- independent of whether the PhysX GPU/CUDA path is available.
+		Unlike [PhysXParticleFluid3D] and [PhysXGranular3D], this is not a particle system -- it shares only its block-hash lookup technique with their block-sparse grid, not their solve. Renders through a stock [FogVolume] + [FogMaterial]: the solver's density grid is baked into an [ImageTexture3D] each step and handed to [member FogMaterial.density_texture], so the actual raymarching, camera-frustum froxel integration, temporal reprojection and light/shadow scattering are all engine code, not anything custom here.
+		[b]FogVolume rendering requires [member Environment.volumetric_fog_enabled] to be on in the scene's active Environment -- this is a hard, scene-wide, all-or-nothing switch (it gates whether the engine's froxel fog buffer exists at all), not something this node can turn on by itself. With it off, this node (and every other [FogVolume] in the scene) draws nothing, silently. A configuration warning is shown in the editor when this is the case; [member volumetric_render] can be turned off in favor of [member debug_point_cloud] if you don't want to enable scene-wide volumetric fog.[/b]
+		[b]v1 scope, worth knowing before relying on this:[/b] [member domain_size]'s world footprint (X/Z and the bottom of Y) is frozen at the node's transform when it first configures and does not follow the node afterward -- a node that moves far from its start loses whatever crosses that boundary. The box's TOP does grow automatically as a plume rises past it (periodically, a few blocks at a time, up to 3x the configured height), so vertical headroom mostly takes care of itself; lateral spread past [member domain_size]'s X/Z does not. There is no pressure projection, so the flow is not divergence-free -- its spread comes from a diffusion term standing in for that, the same technique Stam's stable-fluids method uses for viscosity. Colliders (up to 4, see [member colliders]) are voxelized solids (forced empty and still every step), not a proper no-slip/free-slip boundary.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_configured_domain_anchor" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="get_configured_domain_size" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="get_last_max_density" qualifiers="const">
+			<return type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="get_solver_step_submits" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="is_domain_configured" qualifiers="const">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="buoyancy" type="float" setter="set_buoyancy" getter="get_buoyancy" default="9.0">
+			Upward acceleration applied to a cell's velocity, scaled by its own density. Negative sinks instead of rises (a heavier-than-air gas).
+		</member>
+		<member name="cell_size" type="float" setter="set_cell_size" getter="get_cell_size" default="0.08">
+			Grid cell size in meters. Also reconfigures the grid when changed.
+		</member>
+		<member name="collider_radius" type="float" setter="set_collider_radius" getter="get_collider_radius" default="0.0">
+			Fallback radius (meters) for entries in [member colliders] that are not a sphere-shaped [CollisionShape3D]/[CollisionObject3D]. [code]0[/code] disables such an entry.
+		</member>
+		<member name="colliders" type="NodePath[]" setter="set_colliders" getter="get_colliders" default="[]">
+			Up to 4 [Node3D] paths; each one's global position drives a sphere obstacle. Every cell inside a sphere is forced empty and still each step, so the field parts and flows around it. A [CollisionShape3D] (or [CollisionObject3D]) carrying a [SphereShape3D] gets its own world-scaled radius from that shape; anything else (a plain [Node3D], or a shape other than a sphere) falls back to [member collider_radius].
+		</member>
+		<member name="debug_diagnostics" type="bool" setter="set_debug_diagnostics" getter="get_debug_diagnostics" default="false">
+		</member>
+		<member name="debug_point_cloud" type="bool" setter="set_debug_point_cloud" getter="get_debug_point_cloud" default="false">
+			Also (or instead) draws a debug point cloud (a [MultiMesh] of small cubes, one per grid cell above [member render_threshold], colour-ramped by density) -- useful to sanity-check the raw simulation data against the shaded [member volumetric_render] result, or as a fallback when volumetric fog can't be enabled in the scene.
+		</member>
+		<member name="dissipation" type="float" setter="set_dissipation" getter="get_dissipation" default="0.996">
+			Per-step density multiplier (how fast the gas fades). [code]1.0[/code] never dissipates; lower values fade faster.
+		</member>
+		<member name="domain_size" type="Vector3" setter="set_domain_size" getter="get_domain_size" default="Vector3(1.92, 3.2, 1.92)">
+			World size of the fixed grid box, centered on the node. Rounded up to whole 4-cell blocks per axis. Frozen in WORLD SPACE the first time the solver configures (the first physics tick) -- moving the node, or changing this or [member cell_size], reconfigures (and clears) the grid at wherever the node ends up. A move is debounced ~0.2s after the last change before it takes effect (so an editor drag doesn't wipe the grid every single tick while you're still moving it) -- changing [member domain_size]/[member cell_size] directly takes effect immediately, no debounce. Fine for placing the effect, including while the scene is running; not a substitute for a real domain-following feature -- a node that's continuously moving (attached to a moving object, not just repositioned once) reconfigures, and loses its in-flight smoke, ~0.2s after it stops moving each time.
+		</member>
+		<member name="emitter_density" type="float" setter="set_emitter_density" getter="get_emitter_density" default="1.0">
+			Fallback injected density for entries in [member emitters] that are not a [PhysXGasEmitter3D] (clamped up to at least this, never down -- an emitter tops a cell up, it does not overwrite a denser one).
+		</member>
+		<member name="emitter_radius" type="float" setter="set_emitter_radius" getter="get_emitter_radius" default="0.22">
+			Fallback sphere radius (meters) for entries in [member emitters] that are not a [PhysXGasEmitter3D].
+		</member>
+		<member name="emitter_velocity" type="Vector3" setter="set_emitter_velocity" getter="get_emitter_velocity" default="Vector3(0, 1.4, 0)">
+			Fallback world-space injected velocity for entries in [member emitters] that are not a [PhysXGasEmitter3D], plus a small per-cell random jitter scaled by its magnitude -- a perfectly symmetric emitter gives vorticity confinement nothing to amplify, so a little injected asymmetry is what seeds any swirl.
+		</member>
+		<member name="emitters" type="NodePath[]" setter="set_emitters" getter="get_emitters" default="[]">
+			Up to 8 [Node3D] paths, each an injection point. A [PhysXGasEmitter3D] gives its own independent shape (sphere or axis-aligned box), size, velocity and density; any other [Node3D] falls back to a sphere using [member emitter_radius]/[member emitter_velocity]/[member emitter_density] at that node's global position -- same fallback pattern [member colliders] uses for [member collider_radius]. An empty array means nothing is emitted.
+		</member>
+		<member name="fire_color_ramp" type="Gradient" setter="set_fire_color_ramp" getter="get_fire_color_ramp">
+			The colour ramp [member fire_look] samples by (normalized) density -- a cell's colour is wherever on this gradient its density falls. Each stop's ALPHA doubles as that stop's emission intensity (0 = pure albedo, no glow; 1 = full self-illumination) -- the same convention [GPUParticles3D]'s own colour ramps use for fade, which is also what lets you assign the exact same [Gradient] resource to a [GPUParticles3D] spark/ember layer's [member ParticleProcessMaterial.color_ramp] and have both layers read as one consistent fire, instead of tuning two separate colour systems by eye. Defaults to a smoke-grey -&gt; orange -&gt; warm yellow-white ramp (alpha 0 -&gt; 0 -&gt; 1) matching this feature's original hardcoded look.
+		</member>
+		<member name="fire_emission_strength" type="float" setter="set_fire_emission_strength" getter="get_fire_emission_strength" default="6.0">
+			How brightly the hot part of the cloud glows (self-illuminates) when [member fire_look] is on. Cooler/thinner cells emit nothing regardless of this value -- only the hot ramp does.
+		</member>
+		<member name="fire_look" type="bool" setter="set_fire_look" getter="get_fire_look" default="false">
+			Swaps the plain gray [FogMaterial] for a custom shader that maps the SAME density field through [member fire_color_ramp] with emission, instead of a flat colour -- a cheap way to hint at underlying fire (an explosion/fireball) without a real independent temperature channel. Density is naturally highest right at an emitter and falls off outward/upward, so this reads as "hot core cooling into smoke" for free. Good for short-lived bursts; NOT real combustion (no persistent cooling once density itself has dispersed, no fuel/temperature simulation).
+		</member>
+		<member name="fog_albedo" type="Color" setter="set_fog_albedo" getter="get_fog_albedo" default="Color(1, 1, 1, 1)">
+			[member FogMaterial.albedo] on the managed [FogMaterial] -- the smoke's scattering colour. Has no effect while [member fire_look] is on (that uses [member fire_color_ramp] instead).
+		</member>
+		<member name="fog_density" type="float" setter="set_fog_density" getter="get_fog_density" default="24.0">
+			[member FogMaterial.density] on the managed [FogMaterial] -- multiplies the solver's raw density values (roughly [code]0..1[/code]) to a visible opacity. Raise it if the smoke looks too faint, lower it if it looks solid/opaque.
+		</member>
+		<member name="render_threshold" type="float" setter="set_render_threshold" getter="get_render_threshold" default="0.01">
+			Minimum density for a cell to appear in [member debug_point_cloud]. Has no effect on [member volumetric_render], which draws the continuous density field as-is.
+		</member>
+		<member name="turbulence_scale" type="float" setter="set_turbulence_scale" getter="get_turbulence_scale" default="2.5">
+			Spatial frequency (1/meters) of [member turbulence_strength]'s base octave -- higher values give finer, tighter wrinkles; lower values give broader, slower-rolling ones. Only matters if [member turbulence_strength] is above 0.
+		</member>
+		<member name="turbulence_strength" type="float" setter="set_turbulence_strength" getter="get_turbulence_strength" default="0.0">
+			Extra curl-noise perturbation velocity (m/s), added only to the advection sample, not the real solved field. Fakes fine "billowing cauliflower" turbulent detail a coarse real-time grid can't resolve on its own -- [code]0[/code] (the default) matches pre-turbulence behavior exactly. A little goes a long way; try [code]1.0[/code]-[code]3.0[/code] first.
+		</member>
+		<member name="volumetric_render" type="bool" setter="set_volumetric_render" getter="get_volumetric_render" default="true">
+			Draws the gas through a [FogVolume] + [FogMaterial] (see the class description for the [member Environment.volumetric_fog_enabled] requirement). Turning this off frees the [FogVolume] and its baked texture.
+		</member>
+		<member name="vorticity_strength" type="float" setter="set_vorticity_strength" getter="get_vorticity_strength" default="8.0">
+			Vorticity confinement strength -- pumps energy back into small eddies the grid's own numerical diffusion would otherwise smear away. Only amplifies curl that already exists (see each emitter's injection jitter); it does not manufacture swirl from nothing.
+		</member>
+	</members>
+</class>

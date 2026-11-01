@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="WaterRippleProbe" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="clear_sphere">
+			<return type="void" />
+			<param index="0" name="owner" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="configure">
+			<return type="void" />
+			<param index="0" name="grid_resolution" type="int" />
+			<param index="1" name="domain_size" type="Vector2" />
+			<param index="2" name="depth" type="float" />
+			<param index="3" name="damping" type="float" />
+			<param index="4" name="gravity" type="float" />
+			<param index="5" name="water_level" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="configure_ocean">
+			<return type="void" />
+			<param index="0" name="ocean_grid_resolution" type="int" />
+			<param index="1" name="ocean_domain_size" type="Vector2" />
+			<param index="2" name="wind_speed" type="float" />
+			<param index="3" name="wind_direction" type="Vector2" />
+			<param index="4" name="wave_amplitude" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="get_ocean_height_array" qualifiers="const">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_ocean_imag_array" qualifiers="const">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_ocean_slope_x_array" qualifiers="const">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="has_device" qualifiers="const">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="is_available" qualifiers="const">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="refresh_height_grid">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="refresh_ocean_height_grid">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="sample_height" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="world_x" type="float" />
+			<param index="1" name="world_z" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="step">
+			<return type="void" />
+			<param index="0" name="delta" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="submit_impulse">
+			<return type="void" />
+			<param index="0" name="world_pos" type="Vector3" />
+			<param index="1" name="radius" type="float" />
+			<param index="2" name="strength" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="submit_sphere">
+			<return type="void" />
+			<param index="0" name="owner" type="int" />
+			<param index="1" name="world_pos" type="Vector3" />
+			<param index="2" name="radius" type="float" />
+			<param index="3" name="strength" type="float" />
+			<description>
+			</description>
+		</method>
+	</methods>
+</class>

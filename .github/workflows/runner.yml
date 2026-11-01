@@ -18,14 +18,20 @@ jobs:
 
   # Second stage: Run all the builds and some of the tests.
 
+  # macOS / iOS / Android builds are paused while the PhysX port is being
+  # stabilized on desktop platforms. To re-enable: repo Settings ->
+  # Secrets and variables -> Actions -> Variables -> add
+  # ENABLE_MAC_IOS_ANDROID = true (delete the variable to pause again).
   android-build:
     name: 🤖 Android
     needs: static-checks
+    if: ${{ vars.ENABLE_MAC_IOS_ANDROID == 'true' }}
     uses: ./.github/workflows/android_builds.yml
 
   ios-build:
     name: 🍏 iOS
     needs: static-checks
+    if: ${{ vars.ENABLE_MAC_IOS_ANDROID == 'true' }}
     uses: ./.github/workflows/ios_builds.yml
 
   linux-build:
@@ -36,6 +42,7 @@ jobs:
   macos-build:
     name: 🍎 macOS
     needs: static-checks
+    if: ${{ vars.ENABLE_MAC_IOS_ANDROID == 'true' }}
     uses: ./.github/workflows/macos_builds.yml
 
   windows-build:
@@ -46,4 +53,7 @@ jobs:
   web-build:
     name: 🌐 Web
     needs: static-checks
+    # Paused like macOS/iOS/Android above; re-enable via repo variable
+    # ENABLE_WEB_BUILDS = true (Settings -> Secrets and variables -> Actions).
+    if: ${{ vars.ENABLE_WEB_BUILDS == 'true' }}
     uses: ./.github/workflows/web_builds.yml

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXWaterWake3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		The wake and foam a [RigidBody3D] leaves on a [PhysXWaterSurface3D] as it moves.
+	</brief_description>
+	<description>
+		Add as a child of a [RigidBody3D] -- a boat, usually alongside a [PhysXBuoyancy3D] and a [PhysXBoat3D]. It runs a small ripple simulation on the GPU, centered a little behind the body, that the hull pushes down as it moves: a row of dips along its keel, deeper with speed. The grid is fixed to the water, not the body: as it slides along with the body, the waves and foam stay where they were made and fade out behind, and waves reaching the grid's edge are absorbed rather than reflected back. A boat at speed draws a Kelvin wake.
+		The wake is drawn by the water surface's material and included in [method PhysXWaterSurface3D.sample_height], so other floating bodies ride it -- everywhere there is water, past the surface's simulated square and over its shore ripple grid alike. The body's own [PhysXBuoyancy3D] doesn't float on its own wake. A surface draws up to four wakes.
+		It also carries foam, in two layers:
+		- [b]Hull foam[/b]: churned into a band just outside the hull along its sides, heaviest at the bow ([member bow_foam]), then pushed out sideways from the hull's line ([member foam_spread]) so it peels off into the two bands of a boat's wake. Steep wake waves break into it too ([member foam_slope]). Foam added with [method add_foam] drifts out with it.
+		- [b]Propeller foam[/b]: churned in behind a sibling [PhysXBoat3D]'s propeller with its thrust ([member propeller_foam]); it stays where it was made, a band down the middle.
+		Both fade over [member foam_persistence]. The grid has to cover the wake to keep it: a body turning tight circles needs a [member size] that holds the circle for its wake to close into a ring, and a [member foam_persistence] of about one lap.
+		Water with an interactive shore ripple grid can carry a body's ripples there instead (see [member PhysXBuoyancy3D.disturb_water]); [member shore_grid_fade] fades the wake out over that grid.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="add_foam">
+			<return type="void" />
+			<param index="0" name="world_position" type="Vector3" />
+			<param index="1" name="radius" type="float" />
+			<param index="2" name="amount_per_second" type="float" />
+			<param index="3" name="drift" type="bool" default="true" />
+			<description>
+				Churns foam into the wake's water around [param world_position] on the next physics step: [param amount_per_second] at the center (1 is fully white), fading out over [param radius] meters. Call it every tick for a steady source, or once with an amount divided by the physics delta for a one-off patch. With [param drift], the foam is pushed out from the hull's line with the hull foam, heading out into the wake; without, it stays where it was put. [PhysXWaterSpray3D] uses this for the foam its spray leaves.
+			</description>
+		</method>
+		<method name="get_grid_origin" qualifiers="const">
+			<return type="Vector2" />
+			<description>
+				The world XZ of the grid's corner, as last stepped. The grid spans [member size] meters from there along +X and +Z.
+			</description>
+		</method>
+		<method name="get_height_texture" qualifiers="const">
+			<return type="Texture2DRD" />
+			<description>
+				The wake's texture, as the water material draws it: red the height (m), green the hull foam, blue the propeller foam (0 to 1).
+			</description>
+		</method>
+		<method name="sample_height" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="world_pos" type="Vector3" />
+			<description>
+				The wake's height (m) at [param world_pos]'s XZ, from the last readback (a few frames behind the simulation); [code]0[/code] outside the grid. The water surface adds it into its own [method PhysXWaterSurface3D.sample_height].
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="border_damping" type="float" setter="set_border_damping" getter="get_border_damping" default="8.0">
+			Damping per second at the grid's edge, easing in across the outer tenth of it: waves running into the border are absorbed instead of reflecting back at the body.
+		</member>
+		<member name="bow_foam" type="float" setter="set_bow_foam" getter="get_bow_foam" default="8.0">
+			Hull foam churned in per second at the bow, along the hull's sides, at [member reference_speed]; it tapers off toward the stern and scales with speed.
+		</member>
+		<member name="cells" type="int" setter="set_cells" getter="get_cells" default="192">
+			Grid cells per side. With [member size] this sets the cell size: keep it around 0.25 m for crisp foam and short wake waves. The cost grows with the square of it; the GPU step is cheap, but the readback for [method sample_height] grows the same way.
+		</member>
+		<member name="damping" type="float" setter="set_damping" getter="get_damping" default="0.25">
+			How quickly the wake's waves die out, per second.
+		</member>
+		<member name="foam_persistence" type="float" setter="set_foam_persistence" getter="get_foam_persistence" default="4.0">
+			Seconds the foam takes to fade to about a third.
+		</member>
+		<member name="foam_slope" type="float" setter="set_foam_slope" getter="get_foam_slope" default="0.08">
+			The wake wave slope past which waves break into hull foam.
+		</member>
+		<member name="foam_slope_gain" type="float" setter="set_foam_slope_gain" getter="get_foam_slope_gain" default="4.0">
+			Foam per second per unit of slope past [member foam_slope].
+		</member>
+		<member name="foam_spread" type="float" setter="set_foam_spread" getter="get_foam_spread" default="1.0">
+			How fast (m/s) the hull foam is pushed out sideways from the hull's line at full speed -- strongest near the hull, fading out over about three beams -- so it opens into two bands behind the boat.
+		</member>
+		<member name="hull_beam" type="float" setter="set_hull_beam" getter="get_hull_beam" default="0.0">
+			The hull's width (m). [code]0[/code] takes it from the sibling [PhysXBuoyancy3D]'s sample points.
+		</member>
+		<member name="hull_length" type="float" setter="set_hull_length" getter="get_hull_length" default="0.0">
+			The hull's length (m) along its [code]+Z[/code]. [code]0[/code] takes it from the sibling [PhysXBuoyancy3D]'s sample points.
+		</member>
+		<member name="propeller_foam" type="float" setter="set_propeller_foam" getter="get_propeller_foam" default="1.0">
+			Propeller foam churned in per second at full thrust, behind a sibling [PhysXBoat3D]'s propeller. [code]0[/code] turns it off.
+		</member>
+		<member name="reference_speed" type="float" setter="set_reference_speed" getter="get_reference_speed" default="6.0">
+			The speed (m/s) at which the hull dips to [member wake_depth] and churns [member bow_foam]; faster goes up to 1.5 times that.
+		</member>
+		<member name="rest_depth" type="float" setter="set_rest_depth" getter="get_rest_depth" default="0.02">
+			How far (m) the hull pushes the water down at rest.
+		</member>
+		<member name="shore_grid_fade" type="float" setter="set_shore_grid_fade" getter="get_shore_grid_fade" default="0.0">
+			How much the wake fades out over the water surface's simulated shore square: [code]0[/code] draws it everywhere (open water, an ocean), [code]1[/code] leaves that square to the body's [PhysXBuoyancy3D] ripples (a lake, where the interactive ripples are worth their cost). In between blends the two.
+		</member>
+		<member name="size" type="float" setter="set_size" getter="get_size" default="48.0">
+			The grid's side length (m). Going straight, most of it trails behind the body; it has to cover all of a wake to keep it, so a body turning tight circles needs one that holds the circle. Changing it rebuilds the grid.
+		</member>
+		<member name="source_count" type="int" setter="set_source_count" getter="get_source_count" default="5">
+			How many dips the hull is pushed down as, spread along its keel from bow to stern.
+		</member>
+		<member name="wake_depth" type="float" setter="set_wake_depth" getter="get_wake_depth" default="0.18">
+			How far (m) the hull pushes the water down at the bow at [member reference_speed]; shallower toward the stern.
+		</member>
+		<member name="water_surface_path" type="NodePath" setter="set_water_surface_path" getter="get_water_surface_path" default="NodePath(&quot;&quot;)">
+			The [PhysXWaterSurface3D] to draw on. Empty uses the sibling [PhysXBuoyancy3D]'s.
+		</member>
+		<member name="wave_speed" type="float" setter="set_wave_speed" getter="get_wave_speed" default="2.2">
+			How fast (m/s) the wake's waves travel. With the body's speed it sets the wake's angle: slower waves give a narrower V.
+		</member>
+	</members>
+</class>

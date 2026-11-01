@@ -834,6 +834,15 @@ public:
 	virtual void end_sync() = 0;
 	virtual void finish() = 0;
 
+	/// Brackets each marshaled-command batch that PhysicsServer3DWrapMT's pump
+	/// task executes. Backends that expose ClassDB methods beyond this
+	/// interface (which scripts call directly on the main thread, bypassing
+	/// the command queue) implement the pair with their pipeline mutex so
+	/// those calls serialize against marshaled commands. The calls always
+	/// pair, on the pump thread, with no commands running in between.
+	virtual void command_flush_begin() {}
+	virtual void command_flush_end() {}
+
 	virtual bool is_flushing_queries() const = 0;
 
 	enum ProcessInfo {

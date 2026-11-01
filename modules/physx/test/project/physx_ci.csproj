@@ -1,0 +1,29 @@
+﻿<Project Sdk="Redot.NET.Sdk/26.4.0-alpha">
+  <!--
+    C# test assembly for the PhysX integration suite.
+
+    Build:  dotnet build modules/physx/test/project/physx_ci.csproj
+    Run:    godot headless fixed-fps 60 path modules/physx/test/project
+            script res://tests/csharp/TestMain.cs with user args: tier=fast
+
+    Requires an engine build with module_mono_enabled=yes (and the PhysX
+    module). The Redot.NET.Sdk packages are produced locally by
+    modules/mono/build_scripts/build_assemblies.py with the push nupkgs
+    local option filling the source folder nuget.config points at
+    (modules/mono/nuget); keep the SDK version pinned to the version
+    build_assemblies.py produces for the current engine (26.4.0-alpha for
+    this tree).
+  -->
+  <PropertyGroup>
+    <!-- Must match the RedotSharp assemblies: net10.0 for the current engine line. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>PhysxTestProject.Tests</RootNamespace>
+    <AssemblyName>PhysxTestProject</AssemblyName>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <Nullable>disable</Nullable>
+    <LangVersion>12</LangVersion>
+    <!-- Test code uses yields/iterators heavily; keep warning noise low but errors real. -->
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

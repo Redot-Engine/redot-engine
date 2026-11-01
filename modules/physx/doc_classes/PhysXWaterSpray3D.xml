@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXWaterSpray3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Drives [GPUParticles3D] spray from a hull moving through a [PhysXWaterSurface3D].
+	</brief_description>
+	<description>
+		Add as a child of a [RigidBody3D] (a boat), and point its emitter lists at ordinary [GPUParticles3D] nodes: their look -- the droplet mesh, material, size, colour, gravity -- is authored in the editor as usual. This node only drives them from the body's motion, every physics tick:
+		- [member bow_emitters] spray while the hull moves through the water: their rate and launch speed rise with forward speed (from [member start_speed] to [member reference_speed]), and none where that part of the hull is out of the water ([member submerge_depth]).
+		- [member stern_emitters] spray with a sibling [PhysXBoat3D]'s propeller thrust.
+		- [member slam_emitters] fire once (they should be [member GPUParticles3D.one_shot]) when the hull drops back onto the water faster than [member slam_speed], scaled with the impact, and emit [signal slammed].
+		Each emitter is moved to the water surface under where it was placed on the hull, level and turned with the hull's heading, so the spray leaves the water there whatever the hull's pitch and roll. An emitter's [member ParticleProcessMaterial.initial_velocity_min] and [member ParticleProcessMaterial.initial_velocity_max] are scaled with speed, on a copy of its process material.
+		For spray that leaves the hull along its waterline, use the [constant ParticleProcessMaterial.EMISSION_SHAPE_DIRECTED_POINTS] emission shape with points along the waterline and the hull's outward normals (tilted up) as the directions.
+		[b]Foam:[/b] the spray leaves foam where it lands, with [member spray_foam]. Each tick the landing spots are worked out from each emitter's launch points, speed, inherited velocity and gravity, and specks of foam are scattered there on the sibling [PhysXWaterWake3D] (see [method PhysXWaterWake3D.add_foam]), drifting out into the wake. A slam leaves a patch. No particle collision is needed for this.
+		[b]Collision[/b] (optional): with [member water_collision], a [GPUParticlesCollisionBox3D] follows the hull with its top on the water around it, so spray whose process material collides lands on the water and skids along it. Give those emitters a [member GPUParticles3D.collision_base_size] near their droplets' size and a lifetime long enough to land, and keep their collision friction low (it is applied every step a particle touches). The foam then follows the skid as well.
+		[b]Note:[/b] save the emitters with [member GPUParticles3D.emitting] off -- this node starts them when the game runs. Particles left emitting in the edited scene keep the editor redrawing every frame, which also slows a game run from the editor.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="bow_emitters" type="NodePath[]" setter="set_bow_emitters" getter="get_bow_emitters" default="[]">
+			[GPUParticles3D] nodes that spray with forward speed while their part of the hull is in the water.
+		</member>
+		<member name="collision_fit_radius" type="float" setter="set_collision_fit_radius" getter="get_collision_fit_radius" default="3.0">
+			How far (m) either side of the hull the water is sampled to fit the collision plane to the waves.
+		</member>
+		<member name="collision_margin" type="float" setter="set_collision_margin" getter="get_collision_margin" default="0.08">
+			How far (m) above the collision plane emitters are held with [member water_collision] on. A particle born touching a collider loses its speed off the surface at once, so the spray starts clear of it.
+		</member>
+		<member name="collision_size" type="float" setter="set_collision_size" getter="get_collision_size" default="12.0">
+			The side length (m) of the water collider around the hull.
+		</member>
+		<member name="collision_smoothing" type="float" setter="set_collision_smoothing" getter="get_collision_smoothing" default="0.1">
+			Seconds over which the collision plane eases to the water's fitted height and slope. The collider is fitted each physics tick and moved every frame between the last two fits.
+		</member>
+		<member name="reference_speed" type="float" setter="set_reference_speed" getter="get_reference_speed" default="6.0">
+			The forward speed (m/s) at which bow spray reaches its full rate and launch speed.
+		</member>
+		<member name="slam_cooldown" type="float" setter="set_slam_cooldown" getter="get_slam_cooldown" default="0.3">
+			Seconds before a slam emitter can fire again.
+		</member>
+		<member name="slam_emitters" type="NodePath[]" setter="set_slam_emitters" getter="get_slam_emitters" default="[]">
+			One-shot [GPUParticles3D] nodes restarted when the hull drops back onto the water.
+		</member>
+		<member name="slam_full_speed" type="float" setter="set_slam_full_speed" getter="get_slam_full_speed" default="4.0">
+			The closing speed (m/s) at which a slam fires at full strength.
+		</member>
+		<member name="slam_speed" type="float" setter="set_slam_speed" getter="get_slam_speed" default="1.5">
+			How fast (m/s) the hull has to close on the water as it drops back in for a slam to fire.
+		</member>
+		<member name="slow_velocity_scale" type="float" setter="set_slow_velocity_scale" getter="get_slow_velocity_scale" default="0.4">
+			The share of an emitter's launch speed used at low speed (or low thrust, for stern emitters), rising to all of it at [member reference_speed].
+		</member>
+		<member name="spray_foam" type="float" setter="set_spray_foam" getter="get_spray_foam" default="0.6">
+			How white (0 to 1) each speck of foam the landing spray leaves starts. [code]0[/code] turns the spray's foam off.
+		</member>
+		<member name="spray_foam_density" type="float" setter="set_spray_foam_density" getter="get_spray_foam_density" default="0.3">
+			The chance, per launch spot per physics tick at full spray, of a speck of foam: lower for sparser, stirred-looking water.
+		</member>
+		<member name="spray_foam_offset" type="float" setter="set_spray_foam_offset" getter="get_spray_foam_offset" default="0.4">
+			How much further out (m) than the spray lands the foam is placed.
+		</member>
+		<member name="start_speed" type="float" setter="set_start_speed" getter="get_start_speed" default="1.5">
+			The forward speed (m/s) below which there is no bow spray.
+		</member>
+		<member name="stern_emitters" type="NodePath[]" setter="set_stern_emitters" getter="get_stern_emitters" default="[]">
+			[GPUParticles3D] nodes that spray with a sibling [PhysXBoat3D]'s propeller thrust.
+		</member>
+		<member name="submerge_depth" type="float" setter="set_submerge_depth" getter="get_submerge_depth" default="0.25">
+			How far (m) above the water an emitter's place on the hull can rise before it stops spraying, easing out over that height.
+		</member>
+		<member name="water_collision" type="bool" setter="set_water_collision" getter="get_water_collision" default="false">
+			If [code]true[/code], a [GPUParticlesCollisionBox3D] follows the hull with its top on the water, for emitters whose process material collides to land on.
+		</member>
+		<member name="water_surface_path" type="NodePath" setter="set_water_surface_path" getter="get_water_surface_path" default="NodePath(&quot;&quot;)">
+			The [PhysXWaterSurface3D] the spray comes off. Empty uses the sibling [PhysXBuoyancy3D]'s.
+		</member>
+	</members>
+	<signals>
+		<signal name="slammed">
+			<param index="0" name="position" type="Vector3" />
+			<param index="1" name="speed" type="float" />
+			<description>
+				Emitted when the hull drops back onto the water hard enough to fire the slam emitters: where, on the water, and how fast (m/s) it closed on it -- for a splash sound, a camera shake.
+			</description>
+		</signal>
+	</signals>
+</class>

@@ -1,0 +1,101 @@
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+#ifndef PX_BVH_34_MIDPHASE_DESC_H
+#define PX_BVH_34_MIDPHASE_DESC_H
+
+#include "foundation/PxPreprocessor.h"
+#include "foundation/PxSimpleTypes.h"
+
+#if !PX_DOXYGEN
+namespace physx
+{
+#endif
+
+/**
+\brief Desired build strategy for PxMeshMidPhase::eBVH34
+*/
+struct PxBVH34BuildStrategy
+{
+	enum Enum
+	{
+		eFAST = 0,		//!< Fast build strategy. Fast build speed, good runtime performance in most cases. Recommended for runtime mesh cooking.
+		eDEFAULT = 1,	//!< Default build strategy. Medium build speed, good runtime performance in all cases.
+		eSAH = 2,		//!< SAH build strategy. Slower builds, slightly improved runtime performance in some cases.
+
+		eLAST
+	};
+};
+
+
+/**
+
+\brief Structure describing parameters affecting BVH34 midphase mesh structure.
+
+\see PxCookingParams, PxMidphaseDesc
+*/
+struct PxBVH34MidphaseDesc
+{
+	/**
+	\brief Mesh cooking hint for max primitives per leaf limit. 
+	Less primitives per leaf produces larger meshes with better runtime performance 
+	and worse cooking performance. More triangles per leaf results in faster cooking speed and
+	smaller mesh sizes, but with worse runtime performance.
+
+	<b>Default value:</b> 4
+	<b>Range:</b> <2, 15>
+	*/
+	PxU32			numPrimsPerLeaf;
+
+	/**
+	\brief Desired build strategy for the BVH
+
+	<b>Default value:</b> eDEFAULT
+	*/
+	PxBVH34BuildStrategy::Enum	buildStrategy;
+
+	/**
+	\brief Whether the tree should be quantized or not
+
+	Quantized trees use up less memory, but the runtime dequantization (to retrieve the node bounds) might have
+	a measurable performance cost. In most cases the cost is too small to matter, and using less memory is more
+	important. Hence, the default is true.
+
+	One important use case for non-quantized trees is deformable meshes. The refit function for the BVH is not
+	supported for quantized trees.
+
+	<b>Default value:</b> true
+	*/
+	bool			quantized;
+
+	/**
+	\brief Desc initialization to default value.
+	*/
+    void setToDefault()
+    {
+		numPrimsPerLeaf = 4;
+		buildStrategy = PxBVH34BuildStrategy::eDEFAULT;
+		quantized = true;
+    }
+
+	/**
+	\brief Returns true if the descriptor is valid.
+	\return true if the current settings are valid.
+	*/
+	bool isValid() const
+	{
+		if(numPrimsPerLeaf < 2 || numPrimsPerLeaf > 15)
+			return false;
+		return true;
+	}
+};
+
+#if !PX_DOXYGEN
+} // namespace physx
+#endif
+
+
+#endif
+

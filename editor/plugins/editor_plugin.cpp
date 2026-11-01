@@ -580,7 +580,9 @@ void EditorPlugin::_notification(int p_what) {
 #ifndef DISABLE_DEPRECATED
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE: {
-			ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &EditorPlugin::_editor_project_settings_changed));
+			if (!ProjectSettings::get_singleton()->is_connected("settings_changed", callable_mp(this, &EditorPlugin::_editor_project_settings_changed))) {
+				ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &EditorPlugin::_editor_project_settings_changed));
+			}
 		} break;
 
 		case NOTIFICATION_EXIT_TREE: {
