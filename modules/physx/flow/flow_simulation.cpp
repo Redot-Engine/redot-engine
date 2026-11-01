@@ -155,6 +155,12 @@ void FlowSimulation::_rt_destroy_grid() {
 }
 
 void FlowSimulation::_destroy_grid_now() {
+	{
+		// Decoded frames of the dead grid must not survive a later rebuild
+		// (poll_readback would otherwise deliver pre-destroy data).
+		MutexLock lock(step_mutex);
+		decoded_frames.clear();
+	}
 	// Readback buffers FIRST: they live in the context, and this function
 	// destroys that context -- releasing them through it afterwards would
 	// hand freed pointers to a dead Context (v1's context outlived them;
@@ -292,6 +298,12 @@ void FlowSimulation::_rt_reset() {
 	for (ReadbackSlot &s : slots) {
 		s.inflight.frame_index = 0;
 		s.consumed = true;
+	}
+	{
+		// Pre-reset frames must not survive the reset: poll_readback would
+		// otherwise deliver data from before the grid was cleared.
+		MutexLock lock(step_mutex);
+		decoded_frames.clear();
 	}
 	frames_simulated = 0;
 	sim_time = 0.0;
@@ -1157,8 +1169,18 @@ bool FlowSimulation::poll_readback(FlowReadbackFrame &r_frame) {
 		if (decoded_frames.is_empty()) {
 			return false;
 		}
-		r_frame = decoded_frames[0];
-		decoded_frames.remove_at(0);
+		// The decode loop pushes in slot order, not frame_index order, so
+		// queue front != newest. Return the highest frame_index (the header
+		// contract) and drop the rest: a backlog is stale query data by the
+		// time it is consumed.
+		uint32_t newest = 0;
+		for (uint32_t i = 1; i < decoded_frames.size(); i++) {
+			if (decoded_frames[i].frame_index > decoded_frames[newest].frame_index) {
+				newest = i;
+			}
+		}
+		r_frame = decoded_frames[newest];
+		decoded_frames.clear();
 		return true;
 	}
 	const uint64_t completed = _last_frame_completed();

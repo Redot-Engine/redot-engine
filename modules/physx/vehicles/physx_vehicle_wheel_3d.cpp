@@ -36,6 +36,7 @@
 #include "physx_tank_3d.h"
 #include "physx_vehicle_3d.h"
 
+#include "core/config/engine.h"
 #include "core/object/class_db.h"
 
 void PhysXVehicleWheel3D::_notification(int p_what) {
@@ -43,12 +44,14 @@ void PhysXVehicleWheel3D::_notification(int p_what) {
 		case NOTIFICATION_ENTER_TREE: {
 			// Capture the authored hardpoint BEFORE the parent vehicle ever
 			// simulates (it starts owning this transform once live) -- and only
-			// once: a live parent writes the jounce/steer/spin pose into this
-			// node every tick, so a later re-enter (reparent, pooled vehicle
-			// re-added) must not recapture that live pose as the authored
-			// hardpoint (the next build would configure from a tilted
-			// suspension basis).
-			if (!_authored_valid) {
+			// once at runtime: a live parent writes the jounce/steer/spin pose
+			// into this node every tick, so a later re-enter (reparent, pooled
+			// vehicle re-added) must not recapture that live pose as the
+			// authored hardpoint (the next build would configure from a tilted
+			// suspension basis). In the editor no parent ever simulates, so the
+			// current transform IS the authored one -- always refresh it, or a
+			// user edit followed by a reparent/undo would be silently dropped.
+			if (!_authored_valid || Engine::get_singleton()->is_editor_hint()) {
 				_authored_position = get_position();
 				_authored_basis = get_transform().basis;
 				_authored_valid = true;
@@ -83,7 +86,8 @@ void PhysXVehicleWheel3D::_notification(int p_what) {
 			}
 			// Leave with the authored pose: the parent owned this transform
 			// while registered, so anything else it left there isn't ours.
-			if (_authored_valid) {
+			// Editor only: the user owns the transform there (see ENTER_TREE).
+			if (_authored_valid && !Engine::get_singleton()->is_editor_hint()) {
 				set_transform(Transform3D(_authored_basis, _authored_position));
 			}
 		} break;

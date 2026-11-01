@@ -395,7 +395,13 @@ void PhysXBody3D::set_state(PhysicsServer3D::BodyState p_state, const Variant &p
 				// CharacterBody3D sets its transform on creation, before it has
 				// a space, so fall back to setGlobalPose() until it's added.
 				if (physx::PxRigidDynamic *dyn = get_px_dynamic()) {
-					if (space && space->get_px_scene()) {
+					// Gate on actual scene membership, not space presence: a
+					// body that has a space but no shapes yet (AnimatableBody3D
+					// built shape-first) has no scene, and setKinematicTarget
+					// on a sceneless actor is rejected -- the requested pose
+					// would be lost and the body would enter the scene at its
+					// stale pose once shapes arrive.
+					if (body_added_to_scene) {
 						dyn->setKinematicTarget(pose);
 					} else {
 						dyn->setGlobalPose(pose);

@@ -73,11 +73,18 @@ void PhysXSoftBody3D::set_space(PhysXSpace3D *p_space) {
 		memdelete(volume);
 		volume = nullptr;
 		using_gpu = false;
+		// The CPU solver was never built on the GPU path: the CPU-visible mesh
+		// state is dead until a space rebuilds from the mesh. Position/impulse
+		// accessors validate against visual_vertex_count, so leaving it (and
+		// the mapping) populated sent them past the end of the empty solver.
+		mesh_ready = false;
+		map_visual_to_physics.clear();
+		visual_vertex_count = 0;
 	}
 	space = p_space;
 	if (space) {
 		space->register_soft_body(this);
-		if (mesh_ready) {
+		if (mesh.is_valid()) {
 			_rebuild_from_mesh();
 		}
 	}
@@ -96,6 +103,12 @@ void PhysXSoftBody3D::notify_space_destroyed() {
 		memdelete(volume);
 		volume = nullptr;
 		using_gpu = false;
+		// Same CPU-state invalidation as set_space: the GPU path never built
+		// the CPU solver, so the stale mapping would send CPU-fallback reads
+		// past the end of its (empty) arrays.
+		mesh_ready = false;
+		map_visual_to_physics.clear();
+		visual_vertex_count = 0;
 	}
 }
 
@@ -826,7 +839,7 @@ void PhysXSoftBody3D::attach_point_to_body(int p_point_index, const RID &p_body)
 	if (!using_gpu || !volume) {
 		// The CPU XPBD solver has no SDK constraint facility; a rigid
 		// attachment is a GPU-path capability (warn once per body).
-		WARN_PRINT_ONCE("PhysXSoftBody3D: attach_point_to_body requires the GPU solver path (project setting physics/physx_3d/soft_body/mode=GPU or the node's physx_soft_mode metadata).");
+		WARN_PRINT_ONCE("PhysXSoftBody3D: attach_point_to_body requires the GPU solver path (project setting physics/physx_3d/soft_body/mode=GPU, or PhysXServer3D.soft_body_set_solver_mode with mode 2 on this body).");
 		return;
 	}
 	PhysXBody3D *body = PhysXServer3D::get_singleton()->get_body(p_body);

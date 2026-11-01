@@ -42,7 +42,7 @@
 		<member name="enabled" type="bool" setter="set_enabled" getter="get_enabled" default="true">
 			If [code]true[/code] this rendering effect is applied to any viewport it is added to.
 		</member>
-		<member name="needs_albedo" type="bool" setter="set_needs_albedo" getter="get_needs_albedo">
+		<member name="needs_albedo" type="bool" setter="set_needs_albedo" getter="get_needs_albedo" default="false">
 			If [code]true[/code], albedo data is written to a separate buffer during the opaque rendering pass, only applicable for the Forward+ renderer.
 			The buffer is available from [constant EFFECT_CALLBACK_TYPE_POST_OPAQUE] onward and does not include transparent objects. If MSAA is enabled, the buffer is resolved after the opaque rendering pass.
 			[b]Note:[/b] In [method _render_callback], to access the albedo buffer use:

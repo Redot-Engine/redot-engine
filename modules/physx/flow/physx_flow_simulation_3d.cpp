@@ -638,6 +638,12 @@ void PhysXFlowSimulation3D::_step(double p_delta) {
 		PhysXFlowRenderEffect::install(get_world_3d().ptr(),
 				get_viewport() != nullptr ? get_viewport()->get_camera_3d() : nullptr);
 	}
+
+	// Publish the scatter-light snapshot for the render callback (which runs
+	// on the render thread under the Separate thread model and must not touch
+	// scene nodes itself). Main-thread only: is_visible_in_tree /
+	// get_tree() are guarded node reads.
+	_gather_scatter_lights();
 }
 
 // ---- Light + render settings -------------------------------------------------
@@ -825,7 +831,11 @@ void PhysXFlowSimulation3D::render_rd(PhysXFlowRenderEffect *p_effect, Rendering
 	if (simulation == nullptr || !simulation->is_using_rd() || p_rd != rendering_device) {
 		return;
 	}
-	_gather_scatter_lights();
+	// scatter_lights is gathered on the node's step path (main thread) and
+	// published under scatter_mutex -- NOT here: under the Separate thread
+	// model this callback runs on the render thread, where guarded node reads
+	// (Light3D::is_visible_in_tree et al) fail their thread guard and every
+	// light was skipped before its scattering record was built.
 	const uint64_t out = simulation->render(p_view, p_projection, p_size.x, p_size.y,
 			p_depth.get_id(), p_size.x, p_size.y, p_color.get_id(),
 			(light_scattering && !scatter_lights.is_empty()) ? &scatter_source : nullptr,
@@ -879,7 +889,10 @@ FlowScatterRD &PhysXFlowSimulation3D::get_scatter() {
 
 // Point/spot lights that can reach the gas, strongest at it first (energy over
 // squared distance to where the gas is, roughly). Ported from the upstream
-// godot_physx module's _gather_scatter_lights.
+// godot_physx module's _gather_scatter_lights. MAIN THREAD ONLY (the node's
+// step path): it reads guarded node state (is_visible_in_tree, get_tree()),
+// which fails its thread guard on the render thread -- so the render callback
+// consumes the published snapshot instead of gathering.
 void PhysXFlowSimulation3D::_gather_scatter_lights() {
 	LocalVector<FlowScatterRD::Light> picked;
 	if (light_scattering) {

@@ -214,12 +214,16 @@ def scan_tree(path, level):
             try:
                 with open(full, "rb") as f:
                     magic = f.read(5)
-                if magic[:4] != b"\x7fELF" or magic[4:5] != b"\x02":
-                    continue
             except OSError:
                 continue
+            if magic[:4] != b"\x7fELF" or magic[4:5] != b"\x02":
+                continue
             print(f"-- {full}")
-            fix(full, level, report_only=True)
+            try:
+                fix(full, level, report_only=True)
+            except (struct.error, UnicodeDecodeError, OSError) as e:
+                # One malformed ELF must not stop the walk over the rest.
+                print(f"{full}: failed to parse ({e})")
             flagged += 1
     if flagged == 0:
         print(f"no ELF64 objects found under {path}")
@@ -241,12 +245,22 @@ def main():
     )
     ap.add_argument("files", nargs="+", help="ELF objects (or directories with --report) to process")
     args = ap.parse_args()
+    # fix() returns False when the patch did NOT happen (not ELF64, or the
+    # verification mismatch left the file unchanged). Exit non-zero so a
+    # build step can fail loudly instead of shipping an object that still
+    # carries the too-high ISA requirement.
+    ok = True
     for path in args.files:
-        if args.report and os.path.isdir(path):
-            scan_tree(path, args.level)
-        else:
-            fix(path, args.level, report_only=args.report)
+        try:
+            if args.report and os.path.isdir(path):
+                scan_tree(path, args.level)
+            elif not fix(path, args.level, report_only=args.report):
+                ok = False
+        except (struct.error, UnicodeDecodeError, OSError) as e:
+            print(f"{path}: failed to parse ({e})")
+            ok = False
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

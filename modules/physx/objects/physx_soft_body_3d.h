@@ -47,8 +47,9 @@
  *    query pushes it out of rigid bodies.
  *
  * The path is chosen per body: the physics/physx_3d/soft_body/mode project
- * setting (Auto/CPU/GPU), overridden per node by the "physx_soft_mode"
- * metadata ("cpu" / "gpu"). Auto prefers GPU whenever it can build.
+ * setting (Auto/CPU/GPU), overridden per body by
+ * PhysXServer3D.soft_body_set_solver_mode (-1 project setting, 0 Auto,
+ * 1 CPU, 2 GPU). Auto prefers GPU whenever it can build.
  *
  * Known limits (documented, not bugs):
  *  - Query invisibility: soft bodies have no PhysXActorUserData, so they are
