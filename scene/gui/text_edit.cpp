@@ -739,7 +739,11 @@ void TextEdit::_accessibility_action_scroll_into_view(const Variant &p_data, int
 
 void TextEdit::_notification(int p_what) {
 	switch (p_what) {
-		case NOTIFICATION_EXIT_TREE:
+		case NOTIFICATION_EXIT_TREE: {
+			// The viewport sends no mouse release for a removed control.
+			click_select_held->stop();
+			[[fallthrough]];
+		}
 		case NOTIFICATION_ACCESSIBILITY_INVALIDATE: {
 			text.clear_accessibility();
 			accessibility_text_root_element_nl = RID();
@@ -8376,7 +8380,8 @@ void TextEdit::_selection_changed(int p_caret) {
 }
 
 void TextEdit::_click_selection_held() {
-	if (!Input::get_singleton()->is_mouse_button_pressed(MouseButton::LEFT)) {
+	if (has_ime_text()) {
+		// Mouse up is ignored in IME input mode, so it would not stop the timer.
 		click_select_held->stop();
 		return;
 	}
