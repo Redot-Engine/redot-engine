@@ -37,7 +37,7 @@ internal static class SoftBodyTests
 		{
 			using var w = new PhysxWorld(false);
 			var cloth = VehicleApi.Call("cloth_create").AsRid();
-			Assert.Require(cloth.IsValid, "GPU cloth created (CUDA build required)");
+			if (!cloth.IsValid) Assert.Skip("GPU cloth unavailable (CUDA build/device required)");
 			VehicleApi.Call("cloth_set_space", cloth, w.Space);
 			VehicleApi.Call("cloth_set_params", cloth, 0.02f, 0.5f, 0.9f, 0.1f, 0.03f, 1u);
 			VehicleApi.Call("cloth_set_collision_layer_and_mask", cloth, 2u, 1u);
@@ -78,7 +78,7 @@ internal static class SoftBodyTests
 		using (var w = new PhysxWorld(false))
 		{
 			var cloth = VehicleApi.Call("cloth_create").AsRid();
-			Assert.Require(cloth.IsValid, "GPU cloth created (second world)");
+			if (!cloth.IsValid) Assert.Skip("GPU cloth unavailable (CUDA build/device required)");
 			VehicleApi.Call("cloth_set_space", cloth, w.Space);
 			VehicleApi.Call("cloth_set_params", cloth, 0.02f, 0.5f, 0.9f, 0.1f, 0.03f, 1u);
 			// Mismatch: cloth L2/M2 + ball L1/M1 -> no pair.

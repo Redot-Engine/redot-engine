@@ -243,7 +243,12 @@ def main():
         if not build_csharp():
             return 2
 
-    user_args = [f"--tier={args.tier}"]
+    # Mirror the driver's wall-clock budget into the C# runner's own cap
+    # (TestMain.cs --max-seconds, default 1800): without this, the fast tier
+    # kills the process before the runner writes its final report (reported
+    # as CRASH), and the nightly tier aborts tests 30 minutes into a 6-hour
+    # budget. The 60s margin lets the final JSON land before the kill.
+    user_args = [f"--tier={args.tier}", f"--max-seconds={max(60, timeout - 60)}"]
     for c in args.category:
         user_args += [f"--category={c}"]
     for t in args.test:

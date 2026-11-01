@@ -304,8 +304,13 @@ internal static class LifecycleTests
 		// CallDeferred lands in the same message-queue flush.
 		var bridge = (Godot.GodotObject)GD.Load<GDScript>("res://gdscript/deferred_free_bridge.gd").New();
 		bridge.CallDeferred("free_rid", victim);
-		bridge.Free();
+		// The bridge must stay alive until the queued call runs: freeing it
+		// this frame made the flush skip the call (dead target) and the test
+		// passed without ever exercising the mid-flight deferred free. The
+		// victim is freed by that call, so Dispose() must not free it again.
+		w.Forget(victim);
 		yield return Wait.Frames(30);
+		bridge.Free();
 		// Canary proves the space keeps simulating after the mid-flight free.
 		var canary = w.MakeBody(w.Sphere(0.3f), new Vector3(3, 4, 0));
 		yield return Wait.UntilOrFail(() => w.Pos(canary).Origin.Y < 3.5f, 240, "canary falls after deferred body free");

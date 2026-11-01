@@ -288,7 +288,12 @@ func _advance_async() -> void:
 	_async_iteration += 1
 	_free_all([_monitor_area, _monitor_area_shape])
 	if _async_iteration >= ASYNC_ITERATIONS:
-		_record("PHYSX-LIFEC-003", true, [])
+		# Record the pass only when no iteration already recorded a failure:
+		# _record() replaces the entry, so an unconditional pass here would
+		# overwrite a timeout failure from WAIT_ENTER/WAIT_EXIT and report a
+		# broken async free path as PASS.
+		if not _results.has("PHYSX-LIFEC-003"):
+			_record("PHYSX-LIFEC-003", true, [])
 		ProjectSettings.set_setting("physics/physx_3d/simulation/async_step", false)
 		_enter(P_LC004_BUILD)
 	else:

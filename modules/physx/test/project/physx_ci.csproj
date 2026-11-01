@@ -15,8 +15,8 @@
     this tree).
   -->
   <PropertyGroup>
-    <!-- Must match the RedotSharp assemblies: net8.0 for Redot 26.3 (Godot 4.5 line). -->
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- Must match the RedotSharp assemblies: net10.0 for the current engine line. -->
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>PhysxTestProject.Tests</RootNamespace>
     <AssemblyName>PhysxTestProject</AssemblyName>
     <EnableDynamicLoading>true</EnableDynamicLoading>
