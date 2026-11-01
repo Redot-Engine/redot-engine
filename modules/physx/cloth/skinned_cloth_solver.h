@@ -100,7 +100,7 @@ public:
 		float animation_drive = 0.0f; // fraction of the way back to the animated pose per 1/60 s
 		float self_collision_thickness = 0.0f; // > 0: particles keep this far apart (self collision)
 		float backstop = 0.02f; // how far (m) the cloth may sink inward past its animated position; < 0 = off
-		Transform3D output_xform; // world -> the space the output textures are written in
+		Transform3D output_xform; // solver space -> the space the output textures are written in
 	};
 
 	bool is_available() const { return gpu.is_valid() && gpu->rd != nullptr; }
@@ -113,9 +113,11 @@ public:
 	void build(const PackedFloat32Array &p_rest, const PackedFloat32Array &p_rest_normals, const PackedInt32Array &p_skin_idx, const PackedFloat32Array &p_skin_w,
 			const PackedFloat32Array &p_constraints, const PackedInt32Array &p_batch_offsets, const PackedFloat32Array &p_tethers,
 			const PackedInt32Array &p_adj_offsets, const PackedInt32Array &p_adj_pairs, int p_bone_count);
-	// p_bones: 16 floats (column-major mat4) per skin bind, world space.
-	// p_capsules: 16 floats per capsule -- previous frame (a.xyz, ra, b.xyz,
-	// rb) then this frame's -- world space, blended across the substeps.
+	// The solver runs in the caller's space (the source mesh's local space,
+	// physics interpolation included). p_bones: 16 floats (column-major mat4)
+	// per skin bind, in that space. p_capsules: 16 floats per capsule --
+	// previous frame (a.xyz, ra, b.xyz, rb) then this frame's -- in that
+	// space, blended across the substeps.
 	void step(const PackedFloat32Array &p_bones, const PackedFloat32Array &p_capsules, const PackedFloat32Array &p_boxes, double p_delta, int p_substeps, const Settings &p_settings);
 	void reset();
 

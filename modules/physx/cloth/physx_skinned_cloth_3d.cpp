@@ -668,7 +668,9 @@ void PhysXSkinnedCloth3D::_try_build() {
 	// The garment as WORN, for the rest lengths: skinned on the skeleton's
 	// SHAPE -- each bone's rest rotation with its current pose position +
 	// scale (body shapes, proportions, a scaled character). The solver works
-	// in world space; rest lengths straight from the mesh's bind-space
+	// in the source mesh's local space (the render twin's, physics
+	// interpolation included); the skeleton-relative basis maps the shape
+	// chain into it. Rest lengths straight from the mesh's bind-space
 	// vertices made a garment on a scaled body shorter than what it is
 	// skinned onto, so every free particle was pulled toward the pins. The
 	// rotations stay at rest so the pose the cloth happens to be built in
@@ -698,15 +700,21 @@ void PhysXSkinnedCloth3D::_try_build() {
 			}
 		}
 	}
-	const Basis node_basis = skeleton->get_global_transform().basis;
+	// The skeleton-relative transform maps the shape chain into the solver's
+	// space (the source mesh's local space).
+	const Transform3D s2l = source->get_global_transform().affine_inverse() * skeleton->get_global_transform();
 	LocalVector<Transform3D> worn_mats;
 	worn_mats.resize(bind_bones.size());
 	for (int j = 0; j < bind_bones.size(); j++) {
 		const int bone = bind_bones[j];
-		worn_mats[j] = Transform3D(node_basis, Vector3()) * (bone >= 0 ? shape_global[bone] : Transform3D()) * bind_poses[j];
+		worn_mats[j] = Transform3D(s2l.basis, Vector3()) * (bone >= 0 ? shape_global[bone] : Transform3D()) * bind_poses[j];
 	}
 	for (int p = 0; p < n; p++) {
 		const int v = particle_vertex[p];
+		// rest stays in BIND space: the shader's skin() applies the full skin
+		// matrices to it, and feeding it the worn positions double-skinned
+		// every animated target (a scaled character's strip contracted toward
+		// its animated pose).
 		rest.set(p * 4 + 0, verts[v].x);
 		rest.set(p * 4 + 1, verts[v].y);
 		rest.set(p * 4 + 2, verts[v].z);
@@ -736,24 +744,35 @@ void PhysXSkinnedCloth3D::_try_build() {
 		}
 	}
 
-	// Second pass with the weights known: the rest positions become the
-	// garment as WORN (see shape_global above) instead of the bind pose.
+	// Second pass with the weights known: the garment as WORN (see
+	// shape_global above) gives the constraint and tether rest lengths, and
+	// its per-particle scale converts the max distances from mesh units into
+	// the solver's space (an unscaled rig maps 1:1). The shader's rest buffer
+	// keeps the bind positions.
+	LocalVector<Vector3> worn_pos;
+	worn_pos.resize(n);
 	{
 		const int *si = skin_idx.ptr();
 		const float *sw = skin_w.ptr();
 		for (int p = 0; p < n; p++) {
 			const int v = particle_vertex[p];
 			const Vector3 bind(verts[v]);
+			Basis worn_basis;
 			Vector3 shaped;
 			for (int wj = 0; wj < 4; wj++) {
 				const float w = sw[p * 4 + wj];
 				if (w > 0.0f && si[p * 4 + wj] < (int)worn_mats.size()) {
-					shaped += worn_mats[si[p * 4 + wj]].xform(bind) * w;
+					const Basis &wm = worn_mats[si[p * 4 + wj]].basis;
+					shaped += wm.xform(bind) * w;
+					worn_basis.rows[0] += wm.rows[0] * w;
+					worn_basis.rows[1] += wm.rows[1] * w;
+					worn_basis.rows[2] += wm.rows[2] * w;
 				}
 			}
-			rest.set(p * 4 + 0, shaped.x);
-			rest.set(p * 4 + 1, shaped.y);
-			rest.set(p * 4 + 2, shaped.z);
+			worn_pos[p] = shaped;
+			const real_t worn_scale = (worn_basis.get_column(0).length() +
+					worn_basis.get_column(1).length() + worn_basis.get_column(2).length()) / 3.0;
+			rest.set(p * 4 + 3, particle_max[p] * worn_scale);
 		}
 	}
 
@@ -796,7 +815,7 @@ void PhysXSkinnedCloth3D::_try_build() {
 	};
 	LocalVector<Con> cons;
 	auto particle_pos = [&](int p) {
-		return Vector3(rest[p * 4], rest[p * 4 + 1], rest[p * 4 + 2]);
+		return worn_pos[p];
 	};
 	auto add_con = [&](int a, int b, float k) {
 		if (particle_max[a] <= 0.0f && particle_max[b] <= 0.0f) {
@@ -1039,14 +1058,21 @@ void PhysXSkinnedCloth3D::_capture_pose(Skeleton3D *p_skeleton) {
 	has_capture = true;
 }
 
-// Solver data from the last capture, placed where the skeleton is now (a
-// still-pose frame may still move through the world).
+// Solver data from the last capture, placed in the solver's space (the
+// source mesh's local space — the render twin's, physics interpolation
+// included: the twin carries the world motion, the sim only sees the pose
+// relative to the garment). A still-pose frame may still move through the
+// world; the relative transform tracks it.
 void PhysXSkinnedCloth3D::_place_capture(Skeleton3D *p_skeleton) {
-	const Transform3D skel_xform = p_skeleton->get_global_transform();
+	MeshInstance3D *source = ObjectDB::get_instance<MeshInstance3D>(source_id);
+	if (source == nullptr) {
+		return;
+	}
+	const Transform3D s2l = source->get_global_transform().affine_inverse() * p_skeleton->get_global_transform();
 	captured_bones.resize(MAX(captured_poses.size(), 1U) * 16);
 	float *bw = captured_bones.ptrw();
 	for (uint32_t j = 0; j < captured_poses.size(); j++) {
-		put_mat4(bw + j * 16, skel_xform * captured_poses[j]);
+		put_mat4(bw + j * 16, s2l * captured_poses[j]);
 	}
 }
 
@@ -1065,6 +1091,12 @@ void PhysXSkinnedCloth3D::_step() {
 	if (delta <= 0.0) {
 		return;
 	}
+
+	// The solver runs in the source mesh's local space (see _place_capture):
+	// colliders and gravity ride the same mapping, and the outputs land in it
+	// directly.
+	const Transform3D source_inv = source->get_global_transform().affine_inverse();
+	const Transform3D s2l = source_inv * skeleton->get_global_transform();
 
 	PackedFloat32Array capsule_data;
 	PackedFloat32Array box_data;
@@ -1099,16 +1131,17 @@ void PhysXSkinnedCloth3D::_step() {
 				continue;
 			}
 			if (cap.is_box) {
-				// World frame: bone pose * body offset * shape placement. The
-				// shader works in pure-rotation coordinates: transpose of an
-				// orthonormal basis is its inverse, and the shape's scale goes
-				// into the world-space half extents instead (inv.origin would
-				// double-apply the rotation to the offset -- any box away from
-				// the world origin collided in the wrong place).
-				const Transform3D world = skeleton->get_global_transform() * captured_capsule_poses_a[c] * cap.shape_local;
-				const Vector3 scale = world.basis.get_scale_abs();
-				const Basis w2l = world.basis.orthonormalized().transposed();
-				const Vector3 origin = world.origin; // shader computes w2l * (p - origin)
+				// Solver-space frame: bone pose * body offset * shape
+				// placement. The shader works in pure-rotation coordinates:
+				// transpose of an orthonormal basis is its inverse, and the
+				// shape's scale goes into the solver-space half extents
+				// instead (inv.origin would double-apply the rotation to the
+				// offset -- any box away from the space origin collided in
+				// the wrong place).
+				const Transform3D solver_frame = s2l * captured_capsule_poses_a[c] * cap.shape_local;
+				const Vector3 scale = solver_frame.basis.get_scale_abs();
+				const Basis w2l = solver_frame.basis.orthonormalized().transposed();
+				const Vector3 origin = solver_frame.origin; // shader computes w2l * (p - origin)
 				const Vector3 half = cap.half_extents * scale;
 				const float box_friction = 0.2f; // matches the capsule path's authored-shape feel
 				bw2[bi * 16 + 0] = w2l.get_column(0).x;
@@ -1135,13 +1168,13 @@ void PhysXSkinnedCloth3D::_step() {
 			float scale = collision_radius_scale;
 			if (cap.from_shape) {
 				// Where the PhysicalBone3D puts its shape: bone pose * body offset.
-				const Transform3D x = skeleton->get_global_transform() * captured_capsule_poses_a[c] * cap.shape_local;
+				const Transform3D x = s2l * captured_capsule_poses_a[c] * cap.shape_local;
 				a = x.xform(Vector3(0, -cap.half_length, 0));
 				b = x.xform(Vector3(0, cap.half_length, 0));
 				scale = 1.0f; // authored shapes are used as they are
 			} else {
-				a = (skeleton->get_global_transform() * captured_capsule_poses_a[c]).origin;
-				b = (skeleton->get_global_transform() * captured_capsule_poses_b[c]).origin;
+				a = (s2l * captured_capsule_poses_a[c]).origin;
+				b = (s2l * captured_capsule_poses_b[c]).origin;
 			}
 			cw[ci * 8 + 0] = a.x;
 			cw[ci * 8 + 1] = a.y;
@@ -1173,9 +1206,14 @@ void PhysXSkinnedCloth3D::_step() {
 	s.thickness = thickness;
 	s.backstop = backstop;
 	s.animation_drive = animation_drive;
-	s.gravity = get_effective_gravity();
+	// World gravity in the solver's space: the inverse basis rotates it and
+	// scales its magnitude into local units (1 local unit = the twin's scale
+	// in meters).
+	s.gravity = source_inv.basis.xform(get_effective_gravity());
 	s.self_collision_thickness = self_collision ? self_collision_thickness : 0.0f;
-	s.output_xform = source->get_global_transform().affine_inverse();
+	// The sim already runs in the output space: the textures hold
+	// source-local positions the render twin reads directly.
+	s.output_xform = Transform3D();
 	solver->step(captured_bones, capsule_data, box_data, delta, substeps, s);
 
 	MeshInstance3D *ri = ObjectDB::get_instance<MeshInstance3D>(render_instance_id);

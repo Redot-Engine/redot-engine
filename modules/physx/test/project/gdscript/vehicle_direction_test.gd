@@ -72,6 +72,19 @@ func _run() -> void:
 		var spd2: float = bike.get_forward_speed()
 		_chk(pos2.z < -1.0, "2W drives nose-first -Z (dz=%.2f)" % pos2.z)
 		_chk(spd2 > 1.0, "2W forward speed positive on +throttle (%.2f)" % spd2)
+		# Curved drive: POSITIVE steer must curve the bike toward +X (the
+		# lateral contract the command inputs carry across the server, the
+		# nodes and the probe bridges). Same lean assist keeps it upright.
+		var steer_start_x: float = pos2.x
+		for i in 120:
+			await physics_frame
+			bike.step(1.0 / 60.0, 1.0, 0.0, 0.6)
+			var av: Vector3 = bike.get_angular_velocity()
+			var fwd: Vector3 = bike.get_forward()
+			bike.apply_torque_impulse(fwd * (-av.dot(fwd) * 0.5))
+		var pos2c: Vector3 = bike.get_position()
+		var dx: float = pos2c.x - steer_start_x
+		_chk(dx > 0.15, "2W positive steer curves toward +X (dx=%.2f)" % dx)
 	bike = null
 
 	# ================= tracked (tank composition) =================

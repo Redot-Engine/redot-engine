@@ -55,10 +55,11 @@ layout(set = 0, binding = 0, std140) uniform Params {
 	vec4 step; // x dt (substep), y damping (velocity kept per substep), z animation drive (fraction pulled to the target per substep), w stiffness
 	vec4 gravity; // xyz gravity (m/s^2), w thickness (m)
 	vec4 limits; // x tether slack (allowed stretch, e.g. 1.03), y tether stiffness, z capsule friction, w backstop distance (m, < 0 = off)
-	// World -> source mesh local space (rows of a 3x4 affine transform). The
-	// solver works in world space; the output images are in the source mesh's
-	// space so the cloth renders through the same (possibly interpolated)
-	// transform as the mesh it replaces.
+	// Solver space -> output space (rows of a 3x4 affine transform). The
+	// solver works in the source mesh's local space, and the output images
+	// are written in the same space (the node passes an identity here): the
+	// cloth renders through the same (possibly interpolated) transform as the
+	// mesh it replaces.
 	vec4 out_x;
 	vec4 out_y;
 	vec4 out_z;
@@ -85,7 +86,7 @@ layout(set = 0, binding = 3, std430) restrict readonly buffer SkinW {
 	vec4 skin_w[];
 };
 layout(set = 0, binding = 4, std430) restrict readonly buffer Bones {
-	mat4 bones[]; // world-space skinning matrices (world * bone global * bind)
+	mat4 bones[]; // solver-space skinning matrices (solver space * bone global * bind)
 };
 layout(set = 0, binding = 5, std430) restrict buffer Target {
 	vec4 target[];
@@ -94,7 +95,7 @@ layout(set = 0, binding = 6, std430) restrict buffer TargetPrev {
 	vec4 target_prev[];
 };
 layout(set = 0, binding = 7, std430) restrict buffer Pos {
-	vec4 pos[]; // xyz world position, w inverse mass (0 = pinned)
+	vec4 pos[]; // xyz solver-space position, w inverse mass (0 = pinned)
 };
 layout(set = 0, binding = 8, std430) restrict buffer Prev {
 	vec4 prev[];
@@ -109,7 +110,7 @@ layout(set = 0, binding = 11, std430) restrict readonly buffer Capsules {
 	vec4 capsules[]; // per capsule: previous frame (a.xyz, ra), (b.xyz, rb), then this frame's
 };
 layout(set = 0, binding = 21, std430) restrict readonly buffer Boxes {
-	vec4 boxes[]; // per box (16 floats): world_to_local basis columns (origin in w), half extents, friction
+	vec4 boxes[]; // per box (16 floats): solver_to_local basis columns (origin in w), half extents, friction
 };
 layout(set = 0, binding = 12, std430) restrict readonly buffer AdjOffsets {
 	uint adj_offsets[]; // particle -> start in adj_pairs, count = next - this
@@ -197,8 +198,8 @@ vec2 closest_segments(vec3 p1, vec3 q1, vec3 p2, vec3 q2) {
 // from, instead of ending up through the limb.
 // Keeps p outside the body boxes (oriented): the axes are pure rotation
 // (transpose == inverse) and the shape's scale is folded into the half
-// extents. Per box (4 vec4): world_to_local basis columns (world-space box
-// center in w), then world-space half extents (xyz) and friction (w).
+// extents. Per box (4 vec4): solver_to_local basis columns (solver-space box
+// center in w), then solver-space half extents (xyz) and friction (w).
 void project_boxes(inout vec3 p, vec3 prev_p) {
 	float thickness = gravity.w;
 	for (int b = 0; b < counts2.w; b++) {
