@@ -11,7 +11,7 @@ on:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout Repository
@@ -51,7 +51,7 @@ jobs:
           path: bin
 
   build-linux-template:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout Repository
@@ -88,7 +88,7 @@ jobs:
           path: bin
 
   build-linux-editor-mono:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout Repository
@@ -126,7 +126,7 @@ jobs:
           path: bin
 
   build-linux-template-mono:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout Repository
@@ -504,6 +504,11 @@ jobs:
             done
             mv "$dir"/*.so physx-runtime-linux/
           done
+          # Demote any ISA requirement the toolchain stamped into the Linux
+          # binaries to baseline: a x86-64-v2/v3 marker would make glibc
+          # refuse the editor on older CPUs ("CPU ISA level is lower than
+          # required") even though the engine code itself is baseline.
+          python3 modules/physx/misc/fix_elf_isa_note.py --level 1             redot-linux-dev/redot.* redot-linux-editor-mono/redot.*
           # upload-artifact does not preserve the executable bit: strip/chmod
           # here and zip in-workflow so the attached release assets carry it.
           strip redot-linux-template/redot.* redot-linux-template-mono/redot.*

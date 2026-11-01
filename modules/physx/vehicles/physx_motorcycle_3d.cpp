@@ -647,6 +647,11 @@ void PhysXMotorcycle3D::_chassis_material_changed() {
 void PhysXMotorcycle3D::_ensure_exception_synced() {
 	if (is_inside_world() && get_world_3d().is_valid()) {
 		PhysXServer3D *server = PhysXServer3D::get_singleton();
+		// Bound entry points reach this whether or not the bike is built;
+		// with PhysX not the active physics backend the singleton is null.
+		if (!server) {
+			return;
+		}
 		if (PhysXSpace3D *space = server->get_space(get_world_3d()->get_space())) {
 			space->ensure_synced();
 		}

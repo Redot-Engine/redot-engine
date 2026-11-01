@@ -95,7 +95,11 @@ void PhysXExportPlugin::_export_begin(const HashSet<String> &p_features, bool p_
 		}
 	}
 	if (template_dir.is_empty()) {
-		template_dir = EditorPaths::get_singleton()->get_export_templates_dir().path_join(GODOT_VERSION_FULL_CONFIG);
+		// REDOT_VERSION_FULL_CONFIG, not the GODOT_ alias: the editor looks
+		// up export templates under the REDOT_ spelling (which carries the
+		// status-version segment the GODOT_ alias omits), and the two do not
+		// always render the same string.
+		template_dir = EditorPaths::get_singleton()->get_export_templates_dir().path_join(REDOT_VERSION_FULL_CONFIG);
 	}
 
 	// One warning per effect (Blast has nine libraries), naming the missing

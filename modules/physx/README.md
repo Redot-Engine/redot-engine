@@ -40,8 +40,8 @@ documented constants or round-trip caches:
 - `physics/physx_3d/simulation/async_step` (default off) overlaps the solve
   with the rest of the frame. Frames that mutate the scene (actor add/remove,
   shape/transform writes, joint changes, scene queries) fetch the in-flight
-  solve first and lose the overlap for that frame. With `physics/3d/
-  run_on_separate_thread`, a module-API mutation arriving from a
+  solve first and lose the overlap for that frame. With
+  `physics/3d/run_on_separate_thread`, a module-API mutation arriving from a
   non-simulating thread proceeds against the last fetched state and warns
   once — keep async stepping off for projects that mutate module objects
   (vehicles, GPU fluids/cloths, articulations) from scripts.

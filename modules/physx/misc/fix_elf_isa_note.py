@@ -1,23 +1,34 @@
 #!/usr/bin/env python3
 """Clears a spurious x86-64 ISA requirement from an ELF's GNU property note.
 
-The Flow premake build stamps GNU_PROPERTY_X86_ISA_1_NEEDED = x86-64-v2 onto
-libnvflow.so / libnvflowext.so unconditionally -- the marker comes from the
-build, not from the code's actual instruction use. glibc's loader refuses
-objects whose ISA note exceeds the running CPU ("CPU ISA level is lower than
-required") at exec and dlopen, so a blanket marker locks engines out of CPUs
-that can actually run every instruction in them.
+glibc's loader refuses objects whose GNU_PROPERTY_X86_ISA_1_NEEDED bitmap
+declares a higher ISA level than the running CPU ("CPU ISA level is lower
+than required") at exec and dlopen. Build toolchains stamp that requirement
+unconditionally (Flow's premake marks x86-64-v2 for libnvflow regardless of
+the instructions actually used; NVIDIA's PhysX static libraries and the
+ubuntu-latest gcc-15 toolchain mark x86-64-v3 the same way), locking engines
+out of CPUs that can run every instruction in the binary.
 
 This tool rewrites the ISA bitmap of the X86_ISA_1_NEEDED property in place
 (the note keeps its size) to --level bits, then verifies the rewritten bytes
 before writing the file.
 
+GNU property type constants (glibc elf.h, 2.41+ -- note that older binutils/
+glibc used 0xc0000002 for X86_ISA_1_NEEDED; the types were renumbered when
+X86_FEATURE_2 was folded away, and glibc 2.41's loader already gates on the
+new value):
+    0xC0000002  GNU_PROPERTY_X86_FEATURE_1_AND  (CET: IBT | SHSTK)
+    0xC0008002  GNU_PROPERTY_X86_ISA_1_NEEDED   <-- this tool rewrites it
 Property entry layout (what glibc's loader walks in elf/dl-load.c):
     pr_type (4 bytes), pr_datasz (4 bytes), pr_data[pr_datasz]
 with pr_data rounded up to an 8-byte boundary in 64-bit objects. An earlier
 version of this tool patched the pr_datasz field by mistake; this version
 also repairs such malformed notes (glibc skips any property whose datasz is
 not 4, so they gate nothing, but they are not the note we meant to write).
+
+The ISA requirement is read from the PT_GNU_PROPERTY program segment (what
+the loader itself walks) when the ELF carries no section-header table --
+a valid stripped ELF can omit sections while keeping the segment.
 """
 
 import argparse
@@ -25,7 +36,9 @@ import os
 import struct
 
 NT_GNU_PROPERTY_TYPE_0 = 5
-GNU_PROPERTY_X86_ISA_1_NEEDED = 0xC0000002
+PT_GNU_PROPERTY = 0x6474E553
+GNU_PROPERTY_X86_ISA_1_NEEDED = 0xC0008002
+GNU_PROPERTY_X86_FEATURE_1_AND = 0xC0000002  # CET marker; NOT gated by the ISA check
 
 ISA_LEVEL_BITS = {
     1: 0x1,  # baseline x86-64 (SSE2)
@@ -35,11 +48,17 @@ ISA_LEVEL_BITS = {
 }
 
 
-def sections(data):
+def _sections(data):
+    """Yields (name, offset, size) for every section header; empty when the
+    file carries no section-header table."""
     e_shoff = struct.unpack_from("<Q", data, 0x28)[0]
+    if e_shoff == 0:
+        return
     e_shentsize = struct.unpack_from("<H", data, 0x3A)[0]
     e_shnum = struct.unpack_from("<H", data, 0x3C)[0]
     e_shstrndx = struct.unpack_from("<H", data, 0x3E)[0]
+    if e_shnum == 0 or e_shstrndx >= e_shnum:
+        return
 
     def sh(i):
         off = e_shoff + i * e_shentsize
@@ -50,8 +69,67 @@ def sections(data):
     for i in range(e_shnum):
         name, offset, size = sh(i)
         base = shstr_off + name
-        n = data[base : data.index(b"\0", base)].decode()
-        yield n, offset, size
+        end = data.index(b"\0", base)
+        if end == -1:
+            continue
+        yield data[base:end].decode(), offset, size
+
+
+def _phdr_gnu_property_notes(data):
+    """Yields (abs_offset_of_desc, desc_bytes) for every NT_GNU_PROPERTY_TYPE_0
+    note inside a PT_GNU_PROPERTY program segment -- the view the dynamic
+    loader itself walks, available even when sections are stripped."""
+    e_phoff = struct.unpack_from("<Q", data, 0x20)[0]
+    if e_phoff == 0:
+        return
+    e_phentsize = struct.unpack_from("<H", data, 0x36)[0]
+    e_phnum = struct.unpack_from("<H", data, 0x38)[0]
+    for i in range(e_phnum):
+        o = e_phoff + i * e_phentsize
+        p_type, p_flags, p_offset, p_vaddr, p_paddr, p_filesz, p_memsz, p_align = struct.unpack_from(
+            "<IIQQQQQQ", data, o
+        )
+        if p_type != PT_GNU_PROPERTY or p_filesz < 12:
+            continue
+        raw = data[p_offset : p_offset + p_filesz]
+        pos = 0
+        while pos + 12 <= len(raw):
+            namesz, descsz, ntype = struct.unpack_from("<III", raw, pos)
+            body = pos + 12 + ((namesz + 3) & ~3)
+            name = raw[pos + 12 : pos + 12 + namesz]
+            if ntype == NT_GNU_PROPERTY_TYPE_0 and namesz == 4 and name == b"GNU\x00":
+                yield p_offset + body, raw[body : body + descsz]
+            pos = body + ((descsz + 3) & ~3)
+
+
+def _property_notes(data):
+    """Collects GNU property note descriptors, preferring the section view and
+    falling back to the program-segment view (stripped binaries). Yields
+    (absolute_desc_offset, desc_bytes) pairs."""
+    descriptors = []
+    has_sections = False
+    for name, offset, size in _sections(data):
+        has_sections = True
+        if name != ".note.gnu.property":
+            continue
+        blob = data[offset : offset + size]
+        pos = 0
+        while pos + 12 <= len(blob):
+            namesz, descsz, ntype = struct.unpack_from("<III", blob, pos)
+            pos += 12
+            name_bytes = blob[pos : pos + namesz]
+            pos += (namesz + 3) & ~3
+            desc_off = offset + pos
+            descriptors.append((desc_off, bytes(blob[pos : pos + descsz])))
+            pos += (descsz + 3) & ~3
+            if namesz != 4 or name_bytes != b"GNU\x00" or ntype != NT_GNU_PROPERTY_TYPE_0:
+                descriptors.pop()
+    if descriptors or has_sections is False:
+        # Fall back to the program-segment view when the section walk found
+        # nothing but the file may still carry the loader-visible note.
+        for desc_off, desc in _phdr_gnu_property_notes(data):
+            descriptors.append((desc_off, desc))
+    return descriptors
 
 
 def fix(path, level, report_only=False):
@@ -64,74 +142,56 @@ def fix(path, level, report_only=False):
 
     patched = 0
     seen = 0
-    for name, offset, size in sections(data):
-        if name != ".note.gnu.property":
-            continue
-        blob = data[offset : offset + size]
-        pos = 0
-        while pos + 12 <= len(blob):
-            namesz, descsz, ntype = struct.unpack_from("<III", blob, pos)
-            pos += 12
-            name = blob[pos : pos + namesz]
-            pos += (namesz + 3) & ~3
-            desc_off = offset + pos
-            desc = blob[pos : pos + descsz]
-            pos += (descsz + 3) & ~3
-            if namesz != 4 or name != b"GNU\x00" or ntype != NT_GNU_PROPERTY_TYPE_0:
-                continue
-            # Walk variable-length property entries, exactly like glibc:
-            # 8-byte header, then pr_data rounded up to 8 bytes on ELF64.
-            j = 0
-            while j + 8 <= len(desc):
-                pr_type, pr_datasz = struct.unpack_from("<II", desc, j)
-                data_off = j + 8
-                next_j = data_off + ((pr_datasz + 7) & ~7)
-                if pr_type == GNU_PROPERTY_X86_ISA_1_NEEDED:
-                    seen += 1
-                    if pr_datasz != 4:
-                        # Malformed: glibc skips the whole note, so it gates
-                        # nothing -- but it is the corrupted output of the
-                        # pre-fix version of this tool (it patched the
-                        # datasz field instead of the bitmap). Rewrite the
-                        # entry well-formed at the requested level.
-                        if report_only:
-                            print(
-                                f"{path}: ISA_1_NEEDED MALFORMED (datasz={pr_datasz}, expected 4) -- skipped by glibc"
-                            )
-                        else:
-                            datasz_off = desc_off + j + 4
-                            struct.pack_into("<I", data, datasz_off, 4)
-                            struct.pack_into("<I", data, desc_off + data_off, want)
-                            if (
-                                struct.unpack_from("<I", data, datasz_off)[0] != 4
-                                or struct.unpack_from("<I", data, desc_off + data_off)[0] != want
-                            ):
-                                print(
-                                    f"{path}: FAILED to repair ISA_1_NEEDED (verification mismatch), file left unchanged"
-                                )
-                                return False
-                            print(f"{path}: ISA_1_NEEDED repaired: datasz {pr_datasz} -> 4, level -> {want:#x}")
-                            patched += 1
-                    elif report_only:
-                        old = struct.unpack_from("<I", desc, data_off)[0]
-                        if old > want:
-                            print(f"{path}: ISA_1_NEEDED = {old:#x} (ABOVE {want:#x})")
-                        else:
-                            print(f"{path}: ISA_1_NEEDED = {old:#x}")
-                    else:
-                        old = struct.unpack_from("<I", desc, data_off)[0]
-                        if old == want:
-                            print(f"{path}: ISA_1_NEEDED already {want:#x}")
-                        else:
-                            struct.pack_into("<I", data, desc_off + data_off, want)
-                            if struct.unpack_from("<I", data, desc_off + data_off)[0] != want:
-                                print(
-                                    f"{path}: FAILED to patch ISA_1_NEEDED (verification mismatch), file left unchanged"
-                                )
-                                return False
-                            print(f"{path}: ISA_1_NEEDED {old:#x} -> {want:#x}")
-                            patched += 1
+    for desc_off, desc in _property_notes(data):
+        # Walk variable-length property entries, exactly like glibc: 8-byte
+        # header, then pr_data rounded up to 8 bytes on ELF64.
+        j = 0
+        while j + 8 <= len(desc):
+            pr_type, pr_datasz = struct.unpack_from("<II", desc, j)
+            data_off = j + 8
+            next_j = data_off + ((pr_datasz + 7) & ~7)
+            if pr_type != GNU_PROPERTY_X86_ISA_1_NEEDED:
                 j = next_j
+                continue
+            seen += 1
+            if pr_datasz != 4:
+                # Malformed: glibc skips the whole note, so it gates nothing
+                # -- but it is the corrupted output of the pre-fix version of
+                # this tool (it patched the datasz field instead of the
+                # bitmap). Rewrite the entry well-formed at the requested
+                # level.
+                if report_only:
+                    print(f"{path}: ISA_1_NEEDED MALFORMED (datasz={pr_datasz}, expected 4) -- skipped by glibc")
+                else:
+                    datasz_off = desc_off + j + 4
+                    struct.pack_into("<I", data, datasz_off, 4)
+                    struct.pack_into("<I", data, desc_off + data_off, want)
+                    if (
+                        struct.unpack_from("<I", data, datasz_off)[0] != 4
+                        or struct.unpack_from("<I", data, desc_off + data_off)[0] != want
+                    ):
+                        print(f"{path}: FAILED to repair ISA_1_NEEDED (verification mismatch), file left unchanged")
+                        return False
+                    print(f"{path}: ISA_1_NEEDED repaired: datasz {pr_datasz} -> 4, level -> {want:#x}")
+                    patched += 1
+            elif report_only:
+                old = struct.unpack_from("<I", desc, data_off)[0]
+                if old > want:
+                    print(f"{path}: ISA_1_NEEDED = {old:#x} (ABOVE {want:#x})")
+                else:
+                    print(f"{path}: ISA_1_NEEDED = {old:#x}")
+            else:
+                old = struct.unpack_from("<I", desc, data_off)[0]
+                if old == want:
+                    print(f"{path}: ISA_1_NEEDED already {want:#x}")
+                else:
+                    struct.pack_into("<I", data, desc_off + data_off, want)
+                    if struct.unpack_from("<I", data, desc_off + data_off)[0] != want:
+                        print(f"{path}: FAILED to patch ISA_1_NEEDED (verification mismatch), file left unchanged")
+                        return False
+                    print(f"{path}: ISA_1_NEEDED {old:#x} -> {want:#x}")
+                    patched += 1
+            j = next_j
     if report_only:
         if seen == 0:
             print(f"{path}: no ISA requirement declared")

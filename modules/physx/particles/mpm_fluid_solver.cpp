@@ -451,6 +451,11 @@ void MPMFluidSolver::configure(const Settings &p_settings, const Transform3D &p_
 	}
 
 	_free_buffers();
+	// Everything below can fail (e.g. _rebuild_uniform_sets() on a device
+	// reset): drop the built flag up front so is_available() stays false and
+	// step()/emit()/get_positions() dispatch against freed RIDs never happens
+	// on a half-configured solver.
+	built = false;
 	_compute_scales(); // sets grid_dims + node_count
 	write_head = 0;
 

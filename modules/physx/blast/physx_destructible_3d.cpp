@@ -701,7 +701,7 @@ bool PhysXDestructible3D::_load() {
 	// block, BLAST-4): a truncated/corrupt file must not reach the resizes
 	// below with a wrapped negative or absurd count.
 	const int64_t chunk_count_i = header[1].to_int();
-	if (chunk_count_i < 0 || (uint32_t)chunk_count_i > asset_chunk_count) {
+	if (chunk_count_i <= 0 || (uint32_t)chunk_count_i > asset_chunk_count) {
 		_unload_native_state();
 		ERR_FAIL_V_MSG(false, vformat("PhysXDestructible3D: chunks file declares %s chunks (asset has %u).", header[1], asset_chunk_count));
 	}
@@ -943,15 +943,17 @@ void PhysXDestructible3D::_spawn_intact() {
 		pieces[pieces.size() - 1].placeholder = true;
 		placeholder_alive = true;
 	}
-	if (physics) {
+	if (physics && (uint32_t)pieces.size() > pieces_before) {
+		// _spawn_piece can fail (chunk index out of range, chunk 0 with too
+		// few points when the sidecar is malformed): skip the body setup
+		// rather than indexing pieces[0] on an empty spawn.
+		const RID intact_body = pieces[pieces.size() - 1].body;
 		PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
 		if (dynamic) {
-			// A real falling/colliding body, not a fixed prop -- and contact
-			// reporting so _check_impact_fracture() can see what it hit.
-			ps->body_set_mode(pieces[0].body, PhysicsServer3D::BODY_MODE_RIGID);
-			ps->body_set_max_contacts_reported(pieces[0].body, 8);
+			ps->body_set_mode(intact_body, PhysicsServer3D::BODY_MODE_RIGID);
+			ps->body_set_max_contacts_reported(intact_body, 8);
 		} else {
-			ps->body_set_mode(pieces[0].body, PhysicsServer3D::BODY_MODE_STATIC);
+			ps->body_set_mode(intact_body, PhysicsServer3D::BODY_MODE_STATIC);
 		}
 	}
 }
@@ -1213,11 +1215,12 @@ void PhysXDestructible3D::_sync_transforms() {
 	// skip the piece it just moved into the current slot.
 	for (int64_t i = (int64_t)pieces.size() - 1; i >= 0; i--) {
 		ChunkVisual &piece = pieces[i];
-		if (!piece.body.is_valid()) {
+		if (!piece.body.is_valid() || piece.anchored) {
 			// Anchored-island chunk: its hull is a shape on the shared static
-			// body, so it has no direct body state of its own -- and it must
-			// not age like debris either (freeing the first island chunk
-			// would free the shared island body out from under the rest).
+			// body -- the owner created that body, the siblings attach to it --
+			// so none of them has a direct body state to sync, and none may
+			// age like debris (freeing any island piece would strip the whole
+			// island's collision).
 			continue;
 		}
 		PhysicsDirectBodyState3D *state = ps->body_get_direct_state(piece.body);
@@ -1505,8 +1508,13 @@ int PhysXDestructible3D::apply_radial_damage(const Vector3 &p_world_position, fl
 					new_actor_pieces.push_back(visible[v]);
 					if (island_static && island_body.is_null()) {
 						// The first chunk's piece owns the shared static body;
-						// sum the island's chunk masses onto it once.
+						// sum the island's chunk masses onto it once. Mark it
+						// anchored too: its body IS the shared island body, so
+						// it must be exempt from the debris lifecycle like its
+						// attached siblings (aging/freeing it would strip the
+						// whole island's collision).
 						island_body = pieces[pieces.size() - 1].body;
+						pieces[pieces.size() - 1].anchored = true;
 						for (uint32_t m : visible) {
 							island_mass += _chunk_mass(m);
 						}
