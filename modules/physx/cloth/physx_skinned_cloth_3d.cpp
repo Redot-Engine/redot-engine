@@ -770,8 +770,9 @@ void PhysXSkinnedCloth3D::_try_build() {
 				}
 			}
 			worn_pos[p] = shaped;
-			const real_t worn_scale = (worn_basis.get_column(0).length() +
-					worn_basis.get_column(1).length() + worn_basis.get_column(2).length()) / 3.0;
+			const real_t worn_span = worn_basis.get_column(0).length() +
+					worn_basis.get_column(1).length() + worn_basis.get_column(2).length();
+			const real_t worn_scale = worn_span / 3.0;
 			rest.set(p * 4 + 3, particle_max[p] * worn_scale);
 		}
 	}
