@@ -50,7 +50,7 @@ namespace AudioMixKernels {
 /// shift the magnitude up by 11 bits keeping the sign.
 _FORCE_INLINE_ void convert_stereo_to_int32(const AudioFrame *p_src, int32_t *p_dst, int p_frames) {
 	int j = 0;
-#ifdef GODOT_SIMD_F32X4
+#if defined(GODOT_SIMD_F32X4) && defined(GODOT_SIMD_X86)
 	{
 		using namespace simd;
 		const f32x4 lo = splat4(-1.0f);
@@ -217,7 +217,7 @@ _FORCE_INLINE_ void mix_ramped(AudioFrame *p_out, const AudioFrame *p_src, Audio
 		const f32x4 vol_start = load2x2(&p_vol_start.left);
 		const f32x4 vol_final = load2x2(&p_vol_final.left);
 		for (; i + 2 <= p_frames; i += 2) {
-			f32x4 t = set4((float)i, (float)i, (float)(i + 1), (float)(i + 1)) / frames;
+			f32x4 t = set4((float[4]){ (float)i, (float)i, (float)(i + 1), (float)(i + 1) }) / frames;
 			f32x4 vol = vol_final * t + vol_start * (one - t);
 			store4(&p_out[i].left, load4(&p_out[i].left) + vol * load4(&p_src[i].left));
 		}

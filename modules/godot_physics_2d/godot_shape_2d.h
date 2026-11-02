@@ -455,7 +455,7 @@ public:
 
 		r_min = r_max = p_normal.dot(p_transform.xform(points[0].pos));
 		int i = 1;
-#ifdef GODOT_SIMD_REAL_F32X4
+#if defined(GODOT_SIMD_REAL_F32X4) && defined(GODOT_SIMD_X86)
 		{
 			// Two points per step (lanes 0,1 and 2,3). Each Point is {pos, normal}, 16 bytes.
 			using namespace simd;
@@ -475,11 +475,11 @@ public:
 				f32x4 m = xf * normal; // nx*x0 ny*y0 nx*x1 ny*y1
 				f32x4 d = m + permute<1, 0, 3, 2>(m); // d0 d0 d1 d1
 				mask4 gt = cmp_gt(d, vmax);
-				vmax = select(gt, d, vmax);
-				imax = select(gt, idx, imax);
+				vmax = select_i32x4(gt, d, vmax);
+				imax = select_i32x4(gt, idx, imax);
 				mask4 lt = cmp_lt(d, vmin);
-				vmin = select(lt, d, vmin);
-				imin = select(lt, idx, imin);
+				vmin = select_i32x4(lt, d, vmin);
+				imin = select_i32x4(lt, idx, imin);
 				idx = add(idx, 2);
 			}
 			// Lanes 0 and 2 hold the two running extremes; equal values (+0.0 / -0.0) keep the

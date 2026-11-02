@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "simd.h"
+#include "simdx86.h"
 
 #include <cstdlib>
 #include <cstring>
@@ -42,8 +42,6 @@
 #include <cpuid.h>
 #endif
 #endif
-
-std::atomic<uint32_t> CPUFeatures::features{ 0 };
 
 #ifdef GODOT_SIMD_X86
 namespace simd {
@@ -86,8 +84,37 @@ static uint64_t _xgetbv0() {
 }
 #endif
 
-static uint32_t _detect_hardware() {
-	uint32_t f = CPUFeatures::INITIALIZED;
+class CPUFeatures
+{
+public:
+	enum Feature
+	{
+		CPUFEATURE_INIT,
+		CPUFEATURE_SIMD,
+		CPUFEATURE_FMADD,
+		CPUFEATURE_FP16,
+		CPUFEATURE_MAX,
+	};
+	enum Features : size_t
+	{
+		CPUFEATURES_NONE = 0,
+		CPUFEATURES_INIT = (1 << CPUFEATURE_INIT),
+		CPUFEATURES_SIMD = (1 << CPUFEATURE_SIMD),
+		CPUFEATURES_FMADD = (1 << CPUFEATURE_FMADD),
+		CPUFEATURES_FP16 = (1 << CPUFEATURE_FP16),
+	};
+
+	static Features get();
+
+	static size_t simdBits;
+	static Features cpuFeatureFlags;
+};
+
+size_t CPUFeatures::simdBits = 0;
+CPUFeatures::Features CPUFeatures::cpuFeatureFlags = CPUFeatures::Features::CPUFEATURES_NONE;;
+
+static CPUFeatures::Features _detect_hardware() {
+	CPUFeatures::Features f = CPUFeatures::CPUFEATURES_NONE;
 #if defined(GODOT_SIMD_X86)
 	uint32_t regs[4];
 	_cpuid(0, 0, regs);
@@ -96,7 +123,8 @@ static uint32_t _detect_hardware() {
 		_cpuid(1, 0, regs);
 		const uint32_t ecx = regs[2];
 		if (ecx & (1u << 20)) {
-			f |= CPUFeatures::SSE42;
+			CPUFeatures::simdBits = MAX(simdBits, 128)
+			f |= CPUFeatures::CPUFEATURES_SIMD;
 		}
 		const bool osxsave = (ecx & (1u << 27)) != 0;
 		const bool avx = (ecx & (1u << 28)) != 0;
@@ -105,59 +133,63 @@ static uint32_t _detect_hardware() {
 			ymm_enabled = (_xgetbv0() & 0x6) == 0x6;
 		}
 		if (ymm_enabled) {
-			f |= CPUFeatures::AVX;
+			CPUFeatures::simdBits = MAX(simdBits, 256)
+			f |= CPUFeatures::CPUFEATURES_SIMD;
 			if (ecx & (1u << 12)) {
-				f |= CPUFeatures::FMA;
+				f |= CPUFeatures::CPUFEATURES_FMADD;
 			}
 			if (ecx & (1u << 29)) {
-				f |= CPUFeatures::F16C;
+				f |= CPUFeatures::CPUFEATURES_FP16;
 			}
 			if (max_leaf >= 7) {
 				_cpuid(7, 0, regs);
 				if (regs[1] & (1u << 5)) {
-					f |= CPUFeatures::AVX2;
+					CPUFeatures::simdBits = MAX(simdBits, 256)
+					f |= CPUFeatures::CPUFEATURES_SIMD;
 				}
 			}
 		}
 	}
 #endif
+	f = CPUFeatures::CPUFEATURES_INIT;
 	return f;
 }
 
 // Function-local static: initialized exactly once, even when several threads get here first.
-static uint32_t _hardware_features() {
-	static const uint32_t hardware = _detect_hardware();
-	return hardware;
-}
+// static CPUFeatures::Features _hardware_features() {
+// 	const CPUFeatures::Features hardware = _detect_hardware();
+// 	return hardware;
+// }
 
-uint32_t CPUFeatures::_detect() {
-	uint32_t f = _hardware_features();
-	// GODOT_SIMD_LEVEL=sse disables every runtime-dispatched extension, =avx keeps only AVX.
-#if defined(_MSC_VER)
-	// MSVC/clang-cl deprecate getenv under /WX; _dupenv_s is the supported form (frees via the heap).
-	char *level = nullptr;
-	size_t level_size = 0;
-	_dupenv_s(&level, &level_size, "GODOT_SIMD_LEVEL");
-#else
-	const char *level = std::getenv("GODOT_SIMD_LEVEL");
-#endif
-	if (level) {
-		if (strcmp(level, "sse") == 0 || strcmp(level, "baseline") == 0) {
-			f &= ~(AVX | AVX2 | FMA | F16C);
-		} else if (strcmp(level, "avx") == 0) {
-			f &= ~(AVX2 | FMA | F16C);
-		}
+// CPUFeatures::Features _detect() {
+// 	CPUFeatures::Features f = _hardware_features();
+// 	return f;
+// 	// GODOT_SIMD_LEVEL=sse disables every runtime-dispatched extension, =avx keeps only AVX.
+// #if defined(_MSC_VER)
+// 	// MSVC/clang-cl deprecate getenv under /WX; _dupenv_s is the supported form (frees via the heap).
+// 	char *level = nullptr;
+// 	size_t level_size = 0;
+// 	_dupenv_s(&level, &level_size, "GODOT_SIMD_LEVEL");
+// #else
+// 	const char *level = std::getenv("GODOT_SIMD_LEVEL");
+// #endif
+// 	if (level) {
+// 		if (strcmp(level, "sse") == 0 || strcmp(level, "baseline") == 0) {
+// 			f &= ~(AVX | AVX2 | FMA | F16C);
+// 		} else if (strcmp(level, "avx") == 0) {
+// 			f &= ~(AVX2 | FMA | F16C);
+// 		}
+// 	}
+// #if defined(_MSC_VER)
+// 	free(level);
+// #endif
+// 	return f;
+// }
+
+CPUFeatures::Features CPUFeatures::get() {
+	if (!(cpuFeatureFlags & CPUFeatures::Features::CPUFEATURES_INIT))
+	{
+		cpuFeatureFlags = _detect_hardware();
 	}
-#if defined(_MSC_VER)
-	free(level);
-#endif
-	return f;
-}
-
-void CPUFeatures::set_override(uint32_t p_mask) {
-	features.store((_hardware_features() & p_mask) | INITIALIZED, std::memory_order_relaxed);
-}
-
-void CPUFeatures::reset_override() {
-	features.store(0, std::memory_order_relaxed);
+	return cpuFeatureFlags;
 }

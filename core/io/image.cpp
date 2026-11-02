@@ -1997,7 +1997,7 @@ int64_t Image::_get_dst_image_size(int p_width, int p_height, Format p_format, i
 	return size;
 }
 
-#ifdef GODOT_SIMD_F32X4
+#if defined(GODOT_SIMD_F32X4) && defined(GODOT_SIMD_X86)
 // Box filter of one row pair for 8-bit, float and half components; p_count destination pixels
 // are produced from 2 * p_count source pixels of each row. Returns how many were handled.
 template <int CC>
@@ -2147,7 +2147,7 @@ static void _generate_po2_mipmap(const Component *p_src, Component *p_dst, uint3
 		Component *dst_ptr = &p_dst[i * dst_w * CC];
 		uint32_t count = dst_w;
 
-#ifdef GODOT_SIMD_F32X4
+#if defined(GODOT_SIMD_F32X4) && defined(GODOT_SIMD_X86)
 		// Half-float (uint16_t) mipmaps stay scalar: the bit-exact half<->float conversion costs more
 		// than the SIMD averaging saves.
 		if constexpr (!renormalize && (std::is_same_v<Component, uint8_t> || std::is_same_v<Component, float>)) {
@@ -2831,7 +2831,7 @@ bool Image::is_invisible() const {
 			const int pixel_count = len / 4;
 			const uint32_t *pixeldata = reinterpret_cast<const uint32_t *>(data.ptr());
 			int i = 0;
-#ifdef GODOT_SIMD_F32X4
+#if defined(GODOT_SIMD_F32X4) && defined(GODOT_SIMD_X86)
 			// OR the alpha bytes of 16 pixels at a time and test once.
 			for (; i + 16 <= pixel_count; i += 16) {
 				const __m128i *p = reinterpret_cast<const __m128i *>(pixeldata + i);
@@ -4414,7 +4414,7 @@ void Image::premultiply_alpha() {
 	const int64_t pixel_count = (int64_t)width * height;
 	int64_t p = 0;
 
-#ifdef GODOT_SIMD_F32X4
+#if defined(GODOT_SIMD_F32X4) && defined(GODOT_SIMD_X86)
 	// Four pixels per step in 16-bit lanes: (c * a + 255) >> 8, alpha kept.
 	for (; p + 4 <= pixel_count; p += 4) {
 		uint8_t *ptr = &data_ptr[p * 4];
