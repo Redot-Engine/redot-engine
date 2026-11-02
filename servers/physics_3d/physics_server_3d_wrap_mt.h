@@ -127,7 +127,6 @@ public:
 
 	/// This function only works on physics process, errors and returns null otherwise
 	PhysicsDirectSpaceState3D *space_get_direct_state(RID p_space) override {
-		ERR_FAIL_COND_V(!Thread::is_main_thread(), nullptr);
 		return physics_server_3d->space_get_direct_state(p_space);
 	}
 
