@@ -96,6 +96,8 @@ public:
 	/// idle by construction) before fetching on the main thread.
 	void ensure_synced();
 	bool is_stepping() const { return stepping; }
+	/// The thread whose step() set `stepping` (only meaningful while stepping).
+	Thread::ID get_stepping_thread() const { return stepping_thread; }
 	float get_last_step() const { return last_step; }
 	/// Active-actor count of the last completed solve (INFO_ACTIVE_OBJECTS).
 	int get_active_objects() const { return active_objects; }

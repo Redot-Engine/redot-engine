@@ -78,7 +78,11 @@ void main() {
 
 	// Surface rise here: ripples plus the (unfaded) ocean waves arriving.
 	vec2 rel = ((vec2(c) + 0.5) / float(n) - 0.5) * domains.xy;
-	vec2 uv_o = clamp(rel / domains.zw + 0.5, vec2(0.0), vec2(1.0));
+	// The FFT ocean is periodic (it tiles seamlessly), so wrap instead of
+	// clamping: a surface footprint larger than the ocean tile must keep
+	// sampling the arriving waves past the center tile, not freeze on the
+	// edge texels the way the clamp did.
+	vec2 uv_o = fract(rel / domains.zw + 0.5);
 	float rise = texelFetch(ripple_height_tex, c, 0).r - foam.w + texture(ocean_height_tex, uv_o).r;
 
 	// Shoreward direction: down the depth gradient.

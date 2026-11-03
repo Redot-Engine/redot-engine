@@ -69,10 +69,24 @@ struct DeeperContactFirst {
 // error, so every public query fetches the pending solve first. This collapses
 // the async overlap for any frame that queries — the documented cost; frames
 // whose scripts only read body state keep the overlap.
-static void _ensure_space_synced(const PhysXSpace3D *p_space) {
-	if (p_space) {
-		const_cast<PhysXSpace3D *>(p_space)->sync();
+// When the in-flight solve belongs to ANOTHER thread (physics/3d/
+// run_on_separate_thread), neither fetching (PhysX requires simulate() and
+// fetchResults() on one thread) nor querying the scene mid-solve is legal.
+// The query is then refused with an error — mirroring godot_physics' locked-
+// space refusal — instead of racing the solver or double-fetching the scene.
+// Returns false when the caller must not touch the scene (no results).
+static bool _ensure_space_synced(const PhysXSpace3D *p_space) {
+	if (!p_space) {
+		return false;
 	}
+	PhysXSpace3D *space = const_cast<PhysXSpace3D *>(p_space);
+	if (space->is_stepping() && Thread::get_caller_id() != space->get_stepping_thread()) {
+		ERR_FAIL_V_MSG(false,
+				"PhysX: a space query arrived from a non-simulating thread while a solve is in flight "
+				"(physics/3d/run_on_separate_thread); it returns no results this frame.");
+	}
+	space->sync();
+	return true;
 }
 
 // Resolves a (actor, shape) query hit to the body-local shape index, or -1
@@ -218,7 +232,9 @@ static bool _build_query_shape(const RID &p_shape_rid,
 // INTERSECT RAY (Raycast)
 // -----------------------------------------------------------------------
 bool PhysXDirectSpaceState3D::intersect_ray(const RayParameters &p_parameters, RayResult &r_result) {
-	_ensure_space_synced(space);
+	if (!_ensure_space_synced(space)) {
+		return false;
+	}
 	if (!space || !space->get_px_scene()) {
 		return false;
 	}
@@ -402,7 +418,9 @@ bool PhysXDirectSpaceState3D::intersect_ray(const RayParameters &p_parameters, R
 // INTERSECT POINT (Overlap)
 // -----------------------------------------------------------------------
 int PhysXDirectSpaceState3D::intersect_point(const PointParameters &p_parameters, ShapeResult *r_results, int p_result_max) {
-	_ensure_space_synced(space);
+	if (!_ensure_space_synced(space)) {
+		return 0;
+	}
 	if (!space || !space->get_px_scene() || p_result_max <= 0) {
 		return 0;
 	}
@@ -463,7 +481,9 @@ int PhysXDirectSpaceState3D::intersect_point(const PointParameters &p_parameters
 }
 
 int PhysXDirectSpaceState3D::intersect_shape(const ShapeParameters &p_parameters, ShapeResult *r_results, int p_result_max) {
-	_ensure_space_synced(space);
+	if (!_ensure_space_synced(space)) {
+		return 0;
+	}
 	if (!space || !space->get_px_scene() || p_result_max <= 0) {
 		return 0;
 	}
@@ -528,7 +548,9 @@ int PhysXDirectSpaceState3D::intersect_shape(const ShapeParameters &p_parameters
 }
 
 bool PhysXDirectSpaceState3D::cast_motion(const ShapeParameters &p_parameters, real_t &r_closest_safe, real_t &r_closest_unsafe, ShapeRestInfo *r_info) {
-	_ensure_space_synced(space);
+	if (!_ensure_space_synced(space)) {
+		return false;
+	}
 	if (!space || !space->get_px_scene()) {
 		return false;
 	}
@@ -646,7 +668,9 @@ bool PhysXDirectSpaceState3D::cast_motion(const ShapeParameters &p_parameters, r
 
 bool PhysXDirectSpaceState3D::collide_shape(const ShapeParameters &p_parameters, Vector3 *r_results, int p_result_max, int &r_result_count) {
 	r_result_count = 0;
-	_ensure_space_synced(space);
+	if (!_ensure_space_synced(space)) {
+		return false;
+	}
 	if (!space || !space->get_px_scene() || p_result_max <= 0) {
 		return false;
 	}
@@ -731,7 +755,9 @@ bool PhysXDirectSpaceState3D::rest_info(const ShapeParameters &p_parameters, Sha
 	// the DEEPEST one (godot_space_3d _rest_cbk_result keeps the largest len).
 	// Used by cast_motion when the sweep starts already overlapping, and by
 	// direct rest_info queries (ground checks).
-	_ensure_space_synced(space);
+	if (!_ensure_space_synced(space)) {
+		return false;
+	}
 	if (!r_info || !space || !space->get_px_scene()) {
 		return false;
 	}
@@ -858,7 +884,9 @@ bool PhysXDirectSpaceState3D::rest_info(const ShapeParameters &p_parameters, Sha
 }
 
 Vector3 PhysXDirectSpaceState3D::get_closest_point_to_object_volume(RID p_object, Vector3 p_point) const {
-	_ensure_space_synced(space);
+	if (!_ensure_space_synced(space)) {
+		return p_point;
+	}
 	// Resolve the RID to the internal PhysXBody3D wrapper.
 	PhysXBody3D *body = PhysXServer3D::get_singleton()->get_body(p_object);
 
@@ -1160,7 +1188,9 @@ static RoundMeshContact _round_mesh_contact(const physx::PxGeometry &p_mover_geo
 }
 
 bool PhysXDirectSpaceState3D::body_test_motion(const PhysXBody3D &p_body, const PhysicsServer3D::MotionParameters &p_parameters, PhysicsServer3D::MotionResult *r_result) const {
-	_ensure_space_synced(space);
+	if (!_ensure_space_synced(space)) {
+		return false;
+	}
 	if (!space) {
 		return false;
 	}

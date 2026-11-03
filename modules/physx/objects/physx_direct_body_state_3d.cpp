@@ -216,6 +216,20 @@ Vector3 PhysXDirectBodyState3D::get_velocity_at_local_position(const Vector3 &p_
 	// contribution is measured about the center of mass, at origin + offset.
 	const physx::PxTransform gp = dyn->getGlobalPose();
 	const physx::PxVec3 world_point(gp.p.x + p_position.x, gp.p.y + p_position.y, gp.p.z + p_position.z);
+	// Kinematic bodies carry no simulated velocity (getLinearVelocity on a
+	// kinematic actor is zero/stale -- the reason get_linear_velocity() and
+	// get_angular_velocity() above return the pose-delta trackers). Reproduce
+	// the same v + omega x r field getVelocityAtPos computes, from the
+	// TRACKED velocities: otherwise a rider on a moving or rotating
+	// AnimatableBody3D platform inherits no ride velocity.
+	if (body->get_mode() == PhysicsServer3D::BODY_MODE_KINEMATIC) {
+		const physx::PxVec3 com_world = gp.transform(dyn->getCMassLocalPose().p);
+		const Vector3 lv = body->get_kinematic_linear_velocity();
+		const Vector3 av = body->get_kinematic_angular_velocity();
+		const physx::PxVec3 r(world_point.x - com_world.x, world_point.y - com_world.y, world_point.z - com_world.z);
+		const physx::PxVec3 spin = physx::PxVec3(av.x, av.y, av.z).cross(r);
+		return Vector3(lv.x + spin.x, lv.y + spin.y, lv.z + spin.z);
+	}
 	physx::PxVec3 vel = physx::PxRigidBodyExt::getVelocityAtPos(*const_cast<physx::PxRigidDynamic *>(dyn), world_point);
 	return Vector3(vel.x, vel.y, vel.z);
 }

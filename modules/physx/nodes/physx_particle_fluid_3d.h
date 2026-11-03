@@ -149,6 +149,10 @@ private:
 	// (MPM foam records arrive as x,y,z,kind; the kind scales the sprite)
 	RID foam_instance;
 	Ref<Mesh> foam_mesh;
+	// Node-local MultiMesh row scratch for the MPM sphere path: the solver's
+	// own cache stays world-space (get_submersion reads it against a world
+	// AABB), so the local-space conversion must not write through it.
+	PackedFloat32Array mm_local_scratch;
 
 	int particle_count = 4096;
 	float particle_size = 0.1;

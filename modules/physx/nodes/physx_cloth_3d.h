@@ -102,6 +102,11 @@ private:
 	double wind_time = 0.0;
 	Transform3D last_anchor_xform;
 	LocalVector<int> pinned_index_cache; // resolved pin set (mode + explicit)
+	// GPU path: current world-space pin target per pinned_index_cache entry,
+	// tracked incrementally by the anchor delta. The pin indices live in the
+	// solver's (pre-cook) vertex space, which the render mesh (cooked order,
+	// from cloth_get_mesh) must not be indexed by.
+	LocalVector<Vector3> gpu_pin_world;
 
 	PackedVector3Array render_verts;
 	PackedVector3Array render_normals;
@@ -114,6 +119,7 @@ private:
 	void _apply_solver_settings();
 	bool _try_build_gpu();
 	void _resolve_pins();
+	void _seed_gpu_pin_world(); // GPU: pin targets from solver (input-space) positions
 	void _step(double p_delta);
 	void _collide();
 	void _update_mesh(); // CPU: from the solver

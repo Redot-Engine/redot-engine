@@ -159,6 +159,10 @@ bool PhysXCloth3D::_try_build_gpu() {
 		pins.push_back(pinned_index_cache[i]);
 	}
 	server->cloth_set_pinned(gpu_cloth, pins);
+	// Seed the incremental world-space pin targets from the solver's rest
+	// positions: they live in the same (input, pre-cook) vertex space the pin
+	// indices use, unlike the render mesh (cooked order).
+	_seed_gpu_pin_world();
 	gpu_mesh_version = 0;
 	// Keep the solver's rest data around for the gizmo and vertex count; it is
 	// just not stepped while the GPU owns the simulation.
@@ -185,6 +189,7 @@ void PhysXCloth3D::_destroy() {
 	}
 	solver.clear();
 	pinned_index_cache.clear();
+	gpu_pin_world.clear();
 }
 
 void PhysXCloth3D::_resolve_pins() {
@@ -241,6 +246,10 @@ void PhysXCloth3D::_resolve_pins() {
 				pins.push_back(pinned_index_cache[i]);
 			}
 			server->cloth_set_pinned(gpu_cloth, pins);
+			// Re-seed for the new pin set: the solver's rest positions are the
+			// only input-space source available here (a runtime pin change
+			// without a rebuild targets the rest pose until the anchor moves).
+			_seed_gpu_pin_world();
 		}
 	}
 
@@ -248,6 +257,18 @@ void PhysXCloth3D::_resolve_pins() {
 	// just record where it starts.
 	Node3D *anchor = Object::cast_to<Node3D>(get_node_or_null(anchor_path));
 	last_anchor_xform = anchor ? anchor->get_global_transform() : Transform3D();
+}
+
+// GPU path: the pin indices are authored in the solver's (input, pre-cook)
+// vertex space, and the solver's positions live in that same space -- the
+// render mesh does NOT (cloth_get_mesh returns cooked-order vertices).
+void PhysXCloth3D::_seed_gpu_pin_world() {
+	gpu_pin_world.resize(pinned_index_cache.size());
+	const LocalVector<Vector3> &sp = solver.get_positions();
+	for (uint32_t i = 0; i < pinned_index_cache.size(); i++) {
+		const int v = pinned_index_cache[i];
+		gpu_pin_world[i] = (v >= 0 && v < (int)sp.size()) ? sp[v] : Vector3();
+	}
 }
 
 Vector3 PhysXCloth3D::_sample_wind(double p_delta) {
@@ -317,20 +338,25 @@ void PhysXCloth3D::_step(double p_delta) {
 			return;
 		}
 		Node3D *anchor = Object::cast_to<Node3D>(get_node_or_null(anchor_path));
-		if (anchor && !pinned_index_cache.is_empty()) {
-			// Feed the pinned vertices' target world positions from the last mesh.
+		if (anchor && !pinned_index_cache.is_empty() && gpu_pin_world.size() == pinned_index_cache.size()) {
+			// Feed the pinned vertices' target world positions, tracked in
+			// INPUT vertex space: pinned_index_cache entries index the
+			// solver's (pre-cook) vertices, while render_verts comes from
+			// cloth_get_mesh() in COOKED order -- indexing it by an input
+			// index reads an unrelated vertex whenever the cook welded or
+			// reordered, snapping the wrong vertex to the anchor.
 			const Transform3D now = anchor->get_global_transform();
 			const Transform3D delta = now * last_anchor_xform.affine_inverse();
 			Vector<Vector3> targets;
-			targets.resize(render_verts.size());
-			const Transform3D gt = get_global_transform();
-			for (int i = 0; i < render_verts.size(); i++) {
-				targets.write[i] = Vector3(NAN, 0, 0);
+			targets.resize(solver.vertex_count());
+			for (int i = 0; i < targets.size(); i++) {
+				targets.write[i] = Vector3(NAN, 0, 0); // NAN.x releases the slot
 			}
 			for (uint32_t i = 0; i < pinned_index_cache.size(); i++) {
 				const int v = pinned_index_cache[i];
+				gpu_pin_world[i] = delta.xform(gpu_pin_world[i]);
 				if (v >= 0 && v < targets.size()) {
-					targets.write[v] = delta.xform(gt.xform(render_verts[v]));
+					targets.write[v] = gpu_pin_world[i];
 				}
 			}
 			server->cloth_set_pin_targets(gpu_cloth, targets);
@@ -568,6 +594,9 @@ void PhysXCloth3D::reset() {
 	}
 	_resolve_pins();
 	solver.reset(get_global_transform());
+	if (gpu_cloth.is_valid()) {
+		_seed_gpu_pin_world(); // follow the re-placed rest pose
+	}
 	last_anchor_xform = Transform3D();
 	Node3D *anchor = Object::cast_to<Node3D>(get_node_or_null(anchor_path));
 	if (anchor) {

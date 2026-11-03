@@ -131,7 +131,11 @@ class PhysXSkinnedCloth3D : public Node3D {
 	bool hid_source_node = false;
 	int hidden_surface = -1;
 	Ref<Material> saved_surface_override;
-	static Ref<ShaderMaterial> hide_material;
+	// Per instance, not static: a static Ref's destructor runs during static
+	// destruction, after ObjectDB/RenderingServer teardown -- the material and
+	// its shader then count as leaked objects at exit and free RIDs against a
+	// server that is already gone.
+	Ref<ShaderMaterial> hide_material;
 	void _hide_source(MeshInstance3D *p_source);
 	void _unhide_source();
 

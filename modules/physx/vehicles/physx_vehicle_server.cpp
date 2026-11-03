@@ -1528,8 +1528,21 @@ void PhysXVehicleServer::write_commands() {
 			}
 		}
 		if (pw_drive) {
-			const float maxr = v2->throttle_response_params.maxResponse;
-			float inv = (maxr > 0.0f) ? (1.0f / maxr) : 1.0f;
+			// Two passes: raise the channel to the LARGEST demanded torque
+			// before encoding ANY multiplier. Encoding while scanning let a
+			// later wheel's raise inflate the already-encoded wheels' applied
+			// torque (their multipliers were computed against the smaller
+			// maxResponse: applied = maxResponse_final * old multiplier).
+			// Starting from the tuned baseline (not the value a previous
+			// per-wheel frame left behind) also stops the channel ratcheting
+			// upward across frames.
+			float max_demand = scoped_drive_max_response;
+			for (int i = 0; i < wheel_count; i++) {
+				const float demand = (in_wheel_drive_torque[i] >= 0.0f) ? in_wheel_drive_torque[i] : -in_wheel_drive_torque[i];
+				max_demand = MAX(max_demand, demand);
+			}
+			v2->throttle_response_params.maxResponse = max_demand;
+			const float inv = (max_demand > 0.0f) ? (1.0f / max_demand) : 1.0f;
 			v2->command_state.throttle = 1.0f;
 			// The gear flips the sign of the throttle response for the whole
 			// vehicle, so it follows the DOMINANT commanded direction (the
@@ -1544,17 +1557,7 @@ void PhysXVehicleServer::write_commands() {
 					? physx::PxVehicleDirectDriveTransmissionCommandState::eFORWARD
 					: physx::PxVehicleDirectDriveTransmissionCommandState::eREVERSE;
 			for (int i = 0; i < wheel_count; i++) {
-				const float wheel_drive_torque = in_wheel_drive_torque[i];
-				const float demand = (wheel_drive_torque >= 0.0f) ? wheel_drive_torque : -wheel_drive_torque;
-				if (demand * inv > 1.0f) {
-					// A wheel torque above maxResponse would encode a multiplier > 1 --
-					// outside the response contract. Raise maxResponse to the largest
-					// demanded torque instead of clamping (clamping would silently
-					// weaken the other wheels' drive).
-					v2->throttle_response_params.maxResponse = demand;
-					inv = 1.0f / demand;
-				}
-				v2->throttle_response_params.wheelResponseMultipliers[i] = wheel_drive_torque * gear_sign * inv;
+				v2->throttle_response_params.wheelResponseMultipliers[i] = in_wheel_drive_torque[i] * gear_sign * inv;
 			}
 		} else {
 			// Scalar mode: restore the TUNED baseline (see the snapshot in
@@ -1574,8 +1577,16 @@ void PhysXVehicleServer::write_commands() {
 			}
 		}
 		if (pw_brake) {
-			const float maxr = v2->brake_response_params[0].maxResponse;
-			float inv = (maxr > 0.0f) ? (1.0f / maxr) : 1.0f;
+			// Two passes, same contract as the drive channel above: the
+			// channel rises to the largest demanded torque BEFORE any
+			// multiplier is encoded, from the tuned baseline.
+			float max_demand = scoped_brake_max_response;
+			for (int i = 0; i < wheel_count; i++) {
+				const float demand = (in_wheel_brake_torque[i] < 0.0f ? -in_wheel_brake_torque[i] : in_wheel_brake_torque[i]);
+				max_demand = MAX(max_demand, demand);
+			}
+			v2->brake_response_params[0].maxResponse = max_demand;
+			const float inv = (max_demand > 0.0f) ? (1.0f / max_demand) : 1.0f;
 			v2->command_state.brakes[0] = 1.0f;
 			// Brake magnitude only: a brake torque resists wheel rotation, it
 			// has no direction of its own, so the sign of the command is
@@ -1583,12 +1594,6 @@ void PhysXVehicleServer::write_commands() {
 			for (int i = 0; i < wheel_count; i++) {
 				const float wheel_drive_torque = in_wheel_brake_torque[i];
 				const float demand = (wheel_drive_torque < 0.0f ? -wheel_drive_torque : wheel_drive_torque);
-				if (demand * inv > 1.0f) {
-					// Same contract as the drive channel: a brake torque above
-					// maxResponse must raise maxResponse, not clamp the multiplier.
-					v2->brake_response_params[0].maxResponse = demand;
-					inv = 1.0f / demand;
-				}
 				v2->brake_response_params[0].wheelResponseMultipliers[i] = demand * inv;
 			}
 		} else {
@@ -2372,6 +2377,13 @@ void PhysXVehicleServer::set_differential_params(const Dictionary &p_params) {
 		PackedInt32Array ids = p_params["front_wheel_ids"];
 		const int32_t *wheel_ids_ptr = ids.ptr();
 		const int driven_wheel_count = ids.size() < 2 ? ids.size() : 2;
+		// Validate every id BEFORE any write: the differential components
+		// index the per-wheel state arrays with these ids during the vehicle
+		// step, so a negative or too-large id reads/writes out of bounds. A
+		// mid-loop fail would otherwise leave a mixed configuration.
+		for (int i = 0; i < driven_wheel_count; i++) {
+			ERR_FAIL_INDEX_MSG(wheel_ids_ptr[i], wheel_count, "PhysX: differential wheel id out of range.");
+		}
 		for (int i = 0; i < driven_wheel_count; i++) {
 			v2->diff_params.frontWheelIds[i] = (physx::PxU32)wheel_ids_ptr[i];
 		}
@@ -2380,6 +2392,9 @@ void PhysXVehicleServer::set_differential_params(const Dictionary &p_params) {
 		PackedInt32Array ids = p_params["rear_wheel_ids"];
 		const int32_t *wheel_ids_ptr = ids.ptr();
 		const int driven_wheel_count = ids.size() < 2 ? ids.size() : 2;
+		for (int i = 0; i < driven_wheel_count; i++) {
+			ERR_FAIL_INDEX_MSG(wheel_ids_ptr[i], wheel_count, "PhysX: differential wheel id out of range.");
+		}
 		for (int i = 0; i < driven_wheel_count; i++) {
 			v2->diff_params.rearWheelIds[i] = (physx::PxU32)wheel_ids_ptr[i];
 		}

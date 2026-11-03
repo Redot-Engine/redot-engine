@@ -316,6 +316,7 @@ bool PhysXFlowSimulation3D::_build_server_shape_mesh(const RID &p_shape_rid, Cac
 
 void PhysXFlowSimulation3D::_resolve_colliders(LocalVector<FlowColliderData> &r_colliders, double p_delta) {
 	active_collider_ids.clear();
+	active_server_luid_bodies.clear();
 	PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
 
 	for (int i = 0; i < colliders.size(); i++) {
@@ -405,6 +406,7 @@ void PhysXFlowSimulation3D::_resolve_colliders(LocalVector<FlowColliderData> &r_
 			}
 
 			const int shape_count = ps->body_get_shape_count(body);
+			active_server_luid_bodies.insert(body);
 			for (int s = 0; s < shape_count; s++) {
 				const RID shape = ps->body_get_shape(body, s);
 				if (!shape.is_valid()) {
@@ -420,7 +422,21 @@ void PhysXFlowSimulation3D::_resolve_colliders(LocalVector<FlowColliderData> &r_
 					cache = shape_mesh_cache.getptr(shape); // refetch: insert may rehash
 				}
 				FlowColliderData c;
-				c.luid = ((uint64_t)shape.get_id() << 1) ^ 0x100000000ull; // stable per shape
+				// One collider per (body, shape slot): a luid keyed on the
+				// shape RID alone aliases shared shapes (one resource on two
+				// bodies) and repeated slots -- Flow keys its per-collider
+				// state on the luid, so both colliders would fight over one
+				// identity. Allocate stable ids per (body, slot) from the
+				// dedicated range instead.
+				LocalVector<uint64_t> &slot_luids = server_collider_luids[body];
+				if ((uint32_t)s >= slot_luids.size()) {
+					const uint32_t old_size = slot_luids.size();
+					slot_luids.resize(s + 1);
+					for (uint32_t k = old_size; k < slot_luids.size(); k++) {
+						slot_luids[k] = next_server_collider_luid++;
+					}
+				}
+				c.luid = slot_luids[s];
 				const Transform3D shape_local = ps->body_get_shape_transform(body, s);
 				c.world_xform = body_xform * shape_local;
 				c.linear_velocity = linear;
@@ -591,6 +607,17 @@ void PhysXFlowSimulation3D::_step(double p_delta) {
 		}
 		for (const ObjectID &dead : dead_ids) {
 			node_luids.erase(dead);
+		}
+		// Same sweep for the physics-server bridge colliders' per-(body, slot)
+		// luid allocations: bodies that left the collider set are dead weight.
+		LocalVector<RID> dead_rids;
+		for (HashMap<RID, LocalVector<uint64_t>>::Iterator it = server_collider_luids.begin(); it != server_collider_luids.end(); ++it) {
+			if (!active_server_luid_bodies.has(it->key)) {
+				dead_rids.push_back(it->key);
+			}
+		}
+		for (const RID &dead : dead_rids) {
+			server_collider_luids.erase(dead);
 		}
 		cache_validate_countdown--;
 		if (cache_validate_countdown <= 0) {
@@ -1470,9 +1497,12 @@ void PhysXFlowSimulation3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "pressure_projection"), "set_pressure_projection", "get_pressure_projection");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "floor_enabled"), "set_floor_enabled", "is_floor_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "floor_height", PROPERTY_HINT_NONE, "suffix:m"), "set_floor_height", "get_floor_height");
-	ADD_GROUP("Emitters", "emitter");
+	// Empty prefixes: a group prefix is stripped from every property name it
+	// covers, so "emitter" turned the emitters array into a bare "S" in the
+	// inspector (and collider_fallback_size into "Fallback Size").
+	ADD_GROUP("Emitters", "");
 	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "emitters", PROPERTY_HINT_ARRAY_TYPE, "NodePath"), "set_emitters", "get_emitters");
-	ADD_GROUP("Colliders", "collider");
+	ADD_GROUP("Colliders", "");
 	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "colliders", PROPERTY_HINT_ARRAY_TYPE, "NodePath"), "set_colliders", "get_colliders");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "collider_fallback_size", PROPERTY_HINT_RANGE, "0.001,8.0,0.01,suffix:m"), "set_collider_fallback_size", "get_collider_fallback_size");
 	ADD_GROUP("Rendering", "");

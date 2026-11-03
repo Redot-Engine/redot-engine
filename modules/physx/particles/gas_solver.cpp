@@ -420,6 +420,23 @@ void GasSolver::_grow_if_needed() {
 	if (settings.box_blocks.y >= max_box_blocks_y) {
 		return; // reserved pool headroom exhausted -- stop trying
 	}
+	// Gate on the plume: growth exists to follow gas that reached the top of
+	// the box (the header's "grows as a plume rises past it" contract). The
+	// step pass flags the top band occupied in bcounts[1] when meaningful
+	// density lands there; an idle node -- or one whose plume never climbs --
+	// keeps its configured height instead of ratcheting to the 3x cap, which
+	// would triple every cell-sized dispatch, readback and texture upload for
+	// nothing.
+	{
+		Vector<uint8_t> flag = rd->buffer_get_data(buf_bcounts, sizeof(uint32_t), sizeof(uint32_t));
+		if (flag.size() < (int)sizeof(uint32_t) || *(const uint32_t *)flag.ptr() == 0) {
+			return; // plume has not reached the top band -- nothing to follow
+		}
+		// Re-arm for the next window. Safe here: the previous step's compute
+		// list was fully submitted and synced before this ran.
+		uint32_t zero = 0;
+		rd->buffer_update(buf_bcounts, sizeof(uint32_t), sizeof(uint32_t), &zero);
+	}
 	// Read the current active-block count (bcounts[0]) before growing: any
 	// slot claimed by the touch dispatch below is one atomicAdd(bcounts[0])
 	// past whatever this was, so [old_count, new_count) is exactly "every

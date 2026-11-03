@@ -508,7 +508,17 @@ void PhysXParticleFluid3D::_mpm_step(double p_delta) {
 				continue; // emitter freed while its (lagged) impulse was in flight
 			}
 			Vector3 imp = hit.impulse;
-			const float m = MAX(src->extents.x * src->extents.y * src->extents.z * 8.0f * 1200.0f, 0.001f);
+			// Mass from the chunk's actual shape volume: sphere chunks carry
+			// their radius in extents.x (y/z are zero, the solver's sphere
+			// convention), so the box-volume estimate collapsed to the 0.001
+			// floor and a 0.02 N*s cap -- sphere debris felt no fluid
+			// reaction. Density comes from the emitter (its chunk mass is
+			// derived from the same value), not a hardcoded 1200.
+			const bool sphere = src->extents.y == 0.0f && src->extents.z == 0.0f;
+			const float vol = sphere
+					? (4.0f / 3.0f) * Math::PI * src->extents.x * src->extents.x * src->extents.x
+					: src->extents.x * src->extents.y * src->extents.z * 8.0f;
+			const float m = MAX(vol * (float)emitter->get_density(), 0.001f);
 			const float cap = m * 20.0f;
 			if (imp.length() > cap) {
 				imp = imp.normalized() * cap;
@@ -592,16 +602,24 @@ void PhysXParticleFluid3D::_mpm_step(double p_delta) {
 	// The solver packs world-space transforms; the MultiMesh is in node-local
 	// space, so shift each instance origin by the node inverse. (Basis stays
 	// identity -- the solver ignores domain rotation.)
-	// PART-7: write through the solver's own cache (no copy-on-write detach --
-	// the old by-value return copied ~2.9 MB per frame just to shift origins).
-	PackedFloat32Array &buffer = mpm->get_multimesh_buffer_mut();
+	// PART-7 wrote through the solver's own cache to skip a per-frame copy --
+	// but that cache is the WORLD-space data get_submersion() reads (floats
+	// 3/7/11 tested against a world AABB), so converting it in place poisoned
+	// every later buoyancy probe on a node away from the world origin.
+	// Convert into a node-owned scratch buffer instead and leave the solver's
+	// cache world-space.
+	const PackedFloat32Array &world = mpm->get_multimesh_buffer_mut();
 	const int n = mpm->get_particle_count();
 	const int cap = mpm->get_capacity();
-	if (buffer.size() < cap * 12) {
+	if (world.size() < cap * 12) {
 		return;
 	}
+	if (mm_local_scratch.size() != world.size()) {
+		mm_local_scratch.resize(world.size());
+	}
+	memcpy(mm_local_scratch.ptrw(), world.ptr(), world.size() * sizeof(float));
 	const Transform3D inv = get_global_transform().affine_inverse();
-	float *b = buffer.ptrw();
+	float *b = mm_local_scratch.ptrw();
 	for (int i = 0; i < n; i++) {
 		float *t = &b[i * 12];
 		const Vector3 local = inv.xform(Vector3(t[3], t[7], t[11]));
@@ -609,7 +627,7 @@ void PhysXParticleFluid3D::_mpm_step(double p_delta) {
 		t[7] = local.y;
 		t[11] = local.z;
 	}
-	rs->multimesh_set_buffer(multimesh, buffer);
+	rs->multimesh_set_buffer(multimesh, mm_local_scratch);
 	rs->multimesh_set_visible_instances(multimesh, n);
 }
 

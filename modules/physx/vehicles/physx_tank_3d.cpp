@@ -265,7 +265,13 @@ void PhysXTank3D::_notification(int p_what) {
 			// comment for the SDK source citations that confirmed this.
 			set_global_transform(px_to_godot(v.physxActor.rigidBody->getGlobalPose()));
 			const PxTransform cmass_local_pose = v.physxActor.rigidBody->getCMassLocalPose();
-			for (uint32_t i = 0; i < wheels.size(); i++) {
+			// Bound by the BUILT wheel count: a wheel child that registers
+			// after the build (rebuilds are deferred) leaves wheels.size()
+			// larger than the composition until the deferred rebuild runs --
+			// and wheelLocalPoses is a fixed 4-entry array, so a node count
+			// past that reads out of bounds.
+			const uint32_t nb_wheels = MIN((uint32_t)wheels.size(), v.numWheels);
+			for (uint32_t i = 0; i < nb_wheels; i++) {
 				wheels[i]->set_transform(px_to_godot(cmass_local_pose * v.wheelLocalPoses[i].localPose));
 			}
 		} break;

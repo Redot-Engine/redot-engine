@@ -34,14 +34,14 @@
 
 #ifdef GODOT_PHYSX_FLOW
 
+#include "core/math/projection.h"
+#include "core/object/object_id.h"
+#include "core/os/mutex.h"
+#include "core/templates/local_vector.h"
+#include "core/templates/paged_array.h"
+#include "core/variant/typed_array.h"
 #include "flow_scatter_rd.h"
 #include "flow_simulation.h"
-#include "core/math/projection.h"
-#include "core/templates/paged_array.h"
-#include "core/os/mutex.h"
-#include "core/object/object_id.h"
-#include "core/templates/local_vector.h"
-#include "core/variant/typed_array.h"
 #include "scene/3d/node_3d.h"
 
 class PhysXFlowRenderEffect;
@@ -111,6 +111,14 @@ class PhysXFlowSimulation3D : public Node3D {
 	// Stable luids across frames per resolved node (Flow matches params by luid).
 	uint64_t next_luid = 2; // 1 is the sim layer
 	HashMap<ObjectID, uint64_t> node_luids;
+
+	// Physics-server bridge colliders: one per (body, shape slot), so the
+	// luid must be keyed on that pair -- a luid derived from the shape RID
+	// alone aliases shared shapes and repeated slots (Flow keys its
+	// per-collider state on the luid). Allocated from a dedicated range.
+	HashMap<RID, LocalVector<uint64_t>> server_collider_luids;
+	HashSet<RID> active_server_luid_bodies; // bodies seen in the current collider pass (pruning)
+	uint64_t next_server_collider_luid = 0x200000000ull;
 
 	// Transient event emitters (see add_transient_emitter).
 	struct TransientEmitter {

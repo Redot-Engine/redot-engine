@@ -212,8 +212,6 @@ void PhysXSkinnedCloth3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "self_collision_thickness", PROPERTY_HINT_RANGE, "0.001,0.1,0.001,suffix:m"), "set_self_collision_thickness", "get_self_collision_thickness");
 }
 
-Ref<ShaderMaterial> PhysXSkinnedCloth3D::hide_material;
-
 // The simulated surface is drawn by the render twin; the source's own copy of
 // it is hidden. With other surfaces on the mesh (a body and its skirt in one
 // MeshInstance3D, as imported characters often are), only that surface: an

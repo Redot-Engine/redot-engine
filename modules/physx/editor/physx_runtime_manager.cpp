@@ -284,12 +284,12 @@ Error PhysXRuntimeManager::extract_bundle(const String &p_zip_path, const Dictio
 	}
 
 	Error result = OK;
-	// Names this call actually wrote, for the failure cleanup below.
+	// Temporary (.part) names this call wrote, for the failure cleanup below.
 	PackedStringArray written;
 	// Extract manifest-listed files one by one, hashing each as it lands so a
 	// corrupted download is caught before the editor ever uses it. On any
-	// failure the files this call wrote are removed; ones it never got to
-	// (and working files from an earlier install) stay.
+	// failure the temporary files this call wrote are removed; the previously
+	// installed files (and the ones this call skipped as intact) stay.
 	for (int i = 0; i < files.size() && result == OK; i++) {
 		Dictionary entry = files[i];
 		String name = entry.get("name", String());
@@ -303,6 +303,22 @@ Error PhysXRuntimeManager::extract_bundle(const String &p_zip_path, const Dictio
 		}
 		String target = p_target_dir.path_join(name);
 
+		// Already installed and intact: never touch a library the running
+		// editor may have mapped or loaded. Truncating a mapped .so SIGBUSes
+		// the process, and a loaded .dll cannot be reopened for writing at
+		// all -- the partial-install flow (only some files missing) used to
+		// fail on exactly the files it did not need to rewrite.
+		if (!want_hash.is_empty() && FileAccess::exists(target) &&
+				sha256_file(target).to_lower() == String(want_hash).to_lower()) {
+			continue;
+		}
+		// Everything else lands at a temporary name and is renamed into place
+		// after its hash verifies: on Linux the rename swaps the inode
+		// atomically (the editor keeps its mapping of the old library), and a
+		// crashed run leaves at worst a stale .part behind.
+		const String tmp_name = name + ".part";
+		const String tmp_target = p_target_dir.path_join(tmp_name);
+
 		if (godot_unzip_locate_file(zip, name) != UNZ_OK) {
 			ERR_PRINT(vformat("PhysX: bundle is missing file '%s'.", name));
 			result = ERR_FILE_NOT_FOUND;
@@ -314,14 +330,14 @@ Error PhysXRuntimeManager::extract_bundle(const String &p_zip_path, const Dictio
 			break;
 		}
 
-		Ref<FileAccess> out = FileAccess::open(target, FileAccess::WRITE);
+		Ref<FileAccess> out = FileAccess::open(tmp_target, FileAccess::WRITE);
 		if (out.is_null()) {
 			unzCloseCurrentFile(zip);
-			ERR_PRINT(vformat("PhysX: cannot write '%s'.", target));
+			ERR_PRINT(vformat("PhysX: cannot write '%s'.", tmp_target));
 			result = ERR_FILE_CANT_WRITE;
 			break;
 		}
-		written.push_back(name);
+		written.push_back(tmp_name);
 
 		CryptoCore::SHA256Context ctx;
 		ctx.start();
@@ -331,7 +347,7 @@ Error PhysXRuntimeManager::extract_bundle(const String &p_zip_path, const Dictio
 			int n = unzReadCurrentFile(zip, buf.ptr(), (unsigned)buf.size());
 			if (n < 0) {
 				out.unref();
-				dir->remove(name);
+				dir->remove(tmp_name);
 				unzCloseCurrentFile(zip);
 				ERR_PRINT(vformat("PhysX: read failure while extracting '%s'.", name));
 				result = ERR_FILE_CANT_READ;
@@ -350,21 +366,28 @@ Error PhysXRuntimeManager::extract_bundle(const String &p_zip_path, const Dictio
 		}
 
 		// Hash what actually landed on disk and compare with the manifest.
-		String got_hash = sha256_file(target);
+		String got_hash = sha256_file(tmp_target);
 		if (got_hash.to_lower() != String(want_hash).to_lower()) {
-			dir->remove(name);
+			dir->remove(tmp_name);
 			ERR_PRINT(vformat("PhysX: extracted '%s' failed its SHA-256 check; removed.", name));
 			result = ERR_FILE_CORRUPT;
+			break;
+		}
+
+		if (dir->rename(tmp_name, name) != OK) {
+			dir->remove(tmp_name);
+			ERR_PRINT(vformat("PhysX: cannot move the extracted '%s' into place.", name));
+			result = ERR_FILE_CANT_WRITE;
 			break;
 		}
 	}
 
 	unzClose(zip);
 	if (result != OK) {
-		// Remove every file this call wrote so a failed install leaves no
-		// half-updated mix of DLLs behind. Entries after the failing one were
-		// never written, and files that were already there before this call
-		// only disappear here if this call had actually replaced them.
+		// Remove every temporary file this call wrote so a failed install
+		// leaves no half-updated mix of DLLs behind. Previously installed
+		// files were never touched (the rename into place is the last step
+		// per file), so they stay intact.
 		for (const String &name : written) {
 			dir->remove(name);
 		}

@@ -193,4 +193,13 @@ void main() {
 	}
 
 	data6[idx] = vec4(new_vel, new_dens);
+
+	// Growth gate: flag the box's top band occupied when meaningful density
+	// lands there (bcounts[1] is unused by the block allocator). GasSolver::
+	// _grow_if_needed reads and re-arms this instead of pulling the whole
+	// grid to the CPU every growth pass -- an idle node keeps its configured
+	// height instead of ratcheting to the 3x cap.
+	if (c.y >= BOXC.y - BLK && new_dens > 0.01) {
+		atomicOr(bcounts[1], 1u);
+	}
 }
