@@ -183,6 +183,12 @@ Vector2 AbstractPolygon2DEditor::_get_geometric_center() const {
 }
 
 void AbstractPolygon2DEditor::_menu_option(int p_option) {
+	// Keep the work-in-progress edit state when Create is pressed during an active polygon.
+	if (!(p_option == MODE_CREATE && wip_active)) {
+		// Don't keep selection information when switching modes
+		_clear_selection();
+	}
+
 	switch (p_option) {
 		case MODE_CREATE: {
 			mode = MODE_CREATE;
@@ -272,10 +278,11 @@ void AbstractPolygon2DEditor::_wip_changed() {
 void AbstractPolygon2DEditor::_wip_cancel() {
 	wip.clear();
 	wip_active = false;
-
+	box_selecting = false;
 	edited_point = PosVertex();
 	hover_point = Vertex();
 	selected_point = Vertex();
+	selected_points.clear();
 	center_drag = false;
 
 	canvas_item_editor->update_viewport();
@@ -285,6 +292,8 @@ void AbstractPolygon2DEditor::_wip_close() {
 	if (!wip_active) {
 		return;
 	}
+
+	selected_points.clear();
 
 	if (_is_line()) {
 		_set_polygon(0, wip);
@@ -391,60 +400,148 @@ bool AbstractPolygon2DEditor::forward_gui_input(const Ref<InputEvent> &p_event) 
 		if (mode == MODE_EDIT || (_is_line() && mode == MODE_CREATE)) {
 			if (mb->get_button_index() == MouseButton::LEFT) {
 				if (mb->is_pressed()) {
-					if (mb->is_meta_pressed() || mb->is_ctrl_pressed() || mb->is_shift_pressed() || mb->is_alt_pressed()) {
+					if (mb->is_alt_pressed() || (mb->is_meta_pressed() && !mb->is_command_or_control_pressed())) {
 						return false;
 					}
 
+					bool ctrl_or_cmd = mb->is_command_or_control_pressed();
+					bool shift = mb->is_shift_pressed();
+
 					const PosVertex closest = closest_point(gpoint);
 					if (closest.valid()) {
+						if (ctrl_or_cmd && selected_points.has(closest)) {
+							// Ctrl-click on an already-selected point removes it.
+							selected_points.erase(closest);
+							if (selected_point == closest) {
+								selected_point = selected_points.is_empty() ? Vertex() : *selected_points.begin();
+							}
+							canvas_item_editor->update_viewport();
+							return true;
+						}
+						if (!selected_points.has(closest)) {
+							_select_point(closest, ctrl_or_cmd || shift, false);
+						}
+
 						original_mouse_pos = gpoint;
 						pre_move_edit = _get_polygon(closest.polygon);
 						edited_point = PosVertex(closest, xform.affine_inverse().xform(closest.pos));
 						selected_point = closest;
 						edge_point = PosVertex();
+
+						multi_move_start_positions.clear();
+						multi_move_polygons.clear();
+						if (selected_points.size() > 1) {
+							// Snapshot every touched polygon and each selected vertex's
+							// start position, keyed by its own polygon.
+							for (const Vertex &v : selected_points) {
+								if (!multi_move_polygons.has(v.polygon)) {
+									multi_move_polygons[v.polygon] = _get_polygon(v.polygon);
+								}
+								const Vector<Vector2> &poly = multi_move_polygons[v.polygon];
+								ERR_CONTINUE(v.vertex >= poly.size());
+								multi_move_start_positions[v] = poly[v.vertex];
+							}
+						}
+
 						canvas_item_editor->update_viewport();
 						return true;
-					} else {
+					} else if (!ctrl_or_cmd) {
 						selected_point = Vertex();
 
 						const PosVertex insert = closest_edge_point(gpoint);
 						if (insert.valid()) {
 							Vector<Vector2> vertices = _get_polygon(insert.polygon);
+							Vertex new_selection;
 
 							if (vertices.size() < (_is_line() ? 2 : 3)) {
 								vertices.push_back(cpoint);
 								undo_redo->create_action(TTR("Edit Polygon"));
-								selected_point = Vertex(insert.polygon, vertices.size());
-								_action_set_polygon(insert.polygon, vertices);
-								_commit_action();
-								return true;
+								new_selection = Vertex(insert.polygon, vertices.size() - 1);
 							} else {
 								edited_point = PosVertex(insert.polygon, insert.vertex + 1, xform.affine_inverse().xform(insert.pos));
 								vertices.insert(edited_point.vertex, edited_point.pos);
 								pre_move_edit = vertices;
-								selected_point = Vertex(edited_point.polygon, edited_point.vertex);
+								new_selection = Vertex(edited_point.polygon, edited_point.vertex);
 								edge_point = PosVertex();
 
 								undo_redo->create_action(TTR("Insert Point"));
-								_action_set_polygon(insert.polygon, vertices);
-								_commit_action();
-								return true;
 							}
+
+							_action_set_polygon(insert.polygon, vertices);
+							undo_redo->add_do_method(this, "_clear_point_selection");
+							undo_redo->add_undo_method(this, "_clear_point_selection");
+							_commit_action();
+
+							_set_point_selection(new_selection);
+
+							return true;
+						}
+
+						// Hit nothing at all (no point, no edge): start box-selection,
+						// but only in edit mode and not when grabbing the center handle.
+						bool on_center_handle = false;
+						if (edit_origin_and_center) {
+							const real_t center_grab = EDITOR_GET("editors/polygon_editor/point_grab_radius");
+							on_center_handle = (gpoint - xform.xform(_get_geometric_center())).length() < center_grab;
+						}
+						if (mode == MODE_EDIT && !on_center_handle) {
+							box_selecting = true;
+							box_select_from = gpoint;
+							box_select_to = gpoint;
+							box_select_additive = shift;
+							if (!box_select_additive) {
+								selected_points.clear();
+							}
+							canvas_item_editor->update_viewport();
+							return true;
 						}
 					}
 				} else {
 					if (edited_point.valid()) {
 						if (original_mouse_pos != gpoint) {
-							Vector<Vector2> vertices = _get_polygon(edited_point.polygon);
-							ERR_FAIL_INDEX_V(edited_point.vertex, vertices.size(), false);
-							vertices.write[edited_point.vertex] = edited_point.pos - _get_offset(edited_point.polygon);
+							bool drag_valid = edited_point.polygon >= 0 && edited_point.polygon < _get_polygon_count();
 
-							undo_redo->create_action(TTR("Edit Polygon"));
-							_action_set_polygon(edited_point.polygon, pre_move_edit, vertices);
-							_commit_action();
+							if (drag_valid && !multi_move_start_positions.is_empty()) {
+								for (const KeyValue<Vertex, Point2> &kv : multi_move_start_positions) {
+									if (kv.key.polygon < 0 || kv.key.polygon >= _get_polygon_count()) {
+										drag_valid = false;
+										break;
+									}
+									const Vector<Vector2> vertices = _get_polygon(kv.key.polygon);
+									if (kv.key.vertex < 0 || kv.key.vertex >= vertices.size()) {
+										drag_valid = false;
+										break;
+									}
+								}
+							}
+
+							if (drag_valid) {
+								undo_redo->create_action(TTR("Edit Polygon"));
+
+								if (!multi_move_polygons.is_empty()) {
+									for (const KeyValue<int, Vector<Vector2>> &kv : multi_move_polygons) {
+										_action_set_polygon(kv.key, kv.value, _get_polygon(kv.key));
+									}
+								} else {
+									Vector<Vector2> vertices = _get_polygon(edited_point.polygon);
+									ERR_FAIL_INDEX_V(edited_point.vertex, vertices.size(), false);
+									vertices.write[edited_point.vertex] = edited_point.pos - _get_offset(edited_point.polygon);
+									_action_set_polygon(edited_point.polygon, pre_move_edit, vertices);
+								}
+
+								_commit_action();
+							}
 						}
 
 						edited_point = PosVertex();
+						multi_move_start_positions.clear();
+						multi_move_polygons.clear();
+						return true;
+					}
+					if (box_selecting) {
+						box_selecting = false;
+						_box_select_confirm(box_select_additive);
+						canvas_item_editor->update_viewport();
 						return true;
 					}
 				}
@@ -486,6 +583,7 @@ bool AbstractPolygon2DEditor::forward_gui_input(const Ref<InputEvent> &p_event) 
 					canvas_item_editor->update_viewport();
 					hover_point = Vertex();
 					selected_point = Vertex(0);
+					selected_points.clear();
 					edge_point = PosVertex();
 					return true;
 				} else {
@@ -545,6 +643,12 @@ bool AbstractPolygon2DEditor::forward_gui_input(const Ref<InputEvent> &p_event) 
 	if (mm.is_valid()) {
 		Vector2 gpoint = mm->get_position();
 
+		if (box_selecting) {
+			box_select_to = gpoint;
+			canvas_item_editor->update_viewport();
+			return true;
+		}
+
 		if (center_drag) {
 			Vector2 cpoint = canvas_item_editor->snap_point(canvas_item_editor->get_canvas_transform().affine_inverse().xform(gpoint));
 			cpoint = _get_node()->get_screen_transform().affine_inverse().xform(cpoint);
@@ -580,10 +684,31 @@ bool AbstractPolygon2DEditor::forward_gui_input(const Ref<InputEvent> &p_event) 
 			edited_point = PosVertex(edited_point, cpoint);
 
 			if (!wip_active) {
-				Vector<Vector2> vertices = _get_polygon(edited_point.polygon);
-				ERR_FAIL_INDEX_V(edited_point.vertex, vertices.size(), false);
-				vertices.write[edited_point.vertex] = cpoint - _get_offset(edited_point.polygon);
-				_set_polygon(edited_point.polygon, vertices);
+				if (multi_move_start_positions.has(Vertex(edited_point.polygon, edited_point.vertex))) {
+					// Apply one delta to each selected vertex, in its own polygon.
+					const Vector2 delta = (cpoint - _get_offset(edited_point.polygon)) - multi_move_start_positions[Vertex(edited_point.polygon, edited_point.vertex)];
+
+					HashMap<int, Vector<Vector2>> dragged;
+					for (const KeyValue<Vertex, Point2> &kv : multi_move_start_positions) {
+						if (kv.key.polygon < 0 || kv.key.polygon >= _get_polygon_count()) {
+							continue;
+						}
+						Vector<Vector2> &vertices = dragged[kv.key.polygon];
+						if (vertices.is_empty()) {
+							vertices = _get_polygon(kv.key.polygon);
+						}
+						ERR_CONTINUE(kv.key.vertex < 0 || kv.key.vertex >= vertices.size());
+						vertices.write[kv.key.vertex] = kv.value + delta;
+					}
+					for (const KeyValue<int, Vector<Vector2>> &kv : dragged) {
+						_set_polygon(kv.key, kv.value);
+					}
+				} else {
+					Vector<Vector2> vertices = _get_polygon(edited_point.polygon);
+					ERR_FAIL_INDEX_V(edited_point.vertex, vertices.size(), false);
+					vertices.write[edited_point.vertex] = cpoint - _get_offset(edited_point.polygon);
+					_set_polygon(edited_point.polygon, vertices);
+				}
 			}
 
 			canvas_item_editor->update_viewport();
@@ -615,7 +740,9 @@ bool AbstractPolygon2DEditor::forward_gui_input(const Ref<InputEvent> &p_event) 
 
 	Ref<InputEventKey> k = p_event;
 
+	// Key handling
 	if (k.is_valid() && k->is_pressed()) {
+		// Point deletion
 		if (k->get_keycode() == Key::KEY_DELETE || k->get_keycode() == Key::BACKSPACE) {
 			if (wip_active && selected_point.polygon == -1) {
 				if (wip.size() > selected_point.vertex) {
@@ -625,6 +752,15 @@ bool AbstractPolygon2DEditor::forward_gui_input(const Ref<InputEvent> &p_event) 
 					canvas_item_editor->update_viewport();
 					return true;
 				}
+			} else if (hover_point.valid() && !selected_points.has(hover_point)) {
+				// Hovering an unselected point takes precedence over the
+				// selection, matching get_active_point()'s hover-first rule.
+				remove_point(hover_point);
+				return true;
+			} else if (!selected_points.is_empty()) {
+				// Delete the multi/box selection (also covers a single selected point).
+				_delete_selection();
+				return true;
 			} else {
 				const Vertex active_point = get_active_point();
 
@@ -709,16 +845,21 @@ void AbstractPolygon2DEditor::forward_canvas_draw_over_viewport(Control *p_overl
 			offset = _get_offset(j);
 		}
 
-		if (!wip_active && j == edited_point.polygon && EDITOR_GET("editors/polygon_editor/show_previous_outline")) {
-			const Color col = Color(0.5, 0.5, 0.5); /// @todo FIXME polygon->get_outline_color();
-			const int n = pre_move_edit.size();
-			for (int i = 0; i < n - (is_closed ? 0 : 1); i++) {
-				Vector2 p, p2;
-				p = pre_move_edit[i] + offset;
-				p2 = pre_move_edit[(i + 1) % n] + offset;
+		const Vector<Vector2> *previous_points = nullptr;
+		if (!wip_active && EDITOR_GET("editors/polygon_editor/show_previous_outline")) {
+			if (multi_move_polygons.has(j)) {
+				previous_points = &multi_move_polygons[j];
+			} else if (j == edited_point.polygon) {
+				previous_points = &pre_move_edit;
+			}
+		}
 
-				Vector2 point = xform.xform(p);
-				Vector2 next_point = xform.xform(p2);
+		if (previous_points) {
+			const Color col = Color(0.5, 0.5, 0.5); /// @todo FIXME polygon->get_outline_color();
+			const int n = previous_points->size();
+			for (int i = 0; i < n - (is_closed ? 0 : 1); i++) {
+				const Vector2 point = xform.xform((*previous_points)[i] + offset);
+				const Vector2 next_point = xform.xform((*previous_points)[(i + 1) % n] + offset);
 
 				p_overlay->draw_line(point, next_point, col, Math::round(2 * EDSCALE));
 			}
@@ -753,7 +894,7 @@ void AbstractPolygon2DEditor::forward_canvas_draw_over_viewport(Control *p_overl
 			const Vector2 p = (vertex == edited_point) ? edited_point.pos : (points[i] + offset);
 			const Vector2 point = xform.xform(p);
 
-			const Color overlay_modulate = vertex == active_point ? Color(0.4, 1, 1) : Color(1, 1, 1);
+			const Color overlay_modulate = (vertex == active_point || selected_points.has(vertex)) ? Color(0.4, 1, 1) : Color(1, 1, 1);
 			p_overlay->draw_texture(handle, point - handle->get_size() * 0.5, overlay_modulate);
 
 			if (vertex == hover_point) {
@@ -769,6 +910,19 @@ void AbstractPolygon2DEditor::forward_canvas_draw_over_viewport(Control *p_overl
 		Ref<Texture2D> add_handle = get_editor_theme_icon(SNAME("EditorHandleAdd"));
 		p_overlay->draw_texture(add_handle, edge_point.pos - add_handle->get_size() * 0.5);
 	}
+
+	if (box_selecting) {
+		Point2 bsfrom = box_select_from;
+		Point2 bsto = box_select_to;
+		if (bsfrom.x > bsto.x) {
+			SWAP(bsfrom.x, bsto.x);
+		}
+		if (bsfrom.y > bsto.y) {
+			SWAP(bsfrom.y, bsto.y);
+		}
+		p_overlay->draw_rect(Rect2(bsfrom, bsto - bsfrom), get_theme_color(SNAME("box_selection_fill_color"), EditorStringName(Editor)));
+		p_overlay->draw_rect(Rect2(bsfrom, bsto - bsfrom), get_theme_color(SNAME("box_selection_stroke_color"), EditorStringName(Editor)), false, Math::round(EDSCALE));
+	}
 }
 
 void AbstractPolygon2DEditor::set_edit_origin_and_center(bool p_enabled) {
@@ -783,6 +937,8 @@ void AbstractPolygon2DEditor::edit(Node *p_polygon) {
 		canvas_item_editor = CanvasItemEditor::get_singleton();
 	}
 
+	_clear_selection();
+
 	if (p_polygon) {
 		_set_node(p_polygon);
 
@@ -795,10 +951,7 @@ void AbstractPolygon2DEditor::edit(Node *p_polygon) {
 
 		wip.clear();
 		wip_active = false;
-		edited_point = PosVertex();
 		hover_point = Vertex();
-		selected_point = Vertex();
-		center_drag = false;
 	} else {
 		_set_node(nullptr);
 	}
@@ -807,18 +960,27 @@ void AbstractPolygon2DEditor::edit(Node *p_polygon) {
 }
 
 void AbstractPolygon2DEditor::remove_point(const Vertex &p_vertex) {
+	if (p_vertex.polygon < 0 || p_vertex.polygon >= _get_polygon_count()) {
+		return;
+	}
+
 	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
 	Vector<Vector2> vertices = _get_polygon(p_vertex.polygon);
+	ERR_FAIL_INDEX(p_vertex.vertex, vertices.size());
 
 	if (vertices.size() > (_is_line() ? 2 : 3)) {
 		vertices.remove_at(p_vertex.vertex);
 
 		undo_redo->create_action(TTR("Edit Polygon (Remove Point)"));
 		_action_set_polygon(p_vertex.polygon, vertices);
+		undo_redo->add_do_method(this, "_clear_point_selection");
+		undo_redo->add_undo_method(this, "_clear_point_selection");
 		_commit_action();
 	} else {
 		undo_redo->create_action(TTR("Remove Polygon And Point"));
 		_action_remove_polygon(p_vertex.polygon);
+		undo_redo->add_do_method(this, "_clear_point_selection");
+		undo_redo->add_undo_method(this, "_clear_point_selection");
 		_commit_action();
 	}
 
@@ -827,9 +989,7 @@ void AbstractPolygon2DEditor::remove_point(const Vertex &p_vertex) {
 	}
 
 	hover_point = Vertex();
-	if (selected_point == p_vertex) {
-		selected_point = Vertex();
-	}
+	_clear_point_selection();
 }
 
 AbstractPolygon2DEditor::Vertex AbstractPolygon2DEditor::get_active_point() const {
@@ -902,6 +1062,135 @@ AbstractPolygon2DEditor::PosVertex AbstractPolygon2DEditor::closest_edge_point(c
 	return closest;
 }
 
+void AbstractPolygon2DEditor::_set_point_selection(const Vertex &p_vertex) {
+	selected_point = p_vertex;
+	selected_points.clear();
+	if (p_vertex.polygon >= 0 && p_vertex.vertex >= 0) {
+		selected_points.insert(p_vertex);
+	}
+}
+
+void AbstractPolygon2DEditor::_select_point(const Vertex &p_vertex, bool p_add_to_selection, bool p_toggle) {
+	if (!p_add_to_selection) {
+		selected_points.clear();
+	}
+	if (p_toggle && selected_points.has(p_vertex)) {
+		selected_points.erase(p_vertex);
+	} else {
+		selected_points.insert(p_vertex);
+	}
+	canvas_item_editor->update_viewport();
+}
+
+void AbstractPolygon2DEditor::_box_select_confirm(bool p_additive) {
+	Transform2D xform = canvas_item_editor->get_canvas_transform() * _get_node()->get_screen_transform();
+
+	Point2 bsfrom = box_select_from;
+	Point2 bsto = box_select_to;
+	if (bsfrom.x > bsto.x) {
+		SWAP(bsfrom.x, bsto.x);
+	}
+	if (bsfrom.y > bsto.y) {
+		SWAP(bsfrom.y, bsto.y);
+	}
+	Rect2 rect(bsfrom, bsto - bsfrom);
+
+	if (!p_additive) {
+		selected_points.clear();
+	}
+
+	int n_polygons = _get_polygon_count();
+	for (int j = 0; j < n_polygons; j++) {
+		Vector<Vector2> points = _get_polygon(j);
+		Vector2 offset = _get_offset(j);
+		for (int i = 0; i < points.size(); i++) {
+			if (rect.has_point(xform.xform(points[i] + offset))) {
+				selected_points.insert(Vertex(j, i));
+			}
+		}
+	}
+	canvas_item_editor->update_viewport();
+}
+
+void AbstractPolygon2DEditor::_clear_selection() {
+	_clear_point_selection();
+	edited_point = PosVertex();
+	multi_move_start_positions.clear();
+	multi_move_polygons.clear();
+	box_selecting = false;
+	center_drag = false;
+}
+
+void AbstractPolygon2DEditor::_clear_point_selection() {
+	selected_point = Vertex();
+	selected_points.clear();
+}
+
+void AbstractPolygon2DEditor::_delete_selection() {
+	if (selected_points.is_empty()) {
+		return;
+	}
+
+	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+
+	// Group selected vertex indices by polygon so each polygon is
+	// edited against its own vertex list.
+	HashMap<int, Vector<int>> per_polygon;
+	for (const Vertex &v : selected_points) {
+		if (v.polygon < 0 || v.polygon >= _get_polygon_count()) {
+			continue;
+		}
+		if (v.vertex < 0 || v.vertex >= Vector<Vector2>(_get_polygon(v.polygon)).size()) {
+			continue;
+		}
+		per_polygon[v.polygon].push_back(v.vertex);
+	}
+
+	if (per_polygon.is_empty()) {
+		_clear_point_selection();
+		return;
+	}
+
+	// Descending polygon order: removing a polygon shifts the indices
+	// of later polygons, so handle higher indices first.
+	Vector<int> polygon_order;
+	for (const KeyValue<int, Vector<int>> &kv : per_polygon) {
+		polygon_order.push_back(kv.key);
+	}
+	polygon_order.sort();
+	polygon_order.reverse();
+
+	undo_redo->create_action(TTR("Delete Points"), UndoRedo::MERGE_DISABLE, nullptr, true); // true here reverses the order, points "undone" in reverse order added
+
+	for (int polygon_idx : polygon_order) {
+		Vector<int> &vertex_indices = per_polygon[polygon_idx];
+		vertex_indices.sort();
+
+		Vector<Vector2> before = _get_polygon(polygon_idx);
+		Vector<Vector2> after = before;
+		for (int i = vertex_indices.size() - 1; i >= 0; i--) {
+			after.remove_at(vertex_indices[i]);
+		}
+
+		if (after.size() < (_is_line() ? 2 : 3)) {
+			_action_remove_polygon(polygon_idx);
+		} else {
+			_action_set_polygon(polygon_idx, before, after);
+		}
+	}
+
+	undo_redo->add_do_method(this, "_clear_point_selection");
+	undo_redo->add_undo_method(this, "_clear_point_selection");
+	_commit_action();
+
+	hover_point = Vertex();
+	selected_point = Vertex();
+
+	if (_is_empty()) {
+		_menu_option(MODE_CREATE);
+	}
+}
+
 AbstractPolygon2DEditor::AbstractPolygon2DEditor(bool p_wip_destructive) {
 	edited_point = PosVertex();
 	center_drag = false;
@@ -967,4 +1256,8 @@ AbstractPolygon2DEditorPlugin::AbstractPolygon2DEditorPlugin(AbstractPolygon2DEd
 		klass(p_class) {
 	CanvasItemEditor::get_singleton()->add_control_to_menu_panel(polygon_editor);
 	polygon_editor->hide();
+}
+
+void AbstractPolygon2DEditor::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("_clear_point_selection"), &AbstractPolygon2DEditor::_clear_point_selection);
 }

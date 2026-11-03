@@ -665,8 +665,6 @@ private:
 	virtual void input(const Ref<InputEvent> &p_event) override;
 	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
 
-	bool has_main_screen() const { return true; }
-
 	/// When scene gets closed no node is edited anymore, so make sure the editors are notified before nodes are freed.
 	void _remove_edited_scene(bool p_change_tab = true);
 	void _remove_scene(int index, bool p_change_tab = true);

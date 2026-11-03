@@ -1536,6 +1536,48 @@ Vector3 Curve3D::get_point_out(int p_index) const {
 	return points[p_index].out;
 }
 
+void Curve3D::reset_point_handles(int p_index) {
+	ERR_FAIL_UNSIGNED_INDEX((uint32_t)p_index, points.size());
+	points[p_index].in = Vector3();
+	points[p_index].out = Vector3();
+	mark_dirty();
+}
+
+void Curve3D::reset_all_points_handles() {
+	for (uint32_t i = 0; i < points.size(); i++) {
+		points[i].in = Vector3();
+		points[i].out = Vector3();
+	}
+	mark_dirty();
+}
+
+void Curve3D::smooth_all_points() {
+	const uint32_t pc = points.size();
+	if (pc < 3) {
+		return; // Nothing to interpolate with.
+	}
+	for (uint32_t i = 0; i < pc; i++) {
+		// For closed curves wrap around; for open curves clamp the neighbors.
+		uint32_t prev = i - 1;
+		uint32_t next = i + 1;
+		if (closed) {
+			prev = (i + pc - 1) % pc;
+			next = (i + 1) % pc;
+		} else {
+			prev = MAX(i, 1u) - 1;
+			next = MIN(pc - 1, next);
+		}
+		if (prev == next) {
+			continue;
+		}
+		// Catmull-Rom style mirrored handles, matching the 2D behavior.
+		const Vector3 tangent = (points[next].position - points[prev].position) * 0.25;
+		points[i].in = -tangent;
+		points[i].out = tangent;
+	}
+	mark_dirty();
+}
+
 void Curve3D::_remove_point(int p_index) {
 	ERR_FAIL_UNSIGNED_INDEX((uint32_t)p_index, points.size());
 	points.remove_at(p_index);
@@ -2488,6 +2530,11 @@ void Curve3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_point_in", "idx"), &Curve3D::get_point_in);
 	ClassDB::bind_method(D_METHOD("set_point_out", "idx", "position"), &Curve3D::set_point_out);
 	ClassDB::bind_method(D_METHOD("get_point_out", "idx"), &Curve3D::get_point_out);
+
+	ClassDB::bind_method(D_METHOD("reset_point_handles", "idx"), &Curve3D::reset_point_handles);
+	ClassDB::bind_method(D_METHOD("reset_all_points_handles"), &Curve3D::reset_all_points_handles);
+	ClassDB::bind_method(D_METHOD("smooth_all_points"), &Curve3D::smooth_all_points);
+
 	ClassDB::bind_method(D_METHOD("remove_point", "idx"), &Curve3D::remove_point);
 	ClassDB::bind_method(D_METHOD("clear_points"), &Curve3D::clear_points);
 	ClassDB::bind_method(D_METHOD("sample", "idx", "t"), &Curve3D::sample);
