@@ -50,7 +50,8 @@ namespace AudioMixKernels {
 /// shift the magnitude up by 11 bits keeping the sign.
 _FORCE_INLINE_ void convert_stereo_to_int32(const AudioFrame *p_src, int32_t *p_dst, int p_frames) {
 	int j = 0;
-#if defined(GODOT_SIMD_F32X4) && defined(GODOT_SIMD_X86)
+#if defined(GODOT_SIMD_F32X4)
+#if defined(GODOT_SIMD_X86)
 	{
 		using namespace simd;
 		const f32x4 lo = splat4(-1.0f);
@@ -65,6 +66,21 @@ _FORCE_INLINE_ void convert_stereo_to_int32(const AudioFrame *p_src, int32_t *p_
 			_mm_storeu_si128((__m128i *)&p_dst[j * 2], _mm_sub_epi32(_mm_xor_si128(mag, sign), sign));
 		}
 	}
+#elif defined(GODOT_SIMD_NEON)
+	{
+		using namespace simd;
+		const f32x4 lo = splat4(-1.0f);
+		const f32x4 hi = splat4(1.0f);
+		const f32x4 scale = splat4((float)((1 << 20) - 1));
+		for (; j + 2 <= p_frames; j += 2) {
+			f32x4 v = clamp4(load4(&p_src[j].left), lo, hi) * scale;
+			int32x4_t vi = vcvtq_s32_f32(v);
+			int32x4_t sign = vshrq_n_s32(vi, 31);
+			int32x4_t mag = vshl_n_s32(vabsq_s32(vi), 11);
+			vst1q(p_dst, vsubq_s32(mag ^ sign, sign));
+		}
+	}
+#endif
 #endif
 	for (; j < p_frames; j++) {
 		float l = CLAMP(p_src[j].left, -1.0, 1.0);

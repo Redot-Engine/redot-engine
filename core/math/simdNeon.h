@@ -231,10 +231,10 @@ template <int A, int B, int C, int D>
 _ALWAYS_INLINE_ f32x4 shuffle(f32x4 p_a, f32x4 p_b)
 {
 	f32x4 ret;
-	ret = vcopyq_laneq_f32(p_a, 0, p_a, D);
-	ret = vcopyq_laneq_f32(ret, 1, p_a, C);
-	ret = vcopyq_laneq_f32(ret, 2, p_b, B);
-	ret = vcopyq_laneq_f32(ret, 3, p_b, A);
+	ret = vcopyq_laneq_f32(p_a, 0, p_a, A);
+	ret = vcopyq_laneq_f32(ret, 1, p_a, B);
+	ret = vcopyq_laneq_f32(ret, 2, p_b, C);
+	ret = vcopyq_laneq_f32(ret, 3, p_b, D);
 	return ret;
 }
 
@@ -247,7 +247,7 @@ _ALWAYS_INLINE_ f32x4 permute(f32x4 p_a)
 template <int I>
 _ALWAYS_INLINE_ f32x4 splat_lane(f32x4 p_a)
 {
-	return permute<I, I, I, I>(p_a);
+	return vdupq_n_f32(vgetq_lane_f32(p_a, I));
 }
 
 template <int I>
@@ -263,12 +263,12 @@ _ALWAYS_INLINE_ f32x4 insert_lane3(f32x4 p_a, f32x4 p_b)
 
 _ALWAYS_INLINE_ f32x4 movelh(f32x4 p_a, f32x4 p_b)
 {
-	return vextq_f32(p_a, p_b, 1);
+	return vextq_f32(p_a, p_b, 2);
 }
 
 _ALWAYS_INLINE_ f32x4 movehl(f32x4 p_a, f32x4 p_b)
 {
-	return vrev64q_f32(vextq_f32(vrev64q_f32(p_a), vrev64q_f32(p_b), 1));
+	return vcombine_f32(vget_high_f32(p_b), vget_high_f32(p_a));
 }
 
 _ALWAYS_INLINE_ f32x4 unpacklo(f32x4 p_a, f32x4 p_b)
@@ -348,6 +348,11 @@ _ALWAYS_INLINE_ bool any_lane3(mask4 p_m)
 _ALWAYS_INLINE_ i32x4 zero_i32x4()
 {
 	return vdupq_n_s32(0);
+}
+
+_ALWAYS_INLINE_ i32x4 set_i32x4(int32_t p_arr[4])
+{
+	return vld1q_s32(p_arr);
 }
 
 _ALWAYS_INLINE_ i32x4 count_if(i32x4 p_count, mask4 p_m)

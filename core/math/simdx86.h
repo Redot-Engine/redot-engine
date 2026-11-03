@@ -343,6 +343,12 @@ struct i32x4 {
 _ALWAYS_INLINE_ i32x4 zero_i32x4() {
 	return { _mm_setzero_si128() };
 }
+
+_ALWAYS_INLINE_ i32x4 set_i32x4(int32_t p_arr[4])
+{
+	return _mm_loadu_si128(p_arr);
+}
+
 // Adds one to each lane whose mask is set (a set mask lane is -1 as an integer).
 _ALWAYS_INLINE_ i32x4 count_if(i32x4 p_count, mask4 p_m) {
 	return { _mm_sub_epi32(p_count.v, _mm_castps_si128(p_m.v)) };

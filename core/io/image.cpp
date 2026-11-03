@@ -1997,15 +1997,17 @@ int64_t Image::_get_dst_image_size(int p_width, int p_height, Format p_format, i
 	return size;
 }
 
-#if defined(GODOT_SIMD_F32X4) && defined(GODOT_SIMD_X86)
+#if defined(GODOT_SIMD_F32X4)
 // Box filter of one row pair for 8-bit, float and half components; p_count destination pixels
 // are produced from 2 * p_count source pixels of each row. Returns how many were handled.
-template <int CC>
-static uint32_t _mipmap_row_uint8_simd(const uint8_t *p_up, const uint8_t *p_down, uint8_t *p_dst, uint32_t p_count) {
+#if defined(GODOT_SIMD_X86)
+static uint32_t _mipmap_row_uint8_simd(const uint8_t *p_up, const uint8_t *p_down, uint8_t *p_dst, uint32_t p_count, uint32_t components) {
 	uint32_t done = 0;
 	const __m128i zero = _mm_setzero_si128();
 	const __m128i two16 = _mm_set1_epi16(2);
-	if constexpr (CC == 4) {
+	switch (components)
+	{
+	case 4:
 		// 16 source bytes per row = 4 pixels = 2 destination pixels.
 		for (; done + 2 <= p_count; done += 2) {
 			__m128i up = _mm_loadu_si128((const __m128i *)(p_up + done * 8));
@@ -2018,36 +2020,9 @@ static uint32_t _mipmap_row_uint8_simd(const uint8_t *p_up, const uint8_t *p_dow
 			s = _mm_srli_epi16(_mm_add_epi16(s, two16), 2);
 			_mm_storel_epi64((__m128i *)(p_dst + done * 4), _mm_packus_epi16(s, s));
 		}
-	} else if constexpr (CC == 2) {
-		// 16 source bytes per row = 8 pixels = 4 destination pixels.
-		for (; done + 4 <= p_count; done += 4) {
-			__m128i up = _mm_loadu_si128((const __m128i *)(p_up + done * 4));
-			__m128i down = _mm_loadu_si128((const __m128i *)(p_down + done * 4));
-			__m128i s_lo = _mm_add_epi16(_mm_unpacklo_epi8(up, zero), _mm_unpacklo_epi8(down, zero));
-			__m128i s_hi = _mm_add_epi16(_mm_unpackhi_epi8(up, zero), _mm_unpackhi_epi8(down, zero));
-			// Each 32-bit lane is one pixel; pair even and odd pixels in order.
-			__m128i t0 = _mm_shuffle_epi32(s_lo, _MM_SHUFFLE(3, 1, 2, 0));
-			__m128i t1 = _mm_shuffle_epi32(s_hi, _MM_SHUFFLE(3, 1, 2, 0));
-			__m128i s = _mm_add_epi16(_mm_unpacklo_epi64(t0, t1), _mm_unpackhi_epi64(t0, t1));
-			s = _mm_srli_epi16(_mm_add_epi16(s, two16), 2);
-			_mm_storel_epi64((__m128i *)(p_dst + done * 2), _mm_packus_epi16(s, s));
-		}
-	} else if constexpr (CC == 1) {
-		// 16 source bytes per row = 16 pixels = 8 destination pixels.
-		const __m128i ones16 = _mm_set1_epi16(1);
-		for (; done + 8 <= p_count; done += 8) {
-			__m128i up = _mm_loadu_si128((const __m128i *)(p_up + done * 2));
-			__m128i down = _mm_loadu_si128((const __m128i *)(p_down + done * 2));
-			__m128i s_lo = _mm_add_epi16(_mm_unpacklo_epi8(up, zero), _mm_unpacklo_epi8(down, zero));
-			__m128i s_hi = _mm_add_epi16(_mm_unpackhi_epi8(up, zero), _mm_unpackhi_epi8(down, zero));
-			__m128i pairs_lo = _mm_madd_epi16(s_lo, ones16);
-			__m128i pairs_hi = _mm_madd_epi16(s_hi, ones16);
-			__m128i s = _mm_packs_epi32(pairs_lo, pairs_hi);
-			s = _mm_srli_epi16(_mm_add_epi16(s, two16), 2);
-			_mm_storel_epi64((__m128i *)(p_dst + done), _mm_packus_epi16(s, s));
-		}
-	} else if constexpr (CC == 3) {
+		break;
 #ifdef GODOT_SIMD_SSE41
+	case 3:
 		// 12 source bytes per row = 4 pixels = 2 destination pixels, spread to 4-byte slots.
 		const __m128i spread = _mm_setr_epi8(0, 1, 2, -1, 3, 4, 5, -1, 6, 7, 8, -1, 9, 10, 11, -1);
 		const __m128i compact = _mm_setr_epi8(0, 1, 2, 4, 5, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
@@ -2066,33 +2041,162 @@ static uint32_t _mipmap_row_uint8_simd(const uint8_t *p_up, const uint8_t *p_dow
 			memcpy(p_dst + done * 3, &lo, 4);
 			memcpy(p_dst + done * 3 + 4, &hi, 2);
 		}
+		break;
 #endif
+	case 2:
+		// 16 source bytes per row = 8 pixels = 4 destination pixels.
+		for (; done + 4 <= p_count; done += 4) {
+			__m128i up = _mm_loadu_si128((const __m128i *)(p_up + done * 4));
+			__m128i down = _mm_loadu_si128((const __m128i *)(p_down + done * 4));
+			__m128i s_lo = _mm_add_epi16(_mm_unpacklo_epi8(up, zero), _mm_unpacklo_epi8(down, zero));
+			__m128i s_hi = _mm_add_epi16(_mm_unpackhi_epi8(up, zero), _mm_unpackhi_epi8(down, zero));
+			// Each 32-bit lane is one pixel; pair even and odd pixels in order.
+			__m128i t0 = _mm_shuffle_epi32(s_lo, _MM_SHUFFLE(3, 1, 2, 0));
+			__m128i t1 = _mm_shuffle_epi32(s_hi, _MM_SHUFFLE(3, 1, 2, 0));
+			__m128i s = _mm_add_epi16(_mm_unpacklo_epi64(t0, t1), _mm_unpackhi_epi64(t0, t1));
+			s = _mm_srli_epi16(_mm_add_epi16(s, two16), 2);
+			_mm_storel_epi64((__m128i *)(p_dst + done * 2), _mm_packus_epi16(s, s));
+		}
+		break;
+	case 1:
+		// 16 source bytes per row = 16 pixels = 8 destination pixels.
+		const __m128i ones16 = _mm_set1_epi16(1);
+		for (; done + 8 <= p_count; done += 8) {
+			__m128i up = _mm_loadu_si128((const __m128i *)(p_up + done * 2));
+			__m128i down = _mm_loadu_si128((const __m128i *)(p_down + done * 2));
+			__m128i s_lo = _mm_add_epi16(_mm_unpacklo_epi8(up, zero), _mm_unpacklo_epi8(down, zero));
+			__m128i s_hi = _mm_add_epi16(_mm_unpackhi_epi8(up, zero), _mm_unpackhi_epi8(down, zero));
+			__m128i pairs_lo = _mm_madd_epi16(s_lo, ones16);
+			__m128i pairs_hi = _mm_madd_epi16(s_hi, ones16);
+			__m128i s = _mm_packs_epi32(pairs_lo, pairs_hi);
+			s = _mm_srli_epi16(_mm_add_epi16(s, two16), 2);
+			_mm_storel_epi64((__m128i *)(p_dst + done), _mm_packus_epi16(s, s));
+		}
+		break;
 	}
 	return done;
 }
+#elif defined(GODOT_SIMD_NEON)
+static uint32_t _mipmap_row_uint8_simd(
+	const uint8_t *p_up,
+	const uint8_t *p_down,
+	uint8_t *p_dst,
+	uint32_t p_count,
+	uint32_t components
+)
+{
+	size_t doneBytes = 0;
+	size_t bytes = count * components;
+	uint16x8 zero = vdupq_n_u16(0);
+	uint16x8 two16 = vdupq_n_u16(2);
+	switch(components)
+	{
+	case 4:
+		// 16 source bytes per row = 4 pixels = 2 destination pixels.
+		for (; doneBytes + 16 < bytes; doneBytes += 16)
+		{
+			uint8x16_t up = vld1q_u8(p_up + doneBytes);
+			uint8x16_t down = vld1q_u8(p_down + doneBytes);
+			uint16x8_t sLo = vaddq_u16(vreinterpretq_u16_u8(vzip1q_u8(up, zero), vzip1q_u8(down, zero)));
+			uint16x8_t sHi = vaddq_u16(vreinterpretq_u16_u8(vzip2q_u8(up, zero), vzip2q_u8(down, zero)));
+			uint16x8_t s = vreinterpretq_u16_u64(vzip1q_u64(vreinterpretq_u64_u16(sLo), vreinterpretq_u64_u16(sHi)));
+			s = vaddq_u16(vreinterpretq_u16_u64(vzip2q_u64(vreinterpretq_u64_u16(sLo), vreinterpretq_u64_u16(sHi))));
+			s = vshrq_n_u16(vaddq_u16(s, two16), 2));
+			vst1_u8(p_dst + (doneBytes >> 1), vqmovn_u16(s));
+		}
+		break;
+	case 3:
+		// 48 source bytes per row = 16 pixels = 8 destination pixels.
+		for (; doneBytes + 384 < bytes; doneBytes += 384)
+		{
+			uint8x16x3_t up = vld3q_u8(p_up + doneBytes);
+			uint8x16x3_t down = vld3q_u8(p_down + doneBytes);
+			uint8x8x3_t out;
+			uint16x8x3_t sLo;
+			uint16x8x3_t sHi;
+			uint16x8x3_t s;
+			for (size_t j = 0; j < 3; j += 1)
+			{
+				sLo.val[j] = vaddq_u16(vreinterpretq_u16_u8(vzip1q_u8(up.val[j], zero), vzip1q_u8(down.val[j], zero)));
+				sHi.val[j] = vaddq_u16(vreinterpretq_u16_u8(vzip2q_u8(up.val[j], zero), vzip2q_u8(down.val[j], zero)));
+				s.val[j] = vreinterpretq_u16_u64(vzip1q_u64(vreinterpretq_u64_u16(sLo.val[j]), vreinterpretq_u64_u16(sHi.val[j])));
+				s.val[j] = vaddq_u16(vreinterpretq_u16_u64(vzip2q_u64(vreinterpretq_u64_u16(sLo.val[j]), vreinterpretq_u64_u16(sHi.val[j]))));
+				s.val[j] = vshrq_n_u16(vaddq_u16(s.val[j], two16), 2));
+				out.val[j] = vmovn_u16(s.val[j]);
+			}
+			vst3_u8(p_dst + (doneBytes >> 2), out);
+		}
+		break;
+	case 2:
+		// 16 source bytes per row = 8 pixels = 4 destination pixels.
+		for (; doneBytes + 128 < bytes; doneBytes += 128)
+		{
+			uint8x16_t up = vld1q_u8(p_up + doneBytes);
+			uint8x16_t down = vld1q_u8(p_down + doneBytes);
+			uint16x8_t sLo = vaddq_u16(vreinterpretq_u16_u8(vzip1q_u8(up, zero), vzip1q_u8(down, zero)));
+			uint16x8_t sHi = vaddq_u16(vreinterpretq_u16_u8(vzip2q_u8(up, zero), vzip2q_u8(down, zero)));
+			uint32x4_t t0 = vreinterpretq_u32_u16(sLo);
+			t0 = vsetq_lane_u32(vgetq_lane(vreinterpretq_u32_u16(sLo), 3), 0);
+			t0 = vsetq_lane_u32(vgetq_lane(vreinterpretq_u32_u16(sLo), 0), 3);
+			uint32x4_t t1 = vreinterpretq_u32_u16(sHi);
+			t1 = vsetq_lane_u32(vgetq_lane(vreinterpretq_u32_u16(sHi), 3), 0);
+			t1 = vsetq_lane_u32(vgetq_lane(vreinterpretq_u32_u16(sHi), 0), 3);
+			uint16x8_t s = vaddq_u16(
+				vreinterpretq_u16_u64(vzip1q_u64(t0, t1)),
+				vreinterpretq_u16_u64(vzip2q_u64(t0, t1))
+			);
+			vst1_u8(p_dst + (doneBytes >> 1), vqmovn_u16(s));
+		}
+		break;
+	case 1:
+		// 16 source bytes per row = 16 pixels = 8 destination pixels.
+		for (; doneBytes + 128 < bytes; doneBytes += 128)
+		{
+			uint8x16_t up = vld1q_u8(p_up + doneBytes);
+			uint8x16_t down = vld1q_u8(p_down + doneBytes);
+			uint16x8_t sLo = vaddq_u16(vreinterpretq_u16_u8(vzip1q_u8(up, zero), vzip1q_u8(down, zero)));
+			uint16x8_t sHi = vaddq_u16(vreinterpretq_u16_u8(vzip2q_u8(up, zero), vzip2q_u8(down, zero)));
+			uint16x8_t sA = vuzp1_u16(sLo, zero);
+			uint16x8_t sB = vuzp2_u16(sLo, zero);
+			uint32x4_t pairsLo = vaddl_u16(sA, sB);
+			sA = vuzp1_u16(sHi, zero);
+			sB = vuzp1_u16(sHi, zero);
+			uint32x4_t pairsHi = vaddl_u16(sA, sB);
+			uint16x8_t s = vreinterpretq_u16_u32(vzip1q_u32(pairsLo, pairsHi));
+			s = vshrq_n_u16(vaddq_u16(s, two16), 2);
+			vst1_u8(p_dst + (doneBytes >> 1), vqmovn_u16(s));
+		}
+		break;
+	}
+	return (uint32_t)((doneBytes / pitch) / 2);
+}
+#endif
 
 // Gathers the two source pixels of a destination pixel (components interleaved) into
 // lanes: r_a = even source pixel, r_b = odd source pixel, for CC = 1 and 2 (4 and 2 dst pixels).
-template <int CC>
-static _FORCE_INLINE_ void _mipmap_split_pairs(const float *p_row, simd::f32x4 &r_a, simd::f32x4 &r_b) {
+static _FORCE_INLINE_ void _mipmap_split_pairs2(const float *p_row, simd::f32x4 &r_a, simd::f32x4 &r_b) {
 	using namespace simd;
 	f32x4 lo = load4(p_row);
 	f32x4 hi = load4(p_row + 4);
-	if constexpr (CC == 1) {
-		r_a = shuffle<0, 2, 0, 2>(lo, hi);
-		r_b = shuffle<1, 3, 1, 3>(lo, hi);
-	} else {
-		r_a = movelh(lo, hi);
-		r_b = movehl(hi, lo);
-	}
+	r_a = movelh(lo, hi);
+	r_b = movehl(hi, lo);
 }
 
-template <int CC>
-static uint32_t _mipmap_row_float_simd(const float *p_up, const float *p_down, float *p_dst, uint32_t p_count) {
+static _FORCE_INLINE_ void _mipmap_split_pairs1(const float *p_row, simd::f32x4 &r_a, simd::f32x4 &r_b) {
+	using namespace simd;
+	f32x4 lo = load4(p_row);
+	f32x4 hi = load4(p_row + 4);
+	r_a = shuffle<0, 2, 0, 2>(lo, hi);
+	r_b = shuffle<1, 3, 1, 3>(lo, hi);
+}
+
+static uint32_t _mipmap_row_float_simd(const float *p_up, const float *p_down, float *p_dst, uint32_t p_count, uint32_t components) {
 	using namespace simd;
 	const f32x4 quarter = splat4(0.25f);
 	uint32_t done = 0;
-	if constexpr (CC == 4) {
+	switch (components)
+	{
+	case 4:
 		for (; done < p_count; done++) {
 			const float *up = p_up + done * 8;
 			const float *down = p_down + done * 8;
@@ -2102,7 +2206,8 @@ static uint32_t _mipmap_row_float_simd(const float *p_up, const float *p_down, f
 			}
 			store4(p_dst + done * 4, r);
 		}
-	} else if constexpr (CC == 3) {
+		break;
+	case 3:
 		for (; done < p_count; done++) {
 			const float *up = p_up + done * 6;
 			const float *down = p_down + done * 6;
@@ -2112,18 +2217,31 @@ static uint32_t _mipmap_row_float_simd(const float *p_up, const float *p_down, f
 			}
 			store3(p_dst + done * 3, r);
 		}
-	} else {
-		constexpr uint32_t per_step = 4 / CC;
-		for (; done + per_step <= p_count; done += per_step) {
+		break;
+	case 2:
+		for (; done + 2 <= p_count; done += 2) {
 			f32x4 a, b, c, d;
-			_mipmap_split_pairs<CC>(p_up + done * CC * 2, a, b);
-			_mipmap_split_pairs<CC>(p_down + done * CC * 2, c, d);
+			_mipmap_split_pairs2(p_up + done * 4, a, b);
+			_mipmap_split_pairs2(p_down + done * 4, c, d);
 			const f32x4 r = (((a + b) + c) + d) * quarter;
 			if (movemask(cmp_neq(r, r)) != 0) {
 				break;
 			}
-			store4(p_dst + done * CC, r);
+			store4(p_dst + done * 2, r);
 		}
+		break;
+	case 1:
+		for (; done + 1 <= p_count; done += 1) {
+			f32x4 a, b, c, d;
+			_mipmap_split_pairs1(p_up + done * 2, a, b);
+			_mipmap_split_pairs1(p_down + done * 2, c, d);
+			const f32x4 r = (((a + b) + c) + d) * quarter;
+			if (movemask(cmp_neq(r, r)) != 0) {
+				break;
+			}
+			store4(p_dst + done, r);
+		}
+		break;
 	}
 	return done;
 }
@@ -2147,7 +2265,7 @@ static void _generate_po2_mipmap(const Component *p_src, Component *p_dst, uint3
 		Component *dst_ptr = &p_dst[i * dst_w * CC];
 		uint32_t count = dst_w;
 
-#if defined(GODOT_SIMD_F32X4) && defined(GODOT_SIMD_X86)
+#if defined(GODOT_SIMD_F32X4)
 		// Half-float (uint16_t) mipmaps stay scalar: the bit-exact half<->float conversion costs more
 		// than the SIMD averaging saves.
 		if constexpr (!renormalize && (std::is_same_v<Component, uint8_t> || std::is_same_v<Component, float>)) {
@@ -2156,9 +2274,9 @@ static void _generate_po2_mipmap(const Component *p_src, Component *p_dst, uint3
 				// functions used with these component types.
 				uint32_t done = 0;
 				if constexpr (std::is_same_v<Component, uint8_t>) {
-					done = _mipmap_row_uint8_simd<CC>(rup_ptr, rdown_ptr, dst_ptr, count);
+					done = _mipmap_row_uint8_simd(rup_ptr, rdown_ptr, dst_ptr, count, CC);
 				} else {
-					done = _mipmap_row_float_simd<CC>(rup_ptr, rdown_ptr, dst_ptr, count);
+					done = _mipmap_row_float_simd(rup_ptr, rdown_ptr, dst_ptr, count, CC);
 				}
 				count -= done;
 				dst_ptr += done * CC;
@@ -2831,7 +2949,8 @@ bool Image::is_invisible() const {
 			const int pixel_count = len / 4;
 			const uint32_t *pixeldata = reinterpret_cast<const uint32_t *>(data.ptr());
 			int i = 0;
-#if defined(GODOT_SIMD_F32X4) && defined(GODOT_SIMD_X86)
+#if defined(GODOT_SIMD_F32X4)
+#if defined(GODOT_SIMD_X86)
 			// OR the alpha bytes of 16 pixels at a time and test once.
 			for (; i + 16 <= pixel_count; i += 16) {
 				const __m128i *p = reinterpret_cast<const __m128i *>(pixeldata + i);
@@ -2841,6 +2960,15 @@ bool Image::is_invisible() const {
 					return false;
 				}
 			}
+#elif defined(GODOT_SIMD_NEON)
+			for (; i + 16 <= pixel_count; i += 16) {
+				int8x16x4_t pixels = vld4q_u8((uint8_t*)(pixelData + i));
+				if (vaddlvq_u8(vceqq_s32(pixels.val[0], vdupq_n_u8(0))) != 0x0FF0)
+				{
+					return false;
+				}
+			}
+#endif
 #endif
 			for (; i < pixel_count; i++) {
 				if ((pixeldata[i] & 0xFF000000) != 0) {
@@ -4414,7 +4542,8 @@ void Image::premultiply_alpha() {
 	const int64_t pixel_count = (int64_t)width * height;
 	int64_t p = 0;
 
-#if defined(GODOT_SIMD_F32X4) && defined(GODOT_SIMD_X86)
+#if defined(GODOT_SIMD_F32X4)
+#if defined(GODOT_SIMD_X86)
 	// Four pixels per step in 16-bit lanes: (c * a + 255) >> 8, alpha kept.
 	for (; p + 4 <= pixel_count; p += 4) {
 		uint8_t *ptr = &data_ptr[p * 4];
@@ -4432,6 +4561,26 @@ void Image::premultiply_alpha() {
 		mul_hi = _mm_or_si128(_mm_andnot_si128(alpha_lanes, mul_hi), _mm_and_si128(alpha_lanes, hi));
 		_mm_storeu_si128((__m128i *)ptr, _mm_packus_epi16(mul_lo, mul_hi));
 	}
+#elif defined(GODOT_SIMD_NEON)
+	for (; p + 4 <= pixel_count; p += 4) {
+		uint8_t *ptr = &data_ptr[p * 4];
+		const int8x16_t zero = vdupq_n_s8(0);
+		const int16x8_t round = vdupq_n_s16(0xFF);
+		int16x8_t alphaLanes = zero;
+		alphaLanes = vsetq_lane_s16(-1, alphaLanes, 3);
+		alphaLanes = vsetq_lane_s16(-1, alphaLanes, 7);
+		uint8x16_t v = vlt1q_u8(ptr);
+		int16x8_t lo = vreinterpretq_s16_u8(vzip1q_u8(v, zero));
+		int16x8_t hi = vreinterpretq_s16_u8(vzip2q_u8(v, zero));
+		int16x8_t alphaLo = vdupq_n_s16(vgetq_lane_s8(v, 3));
+		int16x8_t alphaHi = vdupq_n_s16(vgetq_lane_s8(v, 7));
+		int16x8_t mulLo = vreinterpretq_s16_u16(vshrq_n_u16(vreinterpretq_u16_s16(vaddq_s16(lo, alphaLo), round), 8));
+		int16x8_t mulHi = vreinterpretq_s16_u16(vshrq_n_u16(vreinterpretq_u16_s16(vaddq_s16(lo, alphaHi), round), 8));
+		mulLo = vorrq_s16(vandq_s16(vmvnq_s16(alphaLanes), mulLo), vandq_s16(alphaLanes, lo));
+		mulHi = vorrq_s16(vandq_s16(vmvnq_s16(alphaLanes), mulHi), vandq_s16(alphaLanes, hi));
+		vst1q_u8(ptr, vcombineq_u8(vmovn_s16(mulLo), vmovn_s16(mulHi)));
+	}
+#endif
 #endif
 
 	for (; p < pixel_count; p++) {
