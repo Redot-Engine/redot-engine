@@ -1,6 +1,6 @@
 extends SceneTree
 
-# Joint motor wake contracts (audit R-03, PHYSX-JMW-001..003).
+# Joint motor wake contracts (PHYSX-JMW-001..003).
 #
 #   PHYSX-JMW-001  a hinge motor driving a heavy arm from a SLEEPING start
 #                   spins it up to the target velocity: the body pre-step wakes

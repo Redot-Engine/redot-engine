@@ -1,6 +1,6 @@
 extends SceneTree
 
-# Blast debris API (audit R-14, PHYSX-BLAST-002).
+# Blast debris API (PHYSX-BLAST-002).
 #
 #   A dynamic destructible falls, shatters mid-flight with shatter_speed=0
 #   (no kick): every spawned piece must inherit the pre-impact velocity --

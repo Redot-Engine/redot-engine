@@ -189,6 +189,13 @@ protected:
 
 	LocalVector<AttachedShape> attached_shapes;
 
+	// Creates the record's PxShape instance and attaches it to the actor.
+	// Returns false when the blueprint cannot produce geometry yet (e.g. a
+	// data-less heightmap — WorldScape3D attaches heightmap RIDs before
+	// setting their heights): the slot stays detached and shape_changed()
+	// retries once the blueprint's data arrives.
+	bool _try_attach_shape(AttachedShape &record);
+
 	/// Baked into shape geometry + local pose origins (see refresh_shape_scaling).
 	Vector3 body_scale = Vector3(1, 1, 1);
 

@@ -135,6 +135,14 @@ PhysXShape3D::~PhysXShape3D() {
 // ---------------------------------------------------------------------------
 
 physx::PxShape *PhysXShape3D::create_shape(physx::PxPhysics &p_physics, const physx::PxVec3 &p_scale, const physx::PxMaterial *p_material, physx::PxShapeFlags p_flags) {
+	// A data-less shape cannot produce geometry yet (e.g. a heightmap RID
+	// attached before its heights are set — WorldScape3D's collision modes
+	// do this). Skip silently instead of erroring, mirroring Jolt's silent
+	// build failure: the owning object keeps the slot and shape_changed()
+	// retries the attach when the shape's data arrives.
+	if (!has_geometry_data()) {
+		return nullptr;
+	}
 	// Generate the concrete geometry (box, sphere, capsule, etc.).
 	physx::PxGeometryHolder geom_holder;
 	if (!get_physx_geometry(geom_holder, p_scale)) {

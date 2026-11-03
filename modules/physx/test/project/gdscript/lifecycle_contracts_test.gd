@@ -1,6 +1,6 @@
 extends SceneTree
 
-# Lifecycle-contract regression tests (audit section 3.4, GAP-10 / Phase 8).
+# Lifecycle-contract regression tests.
 #
 # Four contracts, each with its own report entry:
 #   PHYSX-LIFEC-001  body free during overlap -> body_exited still fires

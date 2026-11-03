@@ -32,6 +32,7 @@ internal static class RegressionTests
 		//        canary mid-fall: a fixed 40-frame wait sampled it at exactly y=0.82 (free-fall
 		//        position at that time), deterministically. SPACE-009 now waits for touchdown.
 		s.Add("PHYSX-REG-0014", "REG-0014: mesh shape on a default-rigid body must not crash the engine (FIXED — guard)", MeshOnDynamicNoCrash);
+		s.Add("PHYSX-REG-0034", "REG-0034: heightmap attached data-less collides once shape_set_data arrives (WorldScape3D fall-through — FIXED — guard)", HeightmapLateDataAttach);
 		// ---- FIXED (kept as permanent regression guards; must stay PASSING):
 		// REG-0010 vehicle subsystem ...... FIXED 2026-08-21 (missing RigidBodyComponent in
 		//        the vehicle2 sequence + vehicle not registered with the chassis's space;
@@ -44,6 +45,12 @@ internal static class RegressionTests
 		// REG-0030 contacts after sleep ... FIXED 2026-08-20 (pre-sleep contact snapshot)
 		// REG-0031/0032 joint release ..... FIXED 2026-08-20 (release() wakes connected bodies)
 		// REG-0033 vehicle_set_space ...... FIXED 2026-08-21 (idempotent + adoption registers)
+		// REG-0034 data-less heightmap ... FIXED 2026-11-03 (WorldScape3D fall-through: the
+		//        eager cook at body_add_shape() failed for a data-less HeightMapShape3D RID
+		//        and shape_changed() skipped slots without a PxShape instance, so
+		//        shape_set_data() never attached the collider. Module now retries failed
+		//        slots via PhysXShapedObject3D::_try_attach_shape and stays silent for
+		//        data-less shapes via PhysXShape3D::has_geometry_data)
 		// ---- still open (primary failing test keeps each one visible):
 		// REG-0011 area-area events ...... FIXED 2026-08-29 (areas are kinematic actors + detection shapes)
 		// REG-0012 motion depenetration ... FIXED 2026-08-30 (MTD-aware cast; travel = recovery + swept motion)
@@ -264,5 +271,39 @@ internal static class RegressionTests
 		PhysicsServer3D.BodySetMode(hostile, PhysicsServer3D.BodyMode.Static);
 		yield return Wait.Frames(10);
 		Assert.Expect(PhysxWorld.Finite(w.Pos(canary)), "engine healthy after mesh-on-dynamic attach + mode change");
+	}
+
+	static IEnumerator HeightmapLateDataAttach()
+	{
+		// WorldScape3D's game-mode terrain sequence: a
+		// HeightMapShape3D RID is attached to a static body BEFORE any height
+		// data exists (disabled, parked at V3_MAX) and shape_set_data() fills
+		// it afterwards. The data-less attach must stay silent (no per-shape
+		// error spam) and the slot must attach when the data arrives; before
+		// the fix the body kept zero attached shapes and everything fell
+		// through the terrain.
+		using var w = new PhysxWorld(false);
+		var hf = PhysicsServer3D.HeightmapShapeCreate();
+		w.AdoptShape(hf);
+		var body = PhysicsServer3D.BodyCreate(); // raw WS3D order: data-less + disabled
+		w.TrackBody(body);
+		PhysicsServer3D.BodySetMode(body, PhysicsServer3D.BodyMode.Static);
+		PhysicsServer3D.BodySetSpace(body, w.Space);
+		PhysicsServer3D.BodyAddShape(body, hf, Transform3D.Identity, true);
+		PhysicsServer3D.BodySetShapeDisabled(body, 0, false);
+		const int n = 65;
+		var heights = new float[n * n];
+		for (int i = 0; i < heights.Length; i++)
+			heights[i] = 2f;
+		PhysicsServer3D.ShapeSetData(hf, new Godot.Collections.Dictionary
+		{
+			["width"] = n,
+			["depth"] = n,
+			["heights"] = heights,
+		});
+		yield return Wait.Frames(3);
+		var hit = w.Ray(new Vector3(0, 10, 0), new Vector3(0, -10, 0));
+		Assert.Expect(hit.Count > 0 && hit["rid"].AsRid() == body, "late-data heightmap collides after shape_set_data");
+		Assert.ExpectNear(hit.Count > 0 ? hit["position"].AsVector3().Y : -1f, 2f, 0.15f, "ray hits the heightfield surface");
 	}
 }

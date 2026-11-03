@@ -159,6 +159,8 @@ func _build_tests() -> void:
 	t.call("GDBIND-VEHI-002", "vehicle", "response params retune steer lock", "t_vehicle_response_tuning", 400)
 	# Soft body API skeleton.
 	t.call("GDBIND-SOFT-001", "soft_bodies", "soft body API skeleton round-trips (no simulation)", "t_soft_body", 10)
+	# Regressions (guards: every fixed integration bug stays PASSING).
+	t.call("GDBIND-REG-001", "regression", "heightmap attached data-less collides once shape_set_data arrives (WorldScape3D fall-through)", "t_reg_heightmap_late_data", 30)
 
 # ------------------------------------------------------------------ lifecycle
 
@@ -1136,6 +1138,38 @@ func t_soft_body(c: Dictionary) -> bool:
 	PhysicsServer3D.soft_body_pin_point(sb, 2, true)
 	chk(PhysicsServer3D.soft_body_is_point_pinned(sb, 2), "pin round-trip")
 	note("soft-body simulation itself is not implemented in the module (API skeleton) — behavior intentionally not asserted here")
+	return true
+
+
+# ------------------------------------------------------------------ regression
+
+func t_reg_heightmap_late_data(c: Dictionary) -> bool:
+	# WorldScape3D's game-mode terrain sequence: a heightmap RID is attached
+	# to a static body BEFORE any height data exists (disabled), then filled
+	# via shape_set_data(). The data-less attach must stay silent and the slot
+	# must attach when the data arrives (fall-through before the fix).
+	if c["frame"] == 1:
+		c["space"] = mkspace()
+		var hf := reg(PhysicsServer3D.heightmap_shape_create())
+		var body := reg(PhysicsServer3D.body_create())
+		PhysicsServer3D.body_set_mode(body, PhysicsServer3D.BODY_MODE_STATIC)
+		PhysicsServer3D.body_set_space(body, c["space"])
+		PhysicsServer3D.body_add_shape(body, hf, Transform3D(), true)
+		PhysicsServer3D.body_set_shape_disabled(body, 0, false)
+		var heights := PackedFloat32Array()
+		heights.resize(65 * 65)
+		heights.fill(2.0)
+		PhysicsServer3D.shape_set_data(hf, {"width": 65, "depth": 65, "heights": heights})
+		c["body"] = body
+		return false
+	if c["frame"] < 4:
+		return false
+	var q := PhysicsRayQueryParameters3D.create(Vector3(0, 10, 0), Vector3(0, -10, 0))
+	var hit: Dictionary = ds().intersect_ray(q)
+	chk(not hit.is_empty() and hit["rid"] == c["body"], "late-data heightmap collides after shape_set_data")
+	if hit.is_empty():
+		return true
+	chk(absf((hit["position"] as Vector3).y - 2.0) < 0.15, "ray hits the heightfield surface (y=%.3f)" % (hit["position"] as Vector3).y)
 	return true
 
 

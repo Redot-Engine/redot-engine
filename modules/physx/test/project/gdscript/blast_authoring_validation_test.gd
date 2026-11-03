@@ -1,6 +1,6 @@
 extends SceneTree
 
-# Authoring input validation (audit F-30, PHYSX-BLAST-003).
+# Authoring input validation (PHYSX-BLAST-003).
 #
 #   fracture_mesh refuses bad input with a reason (get_last_error) instead of
 #   feeding it to the native SDK: an index past the vertices, a partial

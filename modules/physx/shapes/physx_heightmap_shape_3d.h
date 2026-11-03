@@ -64,6 +64,11 @@ public:
 
 	virtual bool get_physx_geometry(physx::PxGeometryHolder &p_geometry_holder, const physx::PxVec3 &p_scale) const override;
 
+	// A heightmap without heights cannot generate geometry (see
+	// _ensure_physx_height_field). Attaching one stays silent until
+	// shape_set_data() supplies the heights.
+	virtual bool has_geometry_data() const override { return width > 1 && depth > 1 && !heights.is_empty(); }
+
 	virtual physx::PxTransform get_local_pose(const physx::PxVec3 &p_scale = physx::PxVec3(1.0f)) const override;
 
 private:

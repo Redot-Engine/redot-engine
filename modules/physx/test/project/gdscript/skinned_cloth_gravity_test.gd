@@ -1,6 +1,6 @@
 extends SceneTree
 
-# Skinned-cloth gravity contracts (audit R-05, PHYSX-CLOTH-001).
+# Skinned-cloth gravity contracts (PHYSX-CLOTH-001).
 #
 #   PHYSX-CLOTH-001  PhysXSkinnedCloth3D's gravity resolution: the world's
 #                   default gravity by default (project settings via the

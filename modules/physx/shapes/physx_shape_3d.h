@@ -126,6 +126,13 @@ public:
 	virtual PhysicsServer3D::ShapeType get_type() const = 0;
 	virtual bool is_convex() const = 0;
 
+	// Whether the shape's data can produce geometry right now. A data-less
+	// shape (e.g. a heightmap RID attached before its heights are set —
+	// WorldScape3D's collision modes do this) answers false so attaching it
+	// skips the geometry cook silently instead of erroring; the owning object
+	// keeps the slot and shape_changed() retries once the data arrives.
+	virtual bool has_geometry_data() const { return true; }
+
 	// Queries
 	virtual AABB get_aabb() const = 0;
 

@@ -1,6 +1,6 @@
 extends SceneTree
 
-# Phase-9 investigation (AUDIT R-22/F-22): contact velocities include the
+# Platform-spin contract: contact velocities include the
 # collider's spin term unconditionally (getVelocityAtPos = linear + wxr), so
 # a character standing on a platform that has STOPPED rotating must not be
 # carried by residual solver spin. PhysX zeroes velocities at sleep, which

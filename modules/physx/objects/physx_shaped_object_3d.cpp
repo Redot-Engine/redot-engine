@@ -229,37 +229,59 @@ void PhysXShapedObject3D::detach_shape(PhysXShape3D *p_shape) {
 // Called by PhysXShape3D when its geometry changes (e.g. editor resize):
 // updates every attached instance's PxGeometry in place (PxShape::
 // setGeometry() is mutable -- no detach/re-attach), respecting the current
-// body scale. Dynamic bodies are woken since the inertia tensor may have
-// changed.
+// body scale. Slots whose first cook failed (a data-less blueprint, e.g.
+// WorldScape3D attaching heightmap RIDs before setting their heights) are
+// re-attached instead. Dynamic bodies are woken since the inertia tensor
+// may have changed.
 void PhysXShapedObject3D::shape_changed(PhysXShape3D *p_shape) {
+	// The paths below issue setGeometry()/attachShape() — both mutate the
+	// scene's broadphase, forbidden while a solve is in flight (async
+	// stepping). Fetch first, like the attach/detach paths.
+	if (space) {
+		space->ensure_synced();
+	}
+
 	for (AttachedShape &record : attached_shapes) {
-		if (record.shape_blueprint == p_shape && (record.shape_instance || record.detection_shape)) {
-			// Rebuild the geometry with the current body scale AND the
-			// per-shape transform scale, and refresh the contact offset (the
-			// margin is stored per PxShape, not per shape_blueprint).
-			physx::PxGeometryHolder holder;
-			const Vector3 geom_scale = _shape_geometry_scale_for(p_shape, record.relative_transform);
-			physx::PxVec3 scale(geom_scale.x, geom_scale.y, geom_scale.z);
-			if (p_shape->get_physx_geometry(holder, scale)) {
-				if (record.shape_instance) {
-					record.shape_instance->setGeometry(holder.any());
-				}
-				if (record.detection_shape) {
-					record.detection_shape->setGeometry(holder.any());
-				}
+		if (record.shape_blueprint != p_shape) {
+			continue;
+		}
+
+		if (!record.shape_instance) {
+			// The slot never received a PxShape: its blueprint could not
+			// produce geometry when it was attached. Retry the attach now —
+			// this notification usually comes from shape_set_data() — so
+			// slots that failed eagerly at add_shape() time recover instead
+			// of staying detached forever.
+			if (_try_attach_shape(record)) {
+				// Re-apply object-level shape semantics: bodies refresh
+				// filter data, areas re-apply trigger flags and detection
+				// shapes (the record was attached with body semantics).
+				_update_shapes();
 			}
-			if (record.shape_instance) {
-				record.shape_instance->setContactOffset(p_shape->get_margin());
-				// Re-apply the space rest offset: setContactOffset above resets
-				// the generation distance to the margin, which would leave
-				// restOffset >= contactOffset (invalid) when the space mapped
-				// CONTACT_MAX_ALLOWED_PENETRATION onto this shape.
-				physx_apply_space_rest_offset(record.shape_instance, p_shape->get_margin(), space);
-			}
+			continue;
+		}
+
+		// Rebuild the geometry with the current body scale AND the
+		// per-shape transform scale, and refresh the contact offset (the
+		// margin is stored per PxShape, not per shape_blueprint).
+		physx::PxGeometryHolder holder;
+		const Vector3 geom_scale = _shape_geometry_scale_for(p_shape, record.relative_transform);
+		physx::PxVec3 scale(geom_scale.x, geom_scale.y, geom_scale.z);
+		if (p_shape->get_physx_geometry(holder, scale)) {
+			record.shape_instance->setGeometry(holder.any());
 			if (record.detection_shape) {
-				record.detection_shape->setContactOffset(p_shape->get_margin());
-				physx_apply_space_rest_offset(record.detection_shape, p_shape->get_margin(), space);
+				record.detection_shape->setGeometry(holder.any());
 			}
+		}
+		record.shape_instance->setContactOffset(p_shape->get_margin());
+		// Re-apply the space rest offset: setContactOffset above resets
+		// the generation distance to the margin, which would leave
+		// restOffset >= contactOffset (invalid) when the space mapped
+		// CONTACT_MAX_ALLOWED_PENETRATION onto this shape.
+		physx_apply_space_rest_offset(record.shape_instance, p_shape->get_margin(), space);
+		if (record.detection_shape) {
+			record.detection_shape->setContactOffset(p_shape->get_margin());
+			physx_apply_space_rest_offset(record.detection_shape, p_shape->get_margin(), space);
 		}
 	}
 
@@ -277,6 +299,106 @@ void PhysXShapedObject3D::shape_changed(PhysXShape3D *p_shape) {
 			}
 		}
 	}
+}
+
+// Creates the record's PxShape instance and attaches it to the actor.
+// Returns false when the blueprint cannot produce geometry yet (e.g. a
+// data-less heightmap — WorldScape3D attaches heightmap RIDs before setting
+// their heights): the slot is kept detached and shape_changed() retries once
+// the blueprint's data arrives.
+bool PhysXShapedObject3D::_try_attach_shape(AttachedShape &record) {
+	if (!px_actor || !record.shape_blueprint) {
+		return false;
+	}
+
+	// Body scale AND per-shape transform scale are baked into the geometry
+	// (e.g. a 1x1 trimesh quad whose shape offset scales it (50,1,50) into a
+	// floor -- the standard Godot idiom). Convex polygon meshes additionally
+	// receive the signed (mirror-capable) scale.
+	const Vector3 geom_scale = _shape_geometry_scale_for(record.shape_blueprint, record.relative_transform);
+	physx::PxVec3 total_scale(geom_scale.x, geom_scale.y, geom_scale.z);
+	physx::PxPhysics &physics = PhysXServer3D::get_singleton()->get_physics();
+
+	// Determine if this is a concave shape being attached to a non-kinematic
+	// dynamic body. PhysX forbids attaching triangle meshes, heightfields,
+	// and planes to dynamic actors — attachShape() will fail and leave the
+	// actor in an inconsistent state (subsequent server calls that dereference
+	// the half-attached shape segfault). For such combinations, we create the
+	// shape with eSCENE_QUERY_SHAPE only (no simulation) so the shape still
+	// participates in raycasts/overlaps but never collides.
+	physx::PxShapeFlags shape_flags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE;
+
+	// Separation-ray shapes are QUERY-ONLY on every body: Godot's ray
+	// shapes never generate simulation contacts — the ray participates
+	// only in its owner's motion queries (which raycast/sweep the
+	// geometry directly, not through this attached PxShape). As a
+	// simulation shape the emulated thin box produced real contacts
+	// Godot rays do not.
+	if (record.shape_blueprint->get_type() == PhysicsServer3D::SHAPE_SEPARATION_RAY) {
+		shape_flags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE;
+	}
+	// Check: is the shape concave? (triangle mesh / heightfield / plane)
+	// Concave geometries on a non-kinematic dynamic body are created
+	// query-only: PhysX forbids those simulation shapes there.
+	else if (!record.shape_blueprint->is_convex()) {
+		// Check: is the actor a non-kinematic dynamic body?
+		physx::PxRigidDynamic *dyn = px_actor->is<physx::PxRigidDynamic>();
+		if (dyn && !(dyn->getRigidBodyFlags() & physx::PxRigidBodyFlag::eKINEMATIC)) {
+			shape_flags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE;
+		}
+	}
+
+	// Godot passes the shape owner's disabled state at add time
+	// (CollisionObject3D::shape_owner_add_shape forwards it). A disabled
+	// shape must attach inert — no simulation, no queries — exactly as a
+	// later set_shape_disabled(idx, true) would leave it; without this the
+	// toggle can never fire because the wrapper already records the flag.
+	if (record.disabled) {
+		shape_flags = physx::PxShapeFlag::eVISUALIZATION;
+	}
+
+	record.shape_instance = record.shape_blueprint->create_shape(physics, total_scale, _get_shape_material(), shape_flags);
+
+	if (!record.shape_instance) {
+		// The blueprint could not produce geometry (a data-less shape stays
+		// silent; a genuine cook failure already reported itself).
+		return false;
+	}
+
+	// Set the shape's local pose (placement * shape alignment). The placement
+	// is body-relative with its origin scaled by the body scale (a child
+	// offset sits at offset*scale, matching a scaled Godot node); the
+	// alignment is the shape's intrinsic axis rotation (e.g. capsule Z-90 to
+	// map PhysX's X-axis to Godot's Y-axis). create_shape() applied the
+	// alignment once already; compose both so neither is lost.
+	Transform3D placed_tr = record.relative_transform;
+	placed_tr.origin *= body_scale;
+	const physx::PxTransform composed = to_physx_transform(placed_tr) * record.shape_blueprint->get_local_pose(total_scale);
+	record.shape_instance->setLocalPose(composed);
+
+	// Apply the owner's collision filter BEFORE attaching: PxShape creation
+	// leaves the filter data zeroed (layer=0, mask=0), which the simulation
+	// filter shader treats as "collides with nothing" -- without this, bodies
+	// fall through everything.
+	physx::PxFilterData filter_data;
+	filter_data.word0 = collision_layer;
+	filter_data.word1 = collision_mask;
+	filter_data.word3 = shape_filter_flags();
+	record.shape_instance->setSimulationFilterData(filter_data);
+	record.shape_instance->setQueryFilterData(filter_data);
+	physx_apply_space_rest_offset(record.shape_instance, record.shape_blueprint->get_margin(), space);
+
+	// Attach to the actor. attachShape() returns void, not a status: for the
+	// concave-on-dynamic case it succeeds but the simulation silently ignores
+	// the shape. Attach anyway so the actor's shape list stays consistent.
+	if (physx::PxRigidActor *rigid_actor = px_actor->is<physx::PxRigidActor>()) {
+		rigid_actor->attachShape(*record.shape_instance);
+	}
+
+	// Drop our local reference — the actor now owns the shape.
+	record.shape_instance->release();
+
+	return true;
 }
 
 // Attaches a shape blueprint to this object: creates the PxShape instance
@@ -304,88 +426,7 @@ void PhysXShapedObject3D::add_shape(PhysXShape3D *p_shape, const Transform3D &p_
 	p_shape->add_owner(this);
 
 	if (px_actor) {
-		// Body scale AND per-shape transform scale are baked into the geometry
-		// (e.g. a 1x1 trimesh quad whose shape offset scales it (50,1,50) into a
-		// floor -- the standard Godot idiom). Convex polygon meshes additionally
-		// receive the signed (mirror-capable) scale.
-		const Vector3 geom_scale = _shape_geometry_scale_for(p_shape, p_transform);
-		physx::PxVec3 total_scale(geom_scale.x, geom_scale.y, geom_scale.z);
-		physx::PxPhysics &physics = PhysXServer3D::get_singleton()->get_physics();
-
-		// Determine if this is a concave shape being attached to a non-kinematic
-		// dynamic body. PhysX forbids attaching triangle meshes, heightfields,
-		// and planes to dynamic actors — attachShape() will fail and leave the
-		// actor in an inconsistent state (subsequent server calls that dereference
-		// the half-attached shape segfault). For such combinations, we create the
-		// shape with eSCENE_QUERY_SHAPE only (no simulation) so the shape still
-		// participates in raycasts/overlaps but never collides.
-		physx::PxShapeFlags shape_flags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE;
-
-		// Separation-ray shapes are QUERY-ONLY on every body: Godot's ray
-		// shapes never generate simulation contacts — the ray participates
-		// only in its owner's motion queries (which raycast/sweep the
-		// geometry directly, not through this attached PxShape). As a
-		// simulation shape the emulated thin box produced real contacts
-		// Godot rays do not.
-		if (p_shape->get_type() == PhysicsServer3D::SHAPE_SEPARATION_RAY) {
-			shape_flags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE;
-		}
-		// Check: is the shape concave? (triangle mesh / heightfield / plane)
-		// Concave geometries on a non-kinematic dynamic body are created
-		// query-only: PhysX forbids those simulation shapes there.
-		else if (!p_shape->is_convex()) {
-			// Check: is the actor a non-kinematic dynamic body?
-			physx::PxRigidDynamic *dyn = px_actor->is<physx::PxRigidDynamic>();
-			if (dyn && !(dyn->getRigidBodyFlags() & physx::PxRigidBodyFlag::eKINEMATIC)) {
-				shape_flags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE;
-			}
-		}
-
-		// Godot passes the shape owner's disabled state at add time
-		// (CollisionObject3D::shape_owner_add_shape forwards it). A disabled
-		// shape must attach inert — no simulation, no queries — exactly as a
-		// later set_shape_disabled(idx, true) would leave it; without this the
-		// toggle can never fire because the wrapper already records the flag.
-		if (p_disabled) {
-			shape_flags = physx::PxShapeFlag::eVISUALIZATION;
-		}
-
-		record.shape_instance = p_shape->create_shape(physics, total_scale, _get_shape_material(), shape_flags);
-
-		if (record.shape_instance) {
-			// Set the shape's local pose (placement * shape alignment). The placement
-			// is body-relative with its origin scaled by the body scale (a child
-			// offset sits at offset*scale, matching a scaled Godot node); the
-			// alignment is the shape's intrinsic axis rotation (e.g. capsule Z-90 to
-			// map PhysX's X-axis to Godot's Y-axis). create_shape() applied the
-			// alignment once already; compose both so neither is lost.
-			Transform3D placed_tr = p_transform;
-			placed_tr.origin *= body_scale;
-			const physx::PxTransform composed = to_physx_transform(placed_tr) * p_shape->get_local_pose(total_scale);
-			record.shape_instance->setLocalPose(composed);
-
-			// Apply the owner's collision filter BEFORE attaching: PxShape creation
-			// leaves the filter data zeroed (layer=0, mask=0), which the simulation
-			// filter shader treats as "collides with nothing" -- without this, bodies
-			// fall through everything.
-			physx::PxFilterData filter_data;
-			filter_data.word0 = collision_layer;
-			filter_data.word1 = collision_mask;
-			filter_data.word3 = shape_filter_flags();
-			record.shape_instance->setSimulationFilterData(filter_data);
-			record.shape_instance->setQueryFilterData(filter_data);
-			physx_apply_space_rest_offset(record.shape_instance, p_shape->get_margin(), space);
-
-			// Attach to the actor. attachShape() returns void, not a status: for the
-			// concave-on-dynamic case it succeeds but the simulation silently ignores
-			// the shape. Attach anyway so the actor's shape list stays consistent.
-			if (physx::PxRigidActor *rigid_actor = px_actor->is<physx::PxRigidActor>()) {
-				rigid_actor->attachShape(*record.shape_instance);
-			}
-
-			// Drop our local reference — the actor now owns the shape.
-			record.shape_instance->release();
-		}
+		_try_attach_shape(record);
 	}
 	attached_shapes.push_back(record);
 

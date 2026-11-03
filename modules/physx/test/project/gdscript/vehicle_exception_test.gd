@@ -1,6 +1,6 @@
 extends SceneTree
 
-# Vehicle collision exceptions + chassis force API (audit R-06/R-13, PHYSX-VEH-001).
+# Vehicle collision exceptions + chassis force API (PHYSX-VEH-001).
 #
 #   PHYSX-VEH-001  add_collision_exception_with makes a vehicle pass through
 #                   the excepted body, wheels included: two identical cars

@@ -40,7 +40,7 @@ func _run() -> void:
 		if gas.has_method("get_solver_step_submits"):
 			submits = gas.get_solver_step_submits()
 		if submits < 0:
-			print("  SKIP  pre-Phase-9 build (no submit counter)")
+			print("  SKIP  build without submit counter")
 		elif submits == 0:
 			print("  SKIP  gas solver unavailable (headless/no device) -- boot was clean")
 		else:
@@ -93,7 +93,7 @@ func _run() -> void:
 				var after: int = int(flow.get_texture_update_count())
 				_chk(after == before, "paused sim issues no texture uploads (%d -> %d)" % [before, after])
 			else:
-				print("  SKIP  pre-Phase-9 build (no upload counters)")
+				print("  SKIP  build without upload counters")
 			# FLOW-12: step_once while paused must actually advance the sim.
 			# The old step_once delegated to _step, which force-disables the
 			# core simulation when paused -- a guaranteed no-op in exactly this

@@ -1,6 +1,6 @@
 extends SceneTree
 
-# Flow floor (audit R-16, PHYSX-FLOW-002).
+# Flow floor (PHYSX-FLOW-002).
 #
 #   With floor_enabled, gas never goes below floor_height: one wide solid
 #   under the grid couples every channel to zero inside itself, so injected

@@ -1,6 +1,6 @@
 extends SceneTree
 
-# Water in-place mutations (audit R-15, PHYSX-WATER-R-001).
+# Water in-place mutations (PHYSX-WATER-R-001).
 #
 #   recenter(world_position) moves the ripple square in place on a built
 #   solver: the grid center follows the node, WITHOUT a rebuild (structural
