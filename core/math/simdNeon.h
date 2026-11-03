@@ -156,7 +156,7 @@ _ALWAYS_INLINE_ f32x4 operator|(f32x4 p_a, f32x4 p_b) {
 }
 
 _ALWAYS_INLINE_ f32x4 operator^(f32x4 p_a, f32x4 p_b) {
-	return (p_a & ~p_b) | (~p_a & p_b); // there is no xor instruction
+	return vreinterpretq_f32_u32(veorq_u32(vreinterpretq_u32_f32(p_a), vreinterpretq_u32_f32(p_b)));
 }
 
 _ALWAYS_INLINE_ f32x4 abs4(f32x4 p_a) {
@@ -382,7 +382,7 @@ _ALWAYS_INLINE_ i32x4 operator|(i32x4 p_a, i32x4 p_b) {
 }
 
 _ALWAYS_INLINE_ i32x4 operator^(i32x4 p_a, i32x4 p_b) {
-	return (p_a & ~p_b) | (~p_a & p_b); // there is no xor instruction
+	return veorq_s32(p_a, p_b);
 }
 
 _ALWAYS_INLINE_ i32x4 select_i32x4(mask4 p_mask, i32x4 p_a, i32x4 p_b) {
