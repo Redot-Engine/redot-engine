@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  simd.h                                                                */
+/*  simdx86.h                                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -344,8 +344,7 @@ _ALWAYS_INLINE_ i32x4 zero_i32x4() {
 	return { _mm_setzero_si128() };
 }
 
-_ALWAYS_INLINE_ i32x4 set_i32x4(int32_t p_arr[4])
-{
+_ALWAYS_INLINE_ i32x4 set_i32x4(int32_t p_arr[4]) {
 	return _mm_loadu_si128(p_arr);
 }
 

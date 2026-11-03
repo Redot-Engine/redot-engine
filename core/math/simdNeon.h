@@ -1,10 +1,42 @@
+/**************************************************************************/
+/*  simdNeon.h                                                            */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
 #pragma once
 
-#include <atomic>
 #include <asm/hwcap.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/auxv.h>
+#include <atomic>
 
 #include "core/math/math_defs.h"
 
@@ -22,16 +54,14 @@
 
 #ifdef GODOT_SIMD_F32X4
 
-namespace simd
-{
+namespace simd {
 
 struct f32x4 {
 	float32x4_t v;
 	_ALWAYS_INLINE_ f32x4(float32x4_t p_v) :
 			v(p_v) {}
 	_ALWAYS_INLINE_ f32x4() = default;
-	_ALWAYS_INLINE_ operator float32x4_t() const
-	{
+	_ALWAYS_INLINE_ operator float32x4_t() const {
 		return v;
 	}
 };
@@ -41,65 +71,54 @@ struct i32x4 {
 	_ALWAYS_INLINE_ i32x4(int32x4_t p_v) :
 			v(p_v) {}
 	_ALWAYS_INLINE_ i32x4() = default;
-	_ALWAYS_INLINE_ operator int32x4_t() const
-	{
+	_ALWAYS_INLINE_ operator int32x4_t() const {
 		return v;
 	}
 };
 
 using mask4 = f32x4;
 
-_ALWAYS_INLINE_ f32x4 zero4()
-{
+_ALWAYS_INLINE_ f32x4 zero4() {
 	return vdupq_n_f32(0);
 }
 
-_ALWAYS_INLINE_ f32x4 set4(float p_arr[4])
-{
+_ALWAYS_INLINE_ f32x4 set4(float p_arr[4]) {
 	return vld1q_f32(p_arr);
 }
 
-_ALWAYS_INLINE_ f32x4 splat4(float p_v)
-{
+_ALWAYS_INLINE_ f32x4 splat4(float p_v) {
 	return vdupq_n_f32(p_v);
 }
 
-_ALWAYS_INLINE_ f32x4 load4(const float *p_ptr)
-{
+_ALWAYS_INLINE_ f32x4 load4(const float *p_ptr) {
 	return vld1q_f32(p_ptr);
 }
 
-_ALWAYS_INLINE_ f32x4 load3(const float *p_ptr)
-{
+_ALWAYS_INLINE_ f32x4 load3(const float *p_ptr) {
 	f32x4 ret = vcombine_f32(vld1_f32(p_ptr), vdup_n_f32(0));
 	ret = vld1q_lane_f32(p_ptr + 2, ret, 2);
 	return ret;
 }
 
-_ALWAYS_INLINE_ f32x4 load2(const float *p_ptr)
-{
+_ALWAYS_INLINE_ f32x4 load2(const float *p_ptr) {
 	return vcombine_f32(vld1_f32(p_ptr), vdup_n_f32(0));
 }
 
-_ALWAYS_INLINE_ f32x4 load2x2(const float *p_ptr)
-{
+_ALWAYS_INLINE_ f32x4 load2x2(const float *p_ptr) {
 	return vcombine_f32(vld1_f32(p_ptr), vld1_f32(p_ptr));
 }
 
-_ALWAYS_INLINE_ void store4(float *p_ptr, f32x4 p_v)
-{
+_ALWAYS_INLINE_ void store4(float *p_ptr, f32x4 p_v) {
 	vst1q_f32(p_ptr, p_v);
 }
 
-_ALWAYS_INLINE_ void store3(float *p_ptr, f32x4 p_v)
-{
+_ALWAYS_INLINE_ void store3(float *p_ptr, f32x4 p_v) {
 	vst1q_lane_f32(p_ptr + 0, p_v, 0);
 	vst1q_lane_f32(p_ptr + 1, p_v, 1);
 	vst1q_lane_f32(p_ptr + 2, p_v, 2);
 }
 
-_ALWAYS_INLINE_ void store2(float *p_ptr, f32x4 p_v)
-{
+_ALWAYS_INLINE_ void store2(float *p_ptr, f32x4 p_v) {
 	vst1q_lane_f32(p_ptr + 0, p_v, 0);
 	vst1q_lane_f32(p_ptr + 1, p_v, 1);
 }
@@ -124,112 +143,89 @@ _ALWAYS_INLINE_ void store2(float *p_ptr, f32x4 p_v)
 // 	return vdivq_f32(p_a, p_b);
 // }
 
-_ALWAYS_INLINE_ f32x4 operator~(f32x4 p_a)
-{
+_ALWAYS_INLINE_ f32x4 operator~(f32x4 p_a) {
 	return vreinterpretq_f32_u32(vmvnq_u32(vreinterpretq_u32_f32(p_a)));
 }
 
-_ALWAYS_INLINE_ f32x4 operator&(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 operator&(f32x4 p_a, f32x4 p_b) {
 	return vreinterpretq_f32_u32(vandq_u32(vreinterpretq_u32_f32(p_a), vreinterpretq_u32_f32(p_b)));
 }
 
-_ALWAYS_INLINE_ f32x4 operator|(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 operator|(f32x4 p_a, f32x4 p_b) {
 	return vreinterpretq_f32_u32(vorrq_u32(vreinterpretq_u32_f32(p_a), vreinterpretq_u32_f32(p_b)));
 }
 
-_ALWAYS_INLINE_ f32x4 operator^(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 operator^(f32x4 p_a, f32x4 p_b) {
 	return (p_a & ~p_b) | (~p_a & p_b); // there is no xor instruction
 }
 
-_ALWAYS_INLINE_ f32x4 abs4(f32x4 p_a)
-{
+_ALWAYS_INLINE_ f32x4 abs4(f32x4 p_a) {
 	return vabsq_f32(p_a);
 }
 
-_ALWAYS_INLINE_ f32x4 sqrt4(f32x4 p_a)
-{
+_ALWAYS_INLINE_ f32x4 sqrt4(f32x4 p_a) {
 	return vsqrtq_f32(p_a);
 }
 
-_ALWAYS_INLINE_ f32x4 min4(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 min4(f32x4 p_a, f32x4 p_b) {
 	return vpminnmq_f32(p_a, p_b);
 }
 
-_ALWAYS_INLINE_ f32x4 max4(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 max4(f32x4 p_a, f32x4 p_b) {
 	return vpmaxnmq_f32(p_a, p_b);
 }
 
-_ALWAYS_INLINE_ mask4 cmp_lt(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ mask4 cmp_lt(f32x4 p_a, f32x4 p_b) {
 	return vreinterpretq_f32_u32(vcltq_f32(p_a, p_b));
 }
 
-_ALWAYS_INLINE_ mask4 cmp_le(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ mask4 cmp_le(f32x4 p_a, f32x4 p_b) {
 	return vreinterpretq_f32_u32(vcleq_f32(p_a, p_b));
 }
 
-_ALWAYS_INLINE_ mask4 cmp_gt(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ mask4 cmp_gt(f32x4 p_a, f32x4 p_b) {
 	return vreinterpretq_f32_u32(vcgtq_f32(p_a, p_b));
 }
 
-_ALWAYS_INLINE_ mask4 cmp_ge(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ mask4 cmp_ge(f32x4 p_a, f32x4 p_b) {
 	return vreinterpretq_f32_u32(vcgeq_f32(p_a, p_b));
 }
 
-_ALWAYS_INLINE_ mask4 cmp_eq(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ mask4 cmp_eq(f32x4 p_a, f32x4 p_b) {
 	return vreinterpretq_f32_u32(vceqq_f32(p_a, p_b));
 }
 
-_ALWAYS_INLINE_ mask4 cmp_neq(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ mask4 cmp_neq(f32x4 p_a, f32x4 p_b) {
 	return ~f32x4(vreinterpretq_f32_u32(vceqq_f32(p_a, p_b)));
 }
 
-_ALWAYS_INLINE_ int movemask(mask4 p_m)
-{
+_ALWAYS_INLINE_ int movemask(mask4 p_m) {
 	return (int)vaddvq_u32(
-		vandq_u32(
-			vtstq_u32(
-				vreinterpretq_u32_f32(p_m),
-				vreinterpretq_u32_f32(splat4(*(float*)((uint32_t)0x10000000)))
-			),
-			vld1q_u32(((uint32_t[4]){ 0x8, 0x4, 0x2, 0x1 }))
-		)
-	);
+			vandq_u32(
+					vtstq_u32(
+							vreinterpretq_u32_f32(p_m),
+							vreinterpretq_u32_f32(splat4(*(float *)((uint32_t)0x10000000)))),
+					vld1q_u32(((uint32_t[4]){ 0x8, 0x4, 0x2, 0x1 }))));
 }
 
-_ALWAYS_INLINE_ f32x4 select(mask4 p_mask, f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 select(mask4 p_mask, f32x4 p_a, f32x4 p_b) {
 	return (p_a & p_mask) | (p_b & ~p_mask);
 }
 
-_ALWAYS_INLINE_ f32x4 floor4(f32x4 p_a)
-{
+_ALWAYS_INLINE_ f32x4 floor4(f32x4 p_a) {
 	return vrndmq_f32(p_a);
 }
 
-_ALWAYS_INLINE_ f32x4 ceil4(f32x4 p_a)
-{
+_ALWAYS_INLINE_ f32x4 ceil4(f32x4 p_a) {
 	return vrndpq_f32(p_a);
 }
 
-_ALWAYS_INLINE_ f32x4 trunc4(f32x4 p_a)
-{
+_ALWAYS_INLINE_ f32x4 trunc4(f32x4 p_a) {
 	return vrndq_f32(p_a);
 }
 
 template <int A, int B, int C, int D>
-_ALWAYS_INLINE_ f32x4 shuffle(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 shuffle(f32x4 p_a, f32x4 p_b) {
 	f32x4 ret;
 	ret = vcopyq_laneq_f32(p_a, 0, p_a, A);
 	ret = vcopyq_laneq_f32(ret, 1, p_a, B);
@@ -239,166 +235,136 @@ _ALWAYS_INLINE_ f32x4 shuffle(f32x4 p_a, f32x4 p_b)
 }
 
 template <int A, int B, int C, int D>
-_ALWAYS_INLINE_ f32x4 permute(f32x4 p_a)
-{
+_ALWAYS_INLINE_ f32x4 permute(f32x4 p_a) {
 	return shuffle<A, B, C, D>(p_a, p_a);
 }
 
 template <int I>
-_ALWAYS_INLINE_ f32x4 splat_lane(f32x4 p_a)
-{
+_ALWAYS_INLINE_ f32x4 splat_lane(f32x4 p_a) {
 	return vdupq_n_f32(vgetq_lane_f32(p_a, I));
 }
 
 template <int I>
-_ALWAYS_INLINE_ float get_lane(f32x4 p_a)
-{
+_ALWAYS_INLINE_ float get_lane(f32x4 p_a) {
 	return vgetq_lane_f32(p_a, I);
 }
 
-_ALWAYS_INLINE_ f32x4 insert_lane3(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 insert_lane3(f32x4 p_a, f32x4 p_b) {
 	return vextq_f32(p_a, vrev64q_f32(p_b), 2);
 }
 
-_ALWAYS_INLINE_ f32x4 movelh(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 movelh(f32x4 p_a, f32x4 p_b) {
 	return vextq_f32(p_a, p_b, 2);
 }
 
-_ALWAYS_INLINE_ f32x4 movehl(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 movehl(f32x4 p_a, f32x4 p_b) {
 	return vcombine_f32(vget_high_f32(p_b), vget_high_f32(p_a));
 }
 
-_ALWAYS_INLINE_ f32x4 unpacklo(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 unpacklo(f32x4 p_a, f32x4 p_b) {
 	return vzip1q_f32(p_a, p_b);
 }
 
-_ALWAYS_INLINE_ f32x4 unpackhi(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 unpackhi(f32x4 p_a, f32x4 p_b) {
 	return vzip2q_f32(p_a, p_b);
 }
 
-_ALWAYS_INLINE_ f32x4 &operator+=(f32x4 &p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 &operator+=(f32x4 &p_a, f32x4 p_b) {
 	p_a = vaddq_f32(p_a, p_b);
 	return p_a;
 }
 
-_ALWAYS_INLINE_ f32x4 &operator-=(f32x4 &p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 &operator-=(f32x4 &p_a, f32x4 p_b) {
 	p_a = vsubq_f32(p_a, p_b);
 	return p_a;
 }
 
-_ALWAYS_INLINE_ f32x4 &operator*=(f32x4 &p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 &operator*=(f32x4 &p_a, f32x4 p_b) {
 	p_a = vmulq_f32(p_a, p_b);
 	return p_a;
 }
 
-_ALWAYS_INLINE_ f32x4 &operator/=(f32x4 &p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 &operator/=(f32x4 &p_a, f32x4 p_b) {
 	p_a = vdivq_f32(p_a, p_b);
 	return p_a;
 }
 
-_ALWAYS_INLINE_ f32x4 &operator&=(f32x4 &p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 &operator&=(f32x4 &p_a, f32x4 p_b) {
 	p_a = vreinterpretq_f32_u32(vandq_u32(vreinterpretq_u32_f32(p_a), vreinterpretq_u32_f32(p_b)));
 	return p_a;
 }
 
-_ALWAYS_INLINE_ f32x4 &operator|=(f32x4 &p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 &operator|=(f32x4 &p_a, f32x4 p_b) {
 	p_a = vreinterpretq_f32_u32(vorrq_u32(vreinterpretq_u32_f32(p_a), vreinterpretq_u32_f32(p_b)));
 	return p_a;
 }
 
-_ALWAYS_INLINE_ f32x4 &operator^=(f32x4 &p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ f32x4 &operator^=(f32x4 &p_a, f32x4 p_b) {
 	p_a = p_a ^ p_b;
 	return p_a;
 }
 
-_ALWAYS_INLINE_ bool all_lanes(mask4 p_m)
-{
+_ALWAYS_INLINE_ bool all_lanes(mask4 p_m) {
 	return vminnmvq_f32(p_m) != 0;
 }
 
-_ALWAYS_INLINE_ bool any_lane(mask4 p_m)
-{
+_ALWAYS_INLINE_ bool any_lane(mask4 p_m) {
 	return vmaxnmvq_f32(p_m) != 0;
 }
 
-_ALWAYS_INLINE_ bool all_lanes3(mask4 p_m)
-{
+_ALWAYS_INLINE_ bool all_lanes3(mask4 p_m) {
 	p_m = vsetq_lane_f32(1, p_m, 3);
 	return vminnmvq_f32(p_m) != 0;
 }
 
-_ALWAYS_INLINE_ bool any_lane3(mask4 p_m)
-{
+_ALWAYS_INLINE_ bool any_lane3(mask4 p_m) {
 	p_m = vsetq_lane_f32(0, p_m, 3);
 	return vmaxnmvq_f32(p_m) != 0;
 }
 
-_ALWAYS_INLINE_ i32x4 zero_i32x4()
-{
+_ALWAYS_INLINE_ i32x4 zero_i32x4() {
 	return vdupq_n_s32(0);
 }
 
-_ALWAYS_INLINE_ i32x4 set_i32x4(int32_t p_arr[4])
-{
+_ALWAYS_INLINE_ i32x4 set_i32x4(int32_t p_arr[4]) {
 	return vld1q_s32(p_arr);
 }
 
-_ALWAYS_INLINE_ i32x4 count_if(i32x4 p_count, mask4 p_m)
-{
+_ALWAYS_INLINE_ i32x4 count_if(i32x4 p_count, mask4 p_m) {
 	return vsubq_s32(p_count, vreinterpretq_s32_f32(p_m));
 }
 
-_ALWAYS_INLINE_ mask4 cmp_eq(i32x4 p_a, int32_t p_b)
-{
+_ALWAYS_INLINE_ mask4 cmp_eq(i32x4 p_a, int32_t p_b) {
 	return vreinterpretq_f32_u32(vceqq_s32(p_a, vdupq_n_s32(p_b)));
 }
 
-_ALWAYS_INLINE_ i32x4 iota_i32x4(int32_t p_first)
-{
+_ALWAYS_INLINE_ i32x4 iota_i32x4(int32_t p_first) {
 	i32x4 ret = vdupq_n_s32(p_first);
 	i32x4 iota = vld1q_s32(((int32_t[4]){ 0, 1, 2, 3 }));
 	return vaddq_s32(ret, iota);
 }
 
-_ALWAYS_INLINE_ i32x4 add(i32x4 p_a, int32_t p_b)
-{
+_ALWAYS_INLINE_ i32x4 add(i32x4 p_a, int32_t p_b) {
 	return vaddq_s32(p_a, vdupq_n_s32(p_b));
 }
 
-_ALWAYS_INLINE_ i32x4 operator+(i32x4 p_a, i32x4 p_b)
-{
+_ALWAYS_INLINE_ i32x4 operator+(i32x4 p_a, i32x4 p_b) {
 	return vaddq_s32(p_a, p_b);
 }
 
-_ALWAYS_INLINE_ i32x4 operator-(i32x4 p_a, i32x4 p_b)
-{
+_ALWAYS_INLINE_ i32x4 operator-(i32x4 p_a, i32x4 p_b) {
 	return vsubq_s32(p_a, p_b);
 }
 
-_ALWAYS_INLINE_ i32x4 operator*(i32x4 p_a, i32x4 p_b)
-{
+_ALWAYS_INLINE_ i32x4 operator*(i32x4 p_a, i32x4 p_b) {
 	return vmulq_s32(p_a, p_b);
 }
 
-_ALWAYS_INLINE_ i32x4 operator~(i32x4 p_a)
-{
+_ALWAYS_INLINE_ i32x4 operator~(i32x4 p_a) {
 	return vreinterpretq_s32_u32(vmvnq_u32(vreinterpretq_u32_s32(p_a)));
 }
 
-_ALWAYS_INLINE_ i32x4 operator&(i32x4 p_a, i32x4 p_b)
-{
+_ALWAYS_INLINE_ i32x4 operator&(i32x4 p_a, i32x4 p_b) {
 	return vandq_s32(p_a, p_b);
 }
 
@@ -407,28 +373,23 @@ _ALWAYS_INLINE_ i32x4 operator&(i32x4 p_a, i32x4 p_b)
 // 	return vandq_s32(vreinterpretq_s32_f32(p_a), p_b);
 // }
 
-_ALWAYS_INLINE_ i32x4 operator&(i32x4 p_a, mask4 p_b)
-{
+_ALWAYS_INLINE_ i32x4 operator&(i32x4 p_a, mask4 p_b) {
 	return vandq_s32(p_a, vreinterpretq_s32_f32(p_b));
 }
 
-_ALWAYS_INLINE_ i32x4 operator|(i32x4 p_a, i32x4 p_b)
-{
+_ALWAYS_INLINE_ i32x4 operator|(i32x4 p_a, i32x4 p_b) {
 	return vreinterpretq_s32_u32(vorrq_u32(vreinterpretq_u32_s32(p_a), vreinterpretq_u32_s32(p_b)));
 }
 
-_ALWAYS_INLINE_ i32x4 operator^(i32x4 p_a, i32x4 p_b)
-{
+_ALWAYS_INLINE_ i32x4 operator^(i32x4 p_a, i32x4 p_b) {
 	return (p_a & ~p_b) | (~p_a & p_b); // there is no xor instruction
 }
 
-_ALWAYS_INLINE_ i32x4 select_i32x4(mask4 p_mask, i32x4 p_a, i32x4 p_b)
-{
+_ALWAYS_INLINE_ i32x4 select_i32x4(mask4 p_mask, i32x4 p_a, i32x4 p_b) {
 	return (p_a & p_mask) | (p_b & ~p_mask);
 }
 
-_ALWAYS_INLINE_ void store_i32x4(int32_t *r_ptr, i32x4 p_v)
-{
+_ALWAYS_INLINE_ void store_i32x4(int32_t *r_ptr, i32x4 p_v) {
 	vst1q_s32(r_ptr, p_v);
 }
 
@@ -447,24 +408,20 @@ _ALWAYS_INLINE_ f32x4 round4(f32x4 p_a) {
 	return select(invalid, -limit, t);
 }
 
-_ALWAYS_INLINE_ f32x4 sign4(f32x4 p_a)
-{
+_ALWAYS_INLINE_ f32x4 sign4(f32x4 p_a) {
 	return vcvtq_f32_u32(cmp_ge(vclsq_s32(vreinterpretq_s32_f32(p_a)), vdupq_n_s32(1)) & vdupq_n_f32(1));
 }
 
-_ALWAYS_INLINE_ f32x4 clamp4(f32x4 p_v, f32x4 p_min, f32x4 p_max)
-{
+_ALWAYS_INLINE_ f32x4 clamp4(f32x4 p_v, f32x4 p_min, f32x4 p_max) {
 	f32x4 r = select(cmp_gt(p_v, p_max), p_max, p_v);
 	return select(cmp_lt(p_v, p_min), p_min, r);
 }
 
-_ALWAYS_INLINE_ f32x4 lerp4(f32x4 p_from, f32x4 p_to, f32x4 p_weight)
-{
+_ALWAYS_INLINE_ f32x4 lerp4(f32x4 p_from, f32x4 p_to, f32x4 p_weight) {
 	return p_from + (p_to - p_from) * p_weight;
 }
 
-_ALWAYS_INLINE_ float dot3(f32x4 p_a, f32x4 p_b)
-{
+_ALWAYS_INLINE_ float dot3(f32x4 p_a, f32x4 p_b) {
 	f32x4 m = p_a * p_b;
 	return (get_lane<0>(m) + get_lane<1>(m)) + get_lane<2>(m);
 }
@@ -507,38 +464,28 @@ _ALWAYS_INLINE_ mask4 is_zero_approx4(f32x4 p_a) {
 	return cmp_lt(abs4(p_a), splat4((float)CMP_EPSILON));
 }
 
-_ALWAYS_INLINE_ uint32_t pack_trunc_u8x4(f32x4 p_v)
-{
+_ALWAYS_INLINE_ uint32_t pack_trunc_u8x4(f32x4 p_v) {
 	return vget_lane_u32(
-		vreinterpret_u32_s8(
-			vmovn_s16(
-				vcombine_s16(
-					vmovn_s32(vcvtq_s32_f32(p_v)),
-					vdup_n_s16(0)
-				)
-			)
-		),
-		0
-	);
+			vreinterpret_u32_s8(
+					vmovn_s16(
+							vcombine_s16(
+									vmovn_s32(vcvtq_s32_f32(p_v)),
+									vdup_n_s16(0)))),
+			0);
 }
 
-_ALWAYS_INLINE_ uint64_t pack_trunc_u16x4(f32x4 p_v)
-{
+_ALWAYS_INLINE_ uint64_t pack_trunc_u16x4(f32x4 p_v) {
 	return vget_lane_u64(
-		vreinterpret_u64_s16(
-			vmovn_s32(vcvtq_s32_f32(p_v))
-		),
-		0
-	);
+			vreinterpret_u64_s16(
+					vmovn_s32(vcvtq_s32_f32(p_v))),
+			0);
 }
 
-_ALWAYS_INLINE_ f32x4 half_to_float4(const uint16_t *p_half)
-{
-	return vcvt_f32_f16(vld1_f16((float16_t*)p_half));
+_ALWAYS_INLINE_ f32x4 half_to_float4(const uint16_t *p_half) {
+	return vcvt_f32_f16(vld1_f16((float16_t *)p_half));
 }
 
-_ALWAYS_INLINE_ void float_to_half4(f32x4 p_v, uint16_t *r_half)
-{
+_ALWAYS_INLINE_ void float_to_half4(f32x4 p_v, uint16_t *r_half) {
 	vst1_u16(r_half, vreinterpret_u16_f16(vcvt_f16_f32(p_v)));
 }
 
@@ -568,8 +515,7 @@ _ALWAYS_INLINE_ bool has_fused_cubic() {
 	return true;
 }
 
-_ALWAYS_INLINE_ void load_vec3x4_soa(const float *p_v, f32x4 &r_x, f32x4 &r_y, f32x4 &r_z)
-{
+_ALWAYS_INLINE_ void load_vec3x4_soa(const float *p_v, f32x4 &r_x, f32x4 &r_y, f32x4 &r_z) {
 	float32x4x3_t vecs = vld3q_f32(p_v);
 	r_x = vecs.val[0];
 	r_y = vecs.val[1];
@@ -604,14 +550,13 @@ struct Transform3DSoA {
 	}
 };
 
-_ALWAYS_INLINE_ void load_mat3(const float *p_m, f32x4 &r_r0, f32x4 &r_r1, f32x4 &r_r2)
-{
+_ALWAYS_INLINE_ void load_mat3(const float *p_m, f32x4 &r_r0, f32x4 &r_r1, f32x4 &r_r2) {
 	r_r0 = load4(p_m);
 	r_r1 = load4(p_m + 3);
 	// 8 + 4 byte loads so a row just written by store3 still forwards from the store buffer.
 	r_r2 = load3(p_m + 6);
 }
 
-}
+} //namespace simd
 
 #endif

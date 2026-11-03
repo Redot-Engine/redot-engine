@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  simd.cpp                                                              */
+/*  simdx86.cpp                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -84,19 +84,16 @@ static uint64_t _xgetbv0() {
 }
 #endif
 
-class CPUFeatures
-{
+class CPUFeatures {
 public:
-	enum Feature
-	{
+	enum Feature {
 		CPUFEATURE_INIT,
 		CPUFEATURE_SIMD,
 		CPUFEATURE_FMADD,
 		CPUFEATURE_FP16,
 		CPUFEATURE_MAX,
 	};
-	enum Features : size_t
-	{
+	enum Features : size_t {
 		CPUFEATURES_NONE = 0,
 		CPUFEATURES_INIT = (1 << CPUFEATURE_INIT),
 		CPUFEATURES_SIMD = (1 << CPUFEATURE_SIMD),
@@ -111,7 +108,8 @@ public:
 };
 
 size_t CPUFeatures::simdBits = 0;
-CPUFeatures::Features CPUFeatures::cpuFeatureFlags = CPUFeatures::Features::CPUFEATURES_NONE;;
+CPUFeatures::Features CPUFeatures::cpuFeatureFlags = CPUFeatures::Features::CPUFEATURES_NONE;
+;
 
 static CPUFeatures::Features _detect_hardware() {
 	CPUFeatures::Features f = CPUFeatures::CPUFEATURES_NONE;
@@ -124,7 +122,7 @@ static CPUFeatures::Features _detect_hardware() {
 		const uint32_t ecx = regs[2];
 		if (ecx & (1u << 20)) {
 			CPUFeatures::simdBits = MAX(simdBits, 128)
-			f |= CPUFeatures::CPUFEATURES_SIMD;
+					f |= CPUFeatures::CPUFEATURES_SIMD;
 		}
 		const bool osxsave = (ecx & (1u << 27)) != 0;
 		const bool avx = (ecx & (1u << 28)) != 0;
@@ -134,7 +132,7 @@ static CPUFeatures::Features _detect_hardware() {
 		}
 		if (ymm_enabled) {
 			CPUFeatures::simdBits = MAX(simdBits, 256)
-			f |= CPUFeatures::CPUFEATURES_SIMD;
+					f |= CPUFeatures::CPUFEATURES_SIMD;
 			if (ecx & (1u << 12)) {
 				f |= CPUFeatures::CPUFEATURES_FMADD;
 			}
@@ -145,7 +143,7 @@ static CPUFeatures::Features _detect_hardware() {
 				_cpuid(7, 0, regs);
 				if (regs[1] & (1u << 5)) {
 					CPUFeatures::simdBits = MAX(simdBits, 256)
-					f |= CPUFeatures::CPUFEATURES_SIMD;
+							f |= CPUFeatures::CPUFEATURES_SIMD;
 				}
 			}
 		}
@@ -187,8 +185,7 @@ static CPUFeatures::Features _detect_hardware() {
 // }
 
 CPUFeatures::Features CPUFeatures::get() {
-	if (!(cpuFeatureFlags & CPUFeatures::Features::CPUFEATURES_INIT))
-	{
+	if (!(cpuFeatureFlags & CPUFeatures::Features::CPUFEATURES_INIT)) {
 		cpuFeatureFlags = _detect_hardware();
 	}
 	return cpuFeatureFlags;
