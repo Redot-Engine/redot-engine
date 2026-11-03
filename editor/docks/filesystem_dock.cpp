@@ -4476,6 +4476,14 @@ FileSystemDock::FileSystemDock() {
 	old_display_mode = DISPLAY_MODE_TREE_ONLY;
 	file_list_display_mode = FILE_LIST_DISPLAY_THUMBNAILS;
 
+	List<PropertyInfo> property_list;
+	ProjectSettings::get_singleton()->get_property_list(&property_list);
+	for (const PropertyInfo &pi : property_list) {
+		if (pi.type == Variant::STRING && pi.hint == PROPERTY_HINT_FILE) {
+			path_project_settings.push_back(pi.name);
+		}
+	}
+
 	ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &FileSystemDock::_project_settings_changed));
 	add_resource_tooltip_plugin(memnew(EditorTextureTooltipPlugin));
 	add_resource_tooltip_plugin(memnew(EditorAudioStreamTooltipPlugin));
