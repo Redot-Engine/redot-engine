@@ -93,3 +93,20 @@ and more. Visit his Godot upstream (4.7+) PhysX module at:
 https://github.com/uno1982/godot/tree/feature/physx5-module
 Wild-ox Studios website:
 https://wildoxstudios.com
+
+### Port lineage
+
+The features credited above were ported from these upstream commits
+([uno1982/godot, `feature/physx5-module`](https://github.com/uno1982/godot/tree/feature/physx5-module)):
+
+| Feature | Upstream commit |
+| --- | --- |
+| MPM compute-fluid solver + shaders | [2913238b1](https://github.com/uno1982/godot/commit/2913238b165fccf6f26e05c17b5fce6a49670253) |
+| FFT/ripple water solver (Phase 1) | [8c48dd9a5](https://github.com/uno1982/godot/commit/8c48dd9a57d4764ec6a44e01567ad3bad2f89a93) |
+| Buoyancy + Boat | [8a4b2c9ff](https://github.com/uno1982/godot/commit/8a4b2c9ff4564bef36c1a0ece160a21974e18e65) |
+| Water spray | [93841cb17](https://github.com/uno1982/godot/commit/93841cb17b9b47c3745ceb4e12fc0a5ecfed63a9) |
+| PxVehicle2 4-wheel node | [7bf6b705d](https://github.com/uno1982/godot/commit/7bf6b705d3e9a2606ba5591b760b6f162fd2c6b5) |
+| 2-wheel motorcycle node | [eef1d6114](https://github.com/uno1982/godot/commit/eef1d61141d20149aae4491c969dc6702190e42d) |
+| Skid-steer tank | [d53ca4375](https://github.com/uno1982/godot/commit/d53ca4375c7e3d0160d0dee0d856afa5cf20cd7a) |
+| Screen-space fluid surface | [00416829bf](https://github.com/uno1982/godot/commit/00416829bff04a13d73ce8f1afd277c48716cf77) |
+| Screen-space foam + shared compositor install | [5badd1389](https://github.com/uno1982/godot/commit/5badd13891ef3646fa72882e5053736c80f0974d) |
