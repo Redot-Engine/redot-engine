@@ -94,7 +94,7 @@ private:
 			FB_CONFIG_MAX
 		};
 
-		RID get_color_fbs(FramebufferConfigType p_config_type);
+		RID get_color_fbs(FramebufferConfigType p_config_type, bool p_resolve_depth = false);
 		virtual void free_data() override;
 		virtual void configure(RenderSceneBuffersRD *p_render_buffers) override;
 
@@ -425,8 +425,7 @@ protected:
 	/// @{
 	virtual void _update_shader_quality_settings() override;
 
-	virtual float _render_buffers_get_luminance_multiplier() override;
-	virtual RD::DataFormat _render_buffers_get_color_format() override;
+	virtual RD::DataFormat _render_buffers_get_preferred_color_format() override;
 	virtual bool _render_buffers_can_be_storage() override;
 
 	virtual RID _render_buffers_get_normal_texture(Ref<RenderSceneBuffersRD> p_render_buffers) override;
