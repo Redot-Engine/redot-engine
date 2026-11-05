@@ -968,13 +968,6 @@ void WorldScape3DEditorPlugin::select_terrain() {
 void WorldScape3DEditorPlugin::make_visible(const bool visible) {
 	const bool terrain_visible = visible && is_selected();
 	_ui->set_visible(terrain_visible);
-	auto dock = _ui->get_asset_dock();
-	if (dock) {
-		if (dock->is_visible() != terrain_visible) {
-			dock->set_visible(terrain_visible);
-			dock->update_dock();
-		}
-	}
 }
 
 void WorldScape3DEditorPlugin::edit(Object *object) {
