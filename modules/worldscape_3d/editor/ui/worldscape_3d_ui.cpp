@@ -699,11 +699,11 @@ void WorldScape3DUI::set_visible(bool visible, bool menu_only) {
 		return;
 	}
 	_visible = visible;
+	_toolbar->set_visible(menu_only ? false : _visible);
+	_tool_settings->set_visible(menu_only ? false : _visible);
 	_asset_dock->set_visible(_visible);
 	_asset_dock->update_dock();
 	_menu->set_visible(_visible);
-	_toolbar->set_visible(menu_only ? false : _visible);
-	_tool_settings->set_visible(menu_only ? false : _visible);
 	if (!menu_only) {
 		bool mod_ctrl = _plugin->is_modifier_on();
 		_toolbar->show_buttons(!mod_ctrl, mod_ctrl);
