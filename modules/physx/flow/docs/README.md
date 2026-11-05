@@ -1,7 +1,7 @@
 # NVIDIA Flow integration (modules/physx/flow)
 
 NVIDIA Flow 2.2.0 — the realtime sparse-voxel fluid / fire / smoke solver that
-ships alongside PhysX 5.11 and Blast in NVIDIA's SDK family — integrated into
+ships alongside PhysX 5.12 and Blast in NVIDIA's SDK family — integrated into
 the PhysX module as scene-level nodes with a shared GPU runtime.
 
 ## Architectural position

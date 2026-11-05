@@ -166,6 +166,8 @@ void PhysXRuntimeManager::_bind_methods() {
 	ClassDB::bind_static_method("PhysXRuntimeManager", D_METHOD("parse_manifest", "json_text"), &PhysXRuntimeManager::parse_manifest);
 	ClassDB::bind_static_method("PhysXRuntimeManager", D_METHOD("sha256_file", "path"), &PhysXRuntimeManager::sha256_file);
 	ClassDB::bind_static_method("PhysXRuntimeManager", D_METHOD("extract_bundle", "zip_path", "bundle", "target_dir"), &PhysXRuntimeManager::extract_bundle);
+	ClassDB::bind_static_method("PhysXRuntimeManager", D_METHOD("get_installed_runtime_version"), &PhysXRuntimeManager::get_installed_runtime_version);
+	ClassDB::bind_static_method("PhysXRuntimeManager", D_METHOD("complete_pending_swaps"), &PhysXRuntimeManager::complete_pending_swaps);
 }
 
 const char *PhysXRuntimeManager::MANIFEST_URL =
@@ -173,6 +175,14 @@ const char *PhysXRuntimeManager::MANIFEST_URL =
 
 const char *PhysXRuntimeManager::RELEASES_PAGE_URL =
 		"https://github.com/Vlado-VG/redot-physx-runtime/releases";
+
+// Version/pending-swap markers next to the runtime DLLs (see the header).
+static const char *VERSION_MARKER_NAME = ".physx-runtime-version";
+static const char *PENDING_MARKER_NAME = ".physx-runtime-pending";
+
+static String runtime_exe_dir() {
+	return OS::get_singleton()->get_executable_path().get_base_dir();
+}
 
 // Maps the running OS to the manifest's "platforms" key; empty when the
 // platform has no runtime bundle.
@@ -224,6 +234,10 @@ Dictionary PhysXRuntimeManager::parse_manifest(const String &p_json_text) {
 			return Dictionary();
 		}
 	}
+	// Surface the manifest's human version (e.g. "5.12.0") on the bundle: the
+	// updater compares it against the installed-version marker. Absent on
+	// older manifests -- the updater then skips the comparison.
+	bundle["runtime_version"] = String(manifest.get("runtime_version", ""));
 	return bundle;
 }
 
@@ -286,6 +300,10 @@ Error PhysXRuntimeManager::extract_bundle(const String &p_zip_path, const Dictio
 	Error result = OK;
 	// Temporary (.part) names this call wrote, for the failure cleanup below.
 	PackedStringArray written;
+	// Names whose rename into place failed because the target is in use: they
+	// stay as verified .part files and are applied at the next editor start
+	// (see complete_pending_swaps()).
+	PackedStringArray pending;
 	// Extract manifest-listed files one by one, hashing each as it lands so a
 	// corrupted download is caught before the editor ever uses it. On any
 	// failure the temporary files this call wrote are removed; the previously
@@ -375,10 +393,16 @@ Error PhysXRuntimeManager::extract_bundle(const String &p_zip_path, const Dictio
 		}
 
 		if (dir->rename(tmp_name, name) != OK) {
-			dir->remove(tmp_name);
-			ERR_PRINT(vformat("PhysX: cannot move the extracted '%s' into place.", name));
-			result = ERR_FILE_CANT_WRITE;
-			break;
+			// The target's name is in use -- on Windows a loaded DLL keeps it
+			// until its handle closes (the DLLs are delay-loaded, so this only
+			// happens when GPU dynamics/Flow already ran this session). Keep
+			// the VERIFIED .part and record it: complete_pending_swaps() moves
+			// it into place at the next editor start, before any physics has
+			// had a chance to load the library. The install itself succeeds --
+			// the restart the flow performs is exactly the fresh start needed.
+			pending.push_back(name);
+			print_line(vformat("PhysX: '%s' is in use -- the update applies at the next editor start.", name));
+			continue;
 		}
 	}
 
@@ -387,10 +411,104 @@ Error PhysXRuntimeManager::extract_bundle(const String &p_zip_path, const Dictio
 		// Remove every temporary file this call wrote so a failed install
 		// leaves no half-updated mix of DLLs behind. Previously installed
 		// files were never touched (the rename into place is the last step
-		// per file), so they stay intact.
+		// per file), so they stay intact. A pending entry's .part is removed
+		// too: the install failed, so no restart-completion is registered.
 		for (const String &name : written) {
 			dir->remove(name);
 		}
+		return result;
+	}
+	if (!pending.is_empty()) {
+		// Register the deferred renames; complete_pending_swaps() applies
+		// them at the next editor start.
+		Ref<FileAccess> pf = FileAccess::open(p_target_dir.path_join(PENDING_MARKER_NAME), FileAccess::WRITE);
+		if (pf.is_valid()) {
+			for (const String &name : pending) {
+				pf->store_line(name);
+			}
+		} else {
+			// The marker could not be written: the pending .part files would
+			// never be applied. Clean them instead of stranding them.
+			for (const String &name : pending) {
+				dir->remove(name + ".part");
+			}
+			return ERR_FILE_CANT_WRITE;
+		}
 	}
 	return result;
+}
+
+// ---------------------------------------------------------------------------
+// Installed-version tracking (the updater)
+// ---------------------------------------------------------------------------
+
+String PhysXRuntimeManager::get_installed_runtime_version() {
+	Ref<FileAccess> f = FileAccess::open(runtime_exe_dir().path_join(VERSION_MARKER_NAME), FileAccess::READ);
+	if (f.is_null()) {
+		return String();
+	}
+	return f->get_line().strip_edges();
+}
+
+void PhysXRuntimeManager::write_runtime_version_marker(const String &p_version) {
+	if (p_version.is_empty()) {
+		return; // a manifest without runtime_version leaves the marker alone
+	}
+	Ref<FileAccess> f = FileAccess::open(runtime_exe_dir().path_join(VERSION_MARKER_NAME), FileAccess::WRITE);
+	if (f.is_valid()) {
+		f->store_line(p_version);
+	}
+}
+
+void PhysXRuntimeManager::complete_pending_swaps() {
+	const String marker_path = runtime_exe_dir().path_join(PENDING_MARKER_NAME);
+	if (!FileAccess::exists(marker_path)) {
+		return;
+	}
+	Ref<DirAccess> dir = DirAccess::open(runtime_exe_dir());
+	if (dir.is_null()) {
+		return; // retried at the next start
+	}
+	PackedStringArray remaining;
+	{
+		Ref<FileAccess> f = FileAccess::open(marker_path, FileAccess::READ);
+		if (f.is_null()) {
+			return;
+		}
+		while (!f->eof_reached()) {
+			const String name = f->get_line().strip_edges();
+			if (name.is_empty()) {
+				continue;
+			}
+			const String part_name = name + ".part";
+			if (!FileAccess::exists(runtime_exe_dir().path_join(part_name))) {
+				continue; // nothing to apply (already swapped or cleaned up)
+			}
+			const String target_path = runtime_exe_dir().path_join(name);
+			// Move the old image aside first: on Windows a loaded DLL keeps its
+			// name until its handle closes (the loader opens with delete-share,
+			// so the rename itself succeeds even while mapped -- the leftover
+			// .old is removed below, or at a later start).
+			if (FileAccess::exists(target_path)) {
+				dir->rename(name, name + ".old");
+			}
+			if (dir->rename(part_name, name) != OK) {
+				remaining.push_back(name); // still locked -- retried next start
+				continue;
+			}
+			// Best effort: the .old goes away here, or on a later start.
+			dir->remove(name + ".old");
+			print_line(vformat("PhysX: runtime update for '%s' applied -- restart the editor once more if it was in use.", name));
+		}
+	}
+	if (remaining.is_empty()) {
+		dir->remove(PENDING_MARKER_NAME);
+	} else {
+		Ref<FileAccess> w = FileAccess::open(marker_path, FileAccess::WRITE);
+		if (w.is_valid()) {
+			for (const String &name : remaining) {
+				w->store_line(name);
+			}
+		}
+	}
 }

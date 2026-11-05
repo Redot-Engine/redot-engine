@@ -68,9 +68,11 @@ public:
 
 	// --- Install helpers (used by the editor plugin's install flow) ---
 
-	// Parses manifest JSON text and returns the Windows bundle dictionary
-	// {url, sha256, size_bytes, files} -- empty Dictionary when the manifest
-	// is missing entries or malformed.
+	// Parses manifest JSON text and returns the platform bundle dictionary
+	// {url, sha256, size_bytes, files, runtime_version} -- empty Dictionary
+	// when the manifest is missing entries or malformed. runtime_version is
+	// the manifest's human version string (e.g. "5.12.0"); the updater
+	// compares it against the installed-version marker.
 	static Dictionary parse_manifest(const String &p_json_text);
 
 	// Lowercase hex SHA-256 of a file; empty String on failure.
@@ -78,8 +80,28 @@ public:
 
 	// Extracts the bundle's manifest-listed files from the zip into
 	// p_target_dir, verifying each file's SHA-256 while writing. Fails
-	// without leaving partial files behind.
+	// without leaving partial files behind. A file whose target is in use
+	// (Windows: a loaded DLL keeps its name) is kept as a verified
+	// "<name>.part" and recorded in the pending-swap marker instead --
+	// complete_pending_swaps() applies it at the next editor start.
 	static Error extract_bundle(const String &p_zip_path, const Dictionary &p_bundle, const String &p_target_dir);
+
+	// --- Installed-version tracking (the updater) ---
+
+	// The runtime_version recorded next to the DLLs by the last successful
+	// install (".physx-runtime-version"); empty when the runtime predates
+	// versioning or was installed by hand.
+	static String get_installed_runtime_version();
+
+	// Records the installed runtime_version next to the DLLs. No-op for an
+	// empty version (a manifest without the field leaves the marker alone).
+	static void write_runtime_version_marker(const String &p_version);
+
+	// Applies any pending-swap entries recorded by extract_bundle (verified
+	// "<name>.part" files whose target was in use). Runs at editor startup,
+	// before any physics has had a chance to load the DLLs; a file that is
+	// still locked stays pending for the next start.
+	static void complete_pending_swaps();
 
 protected:
 	static void _bind_methods();

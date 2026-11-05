@@ -116,7 +116,7 @@ else:
 # The PhysX SDK lives in thirdparty/physx with the vendor layout:
 #   include/                                headers
 #   lib/<platform>/<arch>/<config>/*.lib    static import libs (config: checked | release)
-#   bin/<platform>/<arch>/<config>/*.dll    runtime DLLs (GPU dynamics; 5.11
+#   bin/<platform>/<arch>/<config>/*.dll    runtime DLLs (GPU dynamics; 5.12
 #                                           ships no PVD runtime DLL)
 #
 # `physx_config` selects the SDK configuration (default "checked", matching the
@@ -274,7 +274,7 @@ if physx_gpu and env["platform"] in ("linux", "linuxbsd"):
     )
 
 # Copy the SDK's runtime DLLs next to the built engine binary so the runtime
-# DLL version always matches the linked SDK configuration. PhysX 5.11 ships
+# DLL version always matches the linked SDK configuration. PhysX 5.12 ships
 # only the GPU dynamics DLL (the legacy PVD runtime DLL was dropped from the
 # SDK distribution; PhysXPvdSDK_static_64 covers the PVD link surface).
 if env["platform"] == "windows":

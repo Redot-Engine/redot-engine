@@ -5,7 +5,7 @@ checkout after clone/locate and before project generation. Each is a `-p1` diff
 rooted at the repo (`a/physx/...`), and is skipped cleanly if already applied.
 
 These are fixes that landed upstream *after* the pinned `PHYSX_REF`
-(`ovphysx-0.5.11`). Drop a patch once the ref is bumped past it.
+(`ovphysx-0.7.0`, PhysX SDK 5.12). Drop a patch once the ref is bumped past it.
 
 | Patch | Upstream | Fixes |
 | --- | --- | --- |

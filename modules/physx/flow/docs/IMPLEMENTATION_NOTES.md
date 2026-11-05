@@ -12,7 +12,7 @@ records evidence per the master prompt (§72 Evidence Requirements).
 | Item | Value | Evidence |
 | ---- | ----- | -------- |
 | Engine | Redot LTS 26.3.0-beta2 (Godot 4.5.2 API base) | `version.py` |
-| PhysX | 5.11 (`PhysX-5.11_vc17_win64_mt_cuda12.8.2`) | `thirdparty/physx/README.md`, zip name |
+| PhysX | 5.12 (`ovphysx-0.7.0`) | `thirdparty/physx/README.md`, zip name |
 | Blast | 5.x SDK, DLL-based, Windows-only in this fork | `thirdparty/blast/`, `modules/physx/SCsub` (`blast=yes` default, Windows only) |
 | Flow | **NVIDIA Flow 2.2.0** (`Flow-2.2.0_vc17_win64_cuda12.8.2_release`) | `thirdparty/flow/Flow-2.2.0_*.zip` |
 | Flow libs | Windows: `nvflow.dll`/`nvflowext.dll` (+ RTX, import `.lib` in `lib/`); Linux: `libnvflow.so`/`libnvflowext.so`, CI-built from NVIDIA-Omniverse/PhysX by `.github/workflows/build-flow-libs.yml` | `thirdparty/flow/bin/{windows,linux}/x86_64/release/` |
@@ -24,7 +24,7 @@ This is the **realtime sparse-voxel fluid/combustion Flow SDK** (NvFlow), not th
 unrelated ML `nvflow` project: headers define `NvFlowGrid`, combustion params
 (temperature/fuel/burn/smoke channels), sparse NanoVDB export, emitters,
 `NvFlowLoader` for `nvflow.dll`/`nvflowext.dll` — the SDK that ships next to
-PhysX 5.11 in NVIDIA's PhysX repository.
+PhysX 5.12 in NVIDIA's PhysX repository.
 
 ### Flow 2.2.0 architecture facts (verified from headers + DLL exports)
 

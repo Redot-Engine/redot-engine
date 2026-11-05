@@ -697,6 +697,9 @@ void PhysXEditorPlugin::_check_runtime_files() {
 	if (String(GLOBAL_GET("physics/3d/physics_engine")) != "PhysX") {
 		return;
 	}
+	// Pending renames from a runtime update whose target was in use land here,
+	// before any physics has had a chance to load the (delay-loaded) DLLs.
+	PhysXRuntimeManager::complete_pending_swaps();
 	if (runtime_missing_dialog) {
 		// Offer already built: re-pop it while the files stay missing (the
 		// engine moved away and back, or the user dismissed it earlier). Not
@@ -710,21 +713,105 @@ void PhysXEditorPlugin::_check_runtime_files() {
 		return; // popup_centered() aborts out-of-tree; never build the offer unshown.
 	}
 	const PackedStringArray missing = PhysXRuntimeManager::get_missing_runtime_files();
-	if (missing.is_empty()) {
+	if (!missing.is_empty()) {
+		runtime_missing_dialog = memnew(ConfirmationDialog);
+		runtime_missing_dialog->set_title(TTR("PhysX runtime files missing"));
+		runtime_missing_dialog->set_text(vformat(
+				TTR("This project uses the PhysX physics engine, but its runtime files are not installed next to the editor executable:\n\n%s\n\nDownload them now? The editor restarts afterwards. You can also install them manually later (see the redot-physx-runtime Releases page)."),
+				String("\n").join(missing)));
+		runtime_missing_dialog->set_ok_button_text(TTR("Download and Restart"));
+		runtime_missing_dialog->set_min_size(Vector2i(520, 0));
+		EditorNode::get_singleton()->get_gui_base()->add_child(runtime_missing_dialog);
+		runtime_missing_dialog->connect("confirmed", callable_mp(this, &PhysXEditorPlugin::_start_install));
+		runtime_missing_dialog->popup_centered();
+		print_line(vformat("PhysX: %d runtime file(s) missing -- offering the download-and-restart flow.", missing.size()));
 		return;
 	}
 
-	runtime_missing_dialog = memnew(ConfirmationDialog);
-	runtime_missing_dialog->set_title(TTR("PhysX runtime files missing"));
-	runtime_missing_dialog->set_text(vformat(
-			TTR("This project uses the PhysX physics engine, but its runtime files are not installed next to the editor executable:\n\n%s\n\nDownload them now? The editor restarts afterwards. You can also install them manually later (see the redot-physx-runtime Releases page)."),
-			String("\n").join(missing)));
-	runtime_missing_dialog->set_ok_button_text(TTR("Download and Restart"));
-	runtime_missing_dialog->set_min_size(Vector2i(520, 0));
-	EditorNode::get_singleton()->get_gui_base()->add_child(runtime_missing_dialog);
-	runtime_missing_dialog->connect("confirmed", callable_mp(this, &PhysXEditorPlugin::_start_install));
-	runtime_missing_dialog->popup_centered();
-	print_line(vformat("PhysX: %d runtime file(s) missing -- offering the download-and-restart flow.", missing.size()));
+	// Files complete: still check the manifest for a NEWER runtime. This is
+	// the updater -- without it, an editor linked against a newer SDK keeps
+	// running old DLLs (a GPU-solver protocol mismatch) forever, because the
+	// existence check alone never offers anything once the files are present.
+	if (!update_check_done && !update_check_active && !install_active) {
+		_start_version_check();
+	}
+}
+
+void PhysXEditorPlugin::_start_version_check() {
+	update_check_active = true;
+	if (version_check_http == nullptr) {
+		version_check_http = memnew(HTTPRequest);
+		EditorNode::get_singleton()->get_gui_base()->add_child(version_check_http);
+		version_check_http->connect("request_completed", callable_mp(this, &PhysXEditorPlugin::_on_version_check_completed));
+	}
+	version_check_http->request(PhysXRuntimeManager::MANIFEST_URL);
+}
+
+void PhysXEditorPlugin::_on_version_check_completed(int p_result, int p_code, const PackedStringArray &p_headers, const PackedByteArray &p_body) {
+	update_check_active = false;
+	update_check_done = true; // one check per session, whatever the outcome
+	if (p_result != HTTPRequest::RESULT_SUCCESS || p_code != 200) {
+		// Offline or the manifest host is down: stay quiet, retry next session.
+		return;
+	}
+	const Dictionary bundle = PhysXRuntimeManager::parse_manifest(String::utf8((const char *)p_body.ptr(), p_body.size()));
+	if (bundle.is_empty()) {
+		return; // malformed manifest: nothing to compare against
+	}
+	const String available = bundle.get("runtime_version", "");
+	if (available.is_empty()) {
+		return; // a manifest without the field cannot drive the updater
+	}
+	const String installed = PhysXRuntimeManager::get_installed_runtime_version();
+	if (!installed.is_empty() && installed == available) {
+		return; // up to date
+	}
+	if (installed.is_empty()) {
+		// Pre-versioning install (or a manual one): the marker can't say what
+		// is on disk, so hash the files against the manifest. All matching
+		// means the current bundle is already installed -- adopt the version
+		// silently; anything else is an update offer.
+		const String exe_dir = OS::get_singleton()->get_executable_path().get_base_dir();
+		Array files = bundle["files"];
+		for (int i = 0; i < files.size(); i++) {
+			Dictionary entry = files[i];
+			const String path = exe_dir.path_join(entry["name"]);
+			if (!FileAccess::exists(path) ||
+					PhysXRuntimeManager::sha256_file(path).to_lower() != String(entry["sha256"]).to_lower()) {
+				_offer_runtime_update(installed, available);
+				return;
+			}
+		}
+		PhysXRuntimeManager::write_runtime_version_marker(available);
+		return;
+	}
+	_offer_runtime_update(installed, available);
+}
+
+void PhysXEditorPlugin::_offer_runtime_update(const String &p_installed, const String &p_available) {
+	if (update_dialog) {
+		// Re-offer while the update stays pending (same pattern as the
+		// missing-files dialog).
+		if (!update_dialog->is_visible() && !install_active) {
+			update_dialog->popup_centered();
+		}
+		return;
+	}
+	if (!is_inside_tree()) {
+		return;
+	}
+	const String installed_text = p_installed.is_empty() ? TTR("unknown (pre-versioning install)") : p_installed;
+	update_dialog = memnew(ConfirmationDialog);
+	update_dialog->set_title(TTR("PhysX runtime update available"));
+	update_dialog->set_text(vformat(
+			TTR("A newer PhysX runtime is available: %1$s (installed: %2$s).\n\nRunning an old runtime against a newer engine build can break GPU dynamics and destruction. Update now? Only the changed libraries are downloaded, and the editor restarts afterwards."),
+			p_available, installed_text));
+	update_dialog->set_ok_button_text(TTR("Update and Restart"));
+	update_dialog->set_min_size(Vector2i(520, 0));
+	EditorNode::get_singleton()->get_gui_base()->add_child(update_dialog);
+	update_dialog->connect("confirmed", callable_mp(this, &PhysXEditorPlugin::_start_install));
+	update_dialog->popup_centered();
+	print_line(vformat("PhysX: runtime update available (%s installed, %s available) -- offering the update.", installed_text, p_available));
 }
 
 void PhysXEditorPlugin::_start_install() {
@@ -809,6 +896,9 @@ void PhysXEditorPlugin::_on_install_request_completed(int p_result, int p_code, 
 	}
 
 	install_status_label->set_text(TTR("Installed. Restarting…"));
+	// Record what landed on disk: the updater compares this against the
+	// manifest's runtime_version on future sessions.
+	PhysXRuntimeManager::write_runtime_version_marker(install_bundle.get("runtime_version", ""));
 	EditorNode::get_singleton()->restart_editor();
 }
 

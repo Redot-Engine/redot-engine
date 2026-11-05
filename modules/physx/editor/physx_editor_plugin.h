@@ -209,6 +209,20 @@ class PhysXEditorPlugin : public EditorPlugin {
 	void _install_failed(const String &p_message);
 	void _poll_install_progress();
 
+	// --- Runtime updater ---
+	// When the runtime files are COMPLETE, the manifest is fetched anyway and
+	// its runtime_version compared against the marker the last install wrote:
+	// a mismatch offers the same download-and-restart flow, whose hash-skip
+	// extraction then replaces only the changed libraries.
+	HTTPRequest *version_check_http = nullptr;
+	ConfirmationDialog *update_dialog = nullptr;
+	bool update_check_active = false; // a version fetch is in flight
+	bool update_check_done = false; // one check per editor session
+
+	void _start_version_check();
+	void _on_version_check_completed(int p_result, int p_code, const PackedStringArray &p_headers, const PackedByteArray &p_body);
+	void _offer_runtime_update(const String &p_installed, const String &p_available);
+
 protected:
 	virtual void _notification(int p_what);
 

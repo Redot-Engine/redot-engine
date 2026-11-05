@@ -1,6 +1,6 @@
-# PhysX 5.11 Backend — Automated Integration & Torture Test Suite
+# PhysX 5.12 Backend — Automated Integration & Torture Test Suite
 
-Automated, headless, CI-ready test suite for the custom PhysX 5.11
+Automated, headless, CI-ready test suite for the custom PhysX 5.12
 `PhysicsServer3D` backend (`modules/physx`). This is **not** a visual debugging
 laboratory — there is no UI, no interactive controls, no rendered inspection.
 Every check is programmatic and every run produces a console report, a
@@ -12,7 +12,7 @@ The chain under test:
 C# / .NET  ─┐
             ├─> Godot PhysicsServer3D API ─> custom PhysX module ─> RID/resource
 GDScript  ─┘                                 management ─> Godot/PhysX conversion
-                                              ─> PhysX 5.11 ─> simulation ─> sync
+                                              ─> PhysX 5.12 ─> simulation ─> sync
                                               ─> PhysicsServer3D results
 ```
 
@@ -159,7 +159,7 @@ Per test: `PASS` / `FAIL` / `SKIP` / `TIMEOUT` / `CRASH`. Console summary:
 
 ```
 ====================================================
-  Godot PhysX 5.11 Integration Test Suite (C#)
+  Godot PhysX 5.12 Integration Test Suite (C#)
 ====================================================
   Backend: PhysX    Physics FPS: 60    Seed: 123456
   Foundation       PASS   14/14
