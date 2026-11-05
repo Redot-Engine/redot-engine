@@ -52,7 +52,11 @@ void PhysicsServer3DWrapMT::_thread_loop() {
 		WorkerThreadPool::get_singleton()->yield();
 
 		if (!doing_sync.is_set()) {
+			// Bracket the batch so backends can serialize marshaled commands
+			// against out-of-band module APIs (see command_flush_begin).
+			physics_server_3d->command_flush_begin();
 			command_queue.flush_all();
+			physics_server_3d->command_flush_end();
 		}
 	}
 }

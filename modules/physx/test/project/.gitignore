@@ -1,0 +1,5 @@
+# Local build/test artifacts.
+.godot/
+mono/
+test_results/
+*.log

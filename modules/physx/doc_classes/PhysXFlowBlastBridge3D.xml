@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXFlowBlastBridge3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Destruction-event adapter: Blast fracture to Flow dust/smoke/fire (PhysX module, blast+flow builds).
+	</brief_description>
+	<description>
+		Listens to [signal PhysXDestructible3D.chunks_fractured] on the referenced destructible and spawns a transient smoke/fire puff at the fracture site via [method PhysXFlowSimulation3D.add_transient_emitter]. The bridge owns nothing simulated: Flow never learns what Blast is and vice versa -- either system works without the other, and this node exists only in builds with both compiled in.
+		Burst size scales with the piece count (a chip-off is a small puff, a full shatter a cloud), clamped by [member max_radius]; intensity fades over [member lifetime]. Set [member temperature] and [member fuel] above 0 to turn dust into secondary fire.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="destructible_path" type="NodePath" setter="set_destructible_path" getter="get_destructible_path" default="NodePath(&quot;&quot;)">
+			The [PhysXDestructible3D] whose fracture events drive this bridge.
+		</member>
+		<member name="enabled" type="bool" setter="set_enabled" getter="get_enabled" default="true">
+			Disables event forwarding without disconnecting.
+		</member>
+		<member name="fuel" type="float" setter="set_fuel" getter="get_fuel" default="0.0">
+			Fuel injected at full intensity (with temperature &gt; 0 this makes destruction ignite).
+		</member>
+		<member name="lifetime" type="float" setter="set_lifetime" getter="get_lifetime" default="1.5">
+			Puff lifetime in seconds of simulated time.
+		</member>
+		<member name="max_radius" type="float" setter="set_max_radius" getter="get_max_radius" default="2.0">
+			Upper clamp on the puff radius in meters.
+		</member>
+		<member name="radius_scale" type="float" setter="set_radius_scale" getter="get_radius_scale" default="1.0">
+			Puff radius per fractured piece count (clamped by [member max_radius]).
+		</member>
+		<member name="simulation_path" type="NodePath" setter="set_simulation_path" getter="get_simulation_path" default="NodePath(&quot;&quot;)">
+			The [PhysXFlowSimulation3D] receiving the effect puffs.
+		</member>
+		<member name="smoke" type="float" setter="set_smoke" getter="get_smoke" default="1.2">
+			Smoke injected at full intensity.
+		</member>
+		<member name="temperature" type="float" setter="set_temperature" getter="get_temperature" default="0.0">
+			Temperature injected at full intensity (0 = cold dust).
+		</member>
+		<member name="velocity" type="float" setter="set_velocity" getter="get_velocity" default="1.2">
+			Upward puff speed in m/s.
+		</member>
+	</members>
+</class>

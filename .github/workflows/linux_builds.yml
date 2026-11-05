@@ -83,6 +83,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          lfs: true
           submodules: recursive
 
       - name: Setup dependencies
@@ -151,6 +152,20 @@ jobs:
           platform: linuxbsd
           target: ${{ matrix.target }}
 
+      - name: ISA diagnostics
+        if: always()
+        run: |
+          # glibc 2.41+ refuses ELF objects whose GNU_PROPERTY_X86_ISA_1_NEEDED
+          # exceeds the CPU ("CPU ISA level is lower than required") at exec and
+          # dlopen. Print what the runner's toolchain defaults to, and what ISA
+          # level every produced object in bin/ actually declares.
+          lsb_release -a 2>/dev/null || true
+          gcc --version | head -1
+          echo "-- compiler default ISA macros (no -march, the pinless baseline this runner would emit):"
+          echo | gcc -dM -E - | grep -E "__AVX512F__|__AVX2__|__AVX__|__SSE4_2__" || echo "  baseline (no AVX/SSE4.2 macros defined)"
+          echo "-- ISA requirement declared by each produced object:"
+          python3 modules/physx/misc/fix_elf_isa_note.py --report --level 1 bin/
+
       - name: Save Godot build cache
         uses: ./.github/actions/godot-cache-save
         with:
@@ -206,7 +221,10 @@ jobs:
           echo "Running --doctool to see if this changes the public API without updating the documentation."
           echo -e "If a diff is shown, it means that your code/doc changes are incomplete and you should update the class reference with --doctool.\n\n"
           ${{ matrix.bin }} --doctool --headless 2>&1 > /dev/null || true
-          git diff --color --exit-code && ! git ls-files --others --exclude-standard | sed -e 's/^/New doc file missing in PR: /' | grep 'xml$'
+          # --diff-filter=d: ignore deletions. Classes gated to other platforms
+          # (Blast/Flow/GPU water register Windows-only) have their doc XML removed
+          # by --doctool on this platform -- expected, not a doc gap.
+          git diff --color --exit-code --diff-filter=d && ! git ls-files --others --exclude-standard | sed -e 's/^/New doc file missing in PR: /' | grep 'xml$'
 
       # Check API backwards compatibility
       - name: Check for GDExtension compatibility

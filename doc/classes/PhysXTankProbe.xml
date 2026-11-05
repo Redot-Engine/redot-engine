@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXTankProbe" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_actor_position" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="get_angular_velocity" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="get_forward" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="get_forward_speed" qualifiers="const">
+			<return type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="get_linear_velocity" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="get_position" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="get_up" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="get_wheel_jounce" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="wheel" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_wheel_separation" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="wheel" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="initialize">
+			<return type="bool" />
+			<param index="0" name="space" type="RID" />
+			<param index="1" name="position" type="Vector3" />
+			<param index="2" name="wheel_positions_local" type="PackedVector3Array" />
+			<description>
+			</description>
+		</method>
+		<method name="step">
+			<return type="void" />
+			<param index="0" name="dt" type="float" />
+			<param index="1" name="left_ratio" type="float" />
+			<param index="2" name="right_ratio" type="float" />
+			<param index="3" name="brake" type="float" />
+			<description>
+			</description>
+		</method>
+	</methods>
+</class>

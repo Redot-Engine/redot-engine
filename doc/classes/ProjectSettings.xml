@@ -4,7 +4,7 @@
 		Stores globally-accessible variables.
 	</brief_description>
 	<description>
-		Stores variables that can be accessed from everywhere. Use [method get_setting], [method set_setting] or [method has_setting] to access them. Variables stored in [code]project.godot[/code] are also loaded into [ProjectSettings], making this object very useful for reading custom game configuration options.
+		Stores variables that can be accessed from everywhere. Use [method get_setting], [method set_setting] or [method has_setting] to access them. Variables stored in [code]project.redot[/code] are also loaded into [ProjectSettings], making this object very useful for reading custom game configuration options.
 		When naming a Project Settings property, use the full path to the setting including the category. For example, [code]"application/config/name"[/code] for the project name. Category and property names can be viewed in the Project Settings dialog.
 		[b]Feature tags:[/b] Project settings can be overridden for specific platforms and configurations (debug, release, ...) using [url=$DOCS_URL/tutorials/export/feature_tags.html]feature tags[/url].
 		[b]Overriding:[/b] Any project setting can be overridden by creating a file named [code]override.cfg[/code] in the project's root directory. This can also be used in exported projects by placing this file in the same directory as the project binary. Overriding will still take the base project settings' [url=$DOCS_URL/tutorials/export/feature_tags.html]feature tags[/url] in account. Therefore, make sure to [i]also[/i] override the setting with the desired feature tags if you want them to override base project settings on all platforms and configurations.
@@ -40,7 +40,7 @@
 				[csharp]
 				ProjectSettings.Singleton.Set("category/property_name", 0);
 
-				var propertyInfo = new Godot.Collections.Dictionary
+				var propertyInfo = new Redot.Collections.Dictionary
 				{
 					{ "name", "category/propertyName" },
 					{ "type", (int)Variant.Type.Int },
@@ -150,7 +150,7 @@
 			<param index="0" name="name" type="String" />
 			<description>
 				Returns [code]true[/code] if a configuration value is present.
-				[b]Note:[/b] In order to be be detected, custom settings have to be either defined with [method set_setting], or exist in the [code]project.godot[/code] file. This is especially relevant when using [method set_initial_value].
+				[b]Note:[/b] In order to be be detected, custom settings have to be either defined with [method set_setting], or exist in the [code]project.redot[/code] file. This is especially relevant when using [method set_initial_value].
 			</description>
 		</method>
 		<method name="load_resource_pack">
@@ -175,7 +175,7 @@
 		<method name="save">
 			<return type="int" enum="Error" />
 			<description>
-				Saves the configuration to the [code]project.godot[/code] file.
+				Saves the configuration to the [code]project.redot[/code] file.
 				[b]Note:[/b] This method is intended to be used by editor plugins, as modified [ProjectSettings] can't be loaded back in the running app. If you want to change project settings in exported projects, use [method save_custom] to save [code]override.cfg[/code] file.
 			</description>
 		</method>
@@ -183,7 +183,7 @@
 			<return type="int" enum="Error" />
 			<param index="0" name="file" type="String" />
 			<description>
-				Saves the configuration to a custom file. The file extension must be [code].godot[/code] (to save in text-based [ConfigFile] format) or [code].binary[/code] (to save in binary format). You can also save [code]override.cfg[/code] file, which is also text, but can be used in exported projects unlike other formats.
+				Saves the configuration to a custom file. The file extension must be [code].redot[/code] (to save in text-based [ConfigFile] format) or [code].binary[/code] (to save in binary format). You can also save [code]override.cfg[/code] file, which is also text, but can be used in exported projects unlike other formats.
 			</description>
 		</method>
 		<method name="set_as_basic">
@@ -331,10 +331,10 @@
 			See also [url=$DOCS_URL/tutorials/io/data_paths.html#accessing-persistent-user-data-user]File paths in Redot projects[/url]. This setting is only effective on desktop platforms.
 		</member>
 		<member name="application/config/use_hidden_project_data_directory" type="bool" setter="" getter="" default="true">
-			If [code]true[/code], the project will use a hidden directory ([code].godot[/code]) for storing project-specific data (metadata, shader cache, etc.).
-			If [code]false[/code], a non-hidden directory ([code]godot[/code]) will be used instead.
+			If [code]true[/code], the project will use a hidden directory ([code].redot[/code]) for storing project-specific data (metadata, shader cache, etc.).
+			If [code]false[/code], a non-hidden directory ([code]redot[/code]) will be used instead.
 			[b]Note:[/b] Restart the application after changing this setting.
-			[b]Note:[/b] Changing this value can help on platforms or with third-party tools where hidden directory patterns are disallowed. Only modify this setting if you know that your environment requires it, as changing the default can impact compatibility with some external tools or plugins which expect the default [code].godot[/code] folder.
+			[b]Note:[/b] Changing this value can help on platforms or with third-party tools where hidden directory patterns are disallowed. Only modify this setting if you know that your environment requires it, as changing the default can impact compatibility with some external tools or plugins which expect the default [code].redot[/code] folder.
 		</member>
 		<member name="application/config/version" type="String" setter="" getter="" default="&quot;&quot;">
 			The project's human-readable version identifier. This is used by exporters if the version identifier isn't overridden there. If [member application/config/version] is an empty string and the version identifier isn't overridden in an exporter, the exporter will use [code]1.0.0[/code] as a version identifier.
@@ -514,7 +514,7 @@
 		<member name="debug/file_logging/enable_file_logging.pc" type="bool" setter="" getter="" default="true">
 			Desktop override for [member debug/file_logging/enable_file_logging], as log files are not readily accessible on mobile/Web platforms.
 		</member>
-		<member name="debug/file_logging/log_path" type="String" setter="" getter="" default="&quot;user://logs/godot.log&quot;">
+		<member name="debug/file_logging/log_path" type="String" setter="" getter="" default="&quot;user://logs/redot.log&quot;">
 			Path at which to store log files for the project. Using a path under [code]user://[/code] is recommended.
 			This can be specified manually on the command line using the [code]--log-file &lt;file&gt;[/code] [url=$DOCS_URL/tutorials/editor/command_line_tutorial.html]command line argument[/url]. If this command line argument is specified, log rotation is automatically disabled (see [member debug/file_logging/max_log_files]).
 		</member>
@@ -603,7 +603,7 @@
 			When set to [code]warn[/code] or [code]error[/code], produces a warning or an error respectively when the [code]@static_unload[/code] annotation is used in a script without any static variables.
 		</member>
 		<member name="debug/gdscript/warnings/renamed_in_godot_4_hint" type="bool" setter="" getter="" default="true">
-			When enabled, using a property, enum, or function that was renamed since Godot 3 will produce a hint if an error occurs.
+			When enabled, using a property, enum, or function that was renamed since Redot 3 will produce a hint if an error occurs.
 		</member>
 		<member name="debug/gdscript/warnings/return_value_discarded" type="int" setter="" getter="" default="0">
 			When set to [code]warn[/code] or [code]error[/code], produces a warning or an error respectively when calling a function without using its return value (by assigning it to a variable or using it as a function argument). These return values are sometimes used to indicate possible errors using the [enum Error] enum.
@@ -734,7 +734,7 @@
 			When set to [code]true[/code], produces a warning upon encountering certain formatting errors. Currently this only checks for empty statements. More formatting errors may be added over time.
 		</member>
 		<member name="debug/shader_language/warnings/magic_position_write" type="bool" setter="" getter="" default="true">
-			When set to [code]true[/code], produces a warning when the shader contains [code]POSITION = vec4(vertex,[/code] as this was very common code written in Godot 4.2 and earlier that was paired with a QuadMesh to produce a full screen post processes pass. With the switch to reversed z in 4.3, this trick no longer works, as it implicitly relied on the [code]VERTEX.z[/code] being 0.
+			When set to [code]true[/code], produces a warning when the shader contains [code]POSITION = vec4(vertex,[/code] as this was very common code written in Redot 4.2 and earlier that was paired with a QuadMesh to produce a full screen post processes pass. With the switch to reversed z in 4.3, this trick no longer works, as it implicitly relied on the [code]VERTEX.z[/code] being 0.
 		</member>
 		<member name="debug/shader_language/warnings/treat_warnings_as_errors" type="bool" setter="" getter="" default="false">
 			When set to [code]true[/code], warnings are treated as errors.
@@ -1102,13 +1102,13 @@
 			Number of times to attempt assembly reloading after rebuilding .NET assemblies. Effectively also the timeout in seconds to wait for unloading of script assemblies to finish.
 		</member>
 		<member name="dotnet/project/solution_directory" type="String" setter="" getter="" default="&quot;&quot;">
-			Directory that contains the [code].sln[/code] file. By default, the [code].sln[/code] files is in the root of the project directory, next to the [code]project.godot[/code] and [code].csproj[/code] files.
-			Changing this value allows setting up a multi-project scenario where there are multiple [code].csproj[/code]. Keep in mind that the Redot project is considered one of the C# projects in the workspace and it's root directory should contain the [code]project.godot[/code] and [code].csproj[/code] next to each other.
+			Directory that contains the [code].sln[/code] file. By default, the [code].sln[/code] files is in the root of the project directory, next to the [code]project.redot[/code] and [code].csproj[/code] files.
+			Changing this value allows setting up a multi-project scenario where there are multiple [code].csproj[/code]. Keep in mind that the Redot project is considered one of the C# projects in the workspace and it's root directory should contain the [code]project.redot[/code] and [code].csproj[/code] next to each other.
 		</member>
 		<member name="editor/export/convert_text_resources_to_binary" type="bool" setter="" getter="" default="true">
 			If [code]true[/code], text resource ([code]tres[/code]) and text scene ([code]tscn[/code]) files are converted to their corresponding binary format on export. This decreases file sizes and speeds up loading slightly.
 			[b]Note:[/b] Because a resource's file extension may change in an exported project, it is heavily recommended to use [method @GDScript.load] or [ResourceLoader] instead of [FileAccess] to load resources dynamically.
-			[b]Note:[/b] The project settings file ([code]project.godot[/code]) will always be converted to binary on export, regardless of this setting.
+			[b]Note:[/b] The project settings file ([code]project.redot[/code]) will always be converted to binary on export, regardless of this setting.
 		</member>
 		<member name="editor/import/atlas_max_width" type="int" setter="" getter="" default="2048">
 			The maximum width to use when importing textures as an atlas. The value will be rounded to the nearest power of two when used. Use this to prevent imported textures from growing too large in the other direction.
@@ -2664,7 +2664,7 @@
 		</member>
 		<member name="physics/jolt_physics_3d/joints/world_node" type="int" setter="" getter="" default="0">
 			Which of the two nodes bound by a joint should represent the world when one of the two is omitted, as either [member Joint3D.node_a] or [member Joint3D.node_b]. This can be thought of as having the omitted node be a [StaticBody3D] at the joint's position. Joint limits are more easily expressed when [member Joint3D.node_a] represents the world.
-			[b]Note:[/b] In Godot Physics, only [member Joint3D.node_b] can represent the world.
+			[b]Note:[/b] In Redot Physics, only [member Joint3D.node_b] can represent the world.
 		</member>
 		<member name="physics/jolt_physics_3d/limits/max_angular_velocity" type="float" setter="" getter="" default="47.12389">
 			The maximum angular velocity that a [RigidBody3D] can reach, in radians per second.
@@ -2767,6 +2767,34 @@
 		<member name="physics/jolt_physics_3d/simulation/velocity_steps" type="int" setter="" getter="" default="10">
 			Number of solver velocity iterations. The greater the number of iterations, the more accurate the simulation will be, at the cost of CPU performance.
 			[b]Note:[/b] This needs to be at least [code]2[/code] in order for friction to work, as friction is applied using the non-penetration impulse from the previous iteration.
+		</member>
+		<member name="physics/physx_3d/debug/pvd" type="bool" setter="" getter="" default="false">
+		</member>
+		<member name="physics/physx_3d/flow/device_api" type="int" setter="" getter="" default="0">
+		</member>
+		<member name="physics/physx_3d/flow/device_index" type="int" setter="" getter="" default="0">
+		</member>
+		<member name="physics/physx_3d/flow/device_validation" type="bool" setter="" getter="" default="false">
+		</member>
+		<member name="physics/physx_3d/flow/verbose_logs" type="bool" setter="" getter="" default="false">
+		</member>
+		<member name="physics/physx_3d/simulation/allow_sleep" type="bool" setter="" getter="" default="true">
+		</member>
+		<member name="physics/physx_3d/simulation/async_step" type="bool" setter="" getter="" default="false">
+		</member>
+		<member name="physics/physx_3d/simulation/cpu_worker_threads" type="int" setter="" getter="" default="0">
+		</member>
+		<member name="physics/physx_3d/simulation/enhanced_determinism" type="bool" setter="" getter="" default="false">
+		</member>
+		<member name="physics/physx_3d/simulation/gpu_dynamics" type="bool" setter="" getter="" default="true">
+		</member>
+		<member name="physics/physx_3d/simulation/max_depenetration_velocity" type="float" setter="" getter="" default="0.0">
+		</member>
+		<member name="physics/physx_3d/simulation/solver_type" type="int" setter="" getter="" default="0">
+		</member>
+		<member name="physics/physx_3d/simulation/stabilization" type="bool" setter="" getter="" default="false">
+		</member>
+		<member name="physics/physx_3d/soft_body/mode" type="int" setter="" getter="" default="0">
 		</member>
 		<member name="rendering/2d/batching/item_buffer_size" type="int" setter="" getter="" default="16384">
 			Maximum number of canvas item commands that can be batched into a single draw call.
@@ -3435,12 +3463,12 @@
 		<member name="rendering/textures/vram_compression/import_etc2_astc" type="bool" setter="" getter="" default="false">
 			If [code]true[/code], the texture importer will import VRAM-compressed textures using the Ericsson Texture Compression 2 algorithm for lower quality textures and normal maps and Adaptable Scalable Texture Compression algorithm for high quality textures (in 4×4 block size).
 			[b]Note:[/b] This setting is an override. The texture importer will always import the format the host platform needs, even if this is set to [code]false[/code].
-			[b]Note:[/b] Changing this setting does [i]not[/i] impact textures that were already imported before. To make this setting apply to textures that were already imported, exit the editor, remove the [code].godot/imported/[/code] folder located inside the project folder then restart the editor (see [member application/config/use_hidden_project_data_directory]).
+			[b]Note:[/b] Changing this setting does [i]not[/i] impact textures that were already imported before. To make this setting apply to textures that were already imported, exit the editor, remove the [code].redot/imported/[/code] folder located inside the project folder then restart the editor (see [member application/config/use_hidden_project_data_directory]).
 		</member>
 		<member name="rendering/textures/vram_compression/import_s3tc_bptc" type="bool" setter="" getter="" default="false">
 			If [code]true[/code], the texture importer will import VRAM-compressed textures using the S3 Texture Compression algorithm (DXT1-5) for lower quality textures and the BPTC algorithm (BC6H and BC7) for high quality textures. This algorithm is only supported on PC desktop platforms and consoles.
 			[b]Note:[/b] This setting is an override. The texture importer will always import the format the host platform needs, even if this is set to [code]false[/code].
-			[b]Note:[/b] Changing this setting does [i]not[/i] impact textures that were already imported before. To make this setting apply to textures that were already imported, exit the editor, remove the [code].godot/imported/[/code] folder located inside the project folder then restart the editor (see [member application/config/use_hidden_project_data_directory]).
+			[b]Note:[/b] Changing this setting does [i]not[/i] impact textures that were already imported before. To make this setting apply to textures that were already imported, exit the editor, remove the [code].redot/imported/[/code] folder located inside the project folder then restart the editor (see [member application/config/use_hidden_project_data_directory]).
 		</member>
 		<member name="rendering/textures/webp_compression/compression_method" type="int" setter="" getter="" default="2">
 			The default compression method for WebP. Affects both lossy and lossless WebP. A higher value results in smaller files at the cost of compression speed. Decompression speed is mostly unaffected by the compression method. Supported values are 0 to 6. Note that compression methods above 4 are very slow and offer very little savings.
