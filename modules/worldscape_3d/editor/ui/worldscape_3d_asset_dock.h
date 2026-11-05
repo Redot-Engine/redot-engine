@@ -290,6 +290,7 @@ public:
 	void _notification(int what);
 
 private:
+	void create_bottom_panel();
 	void dialog_confirm();
 	void dialog_cancel();
 };

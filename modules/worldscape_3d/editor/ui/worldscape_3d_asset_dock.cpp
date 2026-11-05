@@ -38,6 +38,7 @@
 #include "editor/editor_log.h"
 #include "editor/editor_node.h"
 #include "editor/gui/editor_bottom_panel.h"
+#include "editor/settings/editor_settings.h"
 #include "editor/settings/event_listener_line_edit.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/label.h"
@@ -595,21 +596,32 @@ void ListContainer::set_selected_id(const int id) {
 	}
 	_plugin->select_terrain();
 
+	auto ui = _plugin->get_ui();
+	if (!ui) {
+		return;
+	}
+
+	auto toolbar = ui->get_toolbar();
+
 	// Select Paint tool if clicking a texture
 	auto tool = _plugin->get_editor()->get_tool();
 	if (_type == WorldScape3DAssets::TYPE_TEXTURE && !(tool == WorldScape3DEditor::Tool::TEXTURE || tool == WorldScape3DEditor::Tool::COLOR || tool == WorldScape3DEditor::ROUGHNESS)) {
-		if (auto paint_btn = cast_to<Button>(_plugin->get_ui()->get_toolbar()->find_button("TerrainPaintTexture")); paint_btn) {
-			paint_btn->set_pressed(true);
-			_plugin->get_ui()->on_tool_changed(WorldScape3DEditor::Tool::TEXTURE, WorldScape3DEditor::Operation::REPLACE);
+		if (toolbar) {
+			if (auto paint_btn = cast_to<Button>(toolbar->find_button("TerrainPaintTexture")); paint_btn) {
+				paint_btn->set_pressed(true);
+				ui->on_tool_changed(WorldScape3DEditor::Tool::TEXTURE, WorldScape3DEditor::Operation::REPLACE);
+			}
 		}
 	} else if (_type == WorldScape3DAssets::TYPE_MESH && tool != WorldScape3DEditor::Tool::INSTANCER) {
-		if (auto instance_btn = cast_to<Button>(_plugin->get_ui()->get_toolbar()->find_button("TerrainInstancer")); instance_btn) {
-			instance_btn->set_pressed(true);
-			_plugin->get_ui()->on_tool_changed(WorldScape3DEditor::Tool::INSTANCER, WorldScape3DEditor::Operation::ADD);
+		if (toolbar) {
+			if (auto instance_btn = cast_to<Button>(toolbar->find_button("TerrainInstancer")); instance_btn) {
+				instance_btn->set_pressed(true);
+				ui->on_tool_changed(WorldScape3DEditor::Tool::INSTANCER, WorldScape3DEditor::Operation::ADD);
+			}
 		}
 	}
 	// Update editor with selected brush
-	_plugin->get_ui()->on_setting_changed();
+	ui->on_setting_changed();
 }
 
 void ListContainer::on_resource_inspected(Ref<Resource> resource) {
@@ -738,6 +750,7 @@ Window *WorldScape3DAssetDock::get_grandparent() const {
 }
 
 void WorldScape3DAssetDock::create_layout() {
+	set_name("Terrain Assets");
 	set_custom_minimum_size(Vector2{ 256.f, 95.f });
 	set_offset(Side::SIDE_RIGHT, 766.f);
 	set_offset(Side::SIDE_BOTTOM, 100.f);
@@ -1001,6 +1014,11 @@ void WorldScape3DAssetDock::remove_dock(const bool force) {
 	}
 }
 
+void WorldScape3DAssetDock::create_bottom_panel() {
+	EditorNode::get_bottom_panel()->add_item(TTRC("Terrain Assets"), this, ED_SHORTCUT("bottom_panels/toggle_terrain_assets_bottom_panel", TTRC("Toggle Terrain Assets Bottom Panel"), KeyModifierMask::ALT | Key::T));
+	_plugin->make_bottom_panel_item_visible(this);
+}
+
 void WorldScape3DAssetDock::update_dock() {
 	if (_window || !_initialized) {
 		return;
@@ -1016,8 +1034,7 @@ void WorldScape3DAssetDock::update_dock() {
 			_plugin->add_control_to_dock(static_cast<EditorPlugin::DockSlot>(_slot), this);
 		} else if (_slot == POS_BOTTOM) { // Bottom
 			_state = BOTTOM;
-			_plugin->add_control_to_bottom_panel(this, "Terrain Assets");
-			_plugin->make_bottom_panel_item_visible(this);
+			create_bottom_panel();
 		}
 	}
 }
@@ -1278,7 +1295,8 @@ void WorldScape3DAssetDock::load_editor_settings() {
 	_pinned_btn->set_pressed(_plugin->get_setting(ES_DOCK_PINNED, true));
 	_size_slider->set_value(_plugin->get_setting(ES_DOCK_TILE_SIZE, 90.f));
 	on_slider_changed(_size_slider->get_value());
-	set_slot(_plugin->get_setting(ES_DOCK_SLOT, POS_BOTTOM));
+	// for now, always start with the dock in the bottom by default
+	set_slot(POS_BOTTOM); // set_slot(_plugin->get_setting(ES_DOCK_SLOT, POS_BOTTOM));
 	if (_floating_btn->is_pressed()) {
 		make_dock_float();
 	}
