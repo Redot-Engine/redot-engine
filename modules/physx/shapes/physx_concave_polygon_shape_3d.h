@@ -44,10 +44,13 @@ public:
 
 	/// Backface cooking duplicates every triangle (forward + reversed winding):
 	/// raw PhysX face indices address the DOUBLED mesh, Godot consumers expect
-	/// indices into their own faces array.
+	/// indices into their own faces array. Both paths first undo the cooking
+	/// reorder (welding/cleaning can sort or drop triangles) through the
+	/// cooked mesh's remap table.
 	virtual int translate_face_index(int p_face_index) const override {
-		return back_face_collision ? p_face_index / 2 : p_face_index;
+		return back_face_collision ? input_face_index(p_face_index) / 2 : input_face_index(p_face_index);
 	}
+	virtual int input_face_index(int p_face_index) const override;
 	virtual bool has_backface_collision() const override { return back_face_collision; }
 
 	virtual void set_data(const Variant &p_data) override;

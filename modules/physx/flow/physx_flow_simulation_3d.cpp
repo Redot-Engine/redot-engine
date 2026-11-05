@@ -862,10 +862,17 @@ void PhysXFlowSimulation3D::render_rd(PhysXFlowRenderEffect *p_effect, Rendering
 	// published under scatter_mutex -- NOT here: under the Separate thread
 	// model this callback runs on the render thread, where guarded node reads
 	// (Light3D::is_visible_in_tree et al) fail their thread guard and every
-	// light was skipped before its scattering record was built.
+	// light was skipped before its scattering record was built. The two
+	// is_empty() checks below also ran WITHOUT the lock while the main thread
+	// could reallocate the vector mid-read: snapshot the flag under the mutex.
+	bool have_lights;
+	{
+		MutexLock lock(scatter_mutex);
+		have_lights = light_scattering && !scatter_lights.is_empty();
+	}
 	const uint64_t out = simulation->render(p_view, p_projection, p_size.x, p_size.y,
 			p_depth.get_id(), p_size.x, p_size.y, p_color.get_id(),
-			(light_scattering && !scatter_lights.is_empty()) ? &scatter_source : nullptr,
+			have_lights ? &scatter_source : nullptr,
 			p_lighting_pass);
 	render_calls++;
 	render_outputs += out != 0 ? 1 : 0;
@@ -874,7 +881,7 @@ void PhysXFlowSimulation3D::render_rd(PhysXFlowRenderEffect *p_effect, Rendering
 		// color before the next Flow call borrows that texture.
 		p_effect->copy_texture(p_rd, RID::from_uint64(out), p_color, p_size);
 	}
-	if (out != 0 && (light_scattering && !scatter_lights.is_empty()) && scatter_source.valid) {
+	if (out != 0 && have_lights && scatter_source.valid) {
 		stat_scatter_passes++;
 		// Before the Flow frame ends: its volume and table are this frame's.
 		FlowScatterRD::Params params;

@@ -664,8 +664,11 @@ void PhysXEditorPlugin::_poll_install_progress() {
 	if (!install_active || install_http == nullptr || install_step != STEP_BUNDLE) {
 		return;
 	}
-	const uint64_t total = install_http->get_body_size();
-	const uint64_t done = install_http->get_downloaded_bytes();
+	// Signed: get_body_size() returns int and yields -1 when the server sent
+	// no Content-Length -- an unsigned store wraps that to UINT64_MAX and the
+	// "x of y MB" progress readout goes nonsensical.
+	const int64_t total = install_http->get_body_size();
+	const int64_t done = install_http->get_downloaded_bytes();
 	if (total > 0) {
 		install_progress_bar->set_value(100.0 * (double)done / (double)total);
 		install_status_label->set_text(vformat(TTR("Downloading PhysX runtime… %d of %d MB"), (int)(done >> 20), (int)(total >> 20)));

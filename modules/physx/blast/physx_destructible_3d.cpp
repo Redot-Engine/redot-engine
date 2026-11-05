@@ -1436,6 +1436,27 @@ int PhysXDestructible3D::apply_radial_damage(const Vector3 &p_world_position, fl
 			base_linear = pieces[0].last_linear_velocity;
 		}
 
+		// Spawn poses for the successors: a released island's pieces have been
+		// SIMULATING since they spawned -- their bodies have moved away from
+		// the node, and after the first fracture the node transform no longer
+		// follows the debris. Spawning the successors at
+		// get_global_transform() teleported a re-split fallen slab back to
+		// where the wall stood. Record each predecessor piece's live body
+		// transform by chunk index BEFORE the free below; the basis is
+		// physics-read (rotation only), so re-apply spawn_scale the way
+		// _sync_transforms() does for the same reason. Anchored-island chunks
+		// own no body (they hang off the shared static body, which sits where
+		// the node placed it) -- they and the intact placeholder fall back to
+		// the node transform.
+		HashMap<uint32_t, Transform3D> pred_xform;
+		for (const ChunkVisual &p : pieces) {
+			if (p.actor == actor && p.body.is_valid()) {
+				Transform3D t = PhysicsServer3D::get_singleton()->body_get_state(p.body, PhysicsServer3D::BODY_STATE_TRANSFORM);
+				t.basis = t.basis.scaled_local(spawn_scale);
+				pred_xform.insert(p.chunk_index, t);
+			}
+		}
+
 		// BLAST-1: this actor's previously-spawned pieces belong to chunks
 		// whose visibility the split just re-assigned — retire them before
 		// the successors spawn their own, or any chunk that stays visible
@@ -1477,6 +1498,12 @@ int PhysXDestructible3D::apply_radial_damage(const Vector3 &p_world_position, fl
 			float island_mass = 0.0f;
 
 			for (uint32_t v = 0; v < visible_count; v++) {
+				// The piece's CURRENT world pose (recorded above): the spawn
+				// transform AND the shatter-kick's centroid reference both
+				// read from here, so a re-split kicks and spawns from where
+				// the piece actually is, not where the intact wall stood.
+				const Transform3D *piece_xform = pred_xform.getptr(visible[v]);
+				const Transform3D &spawn_xform = piece_xform ? *piece_xform : get_global_transform();
 				Vector3 piece_velocity;
 				if (!island_static) {
 					// No real pre-fracture body exists to inherit a genuine
@@ -1489,7 +1516,7 @@ int PhysXDestructible3D::apply_radial_damage(const Vector3 &p_world_position, fl
 					// Released (unanchored) islands get NO kick: they were
 					// never hit as debris, they are simply let go.
 					if (!pred_static || visible_count == 1) {
-						const Vector3 centroid_world = get_global_transform().xform(_chunk_centroid_local(visible[v]));
+						const Vector3 centroid_world = spawn_xform.xform(_chunk_centroid_local(visible[v]));
 						const Vector3 offset = centroid_world - p_world_position;
 						const real_t dist = offset.length();
 						const Vector3 dir = dist > 0.001 ? (offset / dist) : Vector3(0, 1, 0);
@@ -1501,7 +1528,7 @@ int PhysXDestructible3D::apply_radial_damage(const Vector3 &p_world_position, fl
 					piece_velocity += base_linear;
 				}
 				const uint32_t before = (uint32_t)pieces.size();
-				_spawn_piece(visible[v], get_global_transform(), piece_velocity, true, new_actor,
+				_spawn_piece(visible[v], spawn_xform, piece_velocity, true, new_actor,
 						island_static ? PhysicsServer3D::BODY_MODE_STATIC : PhysicsServer3D::BODY_MODE_RIGID,
 						island_body);
 				if ((uint32_t)pieces.size() > before) {

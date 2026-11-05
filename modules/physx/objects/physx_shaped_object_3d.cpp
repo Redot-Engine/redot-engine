@@ -379,10 +379,14 @@ bool PhysXShapedObject3D::_try_attach_shape(AttachedShape &record) {
 	// Apply the owner's collision filter BEFORE attaching: PxShape creation
 	// leaves the filter data zeroed (layer=0, mask=0), which the simulation
 	// filter shader treats as "collides with nothing" -- without this, bodies
-	// fall through everything.
+	// fall through everything. word2 carries the exception slot so a shape
+	// added after the object entered a soft-body/rigid exception is enforced
+	// by the GPU filter shader too (update_shapes_collision_filter() writes
+	// the same field on refresh).
 	physx::PxFilterData filter_data;
 	filter_data.word0 = collision_layer;
 	filter_data.word1 = collision_mask;
+	filter_data.word2 = exception_slot;
 	filter_data.word3 = shape_filter_flags();
 	record.shape_instance->setSimulationFilterData(filter_data);
 	record.shape_instance->setQueryFilterData(filter_data);

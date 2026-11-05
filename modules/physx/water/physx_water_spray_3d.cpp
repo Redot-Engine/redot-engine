@@ -138,16 +138,20 @@ void PhysXWaterSpray3D::_add_emitters(const TypedArray<NodePath> &p_paths, Role 
 		Emitter emitter;
 		emitter.id = particles->get_instance_id();
 		emitter.role = p_role;
-		emitter.rest = to_body * particles->get_global_transform();
 		// Authored state, captured once: later builds must not read back the
-		// ratio/velocities this node itself wrote.
+		// ratio/velocities/rest pose this node itself wrote (the physics step
+		// relocates every emitter to the water surface with a level basis, so
+		// a rebuild that read the live transform would strand the hull point
+		// at the water line and flatten its authored orientation).
 		Authored *authored = authored_state.getptr(emitter.id);
 		if (authored == nullptr) {
 			Authored a;
 			a.ratio = particles->get_amount_ratio();
 			a.material = particles->get_process_material();
+			a.rest = to_body * particles->get_global_transform();
 			authored = &authored_state.insert(emitter.id, a)->value;
 		}
+		emitter.rest = authored->rest;
 		emitter.base_ratio = authored->ratio;
 		Ref<ParticleProcessMaterial> material = authored->material;
 		if (material.is_valid()) {

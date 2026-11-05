@@ -201,9 +201,14 @@ void FlowSimulation::configure(const FlowSimGridConfig &p_config) {
 	if (runtime == nullptr) {
 		runtime = FlowRuntime::acquire();
 	}
+	// Store on EVERY path: _rt_configure() (queued on the render thread, or
+	// called directly below) and _rt_reset() both build the grid from this --
+	// the non-threaded path (headless, Compatibility, single-threaded render)
+	// otherwise created the grid with the default block budget and ignored
+	// every later configure().
+	grid_config = p_config;
 	const bool threaded = separate_render_thread && RenderingServer::get_singleton()->get_rendering_device() != nullptr;
 	if (threaded) {
-		grid_config = p_config;
 		RenderingServer::get_singleton()->call_on_render_thread(Callable(memnew(GodotPhysXQueuedCall<CfgFn>(this))));
 		// The node reads availability right after this; the grid must exist.
 		RenderingServer::get_singleton()->sync();

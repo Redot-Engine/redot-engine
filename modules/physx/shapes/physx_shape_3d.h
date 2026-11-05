@@ -112,6 +112,12 @@ public:
 	// cooked with backface collision (every triangle duplicated, reversed
 	// winding); Godot consumers index the original faces array.
 	virtual int translate_face_index(int p_face_index) const { return p_face_index; }
+	// Cooked face index -> index into the shape's own INPUT array, undoing
+	// the cooking reorder via the triangle remap table. For a backface-doubled
+	// concave mesh that array interleaves the original copy (even) and the
+	// flipped copy (odd), so its parity tells the two apart -- the raycast
+	// postFilter's back-face rule needs that, not the per-face translation.
+	virtual int input_face_index(int p_face_index) const { return p_face_index; }
 	/// Whether this shape collides from both sides (ConcavePolygonShape3D's
 	/// backface_collision). Queries that must honor Godot's back-face rule
 	/// (a back face only counts when the shape allows it AND the query asks

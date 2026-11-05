@@ -189,3 +189,22 @@ bool PhysXConcavePolygonShape3D::_ensure_triangle_mesh() const {
 
 	return true;
 }
+
+int PhysXConcavePolygonShape3D::input_face_index(int p_face_index) const {
+	// PhysX cooking (welding + mesh cleaning) sorts and can drop the input
+	// triangles: a hit's faceIndex addresses the COOKED order, while this
+	// shape's input array -- and the backface-doubled array in particular,
+	// which interleaves the original copy at even and the flipped copy at odd
+	// indices -- is what the parity tests and reported indices mean. The
+	// remap table (remapTable[cooked] = input) bridges the two; a suppressed
+	// table falls back to identity, the pre-fix behavior.
+	if (triangle_mesh) {
+		if (const physx::PxU32 *remap = triangle_mesh->getTrianglesRemap()) {
+			const physx::PxU32 cooked = (physx::PxU32)p_face_index;
+			if (cooked < triangle_mesh->getNbTriangles()) {
+				return (int)remap[cooked];
+			}
+		}
+	}
+	return p_face_index;
+}

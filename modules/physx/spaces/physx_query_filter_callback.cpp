@@ -154,10 +154,14 @@ physx::PxQueryHitType::Enum PhysXQueryFilterCallback::postFilter(
 			// The doubled cook fronts every triangle twice: the flipped copy
 			// is a BACK-face hit and only counts when the query asked for it.
 			// (Redot interleaves the copies -- original at even cooked
-			// indices, flipped at odd -- so the parity of the cooked face
+			// indices, flipped at odd -- so the parity of the input-array
 			// index tells them apart; translate_face_index() maps both to the
-			// same source face for the reported face_index.)
-			const bool flipped_copy = (hit.faceIndex & 1) != 0;
+			// same source face for the reported face_index. Cooking with
+			// welding/cleaning reorders the triangles, so the RAW cooked
+			// index must go through the mesh's remap table first -- an
+			// unremapped parity test misidentified the copy and rejected
+			// valid front hits.)
+			const bool flipped_copy = (shape_blueprint->input_face_index((int)hit.faceIndex) & 1) != 0;
 			if (flipped_copy && !ray_hit_back_faces) {
 				return physx::PxQueryHitType::eNONE;
 			}

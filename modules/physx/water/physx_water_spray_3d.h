@@ -102,10 +102,12 @@ private:
 	};
 
 	// The emitter's authored values, captured on first build: later builds
-	// must not read back the ratio/velocities this node itself wrote.
+	// must not read back the ratio/velocities/rest pose this node itself
+	// wrote (the physics step relocates every emitter to the water surface).
 	struct Authored {
 		float ratio = 1.0f;
 		Ref<ParticleProcessMaterial> material;
+		Transform3D rest;
 	};
 
 	NodePath water_surface_path; // empty = the sibling PhysXBuoyancy3D's
