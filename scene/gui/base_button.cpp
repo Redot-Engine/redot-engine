@@ -269,7 +269,6 @@ void BaseButton::set_disabled(bool p_disabled) {
 
 	status.disabled = p_disabled;
 	if (p_disabled) {
-
 		if (!toggle_mode) {
 			status.pressed = false;
 		}
@@ -280,7 +279,7 @@ void BaseButton::set_disabled(bool p_disabled) {
 			emit_signal(SNAME("button_up"));
 		}
 	}
-	if (status.hovering) {
+	if (is_inside_tree()) {
 		get_viewport()->update_mouse_cursor_state();
 	}
 	queue_accessibility_update();
@@ -304,7 +303,9 @@ void BaseButton::set_disabled_cursor_shape(CursorShape p_shape) {
 	if (!is_inside_tree()) {
 		return;
 	}
-	if (!get_global_rect().has_point(get_global_mouse_position())) {
+
+	Vector2 local_mouse_position = get_global_transform().affine_inverse().xform(get_global_mouse_position());
+	if (!has_point(local_mouse_position) && !status.press_attempt) {
 		return;
 	}
 	get_viewport()->update_mouse_cursor_state();

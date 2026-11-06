@@ -91,8 +91,6 @@ protected:
 	virtual void pressed();
 	virtual void toggled(bool p_pressed);
 	static void _bind_methods();
-	virtual void gui_input(const Ref<InputEvent> &p_event) override;
-	virtual CursorShape get_cursor_shape(const Point2 &p_pos) const override;
 	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
 	void _notification(int p_what);
 
@@ -147,6 +145,9 @@ public:
 
 	void set_shortcut(const Ref<Shortcut> &p_shortcut);
 	Ref<Shortcut> get_shortcut() const;
+
+	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+	virtual CursorShape get_cursor_shape(const Point2 &p_pos) const override;
 
 	virtual Control *make_custom_tooltip(const String &p_text) const override;
 
