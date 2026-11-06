@@ -61,6 +61,7 @@ class AudioEffectNoiseGate : public AudioEffect {
 	float attack_ms = 10.0f; ///< Time for gate to open
 	float release_ms = 200.0f; ///< Time for gate to close
 	float attenuation_db = -60.0f; ///< Gain floor (how much the signal is reduced) when gate is closed. -80 = full mute
+	bool invert = false; ///< Attenuate signals ABOVE the threshold instead of below
 
 protected:
 	static void _bind_methods();
@@ -79,6 +80,9 @@ public:
 
 	void set_attenuation_db(float p_attenuation_db);
 	float get_attenuation_db() const;
+
+	void set_invert(bool p_invert);
+	bool get_invert() const;
 
 	AudioEffectNoiseGate();
 };
