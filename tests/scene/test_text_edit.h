@@ -1844,6 +1844,14 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			CHECK(click_select_held->is_stopped());
 			sub_viewport->add_child(pushed_text_edit);
 
+			// Nor does releasing it in another window after the window loses focus.
+			pushed_text_edit->deselect();
+			sub_viewport->push_input(press);
+			MessageQueue::get_singleton()->flush();
+			CHECK_FALSE(click_select_held->is_stopped());
+			pushed_text_edit->notification(Control::NOTIFICATION_WM_WINDOW_FOCUS_OUT);
+			CHECK(click_select_held->is_stopped());
+
 			memdelete(sub_viewport);
 		}
 

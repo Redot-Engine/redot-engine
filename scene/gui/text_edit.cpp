@@ -891,6 +891,8 @@ void TextEdit::_notification(int p_what) {
 		case NOTIFICATION_WM_WINDOW_FOCUS_OUT: {
 			window_has_focus = false;
 			draw_caret = false;
+			// A release in another window never reaches gui_input.
+			click_select_held->stop();
 			queue_redraw();
 		} break;
 
