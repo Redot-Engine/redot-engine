@@ -56,9 +56,6 @@ class EditorSceneManager : public Node {
 
 	friend class EditorCore;
 
-	/// @note Any class that is intended to build an editor UI must be friended here!
-	friend class EditorNode;
-
 	static EditorSceneManager *singleton;
 
 	/// The core that owns this scene manager. Set in the constructor.
@@ -155,9 +152,6 @@ class EditorSceneManager : public Node {
 	/// Backs up and resets AnimationMixer state on the scene being saved so
 	/// editor-time playback isn't serialized into the PackedScene.
 	static void _reset_animation_mixers(Node *p_node, List<Pair<AnimationMixer *, Ref<AnimatedValuesBackup>>> *r_backups);
-	/// Builds the "unsaved changes" body text listing the currently open,
-	/// unsaved scenes for the close/discard confirmation dialog.
-	static String _get_unsaved_scene_dialog_text(String p_scene_filename, uint64_t p_started_timestamp);
 
 protected:
 	static void _bind_methods();
@@ -166,9 +160,29 @@ public:
 	static EditorSceneManager *get_singleton() { return singleton; }
 
 	bool is_changing_scene() const { return changing_scene; } ///< @returns `true` while the editor is in the middle of switching scenes.
+	void set_changing_scene(bool p_changing) { changing_scene = p_changing; }
+	/// Marks whether the editor is restoring the previous session's open scenes at startup.
+	void set_restoring_scenes(bool p_restoring) { restoring_scenes = p_restoring; }
 	bool has_unsaved_changes() const { return unsaved_cache; }
 	bool has_previous_closed_scenes() const { return !prev_closed_scenes.is_empty(); } ///< @returns `true` if there are recently closed scenes that can be reopened.
+	/// @returns The most recently closed scene path, or an empty string if none was closed.
+	String get_last_closed_scene() const { return prev_closed_scenes.is_empty() ? String() : prev_closed_scenes.back()->get(); }
 	Object *get_current_object() const { return current; }
+	void set_current_object(Object *p_object) { current = p_object; }
+
+	/// @returns The scene path deferred until the editor finishes its first filesystem scan (if any).
+	const String &get_defer_load_scene() const { return defer_load_scene; }
+	/// Clears the deferred scene path after it has been loaded.
+	void clear_defer_load_scene() { defer_load_scene = ""; }
+
+	/// @returns The index of the tab currently being closed, while a close confirmation is pending.
+	int get_tab_closing_idx() const { return tab_closing_idx; }
+	void set_tab_closing_idx(int p_idx) { tab_closing_idx = p_idx; }
+	/// @returns The menu option that was in progress when a tab-close confirmation interrupted it.
+	int get_tab_closing_menu_option() const { return tab_closing_menu_option; }
+	void set_tab_closing_menu_option(int p_option) { tab_closing_menu_option = p_option; }
+	/// Queues a scene path to be closed once pending close confirmations resolve.
+	void queue_tab_close(const String &p_scene_path) { tabs_to_close.push_back(p_scene_path); }
 
 	int new_scene(); ///< Creates a new empty scene tab; @return New scene's index.
 	/// Loads and opens a scene file in the editor, with options for ignoring broken dependencies or opening imported files.
@@ -213,6 +227,9 @@ public:
 	void _remove_scene(int p_index, bool p_change_tab = true);
 	void _mark_unsaved_scenes(); ///< Marks all scenes with unsaved modifications in their tab display.
 	bool _is_scene_unsaved(int p_idx); ///< @return `true` if the scene at the given tab index has unsaved changes.
+	/// Builds the "unsaved changes" body text listing the currently open,
+	/// unsaved scenes for the close/discard confirmation dialog.
+	static String _get_unsaved_scene_dialog_text(String p_scene_filename, uint64_t p_started_timestamp);
 	void _update_prev_closed_scenes(const String &p_scene_path, bool p_add_scene); ///< Maintains the stack of recently closed scenes for "reopen" support.
 	void _proceed_closing_scene_tabs(); ///< Continues closing queued scene tabs after confirmations resolve.
 	void _proceed_save_asing_scene_tabs(); ///< Continues the "Save As" flow across multiple scene tabs.

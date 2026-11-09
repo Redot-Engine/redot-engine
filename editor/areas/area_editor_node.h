@@ -6,28 +6,40 @@
 
 class AreaPane;
 class AreaSplit;
-class ColorRect;
-class VBoxContainer;
-class EditorMainScreen;
-class EditorBottomPanel;
-class EditorTitleBar;
-class EditorSceneTabs;
-class EditorRunBar;
-class EditorFileDialog;
-class DependencyErrorDialog;
-class DependencyEditor;
-class ConfirmationDialog;
-class AcceptDialog;
 class Button;
+class ColorRect;
+class ConfirmationDialog;
+class Control;
+class DependencyEditor;
+class DependencyErrorDialog;
+class EditorAbout;
+class EditorBuildProfileManager;
+class EditorBottomPanel;
+class EditorFileDialog;
+class EditorMainScreen;
+class EditorRunBar;
+class EditorSceneTabs;
+class EditorTitleBar;
+class ExportTemplateManager;
+class MenuBar;
+class OrphanResourcesDialog;
 class PopupMenu;
-class SubViewport;
-class VSplitContainer;
 class ProgressDialog;
+class ProjectUpgradeTool;
+class SubViewport;
+class UIDViewer;
+class VSplitContainer;
+class VBoxContainer;
 
 /**
  * Area-based editor shell implementing the EditorShell interface.
  * Uses a drag-and-drop area layout system instead of the traditional
  * dock-based layout. Integrates with EditorCore through set_shell().
+ *
+ * All functional behavior (menu dispatch, save/open flows, filesystem
+ * scan reactions, dialogs, quit/restart) comes from `EditorShell`; this
+ * class only provides the visual layout (title bar, menus, dialogs, and
+ * the `AreaPane`/`AreaSplit` grid).
  */
 class AreaEditorNode : public EditorShell {
 	GDCLASS(AreaEditorNode, EditorShell);
@@ -38,6 +50,7 @@ class AreaEditorNode : public EditorShell {
 
 	VBoxContainer *main_vbox = nullptr;
 	Control *layout_root = nullptr;
+	MenuBar *main_menu_bar = nullptr;
 	EditorMainScreen *editor_main_screen = nullptr;
 	EditorBottomPanel *bottom_panel = nullptr;
 	EditorTitleBar *title_bar = nullptr;
@@ -47,22 +60,41 @@ class AreaEditorNode : public EditorShell {
 	SubViewport *scene_root = nullptr;
 	AreaSplit *root_split = nullptr;
 
-	// ── Dialogs and menus ─────────────────────────────────────────────
+	// ── Menus ─────────────────────────────────────────────────────────
 
-	AcceptDialog *load_error_dialog = nullptr;
-	AcceptDialog *save_accept = nullptr;
-	AcceptDialog *warning = nullptr;
-	ConfirmationDialog *confirmation = nullptr;
-	ConfirmationDialog *save_confirmation = nullptr;
-	ConfirmationDialog *open_imported = nullptr;
-	DependencyErrorDialog *dependency_error = nullptr;
-	DependencyEditor *dependency_fixer = nullptr;
-	EditorFileDialog *file_dialog = nullptr;
-	ProgressDialog *progress_dialog = nullptr;
-	Button *new_inherited_button = nullptr;
 	PopupMenu *file_menu = nullptr;
+	PopupMenu *project_menu = nullptr;
+	PopupMenu *debug_menu = nullptr;
+	PopupMenu *settings_menu = nullptr;
+	PopupMenu *help_menu = nullptr;
 	PopupMenu *export_as_menu = nullptr;
 	PopupMenu *tool_menu = nullptr;
+	PopupMenu *recent_scenes = nullptr;
+
+	// ── Dialogs ───────────────────────────────────────────────────────
+
+	ConfirmationDialog *confirmation = nullptr;
+	Button *confirmation_button = nullptr;
+	ConfirmationDialog *save_confirmation = nullptr;
+	ConfirmationDialog *open_imported = nullptr;
+	Button *new_inherited_button = nullptr;
+	ConfirmationDialog *pick_main_scene = nullptr;
+	Button *select_current_scene_button = nullptr;
+
+	EditorFileDialog *file = nullptr;
+	EditorFileDialog *file_pack_zip = nullptr;
+	EditorFileDialog *file_export_lib = nullptr;
+
+	EditorAbout *about = nullptr;
+	ExportTemplateManager *export_template_manager = nullptr;
+	OrphanResourcesDialog *orphan_resources = nullptr;
+	EditorBuildProfileManager *build_profile_manager = nullptr;
+	UIDViewer *uid_viewer = nullptr;
+	ProjectUpgradeTool *project_upgrade_tool = nullptr;
+
+	DependencyErrorDialog *dependency_error = nullptr;
+	DependencyEditor *dependency_fixer = nullptr;
+	ProgressDialog *progress_dialog = nullptr;
 
 	// ── Drag and drop state ───────────────────────────────────────────
 
@@ -80,19 +112,20 @@ class AreaEditorNode : public EditorShell {
 
 	// ── Shell state ───────────────────────────────────────────────────
 
-	bool exiting = false;
-	bool dimmed = false;
-	bool cmdline_mode = false;
-	bool is_ready = false;
 	bool distraction_free = false;
-
-	int current_menu_option = 0;
 
 	AreaSplit *pending_offset_split = nullptr;
 	int pending_offset_px = 0;
 
-	/// Splits that need initial offset values set on first resize.
-	List<AreaSplit *> splits_needing_offset;
+	/// Initial offset for a layout split, applied once the split has a
+	/// non-zero size. `from_end` offsets are measured from the far end
+	/// of the split (i.e. they reserve `offset_px` for the second child).
+	struct InitialSplitOffset {
+		AreaSplit *split = nullptr;
+		int offset_px = 0;
+		bool from_end = false;
+	};
+	List<InitialSplitOffset> splits_needing_offset;
 
 	/// Test-harness counter used to title/color panes created by "+ Pane".
 	int pane_count = 0;
@@ -100,8 +133,15 @@ class AreaEditorNode : public EditorShell {
 protected:
 	static void _bind_methods();
 	void _notification(int p_what);
+	void _apply_theme_styles(const Ref<Theme> &p_theme) override;
 
 private:
+	/// Local handler for the "Export As..." submenu.
+	void _export_as_menu_option(int p_idx);
+
+	/// Local handler for the "Version Control" submenu.
+	void _version_control_menu_option(int p_idx);
+
 	/// Collects every AreaPane descendant of p_node into r_list.
 	void _collect_panes(Node *p_node, List<AreaPane *> &r_list);
 
@@ -139,52 +179,35 @@ public:
 
 	// ── EditorShell: Container access ─────────────────────────────────
 
-	Control *get_gui_base() override;
-	SubViewport *get_scene_root() override;
-	EditorMainScreen *get_editor_main_screen() override;
-	EditorBottomPanel *get_bottom_panel() override;
-	EditorTitleBar *get_title_bar() override;
-	EditorSceneTabs *get_scene_tabs() override;
-	EditorRunBar *get_project_run_bar() override;
-	VSplitContainer *get_top_split() override;
+	Control *get_gui_base() const override;
+	SubViewport *get_scene_root() const override;
+	EditorMainScreen *get_editor_main_screen() const override;
+	EditorBottomPanel *get_bottom_panel() const override;
+	EditorTitleBar *get_title_bar() const override;
+	EditorSceneTabs *get_scene_tabs() const override;
+	EditorRunBar *get_project_run_bar() const override;
+	VSplitContainer *get_top_split() const override;
 
-	// ── EditorShell: User feedback ────────────────────────────────────
+	// ── EditorShell: Dialog / menu accessors ──────────────────────────
 
-	void show_warning(const String &p_text, const String &p_title = TTR("Warning!")) override;
-	void show_accept(const String &p_text, const String &p_title) override;
-	void add_io_error(const String &p_error) override;
-	void add_io_warning(const String &p_warning) override;
-	bool immediate_confirmation_dialog(const String &p_text, const String &p_ok_text = TTR("Ok"), const String &p_cancel_text = TTR("Cancel"), uint32_t p_wrap_width = 0) override;
-	void _dialog_display_load_error(String p_file, Error p_error) override;
-	void _dialog_display_save_error(String p_file, Error p_error) override;
-
-	// ── EditorShell: Menu integration ─────────────────────────────────
-
-	void add_tool_menu_item(const String &p_name, const Callable &p_callback) override;
-	void add_tool_submenu_item(const String &p_name, PopupMenu *p_submenu) override;
-	void remove_tool_menu_item(const String &p_name) override;
+	EditorFileDialog *get_file_dialog() override;
+	Button *get_confirmation_button() override;
+	ConfirmationDialog *get_pick_main_scene_dialog() override;
+	Button *get_select_current_scene_button() override;
+	EditorAbout *get_about_dialog() override;
+	ExportTemplateManager *get_export_template_manager() override;
+	EditorFileDialog *get_pack_zip_file_dialog() override;
+	EditorFileDialog *get_export_lib_file_dialog() override;
+	OrphanResourcesDialog *get_orphan_resources_dialog() override;
+	EditorBuildProfileManager *get_build_profile_manager() override;
+	ProjectUpgradeTool *get_project_upgrade_tool() override;
+	UIDViewer *get_uid_viewer() override;
+	PopupMenu *get_recent_scenes_menu() override;
+	PopupMenu *get_tool_menu() override;
 	PopupMenu *get_export_as_menu() override;
-	void trigger_menu_option(int p_option, bool p_confirmed) override;
-
-	// ── EditorShell: State queries ────────────────────────────────────
-
-	bool is_exiting() const override;
-	bool is_editor_ready() const override;
-	void dim_editor(bool p_dimming) override;
-	bool is_editor_dimmed() const override;
-	void set_distraction_free_mode(bool p_enter) override;
-	void update_distraction_free_mode() override;
-	bool is_distraction_free_mode_enabled() const override;
-	bool is_cmdline_mode() override;
-	void notify_all_debug_sessions_exited() override;
-	OS::ProcessID has_child_process(OS::ProcessID p_pid) const override;
-	void stop_child_process(OS::ProcessID p_pid) override;
 
 	// ── EditorShell: State accessors used by core ─────────────────────
 
-	EditorFileDialog *get_file_dialog() override;
-	void set_current_menu_option(int p_option) override;
-	int get_current_menu_option() override;
 	DependencyErrorDialog *get_dependency_error_dialog() override;
 	DependencyEditor *get_dependency_fixer() override;
 
@@ -196,42 +219,20 @@ public:
 	ConfirmationDialog *get_open_imported_dialog() override;
 	Button *get_new_inherited_button() override;
 
-	// ── EditorShell: Run/debug ────────────────────────────────────────
+	// ── EditorShell: Distraction-free mode ────────────────────────────
+
+	void set_distraction_free_mode(bool p_enter) override;
+	void update_distraction_free_mode() override;
+	bool is_distraction_free_mode_enabled() const override;
+
+	// ── EditorShell: Run / debug ──────────────────────────────────────
 
 	int execute_and_show_output(const String &p_title, const String &p_path, const List<String> &p_arguments, bool p_close_on_ok, bool p_close_on_errors, String *r_output) override;
-	void restart_editor(bool p_goto_project_manager = false) override;
-	void _restart_editor(bool p_goto_project_manager = false) override;
-	void _exit_editor(int p_exit_code) override;
-	void open_export_template_manager() override;
 	bool validate_custom_directory() override;
-
-	// ── EditorShell: Drag/drop ────────────────────────────────────────
-
-	Dictionary drag_resource(const Ref<Resource> &p_res, Control *p_from) override;
-	Dictionary drag_files_and_dirs(const Vector<String> &p_paths, Control *p_from) override;
-	void save_editor_layout_delayed() override;
 
 	// ── EditorShell: Scene-session UI hooks ───────────────────────────
 
-	void _inherit_request(String p_file) override;
-	void _instantiate_request(const Vector<String> &p_files) override;
-	void _inherit_imported(const String &p_action) override;
-	void _open_imported() override;
-	bool _is_class_editor_disabled_by_feature_profile(const StringName &p_class) override;
 	void _save_scene_with_preview(String p_file, int p_idx = -1) override;
-	void _edit_current(bool p_skip_foreign = false, bool p_skip_inspector_update = false) override;
-	void edit_foreign_resource(const Ref<Resource> &p_resource) override;
-	void open_setting_override(const String &p_property) override;
-	bool ensure_main_scene(bool p_from_native) override;
-	bool close_scene() override;
-
-	// ── EditorShell: Shell UI bookkeeping ─────────────────────────────
-
-	void _update_title() override;
-	void _menu_option_confirm(int p_option, bool p_confirmed) override;
-	bool _is_closing_editor() const override;
-	void _add_to_recent_scenes(const String &p_scene) override;
-	void _add_to_history(const Object *p_object, const String &p_property, bool p_inspector_only) override;
 
 	AreaEditorNode();
 	~AreaEditorNode();

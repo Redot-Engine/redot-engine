@@ -202,9 +202,9 @@ void EditorSceneTabs::_update_context_menu() {
 
 	if (tab_id >= 0) {
 		scene_tabs_context_menu->add_separator();
-		scene_tabs_context_menu->add_item(TTR("Show in FileSystem"), SCENE_SHOW_IN_FILESYSTEM);
+		scene_tabs_context_menu->add_item(TTR("Show in FileSystem"), EditorShell::SCENE_SHOW_IN_FILESYSTEM);
 		DISABLE_LAST_OPTION_IF(!ResourceLoader::exists(EditorCore::get_singleton()->get_editor_data().get_scene_path(tab_id)));
-		scene_tabs_context_menu->add_item(TTR("Play This Scene"), SCENE_RUN);
+		scene_tabs_context_menu->add_item(TTR("Play This Scene"), EditorShell::SCENE_RUN);
 		DISABLE_LAST_OPTION_IF(no_root_node);
 
 		scene_tabs_context_menu->add_separator();
@@ -213,11 +213,11 @@ void EditorSceneTabs::_update_context_menu() {
 		scene_tabs_context_menu->add_shortcut(ED_GET_SHORTCUT("editor/reopen_closed_scene"), EditorShell::SCENE_OPEN_PREV);
 		scene_tabs_context_menu->set_item_text(-1, TTR("Undo Close Tab"));
 		DISABLE_LAST_OPTION_IF(!EditorSceneManager::get_singleton()->has_previous_closed_scenes());
-		scene_tabs_context_menu->add_item(TTR("Close Other Tabs"), SCENE_CLOSE_OTHERS);
+		scene_tabs_context_menu->add_item(TTR("Close Other Tabs"), EditorShell::SCENE_CLOSE_OTHERS);
 		DISABLE_LAST_OPTION_IF(EditorCore::get_singleton()->get_editor_data().get_edited_scene_count() <= 1);
-		scene_tabs_context_menu->add_item(TTR("Close Tabs to the Right"), SCENE_CLOSE_RIGHT);
+		scene_tabs_context_menu->add_item(TTR("Close Tabs to the Right"), EditorShell::SCENE_CLOSE_RIGHT);
 		DISABLE_LAST_OPTION_IF(EditorCore::get_singleton()->get_editor_data().get_edited_scene_count() == tab_id + 1);
-		scene_tabs_context_menu->add_item(TTR("Close All Tabs"), SCENE_CLOSE_ALL);
+		scene_tabs_context_menu->add_item(TTR("Close All Tabs"), EditorShell::SCENE_CLOSE_ALL);
 
 		const PackedStringArray paths = { EditorCore::get_singleton()->get_editor_data().get_scene_path(tab_id) };
 		EditorContextMenuPluginManager::get_singleton()->add_options_from_plugins(scene_tabs_context_menu, EditorContextMenuPlugin::CONTEXT_SLOT_SCENE_TABS, paths);

@@ -178,10 +178,6 @@ private:
 	EditorSceneTabs *scene_tabs = nullptr;
 	/// @}
 
-	bool exiting = false;
-	bool dimmed = false;
-
-	DisplayServer::WindowMode prev_mode = DisplayServer::WINDOW_MODE_MAXIMIZED;
 	int old_split_ofs = 0;
 	VSplitContainer *top_split = nullptr;
 	Control *vp_base = nullptr;
@@ -232,21 +228,15 @@ private:
 	Color last_system_accent_color = Color(0, 0, 0, 0);
 
 	PopupMenu *recent_scenes = nullptr;
-	String _recent_scene;
 
 	ConfirmationDialog *confirmation = nullptr;
-	bool stop_project_confirmation = false;
 	Button *confirmation_button = nullptr;
 	ConfirmationDialog *save_confirmation = nullptr;
 	ConfirmationDialog *import_confirmation = nullptr;
 	ConfirmationDialog *pick_main_scene = nullptr;
 	ConfirmationDialog *open_project_settings = nullptr;
 	Button *select_current_scene_button = nullptr;
-	AcceptDialog *accept = nullptr;
-	AcceptDialog *save_accept = nullptr;
 	EditorAbout *about = nullptr;
-	AcceptDialog *warning = nullptr;
-	EditorPlugin *plugin_to_save = nullptr;
 
 	int overridden_default_layout = -1;
 	Ref<ConfigFile> default_layout;
@@ -258,7 +248,6 @@ private:
 	ConfirmationDialog *remove_android_build_template = nullptr;
 	Label *install_android_build_template_message = nullptr;
 	OptionButton *choose_android_export_profile = nullptr;
-	Ref<EditorExportPreset> android_export_preset;
 
 	PopupMenu *vcs_actions_menu = nullptr;
 	EditorFileDialog *file = nullptr;
@@ -301,17 +290,10 @@ private:
 	bool scene_distraction_free = false;
 	bool script_distraction_free = false;
 
-	bool cmdline_mode = false;
-	bool immediate_dialog_confirmed = false;
-
-	bool requested_first_scan = false;
-	bool waiting_for_first_scan = true;
 	bool load_editor_layout_done = false;
 
 	HashSet<Ref<Translation>> tracked_translations;
 	bool pending_translation_notification = false;
-
-	int current_menu_option = 0;
 
 	SubViewport *scene_root = nullptr; ///< Root of the scene being edited.
 
@@ -337,25 +319,15 @@ private:
 	/// Returns true if the update spinner button should be shown (based on editor settings and whether the display mode uses it).
 	bool _should_display_update_spinner() const;
 
-	void _update_theme(bool p_skip_creation = false); ///< Rebuilds or refreshes the editor theme (e.g. after settings/system theme change).
-	void _dialog_action(String p_file); ///< Handles the user confirming a file dialog; dispatches on the pending action.
+	void _update_theme(bool p_skip_creation = false); ///< Thin wrapper around `EditorShell::_update_theme` (keeps the existing call sites working).
+	/// Applies EditorNode-specific theme style overrides (panel styleboxes, menu icons, dock styles).
+	void _apply_theme_styles(const Ref<Theme> &p_theme) override;
+	/// Updates the in-window project title label.
+	void _update_title_label(const String &p_title) override;
 
-	void _add_to_history(const Object *p_object, const String &p_property, bool p_inspector_only) override; ///< Records an edited object in the selection/edit history for back/forward nav.
-	void _dialog_display_save_error(String p_file, Error p_error); ///< Shows a dialog explaining why saving the given file failed.
-	void _dialog_display_load_error(String p_file, Error p_error); ///< Shows a dialog explaining why loading the given file failed.
-
-	void _menu_option(int p_option); ///< Executes a menu option that has already passed any confirmation gate.
-	void _menu_confirm_current(); ///< Re-runs the currently pending menu option as if the user confirmed it.
-	void _menu_option_confirm(int p_option, bool p_confirmed) override; /// Entry point for a menu option. If it needs confirmation, shows a dialog first and defers to `_menu_option` once confirmed.
-
-	void _android_build_source_selected(const String &p_file); ///< Handles the user picking an Android build source path in the file dialog.
-	void _android_export_preset_selected(int p_index); /// Handles selection of which export preset the Android build template uses.
-	void _android_install_build_template();
-	void _android_explore_build_templates(); ///< Opens the Android build templates directory in the OS file browser.
-
-	/// Schedules a screenshot of the editor window.  Simply calls `_screenshot()`, but this gets called from `_menu_option_confirm`
-	/// when screenshot is selected, which starts a `Timer`, which has to have a 0-argument function.
-	void _request_screenshot();
+	/// Takes a screenshot of the editor window. Simply calls `_screenshot()`; this is invoked by the
+	/// shell's `_menu_option_confirm` when screenshot is selected.
+	void _request_screenshot() override;
 	void _screenshot(bool p_use_utc = false);
 	void _save_screenshot(const String &p_path);
 	/// Saves a screenshot captured from an embedded (sub-window) process region.
@@ -363,18 +335,12 @@ private:
 
 	void _check_system_theme_changed(); ///< Polls whether the OS light/dark theme or accent color changed, so the editor theme can follow it.
 
-	void _tool_menu_option(int p_idx); ///< Handles a custom item added to the Project > Tools menu being triggered.
 	void _export_as_menu_option(int p_idx); ///< Handles a selection in the "Export As..." menu (e.g. mesh library export).
-	void _update_file_menu_opened(); ///< Refreshes the Scene/File menu contents each time it's opened (recents, enabled states, etc.).
 	void _palette_quick_open_dialog(); ///< Opens the quick-open dialog bound to the command palette path.
 
-	void _fs_changed(); ///< Handles filesystem-changed notifications; queues external-change scanning.
-
-	void _sources_changed(bool p_exist); ///< Handles non-resource source files (e.g. scripts) appearing/disappearing.
-	void _remove_lock_file(); ///< Deletes the editor's lock file on clean shutdown.  This is what's used to detect an improper shutdown and provide the option of recovery mode.
+	void _fs_changed() override; ///< Handles filesystem-changed notifications; runs the shared shell reactions first, then the deferred CLI export.
 
 	void _node_renamed(); ///< Handles a scene tree node being renamed (updates titles/paths as needed).
-	void _update_title() override; ///< Refreshes the window title (project name, current scene, unsaved marker).
 
 	void _version_control_menu_option(int p_idx); ///< Handles a selection in the Version Control menu.
 	/// Legacy: collapses the bottom panel by zeroing center_split's offset.
@@ -386,34 +352,17 @@ private:
 
 	// void _save_all_scenes();
 
-	void _cancel_confirmation(); ///< Cancels the pending generic confirmation dialog.
-	void _prepare_save_confirmation_popup(); ///< Builds the "unsaved changes" confirmation dialog contents before showing it.
-
-	void _inherit_request(String p_file); ///< Handles a request to create a new scene inheriting from the given file.
-	void _instantiate_request(const Vector<String> &p_files); ///< Handles a request to instantiate scene files into the current scene.
-
-	void _quick_opened(const String &p_file_path); ///< Handles a file being chosen in the Quick Open dialog.
 	void _open_command_palette();
-
-	void _project_run_started(); ///< Handles clearing output, etc... (optional) when running game
-	void _project_run_stopped(); ///< Handles closing bottom panel, etc... when stopping game
-
-	void _add_to_recent_scenes(const String &p_scene) override; ///< Adds a path to the recent-scenes list.
-	void _update_recent_scenes(); ///< Rebuilds the Recent Scenes popup contents from the stored list.
-	void _open_recent_scene(int p_idx); ///< Opens the recent scene at the given menu index.
 
 	void _dropped_files(const Vector<String> &p_files); ///< Handles files being drag-and-dropped onto the editor window.
 	void _add_dropped_files_recursive(const Vector<String> &p_files, String to_path); ///< Recursively imports/copies dropped files and folders to a target path.
 
-	void _update_vsync_mode(); ///< Applies the configured V-Sync mode to the editor window.
 	void _update_from_settings(); ///< Re-reads editor settings and applies anything that changed.
 
 	void _renderer_selected(int); ///< Handles the renderer option button selection changing.
 	void _update_renderer_color(); ///< Tints renderer menu entries (e.g. marks overridden renderers).
 	void _add_renderer_entry(const String &p_renderer_name, bool p_mark_overridden); ///< Adds a renderer choice to the renderer dropdown.
 	void _set_renderer_name_save_and_restart(); ///< Saves the chosen renderer and restarts the editor to apply it.
-
-	void _exit_editor(int p_exit_code);
 
 	/// Swallows all key events while the ProgressDialog is visible, so editor
 	/// shortcuts can't fire during a blocking operation — faking modal-popup
@@ -424,14 +373,22 @@ private:
 	virtual void shortcut_input(const Ref<InputEvent> &p_event) override; ///< Shortcut input hook (handles editor keyboard shortcuts).
 
 	void _find_node_types(Node *p_node, int &count_2d, int &count_3d); ///< Counts 2D vs 3D node types under a node (used to pick the default main screen).
-	void _save_scene_with_preview(String p_file, int p_idx = -1); ///< Saves a scene while rendering a preview thumbnail for it.
-	void _close_save_scene_progress(); ///< Tears down the scene-save progress indicator after saving completes.
-
-	bool _is_closing_editor() const override; ///< @return `true` while the editor is mid-shutdown/quit.
-	void _restart_editor(bool p_goto_project_manager = false); ///< Internal restart implementation, optionally landing in the project manager.
+	void _save_scene_with_preview(String p_file, int p_idx = -1) override; ///< Saves a scene while rendering a preview thumbnail for it.
+	void _close_save_scene_progress() override; ///< Tears down the scene-save progress indicator after saving completes.
 
 	void _save_editor_layout_to_config();
 	void _load_editor_layout_to_config();
+
+	/// Loads the editor layout once the first filesystem scan completes.
+	void _load_editor_layout_on_first_scan() override;
+	/// Saves the editor layout when the editor exits.
+	void _save_editor_layout_on_exit() override;
+	/// Saves a named editor layout to the given file (LAYOUT_SAVE).
+	void _save_layout(const String &p_file) override;
+	/// Deletes a named editor layout (LAYOUT_DELETE).
+	void _delete_layout(const String &p_file) override;
+	/// Applies the built-in default editor layout (LAYOUT_DEFAULT).
+	void _apply_default_layout() override;
 
 	void _save_central_editor_layout_to_config(Ref<ConfigFile> p_config_file);
 	void _load_central_editor_layout_from_config(Ref<ConfigFile> p_config_file);
@@ -446,12 +403,8 @@ private:
 
 	void _toggle_distraction_free_mode(); ///< Toggles distraction-free mode (hides docks/panels).
 
-	void _inherit_imported(const String &p_action); ///< Handles "new inherited scene" requests triggered from imported files.
-	void _open_imported(); ///< Handles the open-imported-file confirmation dialog being accepted.
+	void _update_update_spinner() override; ///< Rebuilds the update spinner menu and applies its update mode.
 
-	void _update_update_spinner(); ///< Rebuilds the update spinner menu and applies its update mode.
-
-	void _resources_changed(const Vector<String> &p_resources); ///< Handles resources changing on disk (reload prompts, live updates).
 	void _scan_external_changes(); ///< Scans the filesystem for external modifications to open resources.
 	void _reload_modified_scenes(); ///< Reloads open scenes that were modified outside the editor.
 	void _reload_project_settings();
@@ -462,25 +415,13 @@ private:
 	/// main-screen buttons based on which features the profile turns off.
 	/// Called when the active profile changes; re-enables everything if unset.
 	void _feature_profile_changed();
-	/// @return `true` if the feature profile disables editors for the given class.
-	bool _is_class_editor_disabled_by_feature_profile(const StringName &p_class);
-
-	/// Handles custom actions added to the main-scene picker dialog.
-	void _pick_main_scene_custom_action(const String &p_custom_action_name);
-
-	/// Slot for the ad-hoc `ConfirmationDialog` created by `immediate_confirmation_dialog()`: sets `immediate_dialog_confirmed`,
-	/// which breaks that function's manual event loop and becomes its
-	/// return value (true = OK pressed; false = dialog dismissed).
-	void _immediate_dialog_confirmed();
-
-	void _begin_first_scan(); ///< Kicks off the initial filesystem scan at editor startup.
 
 	/// Recursive function to inform nodes that an array of nodes have had their scene reimported.
 	/// It will attempt to call a method named '_nodes_scene_reimported' on every node in the
 	void _progress_dialog_visibility_changed(); ///< Open the io errors after the progress dialog is closed.
 	void _load_error_dialog_visibility_changed(); ///< Clears load errors if changed to not visible.
 
-	void _execute_upgrades(); ///< Runs pending project-upgrade steps queued for this session.
+	void _execute_upgrades() override; ///< Runs pending project-upgrade steps queued for this session.
 
 	bool _is_project_data_missing();
 
@@ -491,23 +432,42 @@ protected:
 	friend class FileSystemDock;
 
 	static void _bind_methods();
-	void _notification(int p_what);
+	void _notification(int p_what) override;
 
 public:
-	/// @todo This is a very naive estimation, but we need something now. Will be reworked later.
-	bool is_editor_ready() const override { return is_inside_tree() && !waiting_for_first_scan; } ///< @return `true` once the editor has finished its initial filesystem scan and is ready for use.
-
 	static EditorNode *get_singleton() { return singleton; } ///< @return The global `EditorNode` singleton (the one running editor instance).
 
-	EditorTitleBar *get_title_bar() override { return singleton->title_bar; } ///< @return The editor's top title bar widget.
-	VSplitContainer *get_top_split() override { return singleton->top_split; } ///< @return The vertical split containing the main editor area and bottom panel.
-	EditorBottomPanel *get_bottom_panel() override { return singleton->bottom_panel; } ///< @return The bottom panel container (Output, Debugger, etc.).
-	EditorMainScreen *get_editor_main_screen() override { return singleton->editor_main_screen; } ///< @returns The widget managing the main screen buttons (2D, 3D, Script, ...).
+	EditorTitleBar *get_title_bar() const override { return singleton->title_bar; } ///< @return The editor's top title bar widget.
+	VSplitContainer *get_top_split() const override { return singleton->top_split; } ///< @return The vertical split containing the main editor area and bottom panel.
+	EditorBottomPanel *get_bottom_panel() const override { return singleton->bottom_panel; } ///< @return The bottom panel container (Output, Debugger, etc.).
+	EditorMainScreen *get_editor_main_screen() const override { return singleton->editor_main_screen; } ///< @returns The widget managing the main screen buttons (2D, 3D, Script, ...).
+
+	// `EditorShell` dialog/menu accessors backed by this shell's widgets.
+	Button *get_confirmation_button() override { return confirmation_button; } ///< @returns The "OK" button shown next to the generic confirmation dialog.
+	ConfirmationDialog *get_pick_main_scene_dialog() override { return pick_main_scene; } ///< @returns The "pick a main scene" confirmation dialog.
+	Button *get_select_current_scene_button() override { return select_current_scene_button; } ///< @returns The "Select Current" button in the pick-main-scene dialog.
+	EditorAbout *get_about_dialog() override { return about; } ///< @returns The "About" dialog.
+	AcceptDialog *get_accept_dialog() override { return accept; } ///< @returns The generic "accept" dialog (pre-created and customized by this shell).
+	AcceptDialog *get_save_accept_dialog() override { return save_accept; } ///< @returns The "accept" dialog styled for save-related messages.
+	AcceptDialog *get_warning_dialog() override { return warning; } ///< @returns The warning dialog (adds a "Copy Text" button).
+	PopupMenu *get_recent_scenes_menu() override { return recent_scenes; } ///< @returns The "Recent Scenes" popup menu.
+	PopupMenu *get_tool_menu() override { return tool_menu; } ///< @returns The Project > Tools popup menu.
+	ExportTemplateManager *get_export_template_manager() override { return export_template_manager; } ///< @returns The "Export Template Manager" dialog.
+	EditorFileDialog *get_pack_zip_file_dialog() override { return file_pack_zip; } ///< @returns The "Export Project as ZIP" file dialog.
+	EditorFileDialog *get_export_lib_file_dialog() override { return file_export_lib; } ///< @returns The "Export Mesh Library" file dialog.
+	OrphanResourcesDialog *get_orphan_resources_dialog() override { return orphan_resources; } ///< @returns The Orphan Resources tool dialog.
+	EditorBuildProfileManager *get_build_profile_manager() override { return build_profile_manager; } ///< @returns The Build Profile Manager dialog.
+	ProjectUpgradeTool *get_project_upgrade_tool() override { return project_upgrade_tool; } ///< @returns The Project Upgrade tool.
+	UIDViewer *get_uid_viewer() override { return uid_viewer; } ///< @returns The UID Viewer window.
+	OptionButton *get_choose_android_export_profile() override { return choose_android_export_profile; } ///< @returns The "choose Android export preset" option button.
+	ConfirmationDialog *get_remove_android_build_template_dialog() override { return remove_android_build_template; } ///< @returns The "Android template already installed" warning dialog.
+	ConfirmationDialog *get_gradle_build_manage_templates_dialog() override { return gradle_build_manage_templates; } ///< @returns The "manage Android build templates" dialog.
+	ConfirmationDialog *get_install_android_build_template_dialog() override { return install_android_build_template; } ///< @returns The "install Android build template" dialog.
+	EditorFileDialog *get_file_android_build_source_dialog() override { return file_android_build_source; } ///< @returns The "select Android sources file" dialog.
+	Label *get_install_android_build_template_message() override { return install_android_build_template_message; } ///< @returns The info label inside the install-Android-build-template dialog.
 
 	// `EditorShell` state accessors used by the core.
 	EditorFileDialog *get_file_dialog() override { return file; } ///< @returns The general-purpose file dialog (open/save) driven by core resource operations.
-	void set_current_menu_option(int p_option) override { current_menu_option = p_option; } ///< Sets the menu option executed when the pending file dialog is confirmed.
-	int get_current_menu_option() override { return current_menu_option; } ///< @returns The menu option currently in progress (or -1 if none).
 	DependencyErrorDialog *get_dependency_error_dialog() override { return dependency_error; } ///< @returns The dialog that displays broken-dependency errors for a loaded resource.
 	DependencyEditor *get_dependency_fixer() override { return dependency_fixer; } ///< @returns The dependency editor (fixer) dialog.
 	PopupMenu *get_file_menu() override { return file_menu; } ///< @returns The Scene/File menu (for enabling/disabling items).
@@ -519,72 +479,32 @@ public:
 	void add_io_error(const String &p_error) override; ///< Queues an IO error message to be shown to the user in a dialog.
 	void add_io_warning(const String &p_warning) override; ///< Queues an IO warning message to be shown to the user in a dialog.
 
-	/// Shows a modal OK/Cancel dialog and blocks until the user answers;
-	/// @return `true` if the user accepted.
-	bool immediate_confirmation_dialog(const String &p_text, const String &p_ok_text = TTR("Ok"), const String &p_cancel_text = TTR("Cancel"), uint32_t p_wrap_width = 0) override;
-
-	bool is_cmdline_mode() override; ///< @return `true` if the editor is running in headless/command-line mode.
-
-	/// Triggers a menu action programmatically, as if the user clicked it;
-	/// @param p_confirmed pretends a confirmation dialog was already accepted.
-	void trigger_menu_option(int p_option, bool p_confirmed);
-
-	void update_distraction_free_mode(); ///< Refreshes the UI according to the current distraction-free mode state.
+	void update_distraction_free_mode() override; ///< Refreshes the UI according to the current distraction-free mode state.
 	// NOTE - only applies to hopefully legacy UI - truly dynamic windows should supersede this.
-	void set_distraction_free_mode(bool p_enter); /// Returns true if distraction-free mode is currently active.
-	bool is_distraction_free_mode_enabled() const;
+	void set_distraction_free_mode(bool p_enter) override; /// Returns true if distraction-free mode is currently active.
+	bool is_distraction_free_mode_enabled() const override;
 
 	void show_about() { _menu_option_confirm(HELP_ABOUT, false); } ///< Opens the About dialog.
 
-	void edit_foreign_resource(const Ref<Resource> &p_resource) override; ///< Opens a resource that belongs to another scene/instance for editing in its foreign context.
-	void _edit_current(bool p_skip_foreign = false, bool p_skip_inspector_update = false) override; ///< Re-triggers editing of the current object (pushes it to inspector and plugins).
-
-	SubViewport *get_scene_root() override { return scene_root; } ///< @returns the viewport that is the root of the scene being edited.
-	EditorSceneTabs *get_scene_tabs() override { return scene_tabs; } ///< @returns The widget managing the open scene tabs.
-	EditorRunBar *get_project_run_bar() override { return project_run_bar; } ///< @returns The run bar (play/stop controls).
+	SubViewport *get_scene_root() const override { return scene_root; } ///< @returns the viewport that is the root of the scene being edited.
+	EditorSceneTabs *get_scene_tabs() const override { return scene_tabs; } ///< @returns The widget managing the open scene tabs.
+	EditorRunBar *get_project_run_bar() const override { return project_run_bar; } ///< @returns The run bar (play/stop controls).
 
 	/// Toggles low-processor-usage mode when the editor window loses focus, to save CPU/battery in the background.
 	void set_unfocused_low_processor_usage_mode_enabled(bool p_enabled) override;
 
 	int execute_and_show_output(const String &p_title, const String &p_path, const List<String> &p_arguments, bool p_close_on_ok, bool p_close_on_errors, String *r_output) override;
 
-	void notify_all_debug_sessions_exited(); ///< Notifies the editor that all running debug sessions have ended.
-
-	/// @return The process ID if the given PID is a child process spawned by the editor (e.g. a running game instance), or an invalid ID otherwise.
-	OS::ProcessID has_child_process(OS::ProcessID p_pid) const;
-	void stop_child_process(OS::ProcessID p_pid); ///< Stops a child process previously spawned by the editor.
-
-	void show_accept(const String &p_text, const String &p_title); ///< Shows a simple informational "accept" dialog with the given text and title.
-	void show_save_accept(const String &p_text, const String &p_title); ///< Shows an "accept" dialog styled for save-related messages.
-	void show_warning(const String &p_text, const String &p_title = TTR("Warning!")); ///< Shows a warning dialog with the given text and title.
-
 	void _copy_warning(const String &p_str); ///< Internal handler that surfaces a warning when a copy operation fails.
 
 	/// Exports the project using the named export preset to the given path; supports debug builds, pack-only output, Android templates, and patches.
 	Error export_preset(const String &p_preset, const String &p_path, bool p_debug, bool p_pack_only, bool p_android_build_template, bool p_patch, const Vector<String> &p_patches);
 
-	Control *get_gui_base() override { return gui_base; } ///< @returns The root Control of the editor's GUI.
+	Control *get_gui_base() const override { return gui_base; } ///< @returns The root Control of the editor's GUI.
 
-	bool close_scene(); ///< Closes the current scene tab; returns false if the user cancelled.
+	void save_editor_layout_delayed() override; ///< Schedules the editor dock layout to be saved shortly (debounced).
 
-	void save_editor_layout_delayed(); ///< Schedules the editor dock layout to be saved shortly (debounced).
-
-	void open_export_template_manager(); ///< Opens the export template management dialog.
-
-	bool is_exiting() const { return exiting; } ///< @returns `true` if the editor is in the process of quitting.
-
-	Dictionary drag_resource(const Ref<Resource> &p_res, Control *p_from); ///< Builds drag-and-drop data for dragging a resource from a control.
-	Dictionary drag_files_and_dirs(const Vector<String> &p_paths, Control *p_from); ///< Builds drag-and-drop data for dragging files/folders from a control.
-
-	void add_tool_menu_item(const String &p_name, const Callable &p_callback); ///< Adds a custom item to the Project > Tools menu that calls the given callable.
-	void add_tool_submenu_item(const String &p_name, PopupMenu *p_submenu); ///< Adds a custom item to the Project > Tools menu that calls the given callable.
-	void remove_tool_menu_item(const String &p_name); ///< Removes an item previously added to the Tools menu.
-
-	PopupMenu *get_export_as_menu(); ///< @return The "Export As..." popup menu (for mesh libraries, etc.).
-
-	void restart_editor(bool p_goto_project_manager = false);
-
-	void open_setting_override(const String &p_property) override; ///< Opens the Project Settings dialog focused on an override property.
+	PopupMenu *get_export_as_menu() override; ///< @return The "Export As..." popup menu (for mesh libraries, etc.).
 
 	/// Adds a dock control to one of EditorNode's embedded dock slots.
 	void add_control_to_dock(int p_slot, Control *p_control, const Ref<Shortcut> &p_shortcut) override;
@@ -593,12 +513,8 @@ public:
 	/// Sets the tab icon for a dock control.
 	void set_dock_tab_icon(Control *p_control, const Ref<Texture2D> &p_icon) override;
 
-	void dim_editor(bool p_dimming); ///< Dims or undims the editor UI (e.g. while a modal is open).
-	bool is_editor_dimmed() const; ///< Returns true if the editor UI is currently dimmed.
-
 	EditorNode();
 	~EditorNode();
 
-	bool ensure_main_scene(bool p_from_native); ///< Ensures a main scene is set (prompting the user if needed); @return `true` if the project can run.
 	bool validate_custom_directory() override; ///< Checks the project's custom directory setting is valid.
 };

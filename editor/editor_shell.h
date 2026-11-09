@@ -38,21 +38,31 @@
 #include "core/templates/vector.h"
 #include "core/variant/dictionary.h"
 #include "core/variant/variant.h"
+#include "servers/display/display_server.h"
 
-#include "editor/docks/editor_dock_manager.h"
 #include "editor/editor_core.h"
 #include "editor/editor_scene_manager.h"
+#include "editor/export/editor_export.h"
 #include "editor/plugins/editor_plugin_manager.h"
 
+class AcceptDialog;
 class Button;
 class ColorPicker;
 class ConfirmationDialog;
 class Control;
 class DependencyEditor;
 class DependencyErrorDialog;
+class EditorAbout;
+class EditorBuildProfileManager;
 class EditorBottomPanel;
 class EditorData;
 class EditorFileDialog;
+class ExportTemplateManager;
+class Label;
+class OptionButton;
+class OrphanResourcesDialog;
+class ProjectUpgradeTool;
+class UIDViewer;
 class EditorFolding;
 class EditorMainScreen;
 class EditorPlugin;
@@ -69,23 +79,24 @@ class PopupMenu;
 class ProjectSettingsEditor;
 class Resource;
 class SubViewport;
+class Theme;
 class VSplitContainer;
 
 /**
- * Concrete base class for the editor's visual shell (the UI layer that sits
- * on top of `EditorCore`).
+ * Abstract base class for the editor's functional logic and visual shell.
  *
  * `EditorShell` aggregates the editor's decoupled functional components —
- * `EditorCore`, `EditorSceneManager`, and `EditorPluginManager` — and exposes
- * their functional operations as concrete delegates. A shell therefore only
- * has to implement the genuinely visual parts (the pure virtuals below):
- * containers, user feedback, menus, window state, drag-and-drop, and the
- * scene-session UI hooks.
+ * `EditorCore`, `EditorSceneManager`, and `EditorPluginManager` — and owns
+ * the editor's FUNCTIONAL behavior: menu dispatch, save/open flows,
+ * filesystem-scan reactions, title updates, dialogs, and the quit/restart
+ * flow. A concrete shell (e.g. `EditorNode`, `AreaEditorNode`) therefore
+ * only has to provide the genuinely visual parts (the pure virtuals
+ * below): containers, menus, dialogs, window state, and the
+ * scene-session UI hooks specific to its layout.
  *
- * It is a plain C++ base class: NOT a `Node`, NOT a `RefCounted`, and NOT a
- * singleton. The three component pointers are non-owning; they are wired by
- * `EditorCore::set_shell()` when a concrete shell (e.g. `EditorNode`)
- * registers itself, and are `nullptr` until then.
+ * It is a `Node`-based class (NOT a singleton). The three component
+ * pointers are non-owning; they are wired by `EditorCore::set_shell()`
+ * when a concrete shell registers itself, and are `nullptr` until then.
  */
 class EditorShell : public Node {
 	GDCLASS(EditorShell, Node);
@@ -102,16 +113,16 @@ protected:
 public:
 	virtual ~EditorShell() = default;
 
-	/// The quick-open dialogs are owned by `EditorCore` but parented into the
-	/// shell's GUI tree. Unparent them on predelete — which runs before the
-	/// shell's subtree (and thus the dialogs) is freed — so that `EditorCore`'s
-	/// destructor remains the single deletion point and does not double-free
-	/// them during SceneTree teardown.
-	void _notification(int p_what) {
-		if (p_what == NOTIFICATION_PREDELETE && editor_core) {
-			editor_core->unparent_quick_open_dialogs();
-		}
-	}
+	/// Default shell notification handler: unparents the core-owned
+	/// quick-open dialogs on predelete — which runs before the shell's
+	/// subtree (and thus the dialogs) is freed — so that `EditorCore`'s
+	/// destructor remains the single deletion point and does not
+	/// double-free them during SceneTree teardown; kicks the deferred
+	/// first filesystem scan (`_begin_first_scan`) once the shell is
+	/// processing; and routes window close requests into the quit flow.
+	/// Concrete shells may override and must call `EditorShell::_notification()`
+	/// first to keep this behavior.
+	virtual void _notification(int p_what);
 
 	/// The menu options dispatched by a shell through `trigger_menu_option`
 	/// and the pending file-dialog option (`set_current_menu_option`).
@@ -196,6 +207,13 @@ public:
 		RESOURCE_SAVE,
 		RESOURCE_SAVE_AS,
 		SETTINGS_PICK_MAIN_SCENE,
+
+		// Scene tab context menu.
+		SCENE_SHOW_IN_FILESYSTEM = 1000, ///< Prevents conflicts with other menu option IDs.
+		SCENE_RUN,
+		SCENE_CLOSE_OTHERS,
+		SCENE_CLOSE_RIGHT,
+		SCENE_CLOSE_ALL,
 	};
 
 	enum ActionOnPlay {
@@ -218,6 +236,46 @@ public:
 	EditorSceneManager *scene_manager = nullptr;
 	/// The plugin registry.
 	EditorPluginManager *plugin_manager = nullptr;
+
+	// ── Shared shell state ──────────────────────────────────────────────
+	// Functional state shared by every shell (menu flow, quit flow, first-scan
+	// state). Concrete shells keep their own additional visual state.
+
+	/// The menu option currently in progress (or -1 if none).
+	int current_menu_option = 0;
+	/// `true` while a "stop running project before quitting?" confirmation is pending.
+	bool stop_project_confirmation = false;
+	/// Plugin whose external data should be saved on quit, if any.
+	EditorPlugin *plugin_to_save = nullptr;
+	/// Window mode to restore when toggling fullscreen off.
+	DisplayServer::WindowMode prev_mode = DisplayServer::WINDOW_MODE_MAXIMIZED;
+	/// `true` if the editor is in the process of quitting.
+	bool exiting = false;
+	/// `true` if the editor UI is currently dimmed.
+	bool dimmed = false;
+	/// `true` if the editor is running in headless / command-line mode.
+	bool cmdline_mode = false;
+	/// `true` while the editor waits for the initial filesystem scan to finish.
+	bool waiting_for_first_scan = true;
+	/// `true` once a shell has requested the first filesystem scan (fired from processing).
+	bool requested_first_scan = false;
+	/// Result of the most recent `immediate_confirmation_dialog()` poll.
+	bool immediate_dialog_confirmed = false;
+	/// Export preset selected for installing the Android build template from file.
+	Ref<EditorExportPreset> android_export_preset;
+
+	/// Backs the default `get_accept_dialog()` implementation (created lazily
+	/// by it, parented to `get_gui_base()`). Replaced by a shell's own dialog
+	/// when that shell overrides the accessor (e.g. `EditorNode`).
+	AcceptDialog *accept = nullptr;
+	/// Backs the default `get_save_accept_dialog()` implementation (created
+	/// lazily by it, parented to `get_gui_base()`). Replaced by a shell's own
+	/// dialog when that shell overrides the accessor.
+	AcceptDialog *save_accept = nullptr;
+	/// Backs the default `get_warning_dialog()` implementation (created lazily
+	/// by it, parented to `get_gui_base()`). Replaced by a shell's own dialog
+	/// when that shell overrides the accessor.
+	AcceptDialog *warning = nullptr;
 
 	void set_editor_core(EditorCore *p_editor_core) { editor_core = p_editor_core; }
 	void set_scene_manager(EditorSceneManager *p_scene_manager) { scene_manager = p_scene_manager; }
@@ -326,86 +384,194 @@ public:
 	/// Performs editor shutdown cleanup (clears registered init callbacks).
 	void cleanup() { plugin_manager->cleanup(); }
 
-	// ── Container access ──────────────────────────────────────────────────
+	// ── Container access (shell-specific UI, provided by each shell) ───
 
 	/// @returns The root `Control` of the editor's GUI.
-	virtual Control *get_gui_base() = 0;
+	virtual Control *get_gui_base() const = 0;
 
 	/// @returns The viewport that is the root of the scene being edited.
-	virtual SubViewport *get_scene_root() = 0;
+	virtual SubViewport *get_scene_root() const = 0;
 
 	/// @returns The widget managing the main-screen buttons (2D, 3D, Script, …).
-	virtual EditorMainScreen *get_editor_main_screen() = 0;
+	virtual EditorMainScreen *get_editor_main_screen() const = 0;
 
 	/// @returns The bottom panel container (Output, Debugger, …).
-	virtual EditorBottomPanel *get_bottom_panel() = 0;
+	virtual EditorBottomPanel *get_bottom_panel() const = 0;
 
 	/// @returns The editor's top title-bar widget.
-	virtual EditorTitleBar *get_title_bar() = 0;
+	virtual EditorTitleBar *get_title_bar() const = 0;
 
 	/// @returns The widget managing the open scene tabs.
-	virtual EditorSceneTabs *get_scene_tabs() = 0;
+	virtual EditorSceneTabs *get_scene_tabs() const = 0;
 
 	/// @returns The run bar (play/stop controls).
-	virtual EditorRunBar *get_project_run_bar() = 0;
+	virtual EditorRunBar *get_project_run_bar() const = 0;
 
 	/// @returns The vertical split containing the main editor area and bottom panel.
-	virtual VSplitContainer *get_top_split() = 0;
+	virtual VSplitContainer *get_top_split() const = 0;
+
+	// ── Dialog / menu accessors used by the functional logic ────────────
+
+	/// @returns The general-purpose file dialog (open/save) driven by core
+	/// resource operations such as `save_resource_as`.
+	virtual EditorFileDialog *get_file_dialog() = 0;
+
+	/// @returns The generic "accept" dialog. By default this lazily creates a
+	/// plain `AcceptDialog` (autowrap, 600px min width) parented to
+	/// `get_gui_base()`; a concrete shell may override to supply its own
+	/// styled dialog (e.g. `EditorNode` pre-creates and customizes one).
+	virtual AcceptDialog *get_accept_dialog();
+
+	/// @returns The "accept" dialog styled for save-related messages. By
+	/// default this lazily creates a plain `AcceptDialog` parented to
+	/// `get_gui_base()`; a concrete shell may override to supply its own.
+	virtual AcceptDialog *get_save_accept_dialog();
+
+	/// @returns The warning dialog. By default this lazily creates a plain
+	/// `AcceptDialog` parented to `get_gui_base()`; a concrete shell may
+	/// override to supply its own styled dialog (e.g. `EditorNode` adds a
+	/// "Copy Text" button).
+	virtual AcceptDialog *get_warning_dialog();
+
+	/// @returns The "OK" button shown next to the generic confirmation dialog.
+	virtual Button *get_confirmation_button() = 0;
+
+	/// @returns The "pick a main scene" confirmation dialog.
+	virtual ConfirmationDialog *get_pick_main_scene_dialog() = 0;
+
+	/// @returns The "Select Current" button in the pick-main-scene dialog.
+	virtual Button *get_select_current_scene_button() = 0;
+
+	/// @returns The "About" dialog.
+	virtual EditorAbout *get_about_dialog() = 0;
+
+	/// @returns The "Export Template Manager" dialog (nullable if the shell has none).
+	virtual ExportTemplateManager *get_export_template_manager() { return nullptr; }
+
+	/// @returns The "Export Project as ZIP" file dialog (nullable if the shell has none).
+	virtual EditorFileDialog *get_pack_zip_file_dialog() { return nullptr; }
+
+	/// @returns The "Export Mesh Library" file dialog (nullable if the shell has none).
+	virtual EditorFileDialog *get_export_lib_file_dialog() { return nullptr; }
+
+	/// @returns The Orphan Resources tool dialog (nullable if the shell has none).
+	virtual OrphanResourcesDialog *get_orphan_resources_dialog() { return nullptr; }
+
+	/// @returns The Build Profile Manager dialog (nullable if the shell has none).
+	virtual EditorBuildProfileManager *get_build_profile_manager() { return nullptr; }
+
+	/// @returns The Project Upgrade tool (nullable if the shell has none).
+	virtual ProjectUpgradeTool *get_project_upgrade_tool() { return nullptr; }
+
+	/// @returns The UID Viewer window (nullable if the shell has none).
+	virtual UIDViewer *get_uid_viewer() { return nullptr; }
+
+	/// @returns The "choose Android export preset" option button (nullable if the shell has none).
+	virtual OptionButton *get_choose_android_export_profile() { return nullptr; }
+
+	/// @returns The "Android template already installed" warning dialog (nullable if the shell has none).
+	virtual ConfirmationDialog *get_remove_android_build_template_dialog() { return nullptr; }
+
+	/// @returns The "manage Android build templates" dialog (nullable if the shell has none).
+	virtual ConfirmationDialog *get_gradle_build_manage_templates_dialog() { return nullptr; }
+
+	/// @returns The "install Android build template" dialog (nullable if the shell has none).
+	virtual ConfirmationDialog *get_install_android_build_template_dialog() { return nullptr; }
+
+	/// @returns The "select Android sources file" dialog (nullable if the shell has none).
+	virtual EditorFileDialog *get_file_android_build_source_dialog() { return nullptr; }
+
+	/// @returns The info label inside the install-Android-build-template dialog (nullable if the shell has none).
+	virtual Label *get_install_android_build_template_message() { return nullptr; }
+
+	/// @returns The "Recent Scenes" popup menu (each shell provides one).
+	virtual PopupMenu *get_recent_scenes_menu() = 0;
+
+	/// @returns The Project > Tools popup menu (each shell provides one).
+	virtual PopupMenu *get_tool_menu() = 0;
 
 	// ── User feedback ─────────────────────────────────────────────────────
 
-	/// Shows a warning dialog with the given text and title.
-	virtual void show_warning(const String &p_text, const String &p_title = TTR("Warning!")) = 0;
-
 	/// Shows a simple informational "accept" dialog with the given text and title.
-	virtual void show_accept(const String &p_text, const String &p_title) = 0;
+	/// The dialog is lazily created (and parented to `get_gui_base()`) if the
+	/// shell did not create it.
+	virtual void show_accept(const String &p_text, const String &p_title);
+
+	/// Shows an "accept" dialog styled for save-related messages.
+	virtual void show_save_accept(const String &p_text, const String &p_title);
+
+	/// Shows a warning dialog with the given text and title.
+	virtual void show_warning(const String &p_text, const String &p_title = TTR("Warning!"));
 
 	/// Queues an IO error message to be shown to the user in a dialog.
-	virtual void add_io_error(const String &p_error) = 0;
+	/// The default surfaces it through `show_warning`; shells may override
+	/// with a richer presentation.
+	virtual void add_io_error(const String &p_error);
 
 	/// Queues an IO warning message to be shown to the user in a dialog.
-	virtual void add_io_warning(const String &p_warning) = 0;
+	virtual void add_io_warning(const String &p_warning);
 
 	/// Shows a modal OK/Cancel dialog and blocks until the user answers.
 	/// @return `true` if the user accepted.
-	virtual bool immediate_confirmation_dialog(const String &p_text, const String &p_ok_text = TTR("Ok"), const String &p_cancel_text = TTR("Cancel"), uint32_t p_wrap_width = 0) = 0;
+	virtual bool immediate_confirmation_dialog(const String &p_text, const String &p_ok_text = TTR("Ok"), const String &p_cancel_text = TTR("Cancel"), uint32_t p_wrap_width = 0);
 
 	/// Shows a dialog explaining why loading the given file failed.
-	virtual void _dialog_display_load_error(String p_file, Error p_error) = 0;
+	virtual void _dialog_display_load_error(String p_file, Error p_error);
 
 	/// Shows a dialog explaining why saving the given file failed.
-	virtual void _dialog_display_save_error(String p_file, Error p_error) = 0;
+	virtual void _dialog_display_save_error(String p_file, Error p_error);
 
 	// ── Menu integration ──────────────────────────────────────────────────
 
 	/// Adds a custom item to the Project > Tools menu that calls the given callable.
-	virtual void add_tool_menu_item(const String &p_name, const Callable &p_callback) = 0;
+	virtual void add_tool_menu_item(const String &p_name, const Callable &p_callback);
 
 	/// Adds a custom submenu item to the Project > Tools menu.
-	virtual void add_tool_submenu_item(const String &p_name, PopupMenu *p_submenu) = 0;
+	virtual void add_tool_submenu_item(const String &p_name, PopupMenu *p_submenu);
 
 	/// Removes an item previously added to the Tools menu.
-	virtual void remove_tool_menu_item(const String &p_name) = 0;
+	virtual void remove_tool_menu_item(const String &p_name);
 
 	/// @returns The "Export As…" popup menu (for mesh libraries, etc.).
 	virtual PopupMenu *get_export_as_menu() = 0;
 
 	/// Triggers a menu action programmatically, as if the user clicked it.
-	virtual void trigger_menu_option(int p_option, bool p_confirmed) = 0;
+	virtual void trigger_menu_option(int p_option, bool p_confirmed);
+
+	// ── Theme / title ─────────────────────────────────────────────────────
+
+	/// Refreshes the window title (project name, current scene, unsaved marker).
+	virtual void _update_title();
+
+	/// Applies the configured V-Sync mode to the editor window.
+	virtual void _update_vsync_mode();
+
+	/// Rebuilds (or refreshes, with `p_skip_creation`) the editor theme and
+	/// applies it to the shell and its window, then delegates shell-specific
+	/// style application to `_apply_theme_styles`.
+	virtual void _update_theme(bool p_skip_creation = false);
+
+	/// Hook for shell-specific theme style overrides (e.g. panel styleboxes,
+	/// menu icons). The default does nothing.
+	virtual void _apply_theme_styles(const Ref<Theme> &p_theme) {}
+
+	/// Hook for updating a shell-specific title label. The default does
+	/// nothing (the window title itself is set by `_update_title`).
+	virtual void _update_title_label(const String &p_title) {}
 
 	// ── Shell state / queries ─────────────────────────────────────────────
 
 	/// @returns `true` if the editor is in the process of quitting.
-	virtual bool is_exiting() const = 0;
+	virtual bool is_exiting() const;
 
 	/// @returns `true` once the editor has finished its initial filesystem scan and is ready for use.
-	virtual bool is_editor_ready() const = 0;
+	virtual bool is_editor_ready() const;
 
 	/// Dims or undims the editor UI (e.g. while a modal is open).
-	virtual void dim_editor(bool p_dimming) = 0;
+	virtual void dim_editor(bool p_dimming);
 
 	/// @returns `true` if the editor UI is currently dimmed.
-	virtual bool is_editor_dimmed() const = 0;
+	virtual bool is_editor_dimmed() const;
 
 	/// Enters or exits distraction-free mode.
 	virtual void set_distraction_free_mode(bool p_enter) = 0;
@@ -417,29 +583,25 @@ public:
 	virtual bool is_distraction_free_mode_enabled() const = 0;
 
 	/// @returns `true` if the editor is running in headless / command-line mode.
-	virtual bool is_cmdline_mode() = 0;
+	virtual bool is_cmdline_mode();
 
 	/// Notifies the editor that all running debug sessions have ended.
-	virtual void notify_all_debug_sessions_exited() = 0;
+	virtual void notify_all_debug_sessions_exited();
 
 	/// @returns The process ID if the given PID is a child process spawned by the editor, or an invalid ID otherwise.
-	virtual OS::ProcessID has_child_process(OS::ProcessID p_pid) const = 0;
+	virtual OS::ProcessID has_child_process(OS::ProcessID p_pid) const;
 
 	/// Stops a child process previously spawned by the editor.
-	virtual void stop_child_process(OS::ProcessID p_pid) = 0;
+	virtual void stop_child_process(OS::ProcessID p_pid);
 
 	// ── Shell state accessors used by the core ───────────────────────────────
 
-	/// @returns The general-purpose file dialog (open/save) driven by core
-	/// resource operations such as `save_resource_as`.
-	virtual EditorFileDialog *get_file_dialog() = 0;
-
 	/// Sets the menu option that will be executed when the pending file dialog
 	/// is confirmed.
-	virtual void set_current_menu_option(int p_option) = 0;
+	virtual void set_current_menu_option(int p_option);
 
 	/// @returns The menu option currently in progress (or -1 if none).
-	virtual int get_current_menu_option() = 0;
+	virtual int get_current_menu_option();
 
 	/// @returns The dialog that displays broken-dependency errors for a loaded resource.
 	virtual DependencyErrorDialog *get_dependency_error_dialog() = 0;
@@ -472,16 +634,16 @@ public:
 	virtual int execute_and_show_output(const String &p_title, const String &p_path, const List<String> &p_arguments, bool p_close_on_ok, bool p_close_on_errors, String *r_output) = 0;
 
 	/// Restarts the editor, optionally landing in the project manager.
-	virtual void restart_editor(bool p_goto_project_manager = false) = 0;
+	virtual void restart_editor(bool p_goto_project_manager = false);
 
 	/// Internal restart implementation, optionally landing in the project manager.
-	virtual void _restart_editor(bool p_goto_project_manager = false) = 0;
+	virtual void _restart_editor(bool p_goto_project_manager = false);
 
 	/// Shuts the editor down with the given exit code.
-	virtual void _exit_editor(int p_exit_code) = 0;
+	virtual void _exit_editor(int p_exit_code);
 
 	/// Opens the export template management dialog.
-	virtual void open_export_template_manager() = 0;
+	virtual void open_export_template_manager();
 
 	/// Validates the project's custom user-data directory, prompting the user
 	/// to fix it if invalid.
@@ -490,28 +652,28 @@ public:
 
 	// ── Plugin dock integration ───────────────────────────────────────────
 
-	/// Adds a plugin dock control to the given dock slot (see `EditorDockManager::DockSlot`).
-	/// The default implementation routes the dock to the shared `EditorDockManager`
-	/// (floating dock windows); `EditorNode` overrides it to use its embedded slots.
+	/// Adds a plugin dock control to the given dock slot (see the dock slot
+	/// enum of the shell's dock system).
+	/// The default implementation does nothing; shells that support plugin
+	/// docks (e.g. `EditorNode`) override it to route the dock to their dock
+	/// system.
 	virtual void add_control_to_dock(int p_slot, Control *p_control, const Ref<Shortcut> &p_shortcut) {
-		EditorDockManager *dm = EditorDockManager::get_singleton();
-		if (!dm) {
-			ERR_PRINT("Cannot add dock: no EditorDockManager is available for this shell.");
-			return;
-		}
-		dm->add_dock(p_control, String(), EditorDockManager::DockSlot(p_slot), p_shortcut);
+		ERR_PRINT(vformat("Cannot add dock: this shell does not support plugin docks (slot %d).", p_slot));
+		(void)p_control;
+		(void)p_shortcut;
 	}
 	/// Removes a plugin dock control from all dock slots.
+	/// The default implementation does nothing; shells that support plugin
+	/// docks (e.g. `EditorNode`) override it.
 	virtual void remove_control_from_docks(Control *p_control) {
-		if (EditorDockManager::get_singleton()) {
-			EditorDockManager::get_singleton()->remove_dock(p_control);
-		}
+		(void)p_control;
 	}
 	/// Sets the tab icon of a plugin dock control.
+	/// The default implementation does nothing; shells that support plugin
+	/// docks (e.g. `EditorNode`) override it.
 	virtual void set_dock_tab_icon(Control *p_control, const Ref<Texture2D> &p_icon) {
-		if (EditorDockManager::get_singleton()) {
-			EditorDockManager::get_singleton()->set_dock_tab_icon(p_control, p_icon);
-		}
+		(void)p_control;
+		(void)p_icon;
 	}
 
 	/// Enables or disables the low-processor-usage mode applied while the
@@ -522,13 +684,74 @@ public:
 	// ── Drag / drop ───────────────────────────────────────────────────────
 
 	/// Builds drag-and-drop data for dragging a resource from a control.
-	virtual Dictionary drag_resource(const Ref<Resource> &p_res, Control *p_from) = 0;
+	virtual Dictionary drag_resource(const Ref<Resource> &p_res, Control *p_from);
 
 	/// Builds drag-and-drop data for dragging files/folders from a control.
-	virtual Dictionary drag_files_and_dirs(const Vector<String> &p_paths, Control *p_from) = 0;
+	virtual Dictionary drag_files_and_dirs(const Vector<String> &p_paths, Control *p_from);
 
 	/// Schedules the editor dock layout to be saved shortly (debounced).
-	virtual void save_editor_layout_delayed() = 0;
+	/// The default does nothing; shells with a dock layout override it.
+	virtual void save_editor_layout_delayed() {}
+
+	// ── Filesystem scan reactions ─────────────────────────────────────────
+
+	/// Handles filesystem-changed notifications: invalidates core file
+	/// dialogs and marks unsaved scenes. Shells with additional reactions
+	/// (e.g. deferred CLI exports) override and call `EditorShell::_fs_changed()`.
+	virtual void _fs_changed();
+
+	/// Handles non-resource source files (e.g. scripts) appearing/disappearing;
+	/// also completes the initial filesystem scan (layout load, deferred scene
+	/// load, preview thread, lock-file removal).
+	virtual void _sources_changed(bool p_exist);
+
+	/// Handles resources changing on disk (reload prompts, live updates).
+	virtual void _resources_changed(const Vector<String> &p_resources);
+
+	/// Deletes the editor's lock file on clean shutdown.
+	virtual void _remove_lock_file();
+
+	/// Kicks off the initial filesystem scan at editor startup (deferred to
+	/// the first `NOTIFICATION_PROCESS`).
+	virtual void _begin_first_scan();
+
+	/// Runs pending project-upgrade steps queued for this session, once the
+	/// first filesystem scan completes. The default does nothing; shells
+	/// owning an upgrade tool override it.
+	virtual void _execute_upgrades() {}
+
+	// ── Menu flow ──────────────────────────────────────────────────────────
+
+	/// Entry point for a menu option; shows a confirmation dialog when needed
+	/// and defers to `_menu_option_confirm` once confirmed.
+	virtual void _menu_option(int p_option);
+
+	/// Re-runs the currently pending menu option as if the user confirmed it.
+	virtual void _menu_confirm_current();
+
+	/// Entry point for a menu option. If it needs confirmation, shows a dialog
+	/// first and defers to the shell's `_menu_option` once confirmed.
+	virtual void _menu_option_confirm(int p_option, bool p_confirmed);
+
+	/// Handles the user confirming a file dialog; dispatches on the pending action.
+	virtual void _dialog_action(String p_file);
+
+	/// Handles a custom item added to the Project > Tools menu being triggered.
+	virtual void _tool_menu_option(int p_idx);
+
+	/// Refreshes the Scene/File menu contents each time it's opened (enabled states, etc.).
+	virtual void _update_file_menu_opened();
+
+	/// Handles a file being chosen in the Quick Open dialog.
+	virtual void _quick_opened(const String &p_file_path);
+
+	/// Requests a screenshot of the editor window. The default does nothing;
+	/// shells with a screenshot feature override it.
+	virtual void _request_screenshot() {}
+
+	/// Rebuilds the update spinner menu and applies its update mode. The
+	/// default does nothing; shells with an update spinner override it.
+	virtual void _update_update_spinner() {}
 
 	// ── Scene-session UI hooks ────────────────────────────────────────────
 	// These are the cross-boundary operations that the scene manager (or other
@@ -537,54 +760,124 @@ public:
 	// concrete shell type.
 
 	/// Handles a request to create a new scene inheriting from the given file.
-	virtual void _inherit_request(String p_file) = 0;
+	virtual void _inherit_request(String p_file);
 
 	/// Handles a request to instantiate scene files into the current scene.
-	virtual void _instantiate_request(const Vector<String> &p_files) = 0;
+	virtual void _instantiate_request(const Vector<String> &p_files);
 
 	/// Handles "new inherited scene" requests triggered from imported files.
-	virtual void _inherit_imported(const String &p_action) = 0;
+	virtual void _inherit_imported(const String &p_action);
 
 	/// Handles the open-imported-file confirmation dialog being accepted.
-	virtual void _open_imported() = 0;
+	virtual void _open_imported();
 
 	/// @returns `true` if the feature profile disables editors for the given class.
-	virtual bool _is_class_editor_disabled_by_feature_profile(const StringName &p_class) = 0;
+	virtual bool _is_class_editor_disabled_by_feature_profile(const StringName &p_class);
 
 	/// Saves a scene while rendering a preview thumbnail for it.
 	virtual void _save_scene_with_preview(String p_file, int p_idx = -1) = 0;
 
+	/// Tears down the scene-save progress indicator after saving completes.
+	/// The default does nothing; shells with a save progress indicator override it.
+	virtual void _close_save_scene_progress() {}
+
 	/// Re-triggers editing of the current object (pushes it to inspector and plugins).
-	virtual void _edit_current(bool p_skip_foreign = false, bool p_skip_inspector_update = false) = 0;
+	virtual void _edit_current(bool p_skip_foreign = false, bool p_skip_inspector_update = false);
 
 	/// Opens a resource that belongs to another scene/instance for editing in its foreign context.
-	virtual void edit_foreign_resource(const Ref<Resource> &p_resource) = 0;
+	virtual void edit_foreign_resource(const Ref<Resource> &p_resource);
 
 	/// Opens the Project Settings dialog focused on the given override property.
-	virtual void open_setting_override(const String &p_property) = 0;
+	virtual void open_setting_override(const String &p_property);
 
 	/// Ensures a main scene is set (prompting the user if needed).
 	/// @return `true` if the project can run.
-	virtual bool ensure_main_scene(bool p_from_native) = 0;
+	virtual bool ensure_main_scene(bool p_from_native);
 
 	/// Closes the current scene tab; returns `false` if the user cancelled.
-	virtual bool close_scene() = 0;
+	virtual bool close_scene();
 
-	// ── Shell UI bookkeeping used by the scene manager ────────────────────
+	/// Handles custom actions added to the main-scene picker dialog.
+	virtual void _pick_main_scene_custom_action(const String &p_custom_action_name);
 
-	/// Refreshes the window title (project name, current scene, unsaved marker).
-	virtual void _update_title() = 0;
-
-	/// Entry point for a menu option. If it needs confirmation, shows a dialog
-	/// first and defers to the shell's `_menu_option` once confirmed.
-	virtual void _menu_option_confirm(int p_option, bool p_confirmed) = 0;
-
-	/// @returns `true` while the editor is mid-shutdown/quit.
-	virtual bool _is_closing_editor() const = 0;
+	// ── Recent scenes ─────────────────────────────────────────────────────
 
 	/// Adds a path to the recent-scenes list.
-	virtual void _add_to_recent_scenes(const String &p_scene) = 0;
+	virtual void _add_to_recent_scenes(const String &p_scene);
+
+	/// Opens the recent scene at the given menu index.
+	virtual void _open_recent_scene(int p_idx);
+
+	/// Rebuilds the Recent Scenes popup contents from the stored list.
+	virtual void _update_recent_scenes();
+
+	// ── Project run reactions ─────────────────────────────────────────────
+
+	/// Handles clearing output, etc. when the project starts running.
+	virtual void _project_run_started();
+
+	/// Handles closing the bottom panel, etc. when the project stops.
+	virtual void _project_run_stopped();
+
+	// ── History ───────────────────────────────────────────────────────────
 
 	/// Records an edited object in the selection/edit history for back/forward nav.
-	virtual void _add_to_history(const Object *p_object, const String &p_property, bool p_inspector_only) = 0;
+	virtual void _add_to_history(const Object *p_object, const String &p_property, bool p_inspector_only);
+
+	// ── Quit / restart flow ───────────────────────────────────────────────
+
+	/// @returns `true` while the editor is mid-shutdown/quit.
+	virtual bool _is_closing_editor() const;
+
+	/// Cancels the pending "stop running project" confirmation.
+	virtual void _cancel_confirmation();
+
+	/// Re-parents the save-confirmation popup so it stacks above other popups.
+	virtual void _prepare_save_confirmation_popup();
+
+	// ── Layout persistence hooks ──────────────────────────────────────────
+	// The defaults do nothing; shells with a dock/panel layout system override
+	// them to persist/restore their layout.
+
+	/// Loads the editor layout once the first filesystem scan completes.
+	virtual void _load_editor_layout_on_first_scan() {}
+
+	/// Saves the editor layout when the editor exits.
+	virtual void _save_editor_layout_on_exit() {}
+
+	/// Saves a named editor layout to the given file.
+	virtual void _save_layout(const String &p_file) {}
+
+	/// Deletes a named editor layout.
+	virtual void _delete_layout(const String &p_file) {}
+
+	/// Applies the built-in default editor layout.
+	virtual void _apply_default_layout() {}
+
+	// ── Android build template flow ───────────────────────────────────────
+	// Functional parts of the "Install Android build template" flow; the shell
+	// provides the dialogs through the `get_*_android_*` accessors above.
+
+	/// Handles the user picking an Android build source path in the file dialog.
+	virtual void _android_build_source_selected(const String &p_file);
+
+	/// Handles selection of which export preset the Android build template uses.
+	virtual void _android_export_preset_selected(int p_index);
+
+	/// Opens the "select Android sources file" dialog (from the templates dialog).
+	virtual void _android_install_build_template();
+
+	/// Opens the Android build templates directory in the OS file browser.
+	virtual void _android_explore_build_templates();
+
+private:
+	/// Slot for the one-shot `filesystem_changed` connection made when the
+	/// first scan starts; routes to the (virtual) `_execute_upgrades`.
+	void _on_first_scan_completed();
+
+	/// Slot for the ad-hoc `ConfirmationDialog` created by
+	/// `immediate_confirmation_dialog()`: sets `immediate_dialog_confirmed`,
+	/// which breaks that function's manual event loop and becomes its
+	/// return value (true = OK pressed; false = dialog dismissed).
+	void _immediate_dialog_confirmed();
 };
