@@ -5,6 +5,7 @@
 	<description>
 		WorldScape3D is a clipmap based terrain system that supports terrains from 64x64m up to 65.5x65.5km with multiple LODs, 32 textures, with imported or locally created terrains.
 		This class handles mesh generation, and management of the whole system.
+		While the terrain tools are visible in the 3D editor, the editor window has a minimum width of 1280 pixels at 100% editor scale, capped to the usable screen width, and the 3D editing area reserves enough width for its toolbars. The previous minimum widths are restored when the terrain tools are hidden.
 	</description>
 	<tutorials>
 	</tutorials>

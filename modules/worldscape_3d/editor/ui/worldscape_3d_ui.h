@@ -101,6 +101,11 @@ class WorldScape3DUI final : public Node {
 	WorldScape3DToolSettings *_tool_settings = nullptr;
 	bool _settings_has_changed = false;
 	bool _visible = false;
+	bool _minimum_width_active = false;
+	int _previous_window_minimum_width = -1;
+	int _window_minimum_width = 0;
+	real_t _previous_editor_minimum_width = -1;
+	real_t _editor_minimum_width = 0;
 
 	WorldScape3DEditor::Tool _picking = WorldScape3DEditor::Tool::TOOL_MAX;
 	Callable _pick_callback;
@@ -130,6 +135,9 @@ class WorldScape3DUI final : public Node {
 	RID editor_ring_texture_rid;
 
 	void reset_decals();
+	/** Prevents terrain toolbar wrapping from feeding back into the editor layout, restoring the previous width limit when hidden. */
+	void _update_editor_minimum_width();
+	void _on_toolbar_visibility_changed();
 
 public:
 	explicit WorldScape3DUI(WorldScape3DEditorPlugin *plugin);

@@ -8788,6 +8788,25 @@ void Node3DEditor::_update_context_toolbar() {
 	context_toolbar_panel->set_visible(has_visible);
 }
 
+int Node3DEditor::get_minimum_toolbar_width() const {
+	real_t width = 0;
+	bool first = true;
+	for (int i = 0; i < main_flow->get_child_count(); i++) {
+		Control *child = Object::cast_to<Control>(main_flow->get_child(i));
+		if (!child || !child->is_visible()) {
+			continue;
+		}
+		if (!first) {
+			width += main_flow->get_theme_constant(SNAME("h_separation"));
+		}
+		first = false;
+		width += child->get_combined_minimum_size().x;
+	}
+	Control *margin = main_flow->get_parent_control();
+	width += margin->get_theme_constant(SNAME("margin_left")) + margin->get_theme_constant(SNAME("margin_right"));
+	return int(Math::ceil(width));
+}
+
 void Node3DEditor::set_can_preview(Camera3D *p_preview) {
 	for (int i = 0; i < 4; i++) {
 		viewports[i]->set_can_preview(p_preview);
@@ -9434,7 +9453,7 @@ Node3DEditor::Node3DEditor() {
 	vbc->add_child(toolbar_margin);
 
 	// A fluid container for all toolbars.
-	HFlowContainer *main_flow = memnew(HFlowContainer);
+	main_flow = memnew(HFlowContainer);
 	toolbar_margin->add_child(main_flow);
 
 	// Main toolbars.

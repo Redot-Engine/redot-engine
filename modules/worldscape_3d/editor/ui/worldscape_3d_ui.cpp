@@ -43,6 +43,7 @@
 #include "brushes/ring1.h"
 
 #include "core/os/time.h"
+#include "editor/editor_interface.h"
 #include "editor/gui/editor_file_dialog.h"
 #include "editor/scene/3d/node_3d_editor_plugin.h"
 #include "editor/translations/editor_translation.h"
@@ -50,7 +51,9 @@
 #include "scene/animation/tween.h"
 #include "scene/gui/check_box.h"
 #include "scene/gui/separator.h"
+#include "scene/main/window.h"
 #include "scene/resources/image_texture.h"
+#include "servers/display/display_server.h"
 
 class WorldScape3DToolbarButton final : public Button {
 	WorldScape3DEditor *_editor;
@@ -254,11 +257,15 @@ void WorldScape3DToolbar::_bind_methods() {
 
 WorldScape3DUI::WorldScape3DUI(WorldScape3DEditorPlugin *plugin) :
 		_plugin{ plugin } {
+	_plugin->get_redot_editor_window()->connect("size_changed", callable_mp(this, &WorldScape3DUI::_update_editor_minimum_width), CONNECT_DEFERRED);
+	Node3DEditor::get_singleton()->connect("resized", callable_mp(this, &WorldScape3DUI::_update_editor_minimum_width), CONNECT_DEFERRED);
+	Node3DEditor::get_singleton()->connect("minimum_size_changed", callable_mp(this, &WorldScape3DUI::_update_editor_minimum_width), CONNECT_DEFERRED);
 	_region_texture = memnew(ImageTexture);
 
 	_toolbar = memnew(WorldScape3DToolbar(_plugin->get_editor()));
 	_toolbar->connect("tool_changed", callable_mp(this, &WorldScape3DUI::on_tool_changed));
 	_toolbar->hide();
+	_toolbar->connect("visibility_changed", callable_mp(this, &WorldScape3DUI::_on_toolbar_visibility_changed));
 
 	_tool_settings = memnew(WorldScape3DToolSettings(_plugin));
 	_tool_settings->connect("setting_changed", callable_mp(this, &WorldScape3DUI::on_setting_changed));
@@ -694,11 +701,81 @@ void WorldScape3DUI::set_active_operation() {
 	}
 }
 
+void WorldScape3DUI::_update_editor_minimum_width() {
+	Node3DEditor *editor = Node3DEditor::get_singleton();
+	if (!editor) {
+		return;
+	}
+	Window *window = _plugin->get_redot_editor_window();
+	Size2i minimum_size = window->get_min_size();
+	Size2 editor_minimum_size = editor->get_custom_minimum_size();
+	if (!_minimum_width_active) {
+		if (_previous_editor_minimum_width >= 0) {
+			const real_t previous_width = _previous_editor_minimum_width;
+			_previous_editor_minimum_width = -1;
+			if (editor_minimum_size.x == _editor_minimum_width) {
+				editor_minimum_size.x = previous_width;
+				editor->set_custom_minimum_size(editor_minimum_size);
+			}
+		}
+		if (_previous_window_minimum_width < 0) {
+			return;
+		}
+		const int previous_width = _previous_window_minimum_width;
+		_previous_window_minimum_width = -1;
+		if (minimum_size.x == _window_minimum_width) {
+			minimum_size.x = previous_width;
+			window->set_min_size(minimum_size);
+		}
+		return;
+	}
+
+	if (_previous_editor_minimum_width < 0 || editor_minimum_size.x != _editor_minimum_width) {
+		_previous_editor_minimum_width = editor_minimum_size.x;
+	}
+	_editor_minimum_width = MAX(_previous_editor_minimum_width, editor->get_minimum_toolbar_width());
+	if (editor_minimum_size.x != _editor_minimum_width) {
+		editor_minimum_size.x = _editor_minimum_width;
+		editor->set_custom_minimum_size(editor_minimum_size);
+	}
+
+	if (_previous_window_minimum_width < 0 || minimum_size.x != _window_minimum_width) {
+		_previous_window_minimum_width = minimum_size.x;
+	}
+	int terrain_minimum_width = int(Math::ceil(1280 * EditorInterface::get_singleton()->get_editor_scale()));
+	DisplayServer *display = DisplayServer::get_singleton();
+	if (display->get_screen_count() > 0) {
+		const int usable_width = display->screen_get_usable_rect(window->get_current_screen()).size.x;
+		const int decoration_width = window->get_size_with_decorations().x - window->get_size().x;
+		if (usable_width > decoration_width) {
+			terrain_minimum_width = MIN(terrain_minimum_width, usable_width - decoration_width);
+		}
+	}
+	_window_minimum_width = MAX(_previous_window_minimum_width, terrain_minimum_width);
+	if (minimum_size.x != _window_minimum_width) {
+		minimum_size.x = _window_minimum_width;
+		window->set_min_size(minimum_size);
+	}
+
+	Size2i size = window->get_size();
+	if (size.x < _window_minimum_width) {
+		size.x = _window_minimum_width;
+		window->set_size(size);
+	}
+}
+
+void WorldScape3DUI::_on_toolbar_visibility_changed() {
+	_minimum_width_active = is_inside_tree() && _toolbar->is_visible_in_tree();
+	_update_editor_minimum_width();
+}
+
 void WorldScape3DUI::set_visible(bool visible, bool menu_only) {
 	if (_visible == visible) {
 		return;
 	}
 	_visible = visible;
+	_minimum_width_active = visible && !menu_only && _toolbar->get_parent_control()->is_visible_in_tree();
+	_update_editor_minimum_width();
 	_asset_dock->set_visible(_visible);
 	_asset_dock->update_dock();
 	_menu->set_visible(_visible);
@@ -708,6 +785,7 @@ void WorldScape3DUI::set_visible(bool visible, bool menu_only) {
 		bool mod_ctrl = _plugin->is_modifier_on();
 		_toolbar->show_buttons(!mod_ctrl, mod_ctrl);
 	}
+	_update_editor_minimum_width();
 
 	if (auto editor = _plugin->get_editor(); editor) {
 		if (_visible) {
@@ -918,6 +996,15 @@ void WorldScape3DUI::_notification(int what) {
 			if (_asset_dock) {
 				_asset_dock->init();
 			}
+			break;
+		}
+		case NOTIFICATION_EXIT_TREE: {
+			_minimum_width_active = false;
+			_update_editor_minimum_width();
+			break;
+		}
+		case NOTIFICATION_WM_POSITION_CHANGED: {
+			callable_mp(this, &WorldScape3DUI::_update_editor_minimum_width).call_deferred();
 			break;
 		}
 		case Node::NOTIFICATION_PREDELETE: {
