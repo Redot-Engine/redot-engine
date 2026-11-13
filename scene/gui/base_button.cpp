@@ -279,6 +279,9 @@ void BaseButton::set_disabled(bool p_disabled) {
 			emit_signal(SNAME("button_up"));
 		}
 	}
+	if (is_inside_tree()) {
+		get_viewport()->update_mouse_cursor_state();
+	}
 	queue_accessibility_update();
 	queue_redraw();
 	update_minimum_size();
@@ -286,6 +289,35 @@ void BaseButton::set_disabled(bool p_disabled) {
 
 bool BaseButton::is_disabled() const {
 	return status.disabled;
+}
+
+void BaseButton::set_disabled_cursor_shape(CursorShape p_shape) {
+	ERR_MAIN_THREAD_GUARD;
+	ERR_FAIL_INDEX(int(p_shape), Control::CURSOR_MAX);
+
+	if (disabled_cursor_shape == p_shape) {
+		return;
+	}
+	disabled_cursor_shape = p_shape;
+
+	if (!is_inside_tree()) {
+		return;
+	}
+
+	Vector2 local_mouse_position = get_global_transform().affine_inverse().xform(get_global_mouse_position());
+	if (!has_point(local_mouse_position) && !status.press_attempt) {
+		return;
+	}
+	get_viewport()->update_mouse_cursor_state();
+}
+
+Control::CursorShape BaseButton::get_disabled_cursor_shape() const {
+	return disabled_cursor_shape;
+}
+
+Control::CursorShape BaseButton::get_cursor_shape(const Point2 &p_pos) const {
+	ERR_READ_THREAD_GUARD_V(CURSOR_ARROW);
+	return status.disabled ? disabled_cursor_shape : get_default_cursor_shape();
 }
 
 void BaseButton::set_pressed(bool p_pressed) {
@@ -547,6 +579,8 @@ void BaseButton::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("is_shortcut_in_tooltip_enabled"), &BaseButton::is_shortcut_in_tooltip_enabled);
 	ClassDB::bind_method(D_METHOD("set_disabled", "disabled"), &BaseButton::set_disabled);
 	ClassDB::bind_method(D_METHOD("is_disabled"), &BaseButton::is_disabled);
+	ClassDB::bind_method(D_METHOD("set_disabled_cursor_shape", "shape"), &BaseButton::set_disabled_cursor_shape);
+	ClassDB::bind_method(D_METHOD("get_disabled_cursor_shape"), &BaseButton::get_disabled_cursor_shape);
 	ClassDB::bind_method(D_METHOD("set_action_mode", "mode"), &BaseButton::set_action_mode);
 	ClassDB::bind_method(D_METHOD("get_action_mode"), &BaseButton::get_action_mode);
 	ClassDB::bind_method(D_METHOD("set_button_mask", "mask"), &BaseButton::set_button_mask);
@@ -572,6 +606,7 @@ void BaseButton::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("toggled", PropertyInfo(Variant::BOOL, "toggled_on")));
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "disabled"), "set_disabled", "is_disabled");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "disabled_cursor_shape", PROPERTY_HINT_ENUM, "Arrow,I-Beam,Pointing Hand,Cross,Wait,Busy,Drag,Can Drop,Forbidden,Vertical Resize,Horizontal Resize,Secondary Diagonal Resize,Main Diagonal Resize,Move,Vertical Split,Horizontal Split,Help"), "set_disabled_cursor_shape", "get_disabled_cursor_shape");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "toggle_mode"), "set_toggle_mode", "is_toggle_mode");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "button_pressed"), "set_pressed", "is_pressed");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "action_mode", PROPERTY_HINT_ENUM, "Button Press,Button Release"), "set_action_mode", "get_action_mode");
