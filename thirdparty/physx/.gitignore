@@ -1,0 +1,4 @@
+# SDK extraction markers written by modules/physx/test/gitlab-ci-physx.yml
+# (one per SDK zip version; the extracted bin/ and lib/ trees are covered by
+# the repo's global *.dll / *.lib / bin/ ignore patterns).
+.extracted-*

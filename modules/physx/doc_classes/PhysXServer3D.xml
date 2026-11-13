@@ -1,0 +1,600 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXServer3D" inherits="PhysicsServer3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="articulation_add_link">
+			<return type="int" />
+			<param index="0" name="articulation" type="RID" />
+			<param index="1" name="parent_index" type="int" />
+			<param index="2" name="parent_frame" type="Transform3D" />
+			<param index="3" name="child_frame" type="Transform3D" />
+			<param index="4" name="joint_type" type="int" />
+			<param index="5" name="density" type="float" />
+			<param index="6" name="box_half_extents" type="Vector3" />
+			<description>
+				Adds a link and returns its 0-based index. [param parent_index] -1 creates the base link (world-posed via [param child_frame]; [param joint_type] ignored). Otherwise [param child_frame] is the link pose relative to its parent and [param parent_frame] the inbound joint anchor in the parent link's frame. [param joint_type]: 0 FIX, 1 PRISMATIC, 2 REVOLUTE, 3 REVOLUTE_UNWRAPPED, 4 SPHERICAL. Each link gets a default box collision shape ([param box_half_extents]); mass properties derive from it at [param density]. Replace the shape with [method articulation_set_link_shape].
+			</description>
+		</method>
+		<method name="articulation_create">
+			<return type="RID" />
+			<description>
+				Creates a reduced-coordinate articulation (PhysX [code]PxArticulationReducedCoordinate[/code]) and returns its RID. Configure links, drives and flags, then attach it to a space with [method articulation_set_space]. Links must be added before the articulation joins a space.
+			</description>
+		</method>
+		<method name="articulation_get_link_collision_layer" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="articulation" type="RID" />
+			<param index="1" name="link_index" type="int" />
+			<description>
+				Returns the link shape's collision layer.
+			</description>
+		</method>
+		<method name="articulation_get_link_collision_mask" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="articulation" type="RID" />
+			<param index="1" name="link_index" type="int" />
+			<description>
+				Returns the link shape's collision mask.
+			</description>
+		</method>
+		<method name="articulation_get_link_count" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="articulation" type="RID" />
+			<description>
+				Returns the number of links.
+			</description>
+		</method>
+		<method name="articulation_get_link_transform" qualifiers="const">
+			<return type="Transform3D" />
+			<param index="0" name="articulation" type="RID" />
+			<param index="1" name="link_index" type="int" />
+			<description>
+				Returns the link's world-space pose (poll for rendering).
+			</description>
+		</method>
+		<method name="articulation_get_link_velocity" qualifiers="const">
+			<return type="Dictionary" />
+			<param index="0" name="articulation" type="RID" />
+			<param index="1" name="link_index" type="int" />
+			<description>
+				Returns the link's world velocity as [code]{ "linear": Vector3, "angular": Vector3 }[/code] (empty when the index is invalid).
+			</description>
+		</method>
+		<method name="articulation_is_sleeping" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="articulation" type="RID" />
+			<description>
+				Returns [code]true[/code] while the articulation is asleep.
+			</description>
+		</method>
+		<method name="articulation_set_drive">
+			<return type="void" />
+			<param index="0" name="articulation" type="RID" />
+			<param index="1" name="link_index" type="int" />
+			<param index="2" name="axis" type="int" />
+			<param index="3" name="stiffness" type="float" />
+			<param index="4" name="damping" type="float" />
+			<param index="5" name="drive_target" type="float" />
+			<param index="6" name="drive_velocity" type="float" />
+			<param index="7" name="drive_type" type="int" />
+			<description>
+				Unlocks [param axis] on the link's inbound joint and configures a PD drive toward [param drive_target] at [param drive_velocity]. Axes: 0 TWIST, 1 SWING1, 2 SWING2, 3 X, 4 Y, 5 Z. [param drive_type]: 0 FORCE, 1 ACCELERATION.
+			</description>
+		</method>
+		<method name="articulation_set_fix_base">
+			<return type="void" />
+			<param index="0" name="articulation" type="RID" />
+			<param index="1" name="fix" type="bool" />
+			<description>
+				Fixes the base link in place (robot/anchored chains). Set before [method articulation_set_space].
+			</description>
+		</method>
+		<method name="articulation_set_limit">
+			<return type="void" />
+			<param index="0" name="articulation" type="RID" />
+			<param index="1" name="link_index" type="int" />
+			<param index="2" name="axis" type="int" />
+			<param index="3" name="low" type="float" />
+			<param index="4" name="high" type="float" />
+			<description>
+				Unlocks [param axis] and clamps it to [code][low, high][/code] with a joint limit.
+			</description>
+		</method>
+		<method name="articulation_set_link_collision_layer">
+			<return type="void" />
+			<param index="0" name="articulation" type="RID" />
+			<param index="1" name="link_index" type="int" />
+			<param index="2" name="layer" type="int" />
+			<description>
+				Sets the link shape's collision layer (Redot "what I am" bits, filter word0).
+			</description>
+		</method>
+		<method name="articulation_set_link_collision_mask">
+			<return type="void" />
+			<param index="0" name="articulation" type="RID" />
+			<param index="1" name="link_index" type="int" />
+			<param index="2" name="mask" type="int" />
+			<description>
+				Sets the link shape's collision mask (Redot "what I collide with" bits, filter word1).
+			</description>
+		</method>
+		<method name="articulation_set_link_shape">
+			<return type="void" />
+			<param index="0" name="articulation" type="RID" />
+			<param index="1" name="link_index" type="int" />
+			<param index="2" name="shape" type="RID" />
+			<param index="3" name="transform" type="Transform3D" />
+			<description>
+				Replaces the link's collision shape with a per-link instance of the shared shape [param shape] (created by the shape_create methods), placed at [param transform]. Convex polygon shapes preserve mirroring; concave shapes degrade to query-only on links (they simulate — REG-0014 semantics). Mass properties are recomputed at the link's stored density.
+			</description>
+		</method>
+		<method name="articulation_set_space">
+			<return type="void" />
+			<param index="0" name="articulation" type="RID" />
+			<param index="1" name="space" type="RID" />
+			<description>
+				Attaches the articulation to a physics space (or detaches it with an invalid RID). Add all links before calling this; [code]PxArticulationLink[/code]s cannot be created while the articulation is in a scene.
+			</description>
+		</method>
+		<method name="articulation_sleep">
+			<return type="void" />
+			<param index="0" name="articulation" type="RID" />
+			<description>
+				Puts the articulation to sleep.
+			</description>
+		</method>
+		<method name="articulation_wake">
+			<return type="void" />
+			<param index="0" name="articulation" type="RID" />
+			<description>
+				Wakes the articulation.
+			</description>
+		</method>
+		<method name="cloth_add_collision_exception">
+			<return type="void" />
+			<param index="0" name="cloth" type="RID" />
+			<param index="1" name="body" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="cloth_apply_wind">
+			<return type="void" />
+			<param index="0" name="cloth" type="RID" />
+			<param index="1" name="wind" type="Vector3" />
+			<param index="2" name="drag" type="float" />
+			<param index="3" name="lift" type="float" />
+			<param index="4" name="delta" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="cloth_build">
+			<return type="void" />
+			<param index="0" name="cloth" type="RID" />
+			<param index="1" name="positions" type="PackedVector3Array" />
+			<param index="2" name="indices" type="PackedInt32Array" />
+			<param index="3" name="transform" type="Transform3D" />
+			<description>
+			</description>
+		</method>
+		<method name="cloth_create">
+			<return type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="cloth_is_ready" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="cloth" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="cloth_remove_collision_exception">
+			<return type="void" />
+			<param index="0" name="cloth" type="RID" />
+			<param index="1" name="body" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="cloth_set_collision_layer_and_mask">
+			<return type="void" />
+			<param index="0" name="cloth" type="RID" />
+			<param index="1" name="layer" type="int" />
+			<param index="2" name="mask" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="cloth_set_params">
+			<return type="void" />
+			<param index="0" name="cloth" type="RID" />
+			<param index="1" name="thickness" type="float" />
+			<param index="2" name="density" type="float" />
+			<param index="3" name="stretch" type="float" />
+			<param index="4" name="bend" type="float" />
+			<param index="5" name="damping" type="float" />
+			<param index="6" name="collision_mask" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="cloth_set_pin_targets">
+			<return type="void" />
+			<param index="0" name="cloth" type="RID" />
+			<param index="1" name="targets" type="PackedVector3Array" />
+			<description>
+			</description>
+		</method>
+		<method name="cloth_set_pinned">
+			<return type="void" />
+			<param index="0" name="cloth" type="RID" />
+			<param index="1" name="pinned" type="PackedInt32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="cloth_set_space">
+			<return type="void" />
+			<param index="0" name="cloth" type="RID" />
+			<param index="1" name="space" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="get_gpu_device_name" qualifiers="const">
+			<return type="String" />
+			<description>
+				Returns the CUDA device name GPU dynamics runs on (for example [code]NVIDIA GeForce RTX 4080 SUPER[/code]), or an empty [String] when GPU dynamics is unavailable: a CPU-only build, no usable CUDA device, or [code]physics/physx_3d/simulation/enhanced_determinism[/code] forcing the CPU path.
+			</description>
+		</method>
+		<method name="get_singleton" qualifiers="static">
+			<return type="PhysXServer3D" />
+			<description>
+			</description>
+		</method>
+		<method name="is_gpu_dynamics_enabled" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] when GPU dynamics is active (a GODOT_PHYSX_GPU build with a usable CUDA device, and [code]physics/physx_3d/simulation/enhanced_determinism[/code] off). PBD fluids and GPU cloth only simulate when this is [code]true[/code].
+			</description>
+		</method>
+		<method name="particle_fluid_clear">
+			<return type="void" />
+			<param index="0" name="fluid" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="particle_fluid_create">
+			<return type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="particle_fluid_emit">
+			<return type="void" />
+			<param index="0" name="fluid" type="RID" />
+			<param index="1" name="positions" type="PackedVector3Array" />
+			<param index="2" name="velocity" type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="particle_fluid_get_foam_count" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="fluid" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="particle_fluid_get_foam_positions" qualifiers="const">
+			<return type="PackedVector3Array" />
+			<param index="0" name="fluid" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="particle_fluid_get_particle_count" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="fluid" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="particle_fluid_get_positions" qualifiers="const">
+			<return type="PackedVector3Array" />
+			<param index="0" name="fluid" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="particle_fluid_get_submersion" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="fluid" type="RID" />
+			<param index="1" name="world_aabb" type="AABB" />
+			<description>
+			</description>
+		</method>
+		<method name="particle_fluid_get_surface_triangle_count" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="fluid" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="particle_fluid_set_capacity">
+			<return type="void" />
+			<param index="0" name="fluid" type="RID" />
+			<param index="1" name="max" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="particle_fluid_set_foam">
+			<return type="void" />
+			<param index="0" name="fluid" type="RID" />
+			<param index="1" name="enabled" type="bool" />
+			<param index="2" name="capacity" type="int" />
+			<param index="3" name="lifetime" type="float" />
+			<param index="4" name="threshold" type="float" />
+			<param index="5" name="buoyancy" type="float" />
+			<param index="6" name="size" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="particle_fluid_set_param">
+			<return type="void" />
+			<param index="0" name="fluid" type="RID" />
+			<param index="1" name="param" type="int" />
+			<param index="2" name="value" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="particle_fluid_set_particles">
+			<return type="void" />
+			<param index="0" name="fluid" type="RID" />
+			<param index="1" name="positions" type="PackedVector3Array" />
+			<param index="2" name="initial_velocity" type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="particle_fluid_set_space">
+			<return type="void" />
+			<param index="0" name="fluid" type="RID" />
+			<param index="1" name="space" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="particle_fluid_set_surface_anisotropy">
+			<return type="void" />
+			<param index="0" name="fluid" type="RID" />
+			<param index="1" name="enabled" type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="particle_fluid_set_surface_mesh">
+			<return type="void" />
+			<param index="0" name="fluid" type="RID" />
+			<param index="1" name="enabled" type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="particle_fluid_supports_diffuse" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] when this platform's PhysX SDK can create the CUDA PBD particle buffer. The SDK's particle buffer factory ships only in the GPU-enabled Windows libraries through PhysX 5.11, so [code]false[/code] means the [PhysXParticleFluid3D] node's [code]Auto[/code] solver rule resolves to its MPM solver and an explicitly pinned PBD fluid stays inert.
+			</description>
+		</method>
+		<method name="soft_body_attach_point_to_body">
+			<return type="void" />
+			<param index="0" name="soft_body" type="RID" />
+			<param index="1" name="point_index" type="int" />
+			<param index="2" name="body" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="soft_body_detach_point_from_body">
+			<return type="void" />
+			<param index="0" name="soft_body" type="RID" />
+			<param index="1" name="point_index" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="soft_body_get_solver_mode" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="soft_body" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="soft_body_is_gpu" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="soft_body" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="soft_body_set_solver_mode">
+			<return type="void" />
+			<param index="0" name="soft_body" type="RID" />
+			<param index="1" name="mode" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_add_wheel">
+			<return type="int" />
+			<param index="0" name="vehicle" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_create">
+			<return type="RID" />
+			<param index="0" name="archetype" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_get_anti_roll_params" qualifiers="const">
+			<return type="Dictionary" />
+			<param index="0" name="vehicle" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_get_balance_state" qualifiers="const">
+			<return type="Dictionary" />
+			<param index="0" name="vehicle" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_get_engine_state" qualifiers="const">
+			<return type="Dictionary" />
+			<param index="0" name="vehicle" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_get_response_params" qualifiers="const">
+			<return type="Dictionary" />
+			<param index="0" name="vehicle" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_get_wheel_count" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="vehicle" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_get_wheel_states" qualifiers="const">
+			<return type="Array" />
+			<param index="0" name="vehicle" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_get_wheel_steer_angles" qualifiers="const">
+			<return type="PackedFloat32Array" />
+			<param index="0" name="vehicle" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_ackermann_params">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="params" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_anti_roll_params">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="params" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_autobox_params">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="params" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_balance_params">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="params" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_chassis_body">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="body" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_clutch_params">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="params" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_control_inputs">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="throttle" type="float" />
+			<param index="2" name="brake" type="float" />
+			<param index="3" name="steer" type="float" />
+			<param index="4" name="handbrake" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_differential_params">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="params" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_engine_params">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="params" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_gear_command">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="gear" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_gearbox_params">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="params" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_response_params">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="params" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_space">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="space" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_wheel_brake_torque">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="idx" type="int" />
+			<param index="2" name="torque" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_wheel_count">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="count" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_wheel_drive_torque">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="idx" type="int" />
+			<param index="2" name="torque" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_wheel_params">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="idx" type="int" />
+			<param index="2" name="params" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="vehicle_set_wheel_steer_angle">
+			<return type="void" />
+			<param index="0" name="vehicle" type="RID" />
+			<param index="1" name="idx" type="int" />
+			<param index="2" name="angle" type="float" />
+			<description>
+			</description>
+		</method>
+	</methods>
+</class>

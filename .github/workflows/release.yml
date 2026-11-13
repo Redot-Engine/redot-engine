@@ -2,17 +2,22 @@ name: Build Redot Project
 
 on:
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag (e.g. RD_26.3-RC4_Px5.11_B002). Empty = timestamp tag (YYYYMMDDHH) as before.'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
         with:
-          repository: Redot-Engine/redot-engine
-          ref: master
+          lfs: true
 
       - name: Install Dependencies
         run: |
@@ -34,7 +39,20 @@ jobs:
       - name: Build Redot Project for Linux
         run: |
           scons platform=linuxbsd production=yes
+          rm -rf bin/obj
 
+      # Belt and braces: the 24.04 toolchain emits baseline x86-64 and no ISA
+      # requirement, but if the runner ever moves forward again, a stamped
+      # x86-64-v2/v3 requirement would make glibc refuse the editor on older
+      # CPUs ("CPU ISA level is lower than required"). Demote it to baseline
+      # here, in the job that has the repository checkout.
+      - name: Demote ISA requirement to baseline
+        run: |
+          python3 modules/physx/misc/fix_elf_isa_note.py --level 1 bin/redot.*
+
+      # Package the distribution zip here: actions/upload-artifact does not
+      # preserve the executable bit, and the release assets are attached from
+      # these artifacts -- zipping in-workflow keeps `chmod +x` meaningful.
       - name: Upload Linux dev artifact
         uses: actions/upload-artifact@v7
         with:
@@ -42,14 +60,13 @@ jobs:
           path: bin
 
   build-linux-template:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
         with:
-          repository: Redot-Engine/redot-engine
-          ref: master
+          lfs: true
 
       - name: Install Dependencies
         run: |
@@ -70,12 +87,88 @@ jobs:
 
       - name: Build Redot Templates for Linux
         run: |
-          scons platform=linuxbsd target=template_release
+          scons platform=linuxbsd target=template_release physx_config=release
+          rm -rf bin/obj
+
+      - name: Demote ISA requirement to baseline
+        run: |
+          python3 modules/physx/misc/fix_elf_isa_note.py --level 1 bin/redot.*
 
       - name: Upload Linux Template Artifact
         uses: actions/upload-artifact@v7
         with:
           name: redot-linux-template
+          path: bin
+
+  build-linux-editor-mono:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y             scons             pkg-config             libx11-dev             libxcursor-dev             libxrandr-dev             libxi-dev             libxinerama-dev             libgl1-mesa-dev             libglu1-mesa-dev             build-essential             gcc             g++             python3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build Redot Editor for Linux (Mono)
+        run: |
+          scons platform=linuxbsd production=yes module_mono_enabled=yes
+          rm -rf bin/obj
+
+      - name: Demote ISA requirement to baseline
+        run: |
+          python3 modules/physx/misc/fix_elf_isa_note.py --level 1 bin/redot.*
+
+      - name: Generate Mono Glue
+        run: |
+          ./bin/redot.linuxbsd.editor.x86_64.mono --headless --generate-mono-glue modules/mono/glue
+
+      - name: Build GodotSharp
+        run: |
+          python modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin
+
+      - name: Upload Linux Mono editor artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: redot-linux-editor-mono
+          path: bin
+
+  build-linux-template-mono:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y             scons             pkg-config             libx11-dev             libxcursor-dev             libxrandr-dev             libxi-dev             libgl1-mesa-dev             libglu1-mesa-dev             build-essential             gcc             g++             python3
+
+      - name: Build Redot Mono Template for Linux
+        run: |
+          scons platform=linuxbsd target=template_release physx_config=release module_mono_enabled=yes
+          rm -rf bin/obj
+
+      - name: Demote ISA requirement to baseline
+        run: |
+          python3 modules/physx/misc/fix_elf_isa_note.py --level 1 bin/redot.*
+
+      - name: Upload Linux Mono Template artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: redot-linux-template-mono
           path: bin
 
   build-windows:
@@ -85,8 +178,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
         with:
-          repository: Redot-Engine/redot-engine
-          ref: master
+          lfs: true
 
       - name: Setup Scoop
         uses: MinoruSekine/setup-scoop@v4.0.1
@@ -97,12 +189,32 @@ jobs:
       - name: Build Redot Project for Windows
         run: |
           scons platform=windows production=yes
+          Remove-Item -Recurse -Force bin/obj -ErrorAction SilentlyContinue
+
+      # The PhysX/Blast/Flow runtime DLLs are packaged separately so the
+      # editor distribution stays small; the physx module's editor plugin
+      # detects their absence and offers the download-and-restart flow, which
+      # fetches this bundle from the redot-physx-runtime repository.
+      - name: Package PhysX runtime bundle
+        run: |
+          New-Item -ItemType Directory -Force -Path physx-runtime | Out-Null
+          Move-Item bin\PhysXGpu_64.dll physx-runtime\ -Force
+          Move-Item bin\NvBlast*.dll physx-runtime\ -Force
+          Move-Item -Path bin\nvflow*.dll -Destination physx-runtime\ -Force
+          Compress-Archive -Path 'physx-runtime/*' -DestinationPath physx-runtime-windows.zip -Force
+          Remove-Item physx-runtime -Recurse -Force
 
       - name: Upload Windows dev artifact
         uses: actions/upload-artifact@v7
         with:
           name: redot-windows-dev
           path: bin
+
+      - name: Upload PhysX runtime bundle artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: physx-runtime-windows
+          path: physx-runtime-windows.zip
 
   build-windows-template:
     runs-on: windows-latest
@@ -111,8 +223,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
         with:
-          repository: Redot-Engine/redot-engine
-          ref: master
+          lfs: true
 
       - name: Setup Scoop
         uses: MinoruSekine/setup-scoop@v4.0.1
@@ -122,12 +233,98 @@ jobs:
 
       - name: Build Redot Templates for Windows
         run: |
-          scons platform=windows target=template_release
+          scons platform=windows target=template_release physx_config=release
+          Remove-Item -Recurse -Force bin/obj -ErrorAction SilentlyContinue
 
       - name: Upload Windows Template Artifact
         uses: actions/upload-artifact@v7
         with:
           name: redot-windows-template
+          path: bin
+
+  build-windows-editor-mono:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - name: Setup Scoop
+        uses: MinoruSekine/setup-scoop@v4.0.1
+        with:
+          buckets: extras
+          apps: gcc python scons make mingw
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build Redot Editor for Windows (Mono)
+        run: |
+          scons platform=windows production=yes module_mono_enabled=yes
+          Remove-Item -Recurse -Force bin/obj -ErrorAction SilentlyContinue
+
+      - name: Generate Mono Glue
+        run: |
+          ./bin/redot.windows.editor.x86_64.mono.exe --headless --generate-mono-glue modules/mono/glue
+
+      - name: Build GodotSharp
+        run: |
+          python modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin
+
+      # Same as the regular Windows build: the PhysX/Blast/Flow runtime DLLs
+      # are delay-loaded, so the mono editor starts without them and the physx
+      # editor plugin offers the download-and-restart flow when a project uses
+      # PhysX. The bundle content is identical to the regular build's (same
+      # SDK configuration), packaged here so this job stays self-contained.
+      - name: Package PhysX runtime bundle
+        run: |
+          New-Item -ItemType Directory -Force -Path physx-runtime | Out-Null
+          Move-Item bin\PhysXGpu_64.dll physx-runtime\ -Force
+          Move-Item bin\NvBlast*.dll physx-runtime\ -Force
+          Move-Item -Path bin\nvflow*.dll -Destination physx-runtime\ -Force
+          Compress-Archive -Path 'physx-runtime/*' -DestinationPath physx-runtime-windows-mono.zip -Force
+          Remove-Item physx-runtime -Recurse -Force
+
+      - name: Upload Windows Mono editor artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: redot-windows-editor-mono
+          path: bin
+
+      - name: Upload PhysX runtime bundle artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: physx-runtime-windows-mono
+          path: physx-runtime-windows-mono.zip
+
+  build-windows-template-mono:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - name: Setup Scoop
+        uses: MinoruSekine/setup-scoop@v4.0.1
+        with:
+          buckets: extras
+          apps: gcc python scons make mingw
+
+      - name: Build Redot Mono Template for Windows
+        run: |
+          scons platform=windows target=template_release physx_config=release module_mono_enabled=yes
+          Remove-Item -Recurse -Force bin/obj -ErrorAction SilentlyContinue
+
+      - name: Upload Windows Mono Template artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: redot-windows-template-mono
           path: bin
 
   build-macos-x64:
@@ -137,8 +334,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
         with:
-          repository: Redot-Engine/redot-engine
-          ref: master
+          lfs: true
       - name: Setup Vulkan SDK
         run: |
           sh misc/scripts/install_vulkan_sdk_macos.sh
@@ -149,6 +345,7 @@ jobs:
       - name: Build Redot Project for macOS x64
         run: |
           scons platform=macos arch=x64 production=yes
+          rm -rf bin/obj
 
       - name: Upload macOS x64 dev artifact
         uses: actions/upload-artifact@v7
@@ -163,8 +360,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
         with:
-          repository: Redot-Engine/redot-engine
-          ref: master
+          lfs: true
 
       - name: Setup Vulkan SDK
         run: |
@@ -175,7 +371,8 @@ jobs:
 
       - name: Build Redot Project for macOS arm64
         run: |
-          scons platform=macos arch=arm64
+          scons platform=macos arch=arm64 production=yes
+          rm -rf bin/obj
 
       - name: Upload macOS arm64 dev artifact
         uses: actions/upload-artifact@v7
@@ -190,8 +387,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
         with:
-          repository: Redot-Engine/redot-engine
-          ref: master
+          lfs: true
       - name: Setup Vulkan SDK
         run: |
           sh misc/scripts/install_vulkan_sdk_macos.sh
@@ -201,7 +397,8 @@ jobs:
 
       - name: Build Redot Templates for macOS x64
         run: |
-          scons platform=macos arch=x64 target=template_release
+          scons platform=macos arch=x64 target=template_release physx_config=release
+          rm -rf bin/obj
 
       - name: Upload macOS x64 Template Artifact
         uses: actions/upload-artifact@v7
@@ -216,8 +413,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
         with:
-          repository: Redot-Engine/redot-engine
-          ref: master
+          lfs: true
       - name: Setup Vulkan SDK
         run: |
           sh misc/scripts/install_vulkan_sdk_macos.sh
@@ -227,7 +423,8 @@ jobs:
 
       - name: Build Redot Templates for macOS arm64
         run: |
-          scons platform=macos arch=arm64 target=template_release
+          scons platform=macos arch=arm64 target=template_release physx_config=release
+          rm -rf bin/obj
 
       - name: Upload macOS arm64 Template Artifact
         uses: actions/upload-artifact@v7
@@ -236,7 +433,7 @@ jobs:
           path: bin
 
   release:
-    needs: [build-linux, build-windows, build-linux-template, build-windows-template, build-macos-x64, build-macos-arm64, build-macos-x64-template, build-macos-arm64-template]
+    needs: [build-linux, build-linux-template, build-linux-editor-mono, build-linux-template-mono, build-windows, build-windows-template, build-windows-editor-mono, build-windows-template-mono, build-macos-x64, build-macos-arm64, build-macos-x64-template, build-macos-arm64-template]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -290,20 +487,90 @@ jobs:
           name: redot-macos-arm64-template
           path: redot-macos-arm64-template
 
+      - name: Download Linux Mono editor artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: redot-linux-editor-mono
+          path: redot-linux-editor-mono
+
+      - name: Download Linux Mono template artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: redot-linux-template-mono
+          path: redot-linux-template-mono
+
+      - name: Download Windows Mono editor artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: redot-windows-editor-mono
+          path: redot-windows-editor-mono
+
+      - name: Download Windows Mono template artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: redot-windows-template-mono
+          path: redot-windows-template-mono
+
       - name: Get the current date
         id: date
         run: echo "CURRENT_DATE=$(date +'%Y%m%d%H')" >> $GITHUB_ENV
 
-      - name: Zip the dev artifact
+      - name: Install patchelf
         run: |
-          zip -r redot-linuxbsd.zip redot-linux-dev/*
-          zip -r redot-windowsx64.zip redot-windows-dev/*
-          zip -r redot-macos-x64.zip redot-macos-x64-dev/*
-          zip -r redot-macos-arm64.zip redot-macos-arm64-dev/*
-          zip -r redot-linux-template.zip redot-linux-template/*
-          zip -r redot-windows-template.zip redot-windows-template/*
-          zip -r redot-macos-x64-template.zip redot-macos-x64-template/*
-          zip -r redot-macos-arm64-template.zip redot-macos-arm64-template/*
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq patchelf
+
+      - name: Collect the release assets
+        run: |
+          # The PhysX module stages its runtime libraries next to the Linux
+          # editor binary for development. The RELEASED editor does not ship
+          # them (matching Windows, where the DLLs are delay-loaded and only
+          # the runtime bundle carries them): patchelf removes the binary's
+          # five NEEDED entries -- every Blast import is a lazily-bound
+          # function and the GPU runtime is loaded by the SDK itself, so
+          # nothing binds eagerly and the editor starts without the files --
+          # the libraries are split into the Linux runtime bundle, and the
+          # physx editor plugin offers that bundle for download when a
+          # project uses PhysX. Templates KEEP their libraries: the export
+          # plugin stages them into exported games from the template
+          # directory.
+          mkdir -p physx-runtime-linux
+          for dir in redot-linux-dev redot-linux-editor-mono; do
+            for bin in "$dir"/redot.*; do
+              strip "$bin"
+              chmod +x "$bin"
+              for lib in libPhysXGpu_64.so libNvBlast.so libNvBlastGlobals.so libNvBlastExtAuthoring.so libNvBlastExtShaders.so; do
+                patchelf --remove-needed "$lib" "$bin"
+              done
+            done
+            mv "$dir"/*.so physx-runtime-linux/
+          done
+          # The ISA requirement was already demoted to baseline in the build
+          # jobs (which have the repository checkout for the demote tool).
+          # upload-artifact does not preserve the executable bit: strip/chmod
+          # here and zip in-workflow so the attached release assets carry it.
+          strip redot-linux-template/redot.* redot-linux-template-mono/redot.*
+          chmod +x redot-linux-template/redot.* redot-linux-template-mono/redot.*
+          zip -r -9 redot-linuxbsd.zip redot-linux-dev
+          zip -r -9 redot-linux-mono.zip redot-linux-editor-mono
+          zip -r -9 redot-linux-template.zip redot-linux-template
+          zip -r -9 redot-linux-template-mono.zip redot-linux-template-mono
+          zip -r -9 physx-runtime-linux.zip physx-runtime-linux
+          # Windows/macOS artifacts are plain directories (no modes to lose).
+          zip -r -9 redot-windowsx64.zip redot-windows-dev/*
+          zip -r -9 redot-macos-x64.zip redot-macos-x64-dev/*
+          zip -r -9 redot-macos-arm64.zip redot-macos-arm64-dev/*
+          zip -r -9 redot-windows-template.zip redot-windows-template/*
+          zip -r -9 redot-windows-mono.zip redot-windows-editor-mono/*
+          zip -r -9 redot-windows-template-mono.zip redot-windows-template-mono/*
+          zip -r -9 redot-macos-x64-template.zip redot-macos-x64-template/*
+          zip -r -9 redot-macos-arm64-template.zip redot-macos-arm64-template/*
+
+      - name: Upload the Linux runtime bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: physx-runtime-linux
+          path: physx-runtime-linux.zip
 
       # - name: Upload release artifacts
       #   uses: actions/upload-artifact@v7
@@ -322,8 +589,8 @@ jobs:
       - name: Upload dev build artifacts to GitHub dev
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.CURRENT_DATE }}
-          name: Build ${{ env.CURRENT_DATE }}
+          tag_name: ${{ inputs.tag_name || env.CURRENT_DATE }}
+          name: ${{ inputs.tag_name || env.CURRENT_DATE }}
           draft: false
           make_latest: true
           files: |
@@ -335,3 +602,7 @@ jobs:
             redot-windows-template.zip
             redot-macos-x64-template.zip
             redot-macos-arm64-template.zip
+            redot-linux-mono.zip
+            redot-linux-template-mono.zip
+            redot-windows-mono.zip
+            redot-windows-template-mono.zip

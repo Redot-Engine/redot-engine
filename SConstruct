@@ -712,6 +712,13 @@ if env["arch"] == "x86_64":
         env.Append(CCFLAGS=["/d2archSSE42"])
     else:
         # `-msse2` is implied when compiling for x86_64.
+        # Linux: pin the ISA baseline explicitly with `-march=x86-64`. GCC on
+        # distros that build against a higher default (Ubuntu 26.04 defaults
+        # to x86-64-v3) otherwise defines __AVX__/__AVX2__ behind our back —
+        # silently requiring v3 CPUs and switching on thirdparty ISA paths
+        # that target SSE2 only (Embree's ISA dispatch fails to link).
+        if env["platform"] == "linuxbsd":
+            env.Append(CCFLAGS=["-march=x86-64"])
         # core/math/simd.h relies on SSE4.1 intrinsics being available on x86_64 (clang-cl included).
         env.Append(CCFLAGS=["-msse4.2", "-mpopcnt"])
 elif env["arch"] == "x86_32":
@@ -879,6 +886,9 @@ if env.msvc and not methods.using_clang(env):  # MSVC
     if env["werror"]:
         env.AppendUnique(CCFLAGS=["/WX"])
         env.AppendUnique(LINKFLAGS=["/WX"])
+        # The vendored PhysX static libs ship without PDBs; /WX turns the
+        # resulting LNK4099 into LNK1218 and no binary is produced at all.
+        env.AppendUnique(LINKFLAGS=["/IGNORE:4099"])
 
 else:  # GCC, Clang
     common_warnings = []

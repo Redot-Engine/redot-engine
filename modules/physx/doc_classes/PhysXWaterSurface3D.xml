@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXWaterSurface3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		GPU ocean/water surface with waves, foam, shore effects, caustics, and height queries.
+	</brief_description>
+	<description>
+		Renders a water body driven by FFT ocean waves plus interactive ripples. Buoyancy effects consume it through [PhysXBuoyancy3D]; spray and wake effects through [PhysXWaterSpray3D] and [PhysXWaterWake3D], both of which target it via their [code]water_surface_path[/code] NodePath properties. Query the surface with [method sample_height] and [method is_wet], and disturb it from gameplay with [method submit_impulse] or [method submit_sphere].
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="clear_sphere">
+			<return type="void" />
+			<param index="0" name="owner" type="int" />
+			<description>
+				Removes the interactive sphere previously registered with [method submit_sphere] under [param owner].
+			</description>
+		</method>
+		<method name="get_caustics_half_extent" qualifiers="const">
+			<return type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="get_caustics_light_right" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="get_caustics_light_up" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="get_caustics_origin" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="get_caustics_texture" qualifiers="const">
+			<return type="Texture2D" />
+			<description>
+			</description>
+		</method>
+		<method name="get_caustics_tile_size" qualifiers="const">
+			<return type="Vector2" />
+			<description>
+			</description>
+		</method>
+		<method name="get_effective_fetch" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the fetch length actually used by the ocean spectrum (auto-estimated from [member wind_speed] when [member fetch] is [code]0.0[/code]).
+			</description>
+		</method>
+		<method name="get_grid_center" qualifiers="const">
+			<return type="Vector2" />
+			<description>
+			</description>
+		</method>
+		<method name="is_solver_available" qualifiers="const">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="is_wet" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="world_pos" type="Vector3" />
+			<description>
+				Returns [code]true[/code] if [param world_pos] lies inside the wet-sand band (recently washed by swash).
+			</description>
+		</method>
+		<method name="recenter">
+			<return type="void" />
+			<param index="0" name="world_position" type="Vector3" />
+			<description>
+				Moves the simulated square to [param world_position] (its XZ; this node's height is kept) [b]without a rebuild[/b]: the mesh, the FFT ocean and every texture stay bound, so a square following the camera never flashes. The ripples are cleared (the old square's heights are not the new one's). A shaped surface ([member surface_mesh]) or per-cell seabed is baked in node-local space, so those still rebuild.
+			</description>
+		</method>
+		<method name="sample_height" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="world_pos" type="Vector3" />
+			<description>
+				Returns the displaced water height at [param world_pos] including waves and interactive ripples.
+			</description>
+		</method>
+		<method name="set_sea_state">
+			<return type="void" />
+			<param index="0" name="wind_speed" type="float" />
+			<param index="1" name="wind_direction" type="Vector2" />
+			<param index="2" name="wave_amplitude" type="float" />
+			<param index="3" name="fetch" type="float" />
+			<description>
+				Wind, direction, wave height and fetch at once -- [b]one[/b] in-place spectrum update on a built solver (no rebuild; the waves keep their phases). The individual [member wind_speed] / [member wind_direction] / [member wave_amplitude] / [member fetch] setters share the same in-place path.
+			</description>
+		</method>
+		<method name="submit_impulse">
+			<return type="void" />
+			<param index="0" name="world_pos" type="Vector3" />
+			<param index="1" name="radius" type="float" />
+			<param index="2" name="strength" type="float" />
+			<description>
+				Injects a one-shot radial disturbance at [param world_pos].
+			</description>
+		</method>
+		<method name="submit_sphere">
+			<return type="void" />
+			<param index="0" name="owner" type="int" />
+			<param index="1" name="world_pos" type="Vector3" />
+			<param index="2" name="radius" type="float" />
+			<param index="3" name="strength" type="float" default="1.0" />
+			<description>
+				Registers a persistent interactive sphere (a floating body pushing the water) owned by [param owner]; update it every frame and remove it with [method clear_sphere].
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="caustics_enabled" type="bool" setter="set_caustics_enabled" getter="get_caustics_enabled" default="false">
+			Renders refracted-light caustics on the seabed.
+		</member>
+		<member name="caustics_reference_depth" type="float" setter="set_caustics_reference_depth" getter="get_caustics_reference_depth" default="2.5">
+			Depth used to normalize caustics intensity.
+		</member>
+		<member name="caustics_sun_direction" type="Vector3" setter="set_caustics_sun_direction" getter="get_caustics_sun_direction" default="Vector3(-0.35, -1, -0.25)">
+			Light direction used for caustics projection.
+		</member>
+		<member name="choppiness" type="float" setter="set_choppiness" getter="get_choppiness" default="1.0">
+			Horizontal sharpening of wave crests (Jacobian folding).
+		</member>
+		<member name="damping" type="float" setter="set_damping" getter="get_damping" default="0.08">
+			How quickly interactive ripples decay.
+		</member>
+		<member name="depth" type="float" setter="set_depth" getter="get_depth" default="3.0">
+			Simulation depth of the interactive ripple domain.
+		</member>
+		<member name="domain_size" type="Vector2" setter="set_domain_size" getter="get_domain_size" default="Vector2(20, 20)">
+			World-space extent of the interactive ripple simulation.
+		</member>
+		<member name="fetch" type="float" setter="set_fetch" getter="get_fetch" default="0.0">
+			Ocean fetch length in meters; [code]0.0[/code] auto-derives it from [member wind_speed] (see [method get_effective_fetch]).
+		</member>
+		<member name="foam_enabled" type="bool" setter="set_foam_enabled" getter="get_foam_enabled" default="true">
+			Enables foam accumulation on wave crests and shores.
+		</member>
+		<member name="foam_persistence" type="float" setter="set_foam_persistence" getter="get_foam_persistence" default="2.5">
+			How long foam lingers before dissolving.
+		</member>
+		<member name="foam_threshold" type="float" setter="set_foam_threshold" getter="get_foam_threshold" default="0.7">
+			Jacobian threshold below which foam appears.
+		</member>
+		<member name="grid_resolution" type="int" setter="set_grid_resolution" getter="get_grid_resolution" default="96">
+			Simulation texture resolution of the interactive ripple domain.
+		</member>
+		<member name="normal_mode" type="int" setter="set_normal_mode" getter="get_normal_mode" enum="PhysXWaterSurface3D.NormalMode" default="0">
+			Normal computation quality: per-pixel (exact) or per-vertex (cheaper).
+		</member>
+		<member name="ocean_domain_size" type="Vector2" setter="set_ocean_domain_size" getter="get_ocean_domain_size" default="Vector2(40, 40)">
+			World-space tile size of the FFT ocean spectrum.
+		</member>
+		<member name="ocean_grid_resolution" type="int" setter="set_ocean_grid_resolution" getter="get_ocean_grid_resolution" default="64">
+			Spectral resolution of the FFT ocean simulation.
+		</member>
+		<member name="render_extent" type="float" setter="set_render_extent" getter="get_render_extent" default="0.0">
+			Half-extent of the rendered water mesh; [code]0.0[/code] auto-fits the camera.
+		</member>
+		<member name="ripple_amplitude" type="float" setter="set_ripple_amplitude" getter="get_ripple_amplitude" default="1.0">
+			Global scale of interactive ripples.
+		</member>
+		<member name="seabed_collision_mask" type="int" setter="set_seabed_collision_mask" getter="get_seabed_collision_mask" default="1">
+			Collision mask scanned when deriving the seabed from the physics floor.
+		</member>
+		<member name="seabed_from_floor" type="bool" setter="set_seabed_from_floor" getter="get_seabed_from_floor" default="false">
+			If [code]true[/code], the seabed is sampled from colliders instead of assuming a flat floor.
+		</member>
+		<member name="shallow_fade_depth" type="float" setter="set_shallow_fade_depth" getter="get_shallow_fade_depth" default="1.0">
+			Depth at which water fades out toward the shore.
+		</member>
+		<member name="shore_foam_band" type="float" setter="set_shore_foam_band" getter="get_shore_foam_band" default="0.5">
+			Width of the foam band along the shoreline.
+		</member>
+		<member name="shore_undertow" type="float" setter="set_shore_undertow" getter="get_shore_undertow" default="0.3">
+			Backwash current strength along the shore.
+		</member>
+		<member name="surface_mesh" type="Mesh" setter="set_surface_mesh" getter="get_surface_mesh">
+			Mesh used to draw the water surface; leave empty to use the built-in ocean grid.
+		</member>
+		<member name="swash_drain_speed" type="float" setter="set_swash_drain_speed" getter="get_swash_drain_speed" default="0.12">
+			How quickly swash water drains back into the sea.
+		</member>
+		<member name="swash_run_up" type="float" setter="set_swash_run_up" getter="get_swash_run_up" default="0.3">
+			How far waves run up the shore.
+		</member>
+		<member name="water_level" type="float" setter="set_water_level" getter="get_water_level" default="0.0">
+			World-space rest height of the water surface.
+		</member>
+		<member name="water_material" type="ShaderMaterial" setter="set_water_material" getter="get_water_material">
+			Optional material override for the water surface.
+		</member>
+		<member name="wave_amplitude" type="float" setter="set_wave_amplitude" getter="get_wave_amplitude" default="1.0">
+			Global scale of the FFT ocean waves.
+		</member>
+		<member name="wet_sand_dry_time" type="float" setter="set_wet_sand_dry_time" getter="get_wet_sand_dry_time" default="12.0">
+			Seconds the wet-sand band takes to dry (see [method is_wet]).
+		</member>
+		<member name="wind_direction" type="Vector2" setter="set_wind_direction" getter="get_wind_direction" default="Vector2(1, 0)">
+			Horizontal direction the ocean waves travel.
+		</member>
+		<member name="wind_speed" type="float" setter="set_wind_speed" getter="get_wind_speed" default="8.0">
+			Ocean wind speed driving wave size and [member fetch].
+		</member>
+	</members>
+	<constants>
+		<constant name="NORMAL_MODE_PER_PIXEL" value="0" enum="NormalMode">
+		</constant>
+		<constant name="NORMAL_MODE_PER_VERTEX" value="1" enum="NormalMode">
+		</constant>
+	</constants>
+</class>

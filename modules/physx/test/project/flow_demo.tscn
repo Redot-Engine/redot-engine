@@ -1,0 +1,64 @@
+[gd_scene load_steps=6 format=3 uid="uid://flowdemo0000001"]
+
+[ext_resource type="Script" path="res://gdscript/flow_demo_drone.gd" id="1_drone"]
+
+[sub_resource type="Environment" id="env"]
+background_mode = 1
+background_color = Color(0.08, 0.09, 0.12, 1)
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.015
+volumetric_fog_length = 96.0
+
+[sub_resource type="BoxShape3D" id="ground_shape"]
+size = Vector3(40, 1, 40)
+
+[sub_resource type="BoxMesh" id="ground_mesh"]
+size = Vector3(40, 1, 40)
+
+[node name="FlowDemo" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.9, 0.5, 0)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(9, 5, 11)
+rotation = Vector3(-0.35, 0.7, 0)
+
+[node name="Ground" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.5, 0)
+
+[node name="Shape" type="CollisionShape3D" parent="Ground"]
+shape = SubResource("ground_shape")
+
+[node name="Visual" type="MeshInstance3D" parent="Ground"]
+mesh = SubResource("ground_mesh")
+
+[node name="Flow" type="PhysXFlowSimulation3D" parent="."]
+max_blocks = 1024
+cell_size = 0.25
+emitters = Array[NodePath]([NodePath("FireEmitter"), NodePath("SmokeEmitter")])
+colliders = Array[NodePath]([NodePath("../Ground")])
+
+[node name="FireEmitter" type="PhysXFlowEmitter3D" parent="Flow"]
+position = Vector3(0, 0.3, 0)
+radius = 0.45
+velocity = Vector3(0, 3.5, 0)
+temperature = 0.9
+fuel = 1.2
+smoke = 0.15
+
+[node name="SmokeEmitter" type="PhysXFlowEmitter3D" parent="Flow"]
+position = Vector3(2.5, 0.2, -1.5)
+shape = 1
+size = Vector3(0.6, 0.4, 0.6)
+velocity = Vector3(0, 1.6, 0)
+temperature = 0.0
+fuel = 0.0
+smoke = 1.0
+
+[node name="Drone" type="Node3D" parent="."]
+position = Vector3(-2.5, 1.0, 0)
+script = ExtResource("1_drone")

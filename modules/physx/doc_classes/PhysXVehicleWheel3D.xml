@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXVehicleWheel3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		One wheel of a [PhysXVehicle3D]. Add exactly 4 as children of a [PhysXVehicle3D], the same way [VehicleWheel3D] children work on a [VehicleBody3D].
+	</brief_description>
+	<description>
+		This node's own [member Node3D.position] is where the wheel rests under its own static share of the vehicle's weight -- the same convention [VehicleWheel3D]'s own position uses. It is not a separate offset property, so a [MeshInstance3D] parented under it lines up with the real, live wheel motion (suspension jounce, steering angle, roll) automatically, with no manual transform syncing, and the Inspector's own gizmo shows the wheel sitting exactly where Play will settle it -- no separate editor-time-vs-runtime estimate involved.
+		Exactly 2 of a vehicle's 4 wheels must have [member use_as_steering] enabled (the front axle) -- [PhysXVehicle3D] surfaces a configuration warning if that is not the case.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="damping_rate" type="float" setter="set_damping_rate" getter="get_damping_rate" default="0.25">
+			Damping applied to the wheel's own spin (rotation around its axle), independent of the tire's road grip -- resists the wheel spinning up or down, similar to driveline/bearing friction.
+		</member>
+		<member name="half_width" type="float" setter="set_half_width" getter="get_half_width" default="0.15">
+			Half the wheel's thickness, in meters.
+		</member>
+		<member name="radius" type="float" setter="set_radius" getter="get_radius" default="0.35">
+			The wheel's radius, in meters -- also the size the suspension raycast uses to place the wheel above the ground, so this should match whatever wheel mesh is parented under this node.
+		</member>
+		<member name="suspension_damping" type="float" setter="set_suspension_damping" getter="get_suspension_damping" default="5200.0">
+			How strongly the suspension resists the *rate* of compression change, separate from [member suspension_stiffness]'s resistance to compression itself -- higher values settle bounces (from a bump, or landing after a jump) faster, with less oscillation. The default is close to critically damped for the default [member suspension_stiffness] (damping / (2*sqrt(stiffness*sprung_mass)) ≈ 0.9) -- if you change stiffness a lot, rescale damping by roughly sqrt(new_stiffness/old_stiffness) to keep the same feel instead of introducing a bounce.
+		</member>
+		<member name="suspension_stiffness" type="float" setter="set_suspension_stiffness" getter="get_suspension_stiffness" default="22000.0">
+			The suspension spring's stiffness, in N/m. The default matches PhysX's own reference vehicle scaled to this node's default [member PhysXVehicle3D.mass] (same stiffness-to-sprung-mass ratio, roughly a 1.2Hz natural frequency) -- too high and cornering/braking/acceleration barely compress the suspension at all, so the body never visibly leans or dips; too low and it sits compressed close to [member suspension_travel] even at rest, leaving little margin before it bottoms out. Check [method PhysXVehicle3D.get_wheel_jounce] against [member suspension_travel] directly rather than guessing.
+		</member>
+		<member name="suspension_travel" type="float" setter="set_suspension_travel" getter="get_suspension_travel" default="0.22">
+			How far the suspension can move from full droop to full compression, in meters -- matches PhysX's own reference vehicle. [member Node3D.position] (the resting point) sits somewhere inside this range, not at either end, so raising this alone does not change ride height, only how much room there is to move before bottoming out or topping out. If this is too short for the ride height, [method PhysXVehicle3D.get_wheel_separation] reports a negative value (the wheel penetrates the ground even fully compressed).
+		</member>
+		<member name="tire_camber_stiffness" type="float" setter="set_tire_camber_stiffness" getter="get_tire_camber_stiffness" default="0.0">
+			How much lateral force the tire develops from camber angle. This is useful for leaned motorcycle tires; zero disables camber-generated force.
+		</member>
+		<member name="tire_friction" type="float" setter="set_tire_friction" getter="get_tire_friction" default="1.0">
+			The tire's peak grip coefficient, reached at ~10% wheel slip. Grip below and above that point is scaled by [member tire_rest_grip] and [member tire_slide_grip] -- a real tire (and [VehicleWheel3D]'s own simpler single-coefficient model) grips less once it starts sliding than while still rolling, which is what actually produces a skid under hard braking or throttle instead of the tire just sticking to the road regardless of how hard it is being spun or braked. Unlike the wheel's other properties, changing this at runtime does NOT rebuild the vehicle: the built tire data is rewritten in place, so a driving script can move a wheel between surfaces (wet, ice, gravel) every tick with no hitch.
+		</member>
+		<member name="tire_lateral_stiffness" type="float" setter="set_tire_lateral_stiffness" getter="get_tire_lateral_stiffness" default="20000.0">
+			How much sideways (cornering) force the tire develops per unit of lateral slip angle. Higher values corner more sharply for the same steering input, at the cost of feeling less forgiving/more twitchy.
+		</member>
+		<member name="tire_longitudinal_stiffness" type="float" setter="set_tire_longitudinal_stiffness" getter="get_tire_longitudinal_stiffness" default="20000.0">
+			How much forward/backward (acceleration or braking) force the tire develops per unit of longitudinal slip. Higher values put down power more directly for the same throttle/brake input, at the cost of feeling less forgiving/more twitchy.
+		</member>
+		<member name="tire_rest_grip" type="float" setter="set_tire_rest_grip" getter="get_tire_rest_grip" default="0.9">
+			Grip at zero wheel slip, as a fraction of [member tire_friction]. Lower than [code]1.0[/code] so grip still ramps up toward the peak at ~10% slip rather than starting there.
+		</member>
+		<member name="tire_slide_grip" type="float" setter="set_tire_slide_grip" getter="get_tire_slide_grip" default="0.7">
+			Grip once the tire is fully sliding/locked (100% wheel slip), as a fraction of [member tire_friction]. Lower values make a locked wheel (hard braking) or a spun-out wheel (hard throttle) slide/skid more readily instead of gripping like a rolling tire; [code]1.0[/code] disables the falloff entirely (a locked tire grips as well as a rolling one).
+		</member>
+		<member name="use_as_steering" type="bool" setter="set_use_as_steering" getter="is_used_as_steering" default="false">
+			Whether this wheel is on the steering (front) axle. Exactly 2 of a vehicle's 4 wheels must have this enabled -- [PhysXVehicle3D] surfaces a configuration warning otherwise. Also determines which axle [member PhysXVehicle3D.ackermann_strength] applies Ackermann correction to.
+		</member>
+		<member name="use_as_traction" type="bool" setter="set_use_as_traction" getter="is_used_as_traction" default="true">
+			Whether this wheel receives engine torque from [member PhysXVehicle3D.throttle]. All 4 wheels default to [code]true[/code] (all-wheel drive) -- disable on the rear (or front) pair for front-wheel (or rear-wheel) drive instead.
+		</member>
+		<member name="wheel_mass" type="float" setter="set_wheel_mass" getter="get_wheel_mass" default="20.0">
+			The wheel's own mass, in kg -- affects how quickly it spins up/down under engine torque or braking, independent of the vehicle's own [member PhysXVehicle3D.mass].
+		</member>
+		<member name="wheel_moment_of_inertia" type="float" setter="set_wheel_moment_of_inertia" getter="get_wheel_moment_of_inertia" default="1.2">
+			The wheel's own rotational inertia around its axle -- higher values make its spin speed change more sluggishly under engine torque or braking.
+		</member>
+	</members>
+</class>

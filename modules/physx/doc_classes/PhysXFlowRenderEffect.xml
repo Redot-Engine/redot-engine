@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXFlowRenderEffect" inherits="CompositorEffect" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		The world compositor [PhysXFlowSimulation3D] installs to draw its gas, provided by the PhysX module.
+	</brief_description>
+	<description>
+		One instance per world, installed by [PhysXFlowSimulation3D] when it draws volumetrically (never instanced from a scene). Scripts reach it through the static [method get_world_compositor] to inspect which renderer backend the gas draws on.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_world_compositor" qualifiers="static">
+			<return type="Compositor" />
+			<param index="0" name="world" type="World3D" />
+			<description>
+				The world's compositor when a [PhysXFlowSimulation3D] installed its Flow effect into it, or [code]null[/code] when none did.
+			</description>
+		</method>
+	</methods>
+</class>

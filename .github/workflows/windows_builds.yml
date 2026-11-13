@@ -53,6 +53,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          lfs: true
           submodules: recursive
 
       - name: Restore Godot build cache
@@ -139,6 +140,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          lfs: true
           submodules: recursive
 
       - name: Restore Godot build cache
@@ -220,6 +222,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          lfs: true
           submodules: recursive
 
       - name: Download cross-compiled editor

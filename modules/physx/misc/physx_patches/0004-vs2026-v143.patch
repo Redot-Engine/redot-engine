@@ -1,0 +1,94 @@
+Visual Studio 2026 with no Visual Studio 2022 installed: build the vc17 presets
+with the VS 2026 generator and VS 2022's v143 toolset (VS 2026's "MSVC v143"
+component), so the SDK is the same as from VS 2022 -- vc143 libraries, and CUDA
+12.x still works (VS 2026's own v145 needs CUDA 13.2+, which needs R580+
+drivers). Machines with VS 2022 (full or Build Tools) generate exactly as before.
+
+Flow: its vs2022 projects ask for v143, but build.bat points premake at the
+newest Visual Studio's default toolset; on VS 2026 that's v145, whose headers
+v143 can't compile with. Use the v143 component's toolset folder there.
+
+diff --git a/flow/build.bat b/flow/build.bat
+index 4154e31..09a2ac7 100644
+--- a/flow/build.bat
++++ b/flow/build.bat
+@@ -46,6 +46,12 @@ if exist "%InstallDir%\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt"
+ )
+ endlocal & set "MSVS_TOOLSET=%MSVS_TOOLSET%"
+ 
++:: godot_physx: the vs2022 projects ask for the v143 toolset, which Visual Studio 2026 (18) has as its "MSVC v143"
++:: component; use that toolset's headers and libraries too, not VS 2026's v145 default, which v143 can't compile with.
++if "%MAJOR_VERSION%" GEQ "18" (
++    for /d %%d in ("%InstallDir%\VC\Tools\MSVC\14.3*" "%InstallDir%\VC\Tools\MSVC\14.4*") do set "MSVS_TOOLSET=%%~d"
++)
++
+ if not exist "%MSVS_TOOLSET%" (
+     echo MSVC toolset not found, check Visual Studio installation
+     goto Error
+diff --git a/physx/buildtools/cmake_generate_projects.py b/physx/buildtools/cmake_generate_projects.py
+index a7d98e2..ac427ea 100644
+--- a/physx/buildtools/cmake_generate_projects.py
++++ b/physx/buildtools/cmake_generate_projects.py
+@@ -104,6 +104,28 @@ def noPresetProvided(physx_root_dir):
+     mode = int(eval(input('Enter preset number: ')))
+     return presetList[mode]
+ 
++# godot_physx: a machine with Visual Studio 2026 and no Visual Studio 2022 (not even its Build Tools) builds the vc17
++# presets with the VS 2026 generator and VS 2022's v143 toolset (the "MSVC v143" component of VS 2026), so the SDK
++# is the same as from VS 2022: vc143 libraries, and CUDA 12.x still works. None when VS 2022 is installed.
++_vs2026Fallback = []
++
++
++def vs2026WithV143():
++    if not _vs2026Fallback:
++        found = {}
++        vswhere = os.path.join(os.environ.get('PM_vswhere_PATH', ''), 'VsWhere.exe')
++        for name, versions in (('2022', '[17.0,18.0)'), ('2026', '[18.0,19.0)')):
++            path = ''
++            if os.path.isfile(vswhere):
++                path = subprocess.run([vswhere, '-products', '*', '-version', versions, '-latest', '-property', 'installationPath'], capture_output=True, text=True).stdout.strip()
++            found[name] = path != ''
++        use = not found['2022'] and found['2026']
++        if use:
++            print('Visual Studio 2022 not found, Visual Studio 2026 is: using its generator with the v143 toolset')
++        _vs2026Fallback.append(use)
++    return _vs2026Fallback[0]
++
++
+ class CMakePreset:
+     presetName = ''
+     targetPlatform = ''
+@@ -164,6 +186,10 @@ class CMakePreset:
+         return True
+ 
+ 
++    def usesCudaToolset(self):
++        gpu = any(s.startswith(('-DPX_GENERATE_GPU_PROJECTS=', '-DPX_GENERATE_GPU_PROJECTS_ONLY=')) and s.endswith('=TRUE') for s in self.cmakeSwitches)
++        return gpu and os.environ.get('PM_CUDA_PATH') is not None
++
+     def getCMakeSwitches(self):
+         outString = ''
+         # We need to check both GPU-related switches
+@@ -216,7 +242,9 @@ class CMakePreset:
+                     outString = outString + ' -DCMAKE_CUDA_COMPILER=' + nvcc_path
+ 
+                 if self.compiler in ['vc15', 'vc16', 'vc17'] and self.generator != 'ninja':
+-                    outString = outString + ' -T cuda=' + cuda_path
++                    # One -T: the v143 toolset joins the CUDA toolkit when VS 2026 stands in for VS 2022.
++                    toolset = 'v143,' if self.compiler == 'vc17' and vs2026WithV143() else ''
++                    outString = outString + ' -T ' + toolset + 'cuda=' + cuda_path
+                 # TODO: Need to do the same for gcc (aarch64) when we package it with Packman
+                 elif self.compiler == 'clang':
+                     if os.environ.get('PM_clang_PATH') is not None:
+@@ -244,6 +272,11 @@ class CMakePreset:
+         # Visual studio
+         if self.compiler in vs_versions:
+             generator = '-G \"Ninja Multi-Config\"' if self.generator == 'ninja' else '-G ' + vs_versions[self.compiler]
++            if self.compiler == 'vc17' and self.generator != 'ninja' and vs2026WithV143():
++                generator = '-G \"Visual Studio 18 2026\"'
++                # The toolset goes with the CUDA toolkit's -T when the GPU projects are generated.
++                if not self.usesCudaToolset():
++                    generator += ' -T v143'
+             outString += generator
+         # Windows crosscompile
+         elif self.compiler == 'x86_64-w64-mingw32-g++':
