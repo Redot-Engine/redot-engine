@@ -55,6 +55,7 @@ class DirectionalLight3D;
 class EditorData;
 class EditorSelection;
 class EditorSpinSlider;
+class HFlowContainer;
 class HSplitContainer;
 class LineEdit;
 class MenuButton;
@@ -827,6 +828,7 @@ private:
 	void _menu_item_pressed(int p_option);
 	void _menu_item_toggled(bool pressed, int p_option);
 	void _menu_gizmo_toggled(int p_option);
+	HFlowContainer *main_flow = nullptr;
 	/// Used for secondary menu items which are displayed depending on the currently selected node
 	/// (such as MeshInstance's "Mesh" menu).
 	PanelContainer *context_toolbar_panel = nullptr;
@@ -1011,6 +1013,8 @@ public:
 
 	void add_control_to_menu_panel(Control *p_control);
 	void remove_control_from_menu_panel(Control *p_control);
+	/** Returns the width needed to keep the visible 3D toolbars on one row, including margins. */
+	int get_minimum_toolbar_width() const;
 
 	void add_control_to_left_panel(Control *p_control);
 	void remove_control_from_left_panel(Control *p_control);
