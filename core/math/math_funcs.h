@@ -617,15 +617,15 @@ constexpr T rotate_toward(T p_from, T p_to, T p_delta) noexcept {
 	;
 }
 
+/// Converting linear gain to decibals.
 template <std::floating_point T>
 constexpr T linear_to_db(T p_linear) noexcept {
-	// Converting linear gain to decibals.
 	return log(p_linear) * T(DB_CONVERSION_GAIN);
 }
 
+/// Converting decibals to linear gain.
 template <std::floating_point T>
 constexpr T db_to_linear(T p_db) noexcept {
-	// Converting decibals to linear gain.
 	return exp(p_db * T(GAIN_CONVERSION_DB));
 }
 
@@ -705,12 +705,12 @@ _FORCE_INLINE_ float randf() noexcept {
 }
 double randfn(double p_mean, double p_deviation) noexcept;
 
-// TODO: Template + make this better (later.)
+/// @todo Template + make this better (later.)
 double random(double p_from, double p_to) noexcept;
 float random(float p_from, float p_to) noexcept;
 int random(int p_from, int p_to) noexcept;
 
-// This function should be as fast as possible and rounding mode should not matter.
+/// This function should be as fast as possible and rounding mode should not matter.
 constexpr int fast_ftoi(float p_value) noexcept {
 	return static_cast<int>(p_value);
 }

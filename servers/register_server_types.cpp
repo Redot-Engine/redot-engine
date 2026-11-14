@@ -53,6 +53,7 @@
 #include "audio/effects/audio_effect_eq.h"
 #include "audio/effects/audio_effect_filter.h"
 #include "audio/effects/audio_effect_hard_limiter.h"
+#include "audio/effects/audio_effect_noise_gate.h"
 #include "audio/effects/audio_effect_panner.h"
 #include "audio/effects/audio_effect_phaser.h"
 #include "audio/effects/audio_effect_pitch_shift.h"
@@ -228,6 +229,7 @@ void register_server_types() {
 		GDREGISTER_ABSTRACT_CLASS(AudioEffectSpectrumAnalyzerInstance);
 
 		GDREGISTER_CLASS(AudioEffectCapture);
+		GDREGISTER_CLASS(AudioEffectNoiseGate);
 
 #ifndef DISABLE_DEPRECATED
 		GDREGISTER_CLASS(AudioEffectLimiter);
