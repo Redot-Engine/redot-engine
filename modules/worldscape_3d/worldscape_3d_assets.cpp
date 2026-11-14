@@ -694,11 +694,13 @@ Error WorldScape3DAssets::save(const String &p_path) {
 	if (path.get_extension() == "tres" || path.get_extension() == "res") {
 		LOG(DEBUG, "Attempting to save external file: " + path);
 		err = ResourceSaver::save(this, path, ResourceSaver::FLAG_COMPRESS);
+#ifdef DEBUG_ENABLED
 		if (err == OK) {
 			LOG(DEBUG, "File saved successfully: ", path);
 		} else {
 			LOG(ERROR, "Cannot save file: ", path, ". Error code: ", ERROR, ". Look up @GlobalScope Error enum in the Godot docs");
 		}
+#endif
 	}
 	return err;
 }
