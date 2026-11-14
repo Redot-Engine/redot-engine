@@ -7,7 +7,7 @@ env:
   SCONS_FLAGS: >-
     dev_mode=yes
     module_text_server_fb_enabled=yes
-    debug_symbols=no
+    debug_symbols=yes
     "angle_libs=${{ github.workspace }}/"
     "accesskit_sdk_path=${{ github.workspace }}/accesskit-c-0.17.0/"
   SCONS_CACHE_MSVC_CONFIG: true
@@ -111,6 +111,22 @@ jobs:
           cache-name: ${{ matrix.cache-name }}
         continue-on-error: true
 
+      - name: Unit tests
+        run: |
+          ${{ matrix.bin }} --version
+          ${{ matrix.bin }} --help
+          python misc/scripts/run_windows_tests.py ${{ matrix.bin }}
+
+      - name: Upload test diagnostics
+        if: failure()
+        uses: ./.github/actions/upload-artifact
+        with:
+          name: ${{ matrix.cache-name }}-test-diagnostics
+          path: |
+            bin/*.dmp
+            bin/*.pdb
+            bin/*.exe
+
       - name: Prepare artifact
         if: matrix.compiler == 'msvc'
         run: |
@@ -121,12 +137,6 @@ jobs:
         uses: ./.github/actions/upload-artifact
         with:
           name: ${{ matrix.cache-name }}
-
-      - name: Unit tests
-        run: |
-          ${{ matrix.bin }} --version
-          ${{ matrix.bin }} --help
-          ${{ matrix.bin }} --test --force-colors
 
   build-windows-mono:
     runs-on: ubuntu-24.04
@@ -186,7 +196,7 @@ jobs:
           scons-flags: >-
             dev_mode=yes
             module_text_server_fb_enabled=yes
-            debug_symbols=no
+            debug_symbols=yes
             module_mono_enabled=yes
             use_mingw=yes
             use_llvm=yes
@@ -257,7 +267,16 @@ jobs:
         run: |
           ./bin/redot.windows.editor.x86_64.llvm.mono.exe --version
           ./bin/redot.windows.editor.x86_64.llvm.mono.exe --help
-          ./bin/redot.windows.editor.x86_64.llvm.mono.exe --headless --test --force-colors
+          python misc/scripts/run_windows_tests.py ./bin/redot.windows.editor.x86_64.llvm.mono.exe --headless
+
+      - name: Upload test diagnostics
+        if: failure()
+        uses: ./.github/actions/upload-artifact
+        with:
+          name: windows-editor-mono-llvm-test-diagnostics
+          path: |
+            bin/*.dmp
+            bin/*.exe
 
       - name: .NET source generators tests
         shell: pwsh

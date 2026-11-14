@@ -326,6 +326,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 #endif // NAVIGATION_3D_DISABLED
 
 	void test_case_start(const doctest::TestCaseData &p_in) override {
+		print_line(String("Running test: ") + p_in.m_name);
 		reinitialize();
 
 		String name = String(p_in.m_name);

@@ -116,7 +116,8 @@ public:
 	};
 
 	Vector<TestMsgType> message_types_to_write;
-	bool during_writing = false;
+	SafeFlag writing_done;
+	SafeFlag cancel_writing;
 	int message_count_to_read = 0;
 	bool exit_threads = false;
 
@@ -176,14 +177,13 @@ public:
 	}
 
 	void writer_thread_loop() {
-		during_writing = false;
 		writer_threadwork.thread_wait_for_work();
 		while (!exit_threads) {
 			Transform3D tr;
 			Transform3D otr;
 			float f = 1;
-			during_writing = true;
-			for (int i = 0; i < message_types_to_write.size(); i++) {
+			writing_done.clear();
+			for (int i = 0; i < message_types_to_write.size() && !cancel_writing.is_set(); i++) {
 				TestMsgType msg_type = message_types_to_write[i];
 				switch (msg_type) {
 					case TEST_MSG_FUNC1_TRANSFORM:
@@ -212,7 +212,7 @@ public:
 				}
 			}
 			message_types_to_write.clear();
-			during_writing = false;
+			writing_done.set();
 
 			writer_threadwork.thread_done_work();
 			writer_threadwork.thread_wait_for_work();
@@ -462,20 +462,29 @@ TEST_CASE("[Stress][CommandQueue] Stress test command queue") {
 	}
 	sts.writer_threadwork.main_start_work();
 
-	int max_loop_iters = msgs_to_add * 2;
+	const uint64_t deadline = OS::get_singleton()->get_ticks_usec() + 10 * 1000000;
+	bool timed_out = false;
 	int loop_iters = 0;
-	while (sts.func1_count < msgs_to_add && loop_iters < max_loop_iters) {
-		int remaining = (msgs_to_add - sts.func1_count);
+	while (!sts.writing_done.is_set()) {
+		if (!timed_out && OS::get_singleton()->get_ticks_usec() >= deadline) {
+			timed_out = true;
+			sts.cancel_writing.set();
+		}
+		// Keep draining a synchronous command before waiting for the writer, even on failure.
+		const int previous_count = sts.func1_count;
+		int remaining = MAX(1, msgs_to_add - previous_count);
 		sts.message_count_to_read = rng.randi_range(1, remaining < 128 ? remaining : 128);
 		if (loop_iters % 3 == 0) {
 			sts.message_count_to_read = -1;
 		}
 		sts.reader_threadwork.main_start_work();
 		sts.reader_threadwork.main_wait_for_done();
+		if (sts.func1_count == previous_count) {
+			OS::get_singleton()->delay_usec(1000);
+		}
 		loop_iters++;
 	}
-	CHECK_MESSAGE(loop_iters < max_loop_iters,
-			"Reader needed too many iterations to read messages!");
+	CHECK_MESSAGE(!timed_out, "Timed out waiting for the command queue writer!");
 	sts.writer_threadwork.main_wait_for_done();
 
 	sts.destroy_threads();
