@@ -132,7 +132,6 @@
 #include "editor/register_editor_types.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/translations/editor_translation.h"
-#include "editor/areas/area_editor_node.h"
 
 #ifndef DISABLE_DEPRECATED
 #include "editor/project_upgrade/project_converter_3_to_4.h"
@@ -174,7 +173,6 @@ static InputMap *input_map = nullptr;
 static TranslationServer *translation_server = nullptr;
 static Performance *performance = nullptr;
 static PackedData *packed_data = nullptr;
-static bool new_editor = false;
 #ifdef MINIZIP_ENABLED
 static ZipArchive *zip_packed_data = nullptr;
 #endif
@@ -1503,8 +1501,6 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 			project_manager = true;
 		} else if (arg == "--recovery-mode") { // Enables recovery mode.
 			recovery_mode = true;
-		} else if (arg == "--new-editor") {
-			new_editor = true;
 		} else if (arg == "--debug-server") {
 			if (N) {
 				debug_server_uri = N->get();
@@ -1827,8 +1823,6 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 #ifdef TOOLS_ENABLED
 		} else if (arg == "--editor-pseudolocalization") {
 			editor_pseudolocalization = true;
-		} else if (arg == "--new-editor") {
-			new_editor = true;
 #endif // TOOLS_ENABLED
 		} else if (arg == "--gpu-profile") {
 			profile_gpu = true;
@@ -4554,18 +4548,12 @@ int Main::start() {
 			sml->get_root()->add_child(editor_core);
 			editor_core->initialize();
 
-			if (new_editor) {
-				// New drag-and-drop editor shell
-				AreaEditorNode *area_editor = memnew(AreaEditorNode);
-				sml->get_root()->add_child(area_editor);
-			} else {
-				editor_node = memnew(EditorNode);
-				sml->get_root()->add_child(editor_node);
+			editor_node = memnew(EditorNode);
+			sml->get_root()->add_child(editor_node);
 
-				if (!_export_preset.is_empty()) {
-					editor_node->export_preset(_export_preset, positional_arg, export_debug, export_pack_only, install_android_build_template, export_patch, patches);
-					game_path = ""; // Do not load anything.
-				}
+			if (!_export_preset.is_empty()) {
+				editor_node->export_preset(_export_preset, positional_arg, export_debug, export_pack_only, install_android_build_template, export_patch, patches);
+				game_path = ""; // Do not load anything.
 			}
 
 			OS::get_singleton()->benchmark_end_measure("Startup", "Editor");

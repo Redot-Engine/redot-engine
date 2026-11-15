@@ -99,7 +99,6 @@ class EditorPluginManager : public RefCounted {
 	static int build_callback_count;
 	static int plugin_init_callback_count;
 
-
 	// ── Internal helpers ──────────────────────────────────────────────────
 	void _remove_plugin_from_enabled(const String &p_name);
 	void _update_addon_config();

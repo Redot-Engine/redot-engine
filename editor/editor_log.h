@@ -115,7 +115,7 @@ private:
 			message_count = p_count;
 			if (toggle_button) {
 				toggle_button->set_text(itos(message_count));
-				}
+			}
 		}
 
 		bool is_active() {
