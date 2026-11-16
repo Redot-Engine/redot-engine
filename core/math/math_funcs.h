@@ -642,10 +642,7 @@ constexpr T wrapf(T p_value, T p_min, T p_max) noexcept {
 		return p_min;
 	}
 
-	T offset = p_value - p_min;
-	T result = offset - range * floor(offset / range);
-	// This is cheaper due to floor blocking.
-	result += p_min;
+	T result = p_value - (range * floor((p_value - p_min) / range));
 
 	if (is_equal_approx(result, p_max)) {
 		return p_min;
