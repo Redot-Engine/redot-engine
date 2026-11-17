@@ -1,0 +1,354 @@
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+#ifndef PX_ACTOR_H
+#define PX_ACTOR_H
+
+#include "PxPhysXConfig.h"
+#include "foundation/PxBounds3.h"
+#include "PxClient.h"
+#include "common/PxBase.h"
+
+#if !PX_DOXYGEN
+namespace physx
+{
+#endif
+
+class PxRigidActor;
+class PxRigidBody;
+class PxRigidStatic;
+class PxRigidDynamic;
+class PxArticulationLink;
+class PxScene;
+
+/**
+\brief Group index which allows to specify 1- or 2-way interaction
+*/
+typedef PxU8 PxDominanceGroup;		// Must be < 32, PxU8.
+
+/**
+\brief Flags which control the behavior of an actor.
+
+\see PxActorFlags PxActor PxActor.setActorFlag() PxActor.getActorFlags()
+*/
+struct PxActorFlag
+{
+	enum Enum
+	{
+		/**
+		\brief Enable debug renderer for this actor
+
+		\see PxScene.getRenderBuffer() PxRenderBuffer PxVisualizationParameter
+		*/
+		eVISUALIZATION					= (1<<0),
+
+		/**
+		\brief Disables scene gravity for this actor
+		*/
+		eDISABLE_GRAVITY				= (1<<1),
+
+		/**
+		\brief Enables the sending of PxSimulationEventCallback::onWake() and PxSimulationEventCallback::onSleep() notify events
+
+		\see PxSimulationEventCallback::onWake() PxSimulationEventCallback::onSleep()
+		*/
+		eSEND_SLEEP_NOTIFIES			= (1<<2),
+
+		/**
+		\brief Disables simulation for the actor.
+		
+		\note This is only supported by PxRigidStatic and PxRigidDynamic actors and can be used to reduce the memory footprint when rigid actors are
+		used for scene queries only.
+
+		\note Setting this flag will remove all constraints attached to the actor from the scene.
+
+		\note If this flag is set, the following calls are forbidden:
+		\li PxRigidBody: setLinearVelocity(), setAngularVelocity(), addForce(), addTorque(), clearForce(), clearTorque(), setForceAndTorque()
+		\li PxRigidDynamic: setKinematicTarget(), setWakeCounter(), wakeUp(), putToSleep()
+
+		\par <b>Sleeping:</b>
+		Raising this flag will set all velocities and the wake counter to 0, clear all forces, clear the kinematic target, put the actor
+		to sleep and wake up all touching actors from the previous frame.
+		*/
+		eDISABLE_SIMULATION				= (1<<3)
+	};
+};
+
+/**
+\brief collection of set bits defined in PxActorFlag.
+
+\see PxActorFlag
+*/
+typedef PxFlags<PxActorFlag::Enum,PxU8> PxActorFlags;
+PX_FLAGS_OPERATORS(PxActorFlag::Enum,PxU8)
+
+/**
+\brief Identifies each type of actor.
+\see PxActor 
+*/
+struct PxActorType
+{
+	enum Enum
+	{
+		/**
+		\brief A static rigid body
+		\see PxRigidStatic
+		*/
+		eRIGID_STATIC,
+
+		/**
+		\brief A dynamic rigid body
+		\see PxRigidDynamic
+		*/
+		eRIGID_DYNAMIC,
+		
+		/**
+		\brief An articulation link
+		\see PxArticulationLink
+		*/
+		eARTICULATION_LINK,
+
+		/**
+		\brief A deformable surface
+		\see PxDeformableSurface
+		*/
+		eDEFORMABLE_SURFACE,
+
+		/**
+		\brief A deformable volume
+		\see PxDeformableVolume
+		*/
+		eDEFORMABLE_VOLUME,
+
+		/**
+		\brief A PBD ParticleSystem
+		\see PxPBDParticleSystem
+		*/
+		ePBD_PARTICLESYSTEM,
+
+		//! \brief internal use only!
+		eACTOR_COUNT,
+
+		//! \brief internal use only!
+		eACTOR_FORCE_DWORD = 0x7fffffff
+	};
+};
+
+/**
+\brief PxActor is the base class for the main simulation objects in the physics SDK.
+
+The actor is owned by and contained in a PxScene.
+*/
+class PxActor : public PxBase
+{
+public:
+	/**
+	\brief Deletes the actor.
+	
+	Do not keep a reference to the deleted instance.
+
+	If the actor belongs to a #PxAggregate object, it is automatically removed from the aggregate.
+
+	\see PxBase.release(), PxAggregate
+	*/
+	virtual		void			release() = 0;
+
+	/**
+	\brief Retrieves the type of actor.
+
+	\return The actor type of the actor.
+
+	\see PxActorType
+	*/
+	virtual		PxActorType::Enum	getType()	const = 0;
+
+	/**
+	\brief Retrieves the scene which this actor belongs to.
+
+	\return Owner Scene. NULL if not part of a scene.
+
+	\see PxScene
+	*/
+	virtual		PxScene*		getScene()	const = 0;
+
+	// Runtime modifications
+
+	/**
+	\brief Sets a name string for the object that can be retrieved with getName().
+	
+	This is for debugging and is not used by the SDK. The string is not copied by the SDK, 
+	only the pointer is stored.
+
+	\param[in] name String to set the objects name to.
+
+	<b>Default:</b> NULL
+
+	\see getName()
+	*/
+	virtual		void			setName(const char* name)		= 0;
+
+	/**
+	\brief Retrieves the name string set with setName().
+
+	\return Name string associated with object.
+
+	\see setName()
+	*/
+	virtual		const char*		getName()			const	= 0;
+
+	/**
+	\brief Retrieves the axis aligned bounding box enclosing the actor.
+
+	\note It is not allowed to use this method while the simulation is running (except during PxScene::collide(),
+	in PxContactModifyCallback or in contact report callbacks).
+
+	\param[in] inflation  Scale factor for computed world bounds. Box extents are multiplied by this value.
+
+	\return The actor's bounding box.
+
+	\see PxBounds3
+	*/
+	virtual		PxBounds3		getWorldBounds(float inflation=1.01f) const = 0;
+
+	/**
+	\brief Raises or clears a particular actor flag.
+	
+	See the list of flags #PxActorFlag
+
+	<b>Sleeping:</b> Does <b>NOT</b> wake the actor up automatically.
+
+	\param[in] flag  The PxActor flag to raise(set) or clear. See #PxActorFlag.
+	\param[in] value The boolean value to assign to the flag.
+
+	\see PxActorFlag getActorFlags() 
+	*/
+	virtual		void			setActorFlag(PxActorFlag::Enum flag, bool value) = 0;
+
+	/**
+	\brief Sets the actor flags.
+	
+	See the list of flags #PxActorFlag
+	\see PxActorFlag setActorFlag() 
+	*/
+	virtual		void			setActorFlags( PxActorFlags inFlags ) = 0;
+
+	/**
+	\brief Reads the PxActor flags.
+	
+	See the list of flags #PxActorFlag
+
+	\return The values of the PxActor flags.
+
+	\see PxActorFlag setActorFlag() 
+	*/
+	virtual		PxActorFlags	getActorFlags()	const = 0;
+
+	/**
+	\brief Assigns dynamic actors a dominance group identifier.
+	
+	PxDominanceGroup is a 5 bit group identifier (legal range from 0 to 31).
+	
+	The PxScene::setDominanceGroupPair() lets you set certain behaviors for pairs of dominance groups.
+	By default every dynamic actor is created in group 0.
+
+	<b>Default:</b> 0
+
+	<b>Sleeping:</b> Changing the dominance group does <b>NOT</b> wake the actor up automatically.
+
+	\param[in] dominanceGroup The dominance group identifier. <b>Range:</b> [0..31]
+
+	\see getDominanceGroup() PxDominanceGroup PxScene::setDominanceGroupPair()
+	*/
+	virtual		void			setDominanceGroup(PxDominanceGroup dominanceGroup)		 = 0;
+	
+	/**
+	\brief Retrieves the value set with setDominanceGroup().
+
+	\return The dominance group of this actor.
+
+	\see setDominanceGroup() PxDominanceGroup PxScene::setDominanceGroupPair()
+	*/
+	virtual		PxDominanceGroup	getDominanceGroup() const = 0;
+
+	/**
+	\brief Sets the owner client of an actor.
+
+	This cannot be done once the actor has been placed into a scene.
+
+	<b>Default:</b> PX_DEFAULT_CLIENT
+
+	\see PxClientID PxScene::createClient() 
+	*/
+	virtual		void			setOwnerClient( PxClientID inClient ) = 0;
+
+	/**
+	\brief Returns the owner client that was specified at creation time.
+
+	This value cannot be changed once the object is placed into the scene.
+
+	\see PxClientID PxScene::createClient()
+	*/
+	virtual		PxClientID		getOwnerClient() const = 0;
+
+	/**
+	\brief Retrieves the aggregate the actor might be a part of.
+
+	\return The aggregate the actor is a part of, or NULL if the actor does not belong to an aggregate.
+
+	\see PxAggregate
+	*/
+	virtual		PxAggregate*	getAggregate()	const = 0;
+
+/************************************************************************************************/
+/** \name Environment ID
+*/
+
+	/**
+	\brief Sets the environment ID for this actor.
+
+	The environment ID is an extra built-in filter group for the GPU broadphase. Actors will only collide with each-other if they have the
+	same environment ID.
+	
+	The default value is PX_INVALID_U32. Actors with this ID will collide with other actors, regardless of which environment they are a part of.
+
+	The environment ID must be set before adding the actor to a scene, and cannot change while the actor is in the scene.
+
+	If it is not PX_INVALID_U32, the environment ID must be smaller than 1<<24, i.e. the system does not support more than 1<<24 environments.
+
+	<b>Default:</b> PX_INVALID_U32
+
+	\note	This is not available for CPU broadphases.
+
+	\param[in]	envID	 Environment ID for this actor.
+	\return True if success.
+
+	\see getEnvironmentID()
+	*/
+	virtual	bool	setEnvironmentID(PxU32 envID)	= 0;
+
+	/**
+	\brief Returns the environment ID for this actor.
+
+	\return Environment ID for this actor.
+
+	\see setEnvironmentID()
+	*/
+	virtual	PxU32	getEnvironmentID()		const	= 0;
+
+	//public variables:
+				void*			userData;	//!< user can assign this to whatever, usually to create a 1:1 relationship with a user object.
+
+protected:
+	PX_INLINE					PxActor(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags), userData(NULL) {}
+	PX_INLINE					PxActor(PxBaseFlags baseFlags) : PxBase(baseFlags) {}
+	virtual						~PxActor()	{}
+	virtual		bool			isKindOf(const char* name)	const		{ PX_IS_KIND_OF(name, "PxActor", PxBase); }
+};
+
+#if !PX_DOXYGEN
+} // namespace physx
+#endif
+
+#endif

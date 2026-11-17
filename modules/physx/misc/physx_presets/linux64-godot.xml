@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Mirrors vc17win64-godot.xml minus the Windows-only static-CRT switches
+  (NV_USE_STATIC_WINCRT / NV_USE_DEBUG_WINCRT have no meaning outside MSVC).
+-->
+<preset name="linux64-godot" comment="Linux x86-64 CPU-only static libs, for linking into the Godot godot_physx module.">
+  <platform targetPlatform="linux" compiler="clang" />
+  <CMakeSwitches>
+    <cmakeSwitch name="PX_BUILDSNIPPETS" value="False" comment="No sample snippets." />
+    <cmakeSwitch name="PX_BUILDPVDRUNTIME" value="False" comment="No OmniPVD runtime project." />
+    <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Static libraries, linked into the module." />
+    <cmakeSwitch name="PX_CMAKE_SUPPRESS_REGENERATION" value="True" comment="No ZERO_CHECK projects." />
+    <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS" value="False" comment="CPU only; the GPU preset builds these." />
+    <cmakeSwitch name="PX_FLOAT_POINT_PRECISE_MATH" value="False" comment="Fast math." />
+  </CMakeSwitches>
+  <CMakeParams>
+    <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/linux64-godot/PhysX" comment="Install path, relative to the PhysX SDK root." />
+  </CMakeParams>
+</preset>

@@ -23,6 +23,14 @@ for path in [
 # Avoid importing GeneratedIncludes.props.
 os.environ["GodotSkipGenerated"] = "true"
 
+# Projects whose restore needs packages that only build_assemblies.py produces
+# locally (a custom SDK built from this engine). modules/mono/nuget is
+# gitignored, so the static-checks runner never has them and dotnet format's
+# implicit restore fails there ("Restore operation failed") -- even with
+# --no-restore, loading the project would still fail at SDK resolution. Their
+# C# sources are still compile-checked by the test job that builds them.
+NO_RESTORE_PROJECTS = ("modules/physx/test/project",)
+
 # Match all the input files to their respective C# project.
 projects = {
     path: [f for f in sys.argv[1:] if os.path.commonpath([f, path]) == path]
@@ -30,8 +38,15 @@ projects = {
 }
 
 # Run dotnet format on all projects with more than 0 modified files.
+skip_paths = [os.path.normpath(p) for p in NO_RESTORE_PROJECTS]
 for path, files in projects.items():
-    if files:
-        result = subprocess.run(["dotnet", "format", path, "--include", *files], check=False)
-        if result.returncode:
-            sys.exit(result.returncode)
+    if not files:
+        continue
+    # commonpath does not normalize separators: glob may hand back
+    # backslash paths on Windows while the skip list uses forward ones.
+    if any(os.path.commonpath([path, skip]) == skip for skip in skip_paths):
+        print(f"Skipping {path}: restore needs repo-built SDK packages (see NO_RESTORE_PROJECTS).")
+        continue
+    result = subprocess.run(["dotnet", "format", path, "--include", *files], check=False)
+    if result.returncode:
+        sys.exit(result.returncode)

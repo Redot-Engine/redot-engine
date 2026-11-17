@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  UNVERIFIED: the Linux GPU build has not been run yet. The GPU switches here
+  have only been exercised on the Windows preset; whether PhysXGpu on Linux
+  needs PX_GENERATE_GPU_STATIC_LIBRARIES=False the same way (shipping
+  libPhysXGpu_64.so loaded at runtime) or works differently has not been
+  checked. Treat this as a starting point for a Linux GPU build, not a
+  working one, until someone runs it.
+-->
+<preset name="linux64-godot-gpu" comment="Linux x86-64 static libs plus the CUDA GPU projects, for the Godot godot_physx module built with physx_gpu=yes.">
+  <platform targetPlatform="linux" compiler="clang" />
+  <CMakeSwitches>
+    <cmakeSwitch name="PX_BUILDSNIPPETS" value="False" comment="No sample snippets." />
+    <cmakeSwitch name="PX_BUILDPVDRUNTIME" value="False" comment="No OmniPVD runtime project." />
+    <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Static CPU libraries, linked into the module." />
+    <cmakeSwitch name="PX_CMAKE_SUPPRESS_REGENERATION" value="True" comment="No ZERO_CHECK projects." />
+    <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS" value="True" comment="Build the CUDA GPU projects (needs the CUDA Toolkit at build time)." />
+    <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS_ONLY" value="False" comment="Build CPU and GPU." />
+    <cmakeSwitch name="PX_GENERATE_GPU_STATIC_LIBRARIES" value="False" comment="PhysXGpu ships as a shared object; the core links a small loader." />
+    <cmakeSwitch name="PX_GENERATE_GPU_REDUCED_ARCHITECTURES" value="True" comment="Fewer SM architectures for a much faster CUDA compile; widen if you need older/newer GPUs." />
+    <cmakeSwitch name="PX_CUDA_DEVICE_DEBUG" value="False" comment="No -G device debug." />
+    <cmakeSwitch name="PX_FLOAT_POINT_PRECISE_MATH" value="False" comment="Fast math." />
+  </CMakeSwitches>
+  <CMakeParams>
+    <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/linux64-godot-gpu/PhysX" comment="Install path, relative to the PhysX SDK root." />
+  </CMakeParams>
+</preset>

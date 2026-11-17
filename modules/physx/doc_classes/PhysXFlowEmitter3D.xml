@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXFlowEmitter3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		A placement marker for one [PhysXFlowSimulation3D] injection point, provided by the PhysX module.
+	</brief_description>
+	<description>
+		A data-only node in the spirit of [CollisionShape3D]: it simulates nothing itself. List its path in [member PhysXFlowSimulation3D.emitters] and the simulation reads its properties every step; this node's global position is the emitter's world position.
+		Channels mirror NVIDIA Flow's own emitter parameter blocks ([code]NvFlowEmitterSphereParams[/code] / [code]NvFlowEmitterBoxParams[/code]): [member velocity] pushes fluid, [member divergence] adds radial expansion, and the combustion trio ([member temperature], [member fuel], [member smoke]) feeds the solver's real combustion -- fuel above the layer's ignition temperature burns, producing heat (buoyant rise), extra smoke and light. A pure smoke emitter sets [member temperature] and [member fuel] to 0; a torch sets temperature + fuel and leaves smoke at 0 (combustion makes its own smoke).
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="couple_rate" type="float" setter="set_couple_rate" getter="get_couple_rate" default="2.0">
+			How strongly the injected values blend toward their targets (Flow's per-channel coupleRate; the SDK default is 2).
+		</member>
+		<member name="divergence" type="float" setter="set_divergence" getter="get_divergence" default="0.0">
+			Radial expansion injected around this node's position (explosion bursts).
+		</member>
+		<member name="enabled" type="bool" setter="set_enabled" getter="get_enabled" default="true">
+			Disables this emitter without removing it from [member PhysXFlowSimulation3D.emitters].
+		</member>
+		<member name="fuel" type="float" setter="set_fuel" getter="get_fuel" default="0.8">
+			Injected unburnt fuel (consumed by combustion, producing heat and smoke).
+		</member>
+		<member name="radius" type="float" setter="set_radius" getter="get_radius" default="0.5">
+			Sphere radius in meters ([constant SHAPE_SPHERE]).
+		</member>
+		<member name="shape" type="int" setter="set_shape" getter="get_shape" enum="PhysXFlowEmitter3D.Shape" default="0">
+			[constant SHAPE_SPHERE] (uses [member radius]) or [constant SHAPE_BOX] (uses [member size], oriented by this node's transform).
+		</member>
+		<member name="size" type="Vector3" setter="set_size" getter="get_size" default="Vector3(1, 1, 1)">
+			Box full size in meters, halved internally ([constant SHAPE_BOX]).
+		</member>
+		<member name="smoke" type="float" setter="set_smoke" getter="get_smoke" default="0.0">
+			Injected smoke density (the visible fog channel).
+		</member>
+		<member name="sub_steps" type="int" setter="set_sub_steps" getter="get_sub_steps" default="1">
+			Injection substeps per solver step (smooths fast-moving emitters).
+		</member>
+		<member name="temperature" type="float" setter="set_temperature" getter="get_temperature" default="0.5">
+			Injected temperature (drives buoyant rise; ignites fuel above the solver's ignition threshold).
+		</member>
+		<member name="velocity" type="Vector3" setter="set_velocity" getter="get_velocity" default="Vector3(0, 2, 0)">
+			Injection velocity in this node's local space (rotated by the node's orientation -- aim the node to aim the jet).
+		</member>
+	</members>
+	<constants>
+		<constant name="SHAPE_SPHERE" value="0" enum="Shape">
+			A spherical injection region ([member radius]).
+		</constant>
+		<constant name="SHAPE_BOX" value="1" enum="Shape">
+			A box injection region oriented by this node's transform ([member size]).
+		</constant>
+	</constants>
+</class>

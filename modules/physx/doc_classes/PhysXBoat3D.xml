@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXBoat3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Drives its parent [RigidBody3D] as a powered boat.
+	</brief_description>
+	<description>
+		Add as a child of a [RigidBody3D] that also has a [PhysXBuoyancy3D] to float it, and drive it with [member throttle] and [member steering]. Forward is [code]+Z[/code], as for [VehicleBody3D]. These are the forces the boat makes itself, on top of the buoyancy:
+		- [b]Propeller[/b] at [member propeller_position]: [member throttle] pushes from there, only while it is in the water (a wave lifting the stern clear cuts the thrust); [member steering] turns it, like an outboard motor or stern drive; reverse is weaker ([member reverse_thrust_ratio]). Pushing from below and behind the center of mass lifts the bow under power.
+		- [b]Leg[/b]: the water flowing across the propeller's leg -- the boat moving past it, plus the propeller's wash at [member propeller_wash_speed] -- pushes it sideways ([member rudder_strength]). It steers with flow, so the boat turns well under power and little while drifting, holds the stern from sliding out, and points the boat along its course.
+		- [b]Hull[/b]: drag in the boat's own frame, low along the keel and high sideways and vertically ([member hull_drag], [member hull_linear_drag]). The sideways and vertical drag act at the bow and stern ends of the hull, so its length resists turning and pitching like a keel; [member angular_damping] adds to it. The vertical drag answers only the hull heaving and pitching, not its forward speed, so a bow-up hull at speed isn't lifted further by it. All of it scales with how much of the hull is in the water, so a boat launched off a wave isn't braked by air.
+		It only applies [RigidBody3D] forces, so it works with whichever physics engine is selected, not just PhysX.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_applied_thrust" qualifiers="const">
+			<return type="float" />
+			<description>
+				The propeller's thrust this physics tick (N, negative astern); [code]0[/code] while the propeller is out of the water.
+			</description>
+		</method>
+		<method name="get_forward_speed" qualifiers="const">
+			<return type="float" />
+			<description>
+				Speed along the keel (m/s); negative going astern.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="angular_damping" type="Vector3" setter="set_angular_damping" getter="get_angular_damping" default="Vector3(300, 500, 150)">
+			Rotational damping (N·m per rad/s) in the boat's frame: [code]x[/code] pitch, [code]y[/code] yaw, [code]z[/code] roll.
+		</member>
+		<member name="hull_drag" type="Vector3" setter="set_hull_drag" getter="get_hull_drag" default="Vector3(250, 400, 18)">
+			Quadratic hull drag (N per (m/s)²) in the boat's frame: [code]x[/code] sideways, [code]y[/code] vertical, [code]z[/code] along the keel. Keep [code]z[/code] low and [code]x[/code] high for a hull that carves turns instead of skidding; [code]z[/code] with [member max_thrust] sets the top speed, where thrust equals [code]z * v² + hull_linear_drag.z * v[/code].
+		</member>
+		<member name="hull_linear_drag" type="Vector3" setter="set_hull_linear_drag" getter="get_hull_linear_drag" default="Vector3(60, 200, 8)">
+			Linear hull drag (N per m/s), same axes as [member hull_drag] -- settles slow drifting, where quadratic drag fades away.
+		</member>
+		<member name="max_steer_angle" type="float" setter="set_max_steer_angle" getter="get_max_steer_angle" default="0.5235988">
+			How far the propeller turns at full [member steering].
+		</member>
+		<member name="max_thrust" type="float" setter="set_max_thrust" getter="get_max_thrust" default="900.0">
+			Propeller thrust (N) at full throttle ahead. Roughly 150-200 N per horsepower for a small outboard.
+		</member>
+		<member name="propeller_position" type="Vector3" setter="set_propeller_position" getter="get_propeller_position" default="Vector3(0, -0.2, -2.2)">
+			Where the propeller is, in the body's space: at the stern, below the waterline. Thrust only applies while this point is under the water.
+		</member>
+		<member name="propeller_wash_speed" type="float" setter="set_propeller_wash_speed" getter="get_propeller_wash_speed" default="4.0">
+			Speed (m/s) of the propeller's wash over its leg at full throttle -- what lets the boat steer under power even at a standstill.
+		</member>
+		<member name="reverse_thrust_ratio" type="float" setter="set_reverse_thrust_ratio" getter="get_reverse_thrust_ratio" default="0.4">
+			Thrust astern as a fraction of [member max_thrust].
+		</member>
+		<member name="rudder_strength" type="float" setter="set_rudder_strength" getter="get_rudder_strength" default="15.0">
+			Side force from water flowing across the propeller's leg (N per (m/s)²). Higher turns more sharply and holds the boat on course more firmly.
+		</member>
+		<member name="steering" type="float" setter="set_steering" getter="get_steering" default="0.0">
+			[code]-1..1[/code]: positive turns left (as [member VehicleBody3D.steering]), turning the propeller up to [member max_steer_angle].
+		</member>
+		<member name="throttle" type="float" setter="set_throttle" getter="get_throttle" default="0.0">
+			[code]-1..1[/code]: full astern to full ahead.
+		</member>
+	</members>
+</class>

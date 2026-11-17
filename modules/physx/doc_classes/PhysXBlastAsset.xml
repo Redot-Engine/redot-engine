@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXBlastAsset" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		A fractured mesh, ready to drive a [PhysXDestructible3D].
+	</brief_description>
+	<description>
+		Produced by the in-editor [b]Mesh → Fracture with Blast[/b] dialog (or [PhysXBlastAuthoring] directly, for scripted/offline authoring), and saved as a normal [code].tres[/code]/[code].res[/code] file next to the scene. Assign it to a [PhysXDestructible3D]'s [member PhysXDestructible3D.blast_asset] to use it -- there's nothing to configure on the asset itself once it's authored.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_chunk_count" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns how many chunks this asset has, including chunk [code]0[/code] (the whole unfractured mesh) -- so this is always one more than the number of pieces a full fracture actually produces.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="asset_bytes" type="PackedByteArray" setter="set_asset_bytes" getter="get_asset_bytes" default="PackedByteArray()">
+			The raw NvBlast asset data (bond/chunk support-graph structure) -- a single relocatable memory block per NvBlast's own design, stored here as-is. Not meaningful to edit by hand.
+		</member>
+		<member name="chunk_points" type="Array" setter="set_chunk_points" getter="get_chunk_points" default="[]">
+			Per-chunk render-mesh triangle-soup positions, in the source mesh's local space -- one [PackedVector3Array] per chunk, index-matched to [member asset_bytes]' own chunk indices. Not meaningful to edit by hand.
+		</member>
+	</members>
+</class>
