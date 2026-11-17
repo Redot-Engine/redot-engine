@@ -318,6 +318,7 @@ public:
 
 	void sort_items_by_text();
 	int find_metadata(const Variant &p_metadata) const;
+	int find_item_by_text(const String &p_text) const;
 
 	virtual String get_tooltip(const Point2 &p_pos) const override;
 	int get_item_at_position(const Point2 &p_pos, bool p_exact = false) const;
