@@ -108,7 +108,7 @@ Error UnityShaderConverter::convert_shaderlab_to_godot(const String &p_shaderlab
 	}
 
 	ShaderNode *shader_ast = parse_shader_ast(tokens);
-	delete tokens;
+	// tokens chain was consumed (freed) inside parse_shader_ast by _strip_whitespace.
 
 	if (!shader_ast) {
 		return ERR_PARSE_ERROR;
@@ -261,7 +261,8 @@ ShaderNode *UnityShaderConverter::parse_shader_ast(ShaderLabToken *p_tokens) {
 					cg_current = cg_current->next;
 				}
 
-				delete cg_tokens;
+				// cg_tokens was consumed/freed by _strip_whitespace; free cg_stripped iteratively.
+				free_token_chain(cg_stripped);
 				cgprogram_buffer = "";
 			}
 			current = current->next;
@@ -275,7 +276,7 @@ ShaderNode *UnityShaderConverter::parse_shader_ast(ShaderLabToken *p_tokens) {
 		current = current->next;
 	}
 
-	delete stripped;
+	free_token_chain(stripped);
 	return shader;
 }
 
@@ -683,6 +684,9 @@ void UnityShaderConverter::_parse_struct(ShaderLabToken *&p_current, ShaderStruc
 }
 
 void UnityShaderConverter::_parse_function(ShaderLabToken *&p_current, ShaderFunction &r_function) {
+	if (!p_current) {
+		return;
+	}
 	r_function.return_type = p_current->original_data;
 	p_current = p_current->next;
 

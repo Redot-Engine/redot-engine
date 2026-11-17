@@ -211,7 +211,6 @@ Error UnityPackageParser::parse_tar_archive(const PackedByteArray &p_tar_data, H
 	}
 
 	int offset = 0;
-	HashMap<String, UnityAsset *> guid_map;
 	int total_files = 0;
 	int guid_entries = 0;
 
@@ -258,8 +257,9 @@ Error UnityPackageParser::parse_tar_archive(const PackedByteArray &p_tar_data, H
 
 		// Extract file data with boundary checking
 		if (file_size > 0) {
-			if (offset + file_size > p_tar_data.size()) {
-				print_error(vformat("TAR entry '%s' exceeds archive size", entry_name));
+			if (offset + file_size > (int64_t)p_tar_data.size()) {
+				print_error(vformat("TAR entry '%s' exceeds archive size (offset %d + size %d > %d)",
+						entry_name, offset, file_size, p_tar_data.size()));
 				break;
 			}
 
@@ -268,39 +268,49 @@ Error UnityPackageParser::parse_tar_archive(const PackedByteArray &p_tar_data, H
 			memcpy(entry_data.ptrw(), p_tar_data.ptr() + offset, file_size);
 
 			// Parse entry structure: <guid>/asset, <guid>/pathname, <guid>/asset.meta
+			// Skip preview images which are not needed for import.
 			Vector<String> parts = entry_name.split("/");
 			if (parts.size() >= 2) {
 				String guid = parts[0];
 				String entry_type = parts[1];
 
 				// Validate GUID format (should be 32-character hex)
-				if (guid.length() == 32) {
+				if (guid.length() == 32 && entry_type != "preview.png") {
 					guid_entries++;
 
-					if (!guid_map.has(guid)) {
-						UnityAsset asset;
-						asset.guid = guid;
-						r_assets[guid] = asset;
-						guid_map[guid] = &r_assets[guid];
+					// Insert once so that later parts (asset/pathname/asset.meta)
+					// can all update the same record. We never store raw pointers into
+					// the HashMap because insertion can invalidate them; instead we
+					// look up by key each time.
+					if (!r_assets.has(guid)) {
+						UnityAsset new_asset;
+						new_asset.guid = guid;
+						r_assets.insert(guid, new_asset);
 					}
 
-					UnityAsset *asset = guid_map[guid];
-					if (asset != nullptr) {
-						if (entry_type == "asset") {
-							asset->asset_data = entry_data;
-						} else if (entry_type == "pathname") {
-							asset->orig_pathname = String::utf8((const char *)entry_data.ptr(), entry_data.size()).strip_edges();
-							asset->pathname = convert_unity_path_to_godot(asset->orig_pathname);
-						} else if (entry_type == "asset.meta") {
-							asset->meta_bytes = entry_data;
-							asset->meta_data = String::utf8((const char *)entry_data.ptr(), entry_data.size());
+					UnityAsset &asset = r_assets[guid];
+					if (entry_type == "asset") {
+						asset.asset_data = entry_data;
+					} else if (entry_type == "pathname") {
+						asset.orig_pathname = String::utf8((const char *)entry_data.ptr(), entry_data.size()).strip_edges();
+						// Normalize path separators and lower-case the extension so
+						// that material lookups work on case-sensitive filesystems.
+						String pathname = asset.orig_pathname;
+						String ext = pathname.get_extension();
+						if (!ext.is_empty()) {
+							pathname = pathname.left(pathname.length() - ext.length()) + ext.to_lower();
 						}
+						asset.orig_pathname = pathname;
+						asset.pathname = convert_unity_path_to_godot(pathname);
+					} else if (entry_type == "asset.meta") {
+						asset.meta_bytes = entry_data;
+						asset.meta_data = String::utf8((const char *)entry_data.ptr(), entry_data.size());
 					}
 				}
 			}
 
 			// Move to next 512-byte boundary
-			offset += ((file_size + 511) / 512) * 512;
+			offset += (int)((file_size + 511) / 512) * 512;
 		}
 	}
 

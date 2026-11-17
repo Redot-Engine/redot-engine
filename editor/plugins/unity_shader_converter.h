@@ -73,13 +73,18 @@ struct ShaderLabToken {
 	ShaderLabTokenType type = ShaderLabTokenType::NONE;
 	String original_data;
 	ShaderLabToken *next = nullptr;
-
-	~ShaderLabToken() {
-		if (next) {
-			delete next;
-		}
-	}
+	// No recursive destructor – use free_token_chain() to avoid stack overflow
+	// on long token lists.
 };
+
+// Iteratively free an entire ShaderLabToken chain allocated with memnew().
+static inline void free_token_chain(ShaderLabToken *p_head) {
+	while (p_head) {
+		ShaderLabToken *next = p_head->next;
+		memdelete(p_head);
+		p_head = next;
+	}
+}
 
 // AST Node structures
 struct ShaderASTNode {
@@ -87,15 +92,15 @@ struct ShaderASTNode {
 	ShaderASTNode *middle = nullptr;
 	ShaderASTNode *right = nullptr;
 	virtual ~ShaderASTNode() {
-		if (left) {
-			delete left;
-		}
-		if (middle) {
-			delete middle;
-		}
-		if (right) {
-			delete right;
-		}
+		// Iteratively delete the three direct children only.
+		// Derived types manage their own deeper chains (e.g. ShaderPropertiesNode
+		// handles the linked list of ShaderPropertyNode).
+		delete left;
+		left = nullptr;
+		delete middle;
+		middle = nullptr;
+		delete right;
+		right = nullptr;
 	}
 };
 
@@ -103,6 +108,7 @@ struct ShaderPropertyNode : ShaderASTNode {
 	String name;
 	String type_name;
 	ShaderPropertyNode *next_property = nullptr;
+	// No recursive destructor – ShaderPropertiesNode manages the chain iteratively.
 };
 
 struct ShaderPropertiesNode : ShaderASTNode {
@@ -112,6 +118,7 @@ struct ShaderPropertiesNode : ShaderASTNode {
 		ShaderPropertyNode *current = properties;
 		while (current) {
 			ShaderPropertyNode *next = current->next_property;
+			current->next_property = nullptr; // prevent any accidental recursion
 			delete current;
 			current = next;
 		}
@@ -130,17 +137,23 @@ struct ShaderStructMember {
 	String name;
 	String semantic;
 	ShaderStructMember *next = nullptr;
-
-	~ShaderStructMember() {
-		if (next) {
-			delete next;
-		}
-	}
+	// No recursive destructor – ShaderStruct manages the chain iteratively.
 };
 
 struct ShaderStruct {
 	String name;
 	ShaderStructMember *members = nullptr;
+
+	~ShaderStruct() {
+		ShaderStructMember *cur = members;
+		while (cur) {
+			ShaderStructMember *next = cur->next;
+			cur->next = nullptr; // prevent recursive delete inside ShaderStructMember
+			memdelete(cur);
+			cur = next;
+		}
+		members = nullptr;
+	}
 };
 
 struct ShaderFunction {
