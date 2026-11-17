@@ -67,10 +67,10 @@ inline void project_range(const Vector3 *p_vertices, uint32_t p_count, const Vec
 		f32x4 d = (nx * x + ny * y) + nz * z;
 		mask4 gt = cmp_gt(d, vmax);
 		vmax = select(gt, d, vmax);
-		imax = select(gt, idx, imax);
+		imax = select_i32x4(gt, idx, imax);
 		mask4 lt = cmp_lt(d, vmin);
 		vmin = select(lt, d, vmin);
-		imin = select(lt, idx, imin);
+		imin = select_i32x4(lt, idx, imin);
 		idx = add(idx, 4);
 	}
 	// The sequential loop keeps the first of equal extremes (this matters for +0.0 vs -0.0),
@@ -138,7 +138,7 @@ inline int support_index(const Vector3 *p_vertices, uint32_t p_count, const Vect
 		f32x4 d = (nx * x + ny * y) + nz * z;
 		mask4 better = cmp_gt(d, vmax);
 		vmax = select(better, d, vmax);
-		vidx = select(better, idx, vidx);
+		vidx = select_i32x4(better, idx, vidx);
 		idx = add(idx, 4);
 	}
 	real_t best = get_lane<0>(vmax);

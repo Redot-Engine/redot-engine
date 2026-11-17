@@ -402,17 +402,17 @@ TEST_CASE("[Audio][SIMD][Benchmark] SIMD paths versus the original scalar code" 
 	print_line("WARNING: this is a dev build (no optimization). Rebuild without dev_build for meaningful numbers.");
 #endif
 	const uint32_t features = CPUFeatures::get();
-	print_line(vformat("CPU features: SSE4.2 %s, AVX %s, AVX2 %s, FMA %s, F16C %s",
-			(features & CPUFeatures::SSE42) ? "yes" : "no", (features & CPUFeatures::AVX) ? "yes" : "no",
-			(features & CPUFeatures::AVX2) ? "yes" : "no", (features & CPUFeatures::FMA) ? "yes" : "no",
-			(features & CPUFeatures::F16C) ? "yes" : "no"));
+	print_line(vformat("CPU features: SIMD width: %zu, FMA %s, FP16 %s",
+			CPUFeatures::getSimdWidth(),
+			(features & CPUFeatures::CPUFEATURES_FMADD) ? "yes" : "no",
+			(features & CPUFeatures::CPUFEATURES_FP16) ? "yes" : "no"));
 	print_line("Lower is better for ns columns. speedup = scalar / simd.");
 
 	for (const TestSIMD::DispatchMode &mode : TestSIMD::DISPATCH_MODES) {
 		if (mode.mask == (CPUFeatures::SSE42 | CPUFeatures::AVX)) {
 			continue;
 		}
-		CPUFeatures::set_override(mode.mask);
+		CPUFeatures::set_override(mode.mask, mode.simdWidth);
 		print_line("");
 		print_line(vformat("==== Dispatch level: %s ====", mode.name));
 		Random rng(99);
