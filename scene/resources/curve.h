@@ -241,6 +241,11 @@ public:
 	Vector2 get_point_in(int p_index) const;
 	void set_point_out(int p_index, const Vector2 &p_out);
 	Vector2 get_point_out(int p_index) const;
+
+	void reset_point_handles(int p_index); ///< wraps existing "zero a single point" logic
+	void reset_all_points_handles(); ///< the "opposite" bulk operation
+	void smooth_all_points(); ///< the auto-smooth bulk operation
+
 	void remove_point(int p_index);
 	void clear_points();
 
