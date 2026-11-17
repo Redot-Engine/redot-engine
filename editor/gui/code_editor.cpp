@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file code_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "code_editor.h"
 
 #include "core/input/input.h"
@@ -175,7 +181,6 @@ void FindReplaceBar::_notification(int p_what) {
 	}
 }
 
-// Implemented in input(..) as the LineEdit consumes the Escape pressed key.
 void FindReplaceBar::input(const Ref<InputEvent> &p_event) {
 	ERR_FAIL_COND(p_event.is_null());
 
@@ -707,7 +712,7 @@ String FindReplaceBar::get_search_text() const {
 }
 
 String FindReplaceBar::get_replace_text() const {
-	return replace_text->get_text();
+	return replace_text->get_text().c_unescape();
 }
 
 bool FindReplaceBar::is_case_sensitive() const {
@@ -866,8 +871,6 @@ FindReplaceBar::FindReplaceBar() {
 
 static constexpr float ZOOM_FACTOR_PRESETS[8] = { 0.5f, 0.75f, 0.9f, 1.0f, 1.1f, 1.25f, 1.5f, 2.0f };
 
-// This function should be used to handle shortcuts that could otherwise
-// be handled too late if they weren't handled here.
 void CodeTextEditor::input(const Ref<InputEvent> &event) {
 	ERR_FAIL_COND(event.is_null());
 
@@ -1544,9 +1547,10 @@ void CodeTextEditor::_update_error_content_height() {
 	error->set_custom_minimum_size(Size2(0, CLAMP(content_height, 0, content_max_height)));
 }
 
-void CodeTextEditor::set_error_pos(int p_line, int p_column) {
+void CodeTextEditor::set_error_pos(int p_line, int p_column, const String &p_path) {
 	error_line = p_line;
 	error_column = p_column;
+	error_path = p_path;
 }
 
 Point2i CodeTextEditor::get_error_pos() const {
@@ -1555,6 +1559,15 @@ Point2i CodeTextEditor::get_error_pos() const {
 
 void CodeTextEditor::goto_error() {
 	if (!error->get_text().is_empty()) {
+		if (!error_path.is_empty()) {
+			Dictionary target;
+			target["path"] = error_path;
+			target["line"] = error_line;
+			target["column"] = error_column;
+			emit_signal(SNAME("error_clicked"), target);
+			return;
+		}
+
 		int corrected_column = error_column;
 
 		const String line_text = text_editor->get_line(error_line);
@@ -1857,6 +1870,7 @@ float CodeTextEditor::get_zoom_factor() {
 
 void CodeTextEditor::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("validate_script"));
+	ADD_SIGNAL(MethodInfo("error_clicked", PropertyInfo(Variant::DICTIONARY, "target")));
 	ADD_SIGNAL(MethodInfo("load_theme_settings"));
 	ADD_SIGNAL(MethodInfo("show_errors_panel"));
 	ADD_SIGNAL(MethodInfo("show_warnings_panel"));
@@ -1937,6 +1951,7 @@ CodeTextEditor::CodeTextEditor() {
 	error->set_h_size_flags(SIZE_EXPAND_FILL);
 	error->set_v_size_flags(SIZE_SHRINK_CENTER);
 	error->connect(SceneStringName(gui_input), callable_mp(this, &CodeTextEditor::_error_pressed));
+	error->connect("meta_clicked", callable_mp(this, &CodeTextEditor::goto_error).unbind(1));
 	error->connect(SceneStringName(resized), callable_mp(this, &CodeTextEditor::_update_error_content_height));
 	status_bar->add_child(error);
 

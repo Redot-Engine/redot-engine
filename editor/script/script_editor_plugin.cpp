@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file script_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "script_editor_plugin.h"
 
 #include "core/config/project_settings.h"
@@ -74,7 +80,7 @@
 #include "scene/main/node.h"
 #include "scene/main/window.h"
 #include "script_text_editor.h"
-#include "servers/display_server.h"
+#include "servers/display/display_server.h"
 #include "text_editor.h"
 
 /*** SYNTAX HIGHLIGHTER ****/
@@ -127,18 +133,18 @@ void EditorStandardSyntaxHighlighter::_update_cache() {
 
 	/* Engine types. */
 	const Color type_color = EDITOR_GET("text_editor/theme/highlighting/engine_type_color");
-	List<StringName> types;
-	ClassDB::get_class_list(&types);
-	for (const StringName &E : types) {
-		highlighter->add_keyword_color(E, type_color);
+	LocalVector<StringName> types;
+	ClassDB::get_class_list(types);
+	for (const StringName &type : types) {
+		highlighter->add_keyword_color(type, type_color);
 	}
 
 	/* User types. */
 	const Color usertype_color = EDITOR_GET("text_editor/theme/highlighting/user_type_color");
-	List<StringName> global_classes;
-	ScriptServer::get_global_class_list(&global_classes);
-	for (const StringName &E : global_classes) {
-		highlighter->add_keyword_color(E, usertype_color);
+	LocalVector<StringName> global_classes;
+	ScriptServer::get_global_class_list(global_classes);
+	for (const StringName &class_name : global_classes) {
+		highlighter->add_keyword_color(class_name, usertype_color);
 	}
 
 	/* Autoloads. */
@@ -330,7 +336,7 @@ void EditorConfigFileSyntaxHighlighter::_update_cache() {
 	const Color string_color = EDITOR_GET("text_editor/theme/highlighting/string_color");
 	highlighter->add_color_region("\"", "\"", string_color);
 
-	// FIXME: Sections in ConfigFile must be at the beginning of a line. Otherwise, it can be an array within a line.
+	/// @todo FIXME: Sections in ConfigFile must be at the beginning of a line. Otherwise, it can be an array within a line.
 	const Color function_color = EDITOR_GET("text_editor/theme/highlighting/function_color");
 	highlighter->add_color_region("[", "]", function_color);
 
@@ -480,7 +486,7 @@ String ScriptEditor::_get_debug_tooltip(const String &p_text, Node *p_se) {
 		return String();
 	}
 
-	// NOTE: See also `ScriptTextEditor::_show_symbol_tooltip()` for documentation tooltips enabled.
+	/// @note See also `ScriptTextEditor::_show_symbol_tooltip()` for documentation tooltips enabled.
 	String debug_value = EditorDebuggerNode::get_singleton()->get_var_value(p_text);
 	if (!debug_value.is_empty()) {
 		constexpr int DISPLAY_LIMIT = 1024;
@@ -738,25 +744,26 @@ void ScriptEditor::_go_to_tab(int p_idx) {
 
 	c = tab_container->get_current_tab_control();
 
-	if (Object::cast_to<ScriptEditorBase>(c)) {
-		script_name_label->set_text(Object::cast_to<ScriptEditorBase>(c)->get_name());
-		script_icon->set_texture(Object::cast_to<ScriptEditorBase>(c)->get_theme_icon());
+	ScriptEditorBase *seb = Object::cast_to<ScriptEditorBase>(c);
+	if (seb) {
 		if (is_visible_in_tree()) {
-			Object::cast_to<ScriptEditorBase>(c)->ensure_focus();
+			seb->ensure_focus();
 		}
 
-		Ref<Script> scr = Object::cast_to<ScriptEditorBase>(c)->get_edited_resource();
+		Ref<Script> scr = seb->get_edited_resource();
 		if (scr.is_valid()) {
 			notify_script_changed(scr);
 		}
 
-		Object::cast_to<ScriptEditorBase>(c)->validate();
+		seb->validate();
 	}
-	if (Object::cast_to<EditorHelp>(c)) {
-		script_name_label->set_text(Object::cast_to<EditorHelp>(c)->get_class());
-		script_icon->set_texture(get_editor_theme_icon(SNAME("Help")));
+
+	EditorHelp *eh = Object::cast_to<EditorHelp>(c);
+	if (eh) {
+		script_name_label->set_text(eh->get_class());
+
 		if (is_visible_in_tree()) {
-			Object::cast_to<EditorHelp>(c)->set_focused();
+			eh->set_focused();
 		}
 	}
 
@@ -936,6 +943,7 @@ void ScriptEditor::_close_tab(int p_idx, bool p_save, bool p_history_back) {
 		} else {
 			_update_selected_editor_menu();
 			_update_online_doc();
+			script_name_label->set_text(String());
 		}
 
 		_update_history_arrows();
@@ -1229,9 +1237,18 @@ void _import_text_editor_theme(const String &p_file) {
 		EditorToaster::get_singleton()->popup_str(TTR("Importing theme failed. File is not a text editor theme file (.tet)."), EditorToaster::SEVERITY_ERROR);
 		return;
 	}
+
 	const String theme_name = p_file.get_file().get_basename();
 	if (EditorSettings::is_default_text_editor_theme(theme_name.to_lower())) {
-		EditorToaster::get_singleton()->popup_str(TTR("Importing theme failed. File name cannot be 'Default', 'Custom', or 'Godot 2'."), EditorToaster::SEVERITY_ERROR);
+		Vector<String> names;
+		for (const auto *t = EditorSettings::BUILTIN_TEXT_EDITOR_THEMES; t->name; t++) {
+			names.push_back("\"" + String(t->name) + "\"");
+		}
+		String list = String(", ").join(names);
+
+		EditorToaster::get_singleton()->popup_str(
+				TTR("Importing theme failed. File name cannot be {list}.").format({ { "list", list } }),
+				EditorToaster::SEVERITY_ERROR);
 		return;
 	}
 
@@ -1838,8 +1855,6 @@ void ScriptEditor::_notification(int p_what) {
 			filter_scripts->set_right_icon(get_editor_theme_icon(SNAME("Search")));
 			filter_methods->set_right_icon(get_editor_theme_icon(SNAME("Search")));
 
-			filename->add_theme_style_override(CoreStringName(normal), get_theme_stylebox(CoreStringName(normal), SNAME("LineEdit")));
-
 			recent_scripts->reset_size();
 
 			if (is_inside_tree()) {
@@ -2015,6 +2030,7 @@ void ScriptEditor::_script_selected(int p_idx) {
 	grab_focus_block = !Input::get_singleton()->is_mouse_button_pressed(MouseButton::LEFT); //amazing hack, simply amazing
 
 	_go_to_tab(script_list->get_item_metadata(p_idx));
+	script_name_label->set_text(script_list->get_item_text(p_idx));
 	grab_focus_block = false;
 }
 
@@ -2147,11 +2163,6 @@ void ScriptEditor::_update_members_overview() {
 			members_overview->set_item_metadata(-1, line);
 		}
 	}
-
-	String path = se->get_edited_resource()->get_path();
-	bool built_in = !path.is_resource_file();
-	String name = built_in ? path.get_file() : se->get_name();
-	filename->set_text(name);
 }
 
 void ScriptEditor::_update_help_overview_visibility() {
@@ -2173,7 +2184,6 @@ void ScriptEditor::_update_help_overview_visibility() {
 		filter_methods->set_visible(false);
 		help_overview->set_visible(true);
 		overview_vbox->set_visible(true);
-		filename->set_text(se->get_name());
 	} else {
 		help_overview->set_visible(false);
 		overview_vbox->set_visible(false);
@@ -2446,7 +2456,6 @@ void ScriptEditor::_update_script_names() {
 			script_list->select(index);
 
 			script_name_label->set_text(sedata_filtered[i].name);
-			script_icon->set_texture(sedata_filtered[i].icon);
 
 			ScriptEditorBase *se = _get_current_editor();
 			if (se) {
@@ -2535,6 +2544,11 @@ bool ScriptEditor::edit(const Ref<Resource> &p_resource, int p_line, int p_col, 
 			external_editor_active ||
 			(scr.is_valid() && scr->get_language()->overrides_external_editor());
 	use_external_editor = use_external_editor && !(scr.is_valid() && scr->is_built_in()); // Ignore external editor for built-in scripts.
+
+	if (use_external_editor && restoring_layout && bool(EDITOR_GET("text_editor/external/prefer_tabs_in_external_editor"))) {
+		use_external_editor = false; // Let it open internally, bulk open will handle the external editor.
+	}
+
 	const bool open_dominant = EDITOR_GET("text_editor/behavior/files/open_dominant_script_on_scene_change");
 
 	const bool should_open = (open_dominant && !use_external_editor) || !EditorNode::get_singleton()->is_changing_scene();
@@ -2628,8 +2642,8 @@ bool ScriptEditor::edit(const Ref<Resource> &p_resource, int p_line, int p_col, 
 					se->ensure_focus();
 				}
 
-				if (p_line > 0) {
-					se->goto_line(p_line);
+				if (p_line >= 0) {
+					se->goto_line(p_line, p_col);
 				}
 			}
 			_update_script_names();
@@ -2740,7 +2754,7 @@ bool ScriptEditor::edit(const Ref<Resource> &p_resource, int p_line, int p_col, 
 	_update_modified_scripts_for_external_editor(p_resource);
 
 	if (p_line >= 0) {
-		se->goto_line(p_line);
+		se->goto_line(p_line, p_col);
 	}
 
 	notify_script_changed(p_resource);
@@ -3577,6 +3591,10 @@ void ScriptEditor::set_window_layout(Ref<ConfigFile> p_layout) {
 
 	restoring_layout = true;
 
+	bool use_external_editor = bool(EDITOR_GET("text_editor/external/use_external_editor"));
+	bool prefer_tabs = bool(EDITOR_GET("text_editor/external/prefer_tabs_in_external_editor"));
+	Vector<String> external_scripts;
+
 	HashSet<String> loaded_scripts;
 	List<String> extensions;
 	ResourceLoader::get_recognized_extensions_for_type("Script", &extensions);
@@ -3596,6 +3614,11 @@ void ScriptEditor::set_window_layout(Ref<ConfigFile> p_layout) {
 			}
 			continue;
 		}
+
+		if (use_external_editor && prefer_tabs) {
+			external_scripts.push_back(ProjectSettings::get_singleton()->globalize_path(path));
+		}
+
 		loaded_scripts.insert(path);
 
 		if (extensions.find(path.get_extension())) {
@@ -3623,6 +3646,16 @@ void ScriptEditor::set_window_layout(Ref<ConfigFile> p_layout) {
 				se->set_edit_state(script_info["state"]);
 			}
 		}
+	}
+
+	if (use_external_editor && prefer_tabs && !external_scripts.is_empty()) {
+		// Cap of 128 scripts as a safety measure to prevent too many args passed to a process.
+		// Some platforms limit this by arg count or by a certain number of characters.
+		if (external_scripts.size() > 128) {
+			EditorNode::get_singleton()->show_warning(TTR("Too many scripts to open in external editor (max 128)."));
+			external_scripts.resize(128);
+		}
+		_open_external_editor_bulk(external_scripts);
 	}
 
 	for (int i = 0; i < helps.size(); i++) {
@@ -4005,6 +4038,76 @@ void ScriptEditor::register_create_script_editor_function(CreateScriptEditorFunc
 	script_editor_funcs[script_editor_func_count++] = p_func;
 }
 
+/**
+ * Opens multiple scripts in an external editor.
+ *
+ * @param p_paths A list of globalized paths to the scripts.
+ */
+void ScriptEditor::_open_external_editor_bulk(const Vector<String> &p_paths) {
+	if (p_paths.is_empty()) {
+		return;
+	}
+
+	String path = EDITOR_GET("text_editor/external/exec_path");
+	String flags = EDITOR_GET("text_editor/external/exec_flags");
+
+	List<String> args;
+	String project_path = ProjectSettings::get_singleton()->get_resource_path();
+	bool has_file_flag = false;
+
+	if (flags.size()) {
+		// We only support simple flag replacement for bulk open.
+		// {line} and {col} don't make sense for multiple files.
+		flags = flags.replacen("{line}", "0");
+		flags = flags.replacen("{col}", "0");
+		flags = flags.strip_edges().replace("\\\\", "\\");
+
+		int from = 0;
+		int num_chars = 0;
+		bool inside_quotes = false;
+
+		for (int i = 0; i < flags.size(); i++) {
+			if (flags[i] == '"' && (!i || flags[i - 1] != '\\')) {
+				// Increment `from` if not `inside_quotes`
+				from += !inside_quotes;
+				inside_quotes = !inside_quotes;
+			} else if (flags[i] == '\0' || (!inside_quotes && flags[i] == ' ')) {
+				String arg = flags.substr(from, num_chars);
+				if (arg.contains("{file}")) {
+					has_file_flag = true;
+					for (int j = 0; j < p_paths.size(); j++) {
+						args.push_back(arg.replacen("{file}", p_paths[j]).replacen("{project}", project_path));
+					}
+				} else {
+					args.push_back(arg.replacen("{project}", project_path));
+				}
+
+				from = i + 1;
+				num_chars = 0;
+			} else {
+				num_chars++;
+			}
+		}
+		// Handle fallback case where {file} was not defined.
+		if (!has_file_flag) {
+			for (int i = 0; i < p_paths.size(); i++) {
+				args.push_back(p_paths[i]);
+			}
+		}
+	} else {
+		for (int i = 0; i < p_paths.size(); i++) {
+			args.push_back(p_paths[i]);
+		}
+	}
+
+	if (!path.is_empty()) {
+		Error err = OS::get_singleton()->create_process(path, args);
+		if (err != OK) {
+			ERR_PRINT("Couldn't open external text editor. Review your `text_editor/external/` editor settings.");
+		}
+	}
+}
+
 void ScriptEditor::_script_changed() {
 	NodeDock::get_singleton()->update_lists();
 }
@@ -4275,14 +4378,13 @@ ScriptEditor::ScriptEditor(WindowWrapper *p_wrapper) {
 	buttons_hbox = memnew(HBoxContainer);
 	overview_vbox->add_child(buttons_hbox);
 
-	filename = memnew(Label);
-	filename->set_focus_mode(FOCUS_ACCESSIBILITY);
-	filename->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-	filename->set_clip_text(true);
-	filename->set_h_size_flags(SIZE_EXPAND_FILL);
-	filename->set_vertical_alignment(VERTICAL_ALIGNMENT_CENTER);
-	filename->add_theme_style_override(CoreStringName(normal), EditorNode::get_singleton()->get_editor_theme()->get_stylebox(CoreStringName(normal), SNAME("LineEdit")));
-	buttons_hbox->add_child(filename);
+	filter_methods = memnew(LineEdit);
+	filter_methods->set_placeholder(TTRC("Filter Methods"));
+	filter_methods->set_accessibility_name(TTRC("Filter Methods"));
+	filter_methods->set_clear_button_enabled(true);
+	filter_methods->set_h_size_flags(SIZE_EXPAND_FILL);
+	filter_methods->connect(SceneStringName(text_changed), callable_mp(this, &ScriptEditor::_filter_methods_text_changed));
+	buttons_hbox->add_child(filter_methods);
 
 	members_overview_alphabeta_sort_button = memnew(Button);
 	members_overview_alphabeta_sort_button->set_theme_type_variation(SceneStringName(FlatButton));
@@ -4290,15 +4392,7 @@ ScriptEditor::ScriptEditor(WindowWrapper *p_wrapper) {
 	members_overview_alphabeta_sort_button->set_toggle_mode(true);
 	members_overview_alphabeta_sort_button->set_pressed(EDITOR_GET("text_editor/script_list/sort_members_outline_alphabetically"));
 	members_overview_alphabeta_sort_button->connect(SceneStringName(toggled), callable_mp(this, &ScriptEditor::_toggle_members_overview_alpha_sort));
-
 	buttons_hbox->add_child(members_overview_alphabeta_sort_button);
-
-	filter_methods = memnew(LineEdit);
-	filter_methods->set_placeholder(TTRC("Filter Methods"));
-	filter_methods->set_accessibility_name(TTRC("Filter Methods"));
-	filter_methods->set_clear_button_enabled(true);
-	filter_methods->connect(SceneStringName(text_changed), callable_mp(this, &ScriptEditor::_filter_methods_text_changed));
-	overview_vbox->add_child(filter_methods);
 
 	members_overview = memnew(ItemList);
 	members_overview->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
@@ -4335,7 +4429,7 @@ ScriptEditor::ScriptEditor(WindowWrapper *p_wrapper) {
 	ED_SHORTCUT("script_editor/window_sort", TTRC("Sort"));
 	ED_SHORTCUT("script_editor/window_move_up", TTRC("Move Up"), KeyModifierMask::SHIFT | KeyModifierMask::ALT | Key::UP);
 	ED_SHORTCUT("script_editor/window_move_down", TTRC("Move Down"), KeyModifierMask::SHIFT | KeyModifierMask::ALT | Key::DOWN);
-	// FIXME: These should be `Key::GREATER` and `Key::LESS` but those don't work.
+	/// @todo FIXME: These should be `Key::GREATER` and `Key::LESS` but those don't work.
 	ED_SHORTCUT("script_editor/next_script", TTRC("Next Script"), KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::SHIFT | Key::PERIOD);
 	ED_SHORTCUT("script_editor/prev_script", TTRC("Previous Script"), KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::SHIFT | Key::COMMA);
 	set_process_input(true);
@@ -4435,18 +4529,12 @@ ScriptEditor::ScriptEditor(WindowWrapper *p_wrapper) {
 	debugger->connect("breakpoint_set_in_tree", callable_mp(this, &ScriptEditor::_set_breakpoint));
 	debugger->connect("breakpoints_cleared_in_tree", callable_mp(this, &ScriptEditor::_clear_breakpoints));
 
-	menu_hb->add_spacer();
-
-	script_icon = memnew(TextureRect);
-	menu_hb->add_child(script_icon);
 	script_name_label = memnew(Label);
+	script_name_label->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
+	script_name_label->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
 	script_name_label->set_focus_mode(FOCUS_ACCESSIBILITY);
+	script_name_label->set_h_size_flags(SIZE_EXPAND_FILL);
 	menu_hb->add_child(script_name_label);
-
-	script_icon->hide();
-	script_name_label->hide();
-
-	menu_hb->add_spacer();
 
 	site_search = memnew(Button);
 	site_search->set_theme_type_variation(SceneStringName(FlatButton));

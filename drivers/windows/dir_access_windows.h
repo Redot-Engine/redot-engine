@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file dir_access_windows.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef WINDOWS_ENABLED
 
 #include "core/io/dir_access.h"
@@ -63,13 +69,13 @@ public:
 	virtual String get_next() override;
 	virtual bool current_is_dir() const override;
 	virtual bool current_is_hidden() const override;
-	virtual void list_dir_end() override; ///<
+	virtual void list_dir_end() override;
 
 	virtual int get_drive_count() override;
 	virtual String get_drive(int p_drive) override;
 
-	virtual Error change_dir(String p_dir) override; ///< can be relative or absolute, return false on success
-	virtual String get_current_dir(bool p_include_drive = true) const override; ///< return current dir location
+	virtual Error change_dir(String p_dir) override; ///< Can be relative or absolute, @return `false` on success
+	virtual String get_current_dir(bool p_include_drive = true) const override; ///< @return Current dir location
 
 	virtual bool file_exists(String p_file) override;
 	virtual bool dir_exists(String p_dir) override;

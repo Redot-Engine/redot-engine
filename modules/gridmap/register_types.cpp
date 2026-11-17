@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file register_types.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifndef _3D_DISABLED
 
 #include "register_types.h"

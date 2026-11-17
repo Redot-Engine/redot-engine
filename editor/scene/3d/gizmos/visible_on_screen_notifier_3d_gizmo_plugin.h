@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file visible_on_screen_notifier_3d_gizmo_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
 
 class VisibleOnScreenNotifier3DGizmoPlugin : public EditorNode3DGizmoPlugin {

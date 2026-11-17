@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="MCPBridge" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
 	<brief_description>
+		TCP bridge relaying commands between the MCP server and a running game process.
 	</brief_description>
 	<description>
+		[MCPBridge] is a bidirectional TCP relay. On the server (headless) side it listens on an ephemeral loopback port and sends commands produced by MCP tools. On the game side (started with the [code]--mcp-bridge-port[/code] flag) it connects back to that port, receives commands, executes them against the live scene tree/viewport, and returns results. The bridge is single-connection and automatically replaces a stale peer when a new game process connects.
 	</description>
 	<tutorials>
 	</tutorials>
@@ -10,6 +12,7 @@
 		<method name="update">
 			<return type="void" />
 			<description>
+				Pumps the bridge: on the host side it accepts pending connections; on the game side it reads incoming commands, dispatches them, and writes responses. Called each frame from the main loop (game side) or the server's bridge thread (host side).
 			</description>
 		</method>
 	</methods>

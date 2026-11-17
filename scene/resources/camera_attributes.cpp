@@ -30,10 +30,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file camera_attributes.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "camera_attributes.h"
 
 #include "core/config/project_settings.h"
-#include "servers/rendering_server.h"
+#include "servers/rendering/rendering_server.h"
 
 void CameraAttributes::set_exposure_multiplier(float p_multiplier) {
 	exposure_multiplier = p_multiplier;

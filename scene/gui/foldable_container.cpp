@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file foldable_container.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "foldable_container.h"
 
 #include "scene/resources/text_line.h"

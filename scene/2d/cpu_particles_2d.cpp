@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file cpu_particles_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "cpu_particles_2d.h"
 #include "cpu_particles_2d.compat.inc"
 
@@ -873,7 +879,9 @@ void CPUParticles2D::_particles_process(double p_delta) {
 			}
 
 			real_t angle1_rad = direction.angle() + Math::deg_to_rad((rng->randf() * 2.0 - 1.0) * spread);
-			Vector2 rot = Vector2(Math::cos(angle1_rad), Math::sin(angle1_rad));
+			real_t dir_sin, dir_cos;
+			Math::sin_cos(angle1_rad, dir_sin, dir_cos);
+			Vector2 rot = Vector2(dir_cos, dir_sin);
 			p.velocity = rot * Math::lerp(parameters_min[PARAM_INITIAL_LINEAR_VELOCITY], parameters_max[PARAM_INITIAL_LINEAR_VELOCITY], rng->randf());
 
 			real_t base_angle = tex_angle * Math::lerp(parameters_min[PARAM_ANGLE], parameters_max[PARAM_ANGLE], p.angle_rand);
@@ -895,12 +903,16 @@ void CPUParticles2D::_particles_process(double p_delta) {
 				case EMISSION_SHAPE_SPHERE: {
 					real_t t = Math::TAU * rng->randf();
 					real_t radius = emission_sphere_radius * rng->randf();
-					p.transform[2] = Vector2(Math::cos(t), Math::sin(t)) * radius;
+					real_t sc_sin, sc_cos;
+					Math::sin_cos(t, sc_sin, sc_cos);
+					p.transform[2] = Vector2(sc_cos, sc_sin) * radius;
 				} break;
 				case EMISSION_SHAPE_SPHERE_SURFACE: {
 					real_t s = rng->randf(), t = Math::TAU * rng->randf();
 					real_t radius = emission_sphere_radius * Math::sqrt(1.0 - s * s);
-					p.transform[2] = Vector2(Math::cos(t), Math::sin(t)) * radius;
+					real_t sc_sin, sc_cos;
+					Math::sin_cos(t, sc_sin, sc_cos);
+					p.transform[2] = Vector2(sc_cos, sc_sin) * radius;
 				} break;
 				case EMISSION_SHAPE_RECTANGLE: {
 					p.transform[2] = Vector2(rng->randf() * 2.0 - 1.0, rng->randf() * 2.0 - 1.0) * emission_rect_extents;
@@ -1070,8 +1082,8 @@ void CPUParticles2D::_particles_process(double p_delta) {
 		}
 
 		real_t hue_rot_angle = (tex_hue_variation)*Math::TAU * Math::lerp(parameters_min[PARAM_HUE_VARIATION], parameters_max[PARAM_HUE_VARIATION], p.hue_rot_rand);
-		real_t hue_rot_c = Math::cos(hue_rot_angle);
-		real_t hue_rot_s = Math::sin(hue_rot_angle);
+		real_t hue_rot_c, hue_rot_s;
+		Math::sin_cos(hue_rot_angle, hue_rot_s, hue_rot_c);
 
 		Basis hue_rot_mat;
 		{
@@ -1105,8 +1117,10 @@ void CPUParticles2D::_particles_process(double p_delta) {
 			p.transform.columns[1] = p.transform.columns[1].normalized();
 			p.transform.columns[0] = p.transform.columns[1].orthogonal();
 		} else {
-			p.transform.columns[0] = Vector2(Math::cos(p.rotation), -Math::sin(p.rotation));
-			p.transform.columns[1] = Vector2(Math::sin(p.rotation), Math::cos(p.rotation));
+			real_t sc_sin, sc_cos;
+			Math::sin_cos(p.rotation, sc_sin, sc_cos);
+			p.transform.columns[0] = Vector2(sc_cos, -sc_sin);
+			p.transform.columns[1] = Vector2(sc_sin, sc_cos);
 		}
 
 		//scale by scale
@@ -1458,7 +1472,7 @@ void CPUParticles2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("restart", "keep_seed"), &CPUParticles2D::restart, DEFVAL(false));
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "emitting", PROPERTY_HINT_ONESHOT), "set_emitting", "is_emitting");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "amount", PROPERTY_HINT_RANGE, "1,1000000,1,exp"), "set_amount", "get_amount"); // FIXME: Evaluate support for `exp` in integer properties, or remove this.
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "amount", PROPERTY_HINT_RANGE, "1,1000000,1,exp"), "set_amount", "get_amount"); /// @todo FIXME: Evaluate support for `exp` in integer properties, or remove this.
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE, "Texture2D"), "set_texture", "get_texture");
 	ADD_GROUP("Time", "");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "lifetime", PROPERTY_HINT_RANGE, "0.01,600.0,0.01,or_greater,exp,suffix:s"), "set_lifetime", "get_lifetime");
@@ -1689,10 +1703,10 @@ CPUParticles2D::CPUParticles2D() {
 
 	_update_mesh_texture();
 
-	// CPUParticles2D defaults to interpolation off.
-	// This is because the result often looks better when the particles are updated every frame.
-	// Note that children will need to explicitly turn back on interpolation if they want to use it,
-	// rather than relying on inherit mode.
+	/// CPUParticles2D defaults to interpolation off.
+	/// This is because the result often looks better when the particles are updated every frame.
+	/// Note that children will need to explicitly turn back on interpolation if they want to use it,
+	/// rather than relying on inherit mode.
 	set_physics_interpolation_mode(Node::PHYSICS_INTERPOLATION_MODE_OFF);
 }
 

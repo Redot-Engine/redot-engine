@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file main_loop.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "main_loop.h"
 
 void MainLoop::_bind_methods() {

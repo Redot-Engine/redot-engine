@@ -1,0 +1,6 @@
+GDTEST_OK
+~~ WARNING at line 5: (UNSAFE_NULLABLE_ACCESS) The value of type "int?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 12: (UNSAFE_NULLABLE_ACCESS) The value of type "int?" may be null; using it without a null check may fail at runtime.
+6
+4
+6

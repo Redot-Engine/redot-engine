@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file semver.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "semver.h"
 
 bool godotsharp::SemVer::parse_digit_only_field(const String &p_field, uint64_t &r_result) {

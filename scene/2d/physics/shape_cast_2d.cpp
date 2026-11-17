@@ -30,12 +30,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shape_cast_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "shape_cast_2d.h"
 
 #include "core/config/engine.h"
 #include "scene/2d/physics/collision_object_2d.h"
 #include "scene/resources/world_2d.h"
-#include "servers/physics_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 
 void ShapeCast2D::set_target_position(const Vector2 &p_point) {
 	target_position = p_point;

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file physics_material.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #if !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
 #include "core/io/resource.h"
 

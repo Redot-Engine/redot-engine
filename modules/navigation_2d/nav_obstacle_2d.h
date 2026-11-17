@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file nav_obstacle_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "nav_rid_2d.h"
 
 #include "core/object/class_db.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rendering_shader_container_vulkan.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/rendering_shader_container.h"
 
 class RenderingShaderContainerVulkan : public RenderingShaderContainer {

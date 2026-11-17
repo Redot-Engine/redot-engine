@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file image_loader_libjpeg_turbo.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image_loader.h"
 
 class ImageLoaderLibJPEGTurbo : public ImageFormatLoader {

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdscript_extend_parser.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../gdscript_parser.h"
 #include "godot_lsp.h"
 

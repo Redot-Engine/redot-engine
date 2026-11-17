@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_variant_type_selectors.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/variant/variant.h"
 #include "scene/gui/option_button.h"
 #include "scene/gui/popup_menu.h"

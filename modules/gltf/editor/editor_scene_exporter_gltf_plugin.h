@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_scene_exporter_gltf_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../gltf_document.h"
 #include "editor_scene_exporter_gltf_settings.h"
 
@@ -52,6 +58,5 @@ class SceneExporterGLTFPlugin : public EditorPlugin {
 
 public:
 	virtual String get_plugin_name() const override;
-	bool has_main_screen() const override;
 	SceneExporterGLTFPlugin();
 };

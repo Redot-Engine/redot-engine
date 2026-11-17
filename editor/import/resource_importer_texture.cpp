@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_importer_texture.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_importer_texture.h"
 
 #include "core/config/project_settings.h"
@@ -657,10 +663,6 @@ void ResourceImporterTexture::_remap_channels(Ref<Image> &r_image, ChannelRemap 
 }
 
 void ResourceImporterTexture::_invert_y_channel(Ref<Image> &r_image) {
-	// Inverting the green channel can be used to flip a normal map's direction.
-	// There's no standard when it comes to normal map Y direction, so this is
-	// sometimes needed when using a normal map exported from another program.
-	// See <http://wiki.polycount.com/wiki/Normal_Map_Technical_Details#Common_Swizzle_Coordinates>.
 	const int height = r_image->get_height();
 	const int width = r_image->get_width();
 
@@ -673,9 +675,6 @@ void ResourceImporterTexture::_invert_y_channel(Ref<Image> &r_image) {
 }
 
 void ResourceImporterTexture::_clamp_hdr_exposure(Ref<Image> &r_image) {
-	// Clamp HDR exposure following Filament's tonemapping formula.
-	// This can be used to reduce fireflies in environment maps or reduce the influence
-	// of the sun from an HDRI panorama on environment lighting (when a DirectionalLight3D is used instead).
 	const int height = r_image->get_height();
 	const int width = r_image->get_width();
 

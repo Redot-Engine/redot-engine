@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource.h"
 
 #include "core/io/resource_loader.h"
@@ -124,8 +130,6 @@ void Resource::seed_scene_unique_id(uint32_t p_seed) {
 }
 
 String Resource::generate_scene_unique_id() {
-	// Generate a unique enough hash, but still user-readable.
-	// If it's not unique it does not matter because the saver will try again.
 	if (unique_id_gen.get_seed() == 0) {
 		OS::DateTime dt = OS::get_singleton()->get_datetime();
 		uint32_t hash = hash_murmur3_one_32(OS::get_singleton()->get_ticks_usec());
@@ -366,18 +370,20 @@ Variant Resource::_duplicate_recursive(const Variant &p_variant, const Duplicate
 	}
 }
 
+/// @name These are for avoiding potential duplicates
+/// @brief This can happen in custom code from participating in the same duplication session (remap cache).
+/// @{
+#define BEFORE_USER_CODE thread_duplicate_remap_cache = nullptr;
+#define AFTER_USER_CODE                                \
+	thread_duplicate_remap_cache = remap_cache_backup; \
+	thread_duplicate_remap_cache_needs_deallocation = remap_cache_needs_deallocation_backup;
+/// @}
+
 Ref<Resource> Resource::_duplicate(const DuplicateParams &p_params) const {
 	ERR_FAIL_COND_V_MSG(p_params.local_scene && p_params.subres_mode != RESOURCE_DEEP_DUPLICATE_MAX, Ref<Resource>(), "Duplication for local-to-scene can't specify a deep duplicate mode.");
 
 	DuplicateRemapCacheT *remap_cache_backup = thread_duplicate_remap_cache;
 	bool remap_cache_needs_deallocation_backup = thread_duplicate_remap_cache_needs_deallocation;
-
-// These are for avoiding potential duplicates that can happen in custom code
-// from participating in the same duplication session (remap cache).
-#define BEFORE_USER_CODE thread_duplicate_remap_cache = nullptr;
-#define AFTER_USER_CODE                                \
-	thread_duplicate_remap_cache = remap_cache_backup; \
-	thread_duplicate_remap_cache_needs_deallocation = remap_cache_needs_deallocation_backup;
 
 	List<PropertyInfo> plist;
 	get_property_list(&plist);
@@ -668,7 +674,6 @@ void Resource::setup_local_to_scene() {
 }
 
 void Resource::reset_local_to_scene() {
-	// Restores the state as if setup_local_to_scene() hadn't been called.
 }
 
 Node *(*Resource::_get_local_scene_func)() = nullptr;
@@ -688,7 +693,6 @@ void Resource::set_as_translation_remapped(bool p_remapped) {
 	}
 }
 
-// Helps keep IDs the same when loading/saving scenes. An empty ID clears the entry, and an empty ID is returned when not found.
 void Resource::set_resource_id_for_path(const String &p_referrer_path, const String &p_resource_path, const String &p_id) {
 #ifdef TOOLS_ENABLED
 	if (p_id.is_empty()) {

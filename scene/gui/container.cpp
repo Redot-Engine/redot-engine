@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file container.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "container.h"
 
 void Container::_child_minsize_changed() {

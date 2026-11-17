@@ -32,8 +32,14 @@
 
 #pragma once
 
+/**
+ * @file status_indicator.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/main/node.h"
-#include "servers/display_server.h"
+#include "servers/display/display_server.h"
 
 class StatusIndicator : public Node {
 	GDCLASS(StatusIndicator, Node);

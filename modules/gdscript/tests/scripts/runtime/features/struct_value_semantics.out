@@ -1,0 +1,11 @@
+GDTEST_OK
+10 20 30
+10
+1 2 3
+7 0
+1 2 11
+7 9
+true
+true
+false
+false

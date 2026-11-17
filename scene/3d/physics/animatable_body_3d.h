@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file animatable_body_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/physics/static_body_3d.h"
 
 class AnimatableBody3D : public StaticBody3D {

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file thread_safe.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifndef THREAD_SAFE_CPP
 #define THREAD_SAFE_CPP
 

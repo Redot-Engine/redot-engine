@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mesh_instance_3d_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "mesh_instance_3d_editor_plugin.h"
 
 #include "editor/editor_node.h"
@@ -242,7 +248,7 @@ void MeshInstance3DEditor::_menu_option(int p_option) {
 		} break;
 		case MENU_OPTION_CREATE_UV2: {
 			Ref<Mesh> mesh2 = node->get_mesh();
-			if (mesh.is_null()) {
+			if (mesh2.is_null()) {
 				err_dialog->set_text(TTR("No mesh to unwrap."));
 				err_dialog->popup_centered();
 				return;

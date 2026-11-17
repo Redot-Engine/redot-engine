@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_profiler.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/check_button.h"
@@ -60,7 +66,7 @@ public:
 		struct Category {
 			StringName signature;
 			String name;
-			float total_time = 0; //total for category
+			float total_time = 0; ///< Total for category
 
 			struct Item {
 				StringName signature;

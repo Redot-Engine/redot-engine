@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file navigation_link_2d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "scene/2d/navigation/navigation_link_2d.h"
 
@@ -69,7 +75,6 @@ public:
 	virtual void forward_canvas_draw_over_viewport(Control *p_overlay) override { editor->forward_canvas_draw_over_viewport(p_overlay); }
 
 	virtual String get_plugin_name() const override { return "NavigationLink2D"; }
-	bool has_main_screen() const override { return false; }
 	virtual void edit(Object *p_object) override;
 	virtual bool handles(Object *p_object) const override;
 	virtual void make_visible(bool p_visible) override;

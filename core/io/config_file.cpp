@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file config_file.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "config_file.h"
 #include "config_file.compat.inc"
 

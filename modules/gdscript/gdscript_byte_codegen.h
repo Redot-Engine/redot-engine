@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdscript_byte_codegen.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript.h"
 #include "gdscript_codegen.h"
 #include "gdscript_function.h"
@@ -124,8 +130,8 @@ class GDScriptByteCodeGenerator : public GDScriptCodeGenerator {
 	RBMap<GDScriptFunction *, int> lambdas_map;
 
 #ifdef DEBUG_ENABLED
-	// Keep method and property names for pointer and validated operations.
-	// Used when disassembling the bytecode.
+	/// Keep method and property names for pointer and validated operations.
+	/// Used when disassembling the bytecode.
 	Vector<String> operator_names;
 	Vector<String> setter_names;
 	Vector<String> getter_names;
@@ -141,7 +147,8 @@ class GDScriptByteCodeGenerator : public GDScriptCodeGenerator {
 	}
 #endif
 
-	// Lists since these can be nested.
+	/// @name Lists since these can be nested.
+	/// @{
 	List<int> if_jmp_addrs;
 	List<int> for_jmp_addrs;
 	List<Address> for_counter_variables;
@@ -151,10 +158,12 @@ class GDScriptByteCodeGenerator : public GDScriptCodeGenerator {
 	List<Address> for_range_step_variables;
 	List<int> while_jmp_addrs;
 	List<int> continue_addrs;
-
-	// Used to patch jumps with `and` and `or` operators with short-circuit.
+	/// @}
+	/// @name Used to patch jumps with `and` and `or` operators with short-circuit.
+	/// @{
 	List<int> logic_op_jump_pos1;
 	List<int> logic_op_jump_pos2;
+	/// @}
 
 	List<Address> ternary_result;
 	List<int> ternary_jump_fail_pos;
@@ -234,6 +243,14 @@ class GDScriptByteCodeGenerator : public GDScriptCodeGenerator {
 		int pos = constant_map.size();
 		constant_map[p_constant] = pos;
 		return pos;
+	}
+
+	Address get_name_constant_address(const StringName &p_name) {
+		GDScriptDataType type;
+		type.has_type = true;
+		type.kind = GDScriptDataType::BUILTIN;
+		type.builtin_type = Variant::STRING_NAME;
+		return Address(Address::CONSTANT, get_constant_pos(p_name), type);
 	}
 
 	int get_operation_pos(const Variant::ValidatedOperatorEvaluator p_operation) {
@@ -465,6 +482,7 @@ public:
 	virtual void pop_temporary() override;
 	virtual void clear_temporaries() override;
 	virtual void clear_address(const Address &p_address) override;
+	/// @return `true` if the local has been reused and not cleaned up with `clear_address()`.
 	virtual bool is_local_dirty(const Address &p_address) const override;
 
 	virtual void start_parameters() override;
@@ -514,7 +532,7 @@ public:
 	virtual void write_store_named_global(const Address &p_dst, const StringName &p_global) override;
 	virtual void write_cast(const Address &p_target, const Address &p_source, const GDScriptDataType &p_type) override;
 	virtual void write_call(const Address &p_target, const Address &p_base, const StringName &p_function_name, const Vector<Address> &p_arguments) override;
-	virtual void write_super_call(const Address &p_target, const StringName &p_function_name, const Vector<Address> &p_arguments) override;
+	virtual void write_super_call(const Address &p_target, const StringName &p_function_name, const Vector<Address> &p_arguments, bool p_is_trait_super) override;
 	virtual void write_call_async(const Address &p_target, const Address &p_base, const StringName &p_function_name, const Vector<Address> &p_arguments) override;
 	virtual void write_call_utility(const Address &p_target, const StringName &p_function, const Vector<Address> &p_arguments) override;
 	void write_call_builtin_type(const Address &p_target, const Address &p_base, Variant::Type p_type, const StringName &p_method, bool p_is_static, const Vector<Address> &p_arguments);
@@ -534,6 +552,7 @@ public:
 	virtual void write_construct_typed_array(const Address &p_target, const GDScriptDataType &p_element_type, const Vector<Address> &p_arguments) override;
 	virtual void write_construct_dictionary(const Address &p_target, const Vector<Address> &p_arguments) override;
 	virtual void write_construct_typed_dictionary(const Address &p_target, const GDScriptDataType &p_key_type, const GDScriptDataType &p_value_type, const Vector<Address> &p_arguments) override;
+	virtual void write_construct_struct(const Address &p_target, const Address &p_template) override;
 	virtual void write_await(const Address &p_target, const Address &p_operand) override;
 	virtual void write_if(const Address &p_condition) override;
 	virtual void write_else() override;

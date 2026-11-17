@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_motion_filter_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/object_id.h"
 #include "core/templates/hash_set.h"
 #include "core/templates/rid.h"

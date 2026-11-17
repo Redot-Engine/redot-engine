@@ -30,13 +30,19 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file vrs.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "vrs.h"
 #include "../renderer_compositor_rd.h"
 #include "../storage_rd/texture_storage.h"
 #include "../uniform_set_cache_rd.h"
 
 #ifndef XR_DISABLED
-#include "servers/xr_server.h"
+#include "servers/xr/xr_server.h"
 #endif // XR_DISABLED
 
 using namespace RendererRD;

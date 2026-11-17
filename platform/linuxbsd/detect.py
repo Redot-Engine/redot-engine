@@ -533,6 +533,9 @@ def configure(env: "SConsEnvironment"):
     if platform.system() == "FreeBSD":
         env.Append(LINKFLAGS=["-lkvm"])
 
+    if platform.system() == "OpenBSD":
+        env.Append(LINKFLAGS=["-lkvm"])
+
     # Link those statically for portability
     if env["use_static_cpp"]:
         env.Append(LINKFLAGS=["-static-libgcc", "-static-libstdc++"])

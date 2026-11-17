@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdscript_lambda_callable.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript.h"
 
 #include "core/object/ref_counted.h"
@@ -69,7 +75,7 @@ public:
 	virtual ~GDScriptLambdaCallable() = default;
 };
 
-// Lambda callable that references a particular object, so it can use `self` in the body.
+/// Lambda callable that references a particular object, so it can use `self` in the body.
 class GDScriptLambdaSelfCallable : public CallableCustom {
 	GDScript::UpdatableFuncPtr function;
 	Ref<RefCounted> reference; // For objects that are RefCounted, keep a reference.

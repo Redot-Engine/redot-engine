@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file enet_connection.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "enet_connection.h"
 
 #include "enet_packet_peer.h"
@@ -165,9 +171,9 @@ ENetConnection::EventType ENetConnection::service(int p_timeout, Event &r_event)
 	ERR_FAIL_NULL_V_MSG(host, EVENT_ERROR, "The ENetConnection instance isn't currently active.");
 	ERR_FAIL_COND_V(r_event.peer.is_valid(), EVENT_ERROR);
 
-	// Drop peers that have already been disconnected.
-	// NOTE: Forcibly disconnected peers (i.e. peers disconnected via
-	// enet_peer_disconnect*) do not trigger DISCONNECTED events.
+	/// Drop peers that have already been disconnected.
+	/// @note Forcibly disconnected peers (i.e. peers disconnected via
+	/// enet_peer_disconnect*) do not trigger DISCONNECTED events.
 	List<Ref<ENetPacketPeer>>::Element *E = peers.front();
 	while (E) {
 		if (!E->get()->is_active()) {
@@ -332,6 +338,19 @@ Array ENetConnection::_service(int p_timeout) {
 	return out;
 }
 
+Array ENetConnection::_check_events() {
+	Event event;
+	EventType event_type = EVENT_NONE;
+	if (check_events(event_type, event) < 0) {
+		event_type = EVENT_ERROR;
+	}
+	Array out = { event_type, event.peer, event.data, event.channel_id };
+	if (event.packet && event.peer.is_valid()) {
+		event.peer->_queue_packet(event.packet);
+	}
+	return out;
+}
+
 void ENetConnection::_broadcast(int p_channel, PackedByteArray p_packet, int p_flags) {
 	ERR_FAIL_NULL_MSG(host, "The ENetConnection instance isn't currently active.");
 	ERR_FAIL_COND_MSG(p_channel < 0 || p_channel > (int)host->channelLimit, "Invalid channel");
@@ -379,6 +398,7 @@ void ENetConnection::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("destroy"), &ENetConnection::destroy);
 	ClassDB::bind_method(D_METHOD("connect_to_host", "address", "port", "channels", "data"), &ENetConnection::connect_to_host, DEFVAL(0), DEFVAL(0));
 	ClassDB::bind_method(D_METHOD("service", "timeout"), &ENetConnection::_service, DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("check_events"), &ENetConnection::_check_events);
 	ClassDB::bind_method(D_METHOD("flush"), &ENetConnection::flush);
 	ClassDB::bind_method(D_METHOD("bandwidth_limit", "in_bandwidth", "out_bandwidth"), &ENetConnection::bandwidth_limit, DEFVAL(0), DEFVAL(0));
 	ClassDB::bind_method(D_METHOD("channel_limit", "limit"), &ENetConnection::channel_limit);

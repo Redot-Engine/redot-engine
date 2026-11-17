@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file visible_on_screen_notifier_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "visible_on_screen_notifier_2d.h"
 
 #ifdef TOOLS_ENABLED

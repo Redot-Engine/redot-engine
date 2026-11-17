@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file navigation_link_3d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 
 #include "navigation_link_3d_gizmo_plugin.h"
@@ -43,7 +49,6 @@ class NavigationLink3DEditorPlugin : public EditorPlugin {
 
 public:
 	virtual String get_plugin_name() const override { return "NavigationLink3D"; }
-	bool has_main_screen() const override { return false; }
 	virtual void edit(Object *p_object) override;
 	virtual bool handles(Object *p_object) const override;
 

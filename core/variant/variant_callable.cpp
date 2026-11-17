@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file variant_callable.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "variant_callable.h"
 
 #include "core/templates/hashfuncs.h"

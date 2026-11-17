@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file control_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/inspector/editor_inspector.h"
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/box_container.h"
@@ -49,7 +55,7 @@ class PopupPanel;
 class Separator;
 class TextureRect;
 
-// Inspector controls.
+/// Inspector controls.
 class ControlPositioningWarning : public MarginContainer {
 	GDCLASS(ControlPositioningWarning, MarginContainer);
 
@@ -138,7 +144,7 @@ public:
 	virtual bool parse_property(Object *p_object, const Variant::Type p_type, const String &p_path, const PropertyHint p_hint, const String &p_hint_text, const BitField<PropertyUsageFlags> p_usage, const bool p_wide = false) override;
 };
 
-// Toolbar controls.
+/// Toolbar controls.
 class ControlEditorPopupButton : public Button {
 	GDCLASS(ControlEditorPopupButton, Button);
 
@@ -246,14 +252,36 @@ public:
 	ControlEditorToolbar();
 };
 
-// Editor plugin.
+class ControlOffsetTransformPreview : public Control {
+	GDCLASS(ControlOffsetTransformPreview, Control);
+
+	EditorPlugin *plugin = nullptr;
+	ObjectID selected_control_id; ///< Invalid when no control is selected, or when it has been deleted.
+
+	friend class ControlEditorPlugin;
+
+public:
+	void edit(Control *p_control);
+
+	void forward_canvas_draw_over_viewport(Control *p_overlay) const;
+
+	ControlOffsetTransformPreview(EditorPlugin *p_plugin);
+};
+
+/// Editor plugin.
 class ControlEditorPlugin : public EditorPlugin {
 	GDCLASS(ControlEditorPlugin, EditorPlugin);
 
 	ControlEditorToolbar *toolbar = nullptr;
+	ControlOffsetTransformPreview *offset_transform_preview = nullptr;
 
 public:
 	virtual String get_plugin_name() const override { return "Control"; }
+
+	virtual void edit(Object *p_object) override;
+	virtual bool handles(Object *p_object) const override;
+
+	virtual void forward_canvas_draw_over_viewport(Control *p_overlay) override;
 
 	ControlEditorPlugin();
 };

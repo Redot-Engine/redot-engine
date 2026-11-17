@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_theme.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/theme.h"
 
 class EditorTheme : public Theme {
@@ -44,11 +50,17 @@ class EditorTheme : public Theme {
 	uint32_t generated_icons_hash = 0;
 
 public:
+	/// Keep in sync with Theme::get_color.
 	virtual Color get_color(const StringName &p_name, const StringName &p_theme_type) const override;
+	/// Keep in sync with Theme::get_constant.
 	virtual int get_constant(const StringName &p_name, const StringName &p_theme_type) const override;
+	/// Keep in sync with Theme::get_font.
 	virtual Ref<Font> get_font(const StringName &p_name, const StringName &p_theme_type) const override;
+	/// Keep in sync with Theme::get_font_size.
 	virtual int get_font_size(const StringName &p_name, const StringName &p_theme_type) const override;
+	/// Keep in sync with Theme::get_icon.
 	virtual Ref<Texture2D> get_icon(const StringName &p_name, const StringName &p_theme_type) const override;
+	/// Keep in sync with Theme::get_stylebox.
 	virtual Ref<StyleBox> get_stylebox(const StringName &p_name, const StringName &p_theme_type) const override;
 
 	void set_generated_hash(uint32_t p_hash) { generated_hash = p_hash; }

@@ -32,7 +32,13 @@
 
 #pragma once
 
-#include "servers/physics_server_2d.h"
+/**
+ * @file godot_body_direct_state_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
+#include "servers/physics_2d/physics_server_2d.h"
 
 class GodotBody2D;
 

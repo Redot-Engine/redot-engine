@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_device_commons.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rendering_device_commons.h"
 
 #include "thirdparty/spirv-reflect/spirv_reflect.h"
@@ -556,7 +562,6 @@ uint32_t RenderingDeviceCommons::get_image_format_pixel_size(DataFormat p_format
 	return 1;
 }
 
-// https://www.khronos.org/registry/DataFormat/specs/1.1/dataformat.1.1.pdf
 void RenderingDeviceCommons::get_compressed_image_format_block_dimensions(DataFormat p_format, uint32_t &r_w, uint32_t &r_h) {
 	switch (p_format) {
 		case DATA_FORMAT_BC1_RGB_UNORM_BLOCK:

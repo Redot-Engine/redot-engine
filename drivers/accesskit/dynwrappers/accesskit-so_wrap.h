@@ -29,6 +29,12 @@
 #define accesskit_node_set_busy accesskit_node_set_busy_dylibloader_orig_libaccesskit
 #define accesskit_node_clear_busy accesskit_node_clear_busy_dylibloader_orig_libaccesskit
 #define accesskit_node_is_live_atomic accesskit_node_is_live_atomic_dylibloader_orig_libaccesskit
+
+/**
+ * @file accesskit-so_wrap.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
 #define accesskit_node_set_live_atomic accesskit_node_set_live_atomic_dylibloader_orig_libaccesskit
 #define accesskit_node_clear_live_atomic accesskit_node_clear_live_atomic_dylibloader_orig_libaccesskit
 #define accesskit_node_is_modal accesskit_node_is_modal_dylibloader_orig_libaccesskit

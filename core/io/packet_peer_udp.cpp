@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file packet_peer_udp.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "packet_peer_udp.h"
 
 #include "core/io/ip.h"
@@ -45,6 +51,16 @@ void PacketPeerUDP::set_broadcast_enabled(bool p_enabled) {
 	if (_sock.is_valid() && _sock->is_open()) {
 		_sock->set_broadcasting_enabled(p_enabled);
 	}
+}
+
+void PacketPeerUDP::set_reuse_address(bool p_reuse) {
+	ERR_FAIL_COND(udp_server);
+	reuse_address = p_reuse;
+}
+
+void PacketPeerUDP::set_reuse_port(bool p_reuse) {
+	ERR_FAIL_COND(udp_server);
+	reuse_port = p_reuse;
 }
 
 Error PacketPeerUDP::join_multicast_group(IPAddress p_multi_address, const String &p_if_name) {
@@ -89,7 +105,7 @@ Error PacketPeerUDP::_set_dest_address(const String &p_address, int p_port) {
 }
 
 int PacketPeerUDP::get_available_packet_count() const {
-	// TODO we should deprecate this, and expose poll instead!
+	/// @todo We should deprecate this, and expose poll instead!
 	Error err = const_cast<PacketPeerUDP *>(this)->_poll();
 	if (err != OK) {
 		return -1;
@@ -107,7 +123,8 @@ Error PacketPeerUDP::get_packet(const uint8_t **r_buffer, int &r_buffer_size) {
 		return ERR_UNAVAILABLE;
 	}
 
-	/* Bogus GCC warning here:
+	/**
+	 * Bogus GCC warning here:
 	 * In member function 'int RingBuffer<T>::read(T*, int, bool) [with T = unsigned char]',
 	 *     inlined from 'virtual Error PacketPeerUDP::get_packet(const uint8_t**, int&)' at core/io/packet_peer_udp.cpp:112:9,
 	 *     inlined from 'virtual Error PacketPeerUDP::get_packet(const uint8_t**, int&)' at core/io/packet_peer_udp.cpp:99:7:
@@ -196,6 +213,8 @@ Error PacketPeerUDP::bind(int p_port, const IPAddress &p_bind_address, int p_rec
 
 	_sock->set_blocking_enabled(false);
 	_sock->set_broadcasting_enabled(broadcast);
+	_sock->set_reuse_address_enabled(reuse_address);
+	_sock->set_reuse_port_enabled(reuse_port);
 	err = _sock->bind(p_bind_address, p_port);
 
 	if (err != OK) {
@@ -370,6 +389,8 @@ void PacketPeerUDP::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_local_port"), &PacketPeerUDP::get_local_port);
 	ClassDB::bind_method(D_METHOD("set_dest_address", "host", "port"), &PacketPeerUDP::_set_dest_address);
 	ClassDB::bind_method(D_METHOD("set_broadcast_enabled", "enabled"), &PacketPeerUDP::set_broadcast_enabled);
+	ClassDB::bind_method(D_METHOD("set_reuse_address", "enabled"), &PacketPeerUDP::set_reuse_address);
+	ClassDB::bind_method(D_METHOD("set_reuse_port", "enabled"), &PacketPeerUDP::set_reuse_port);
 	ClassDB::bind_method(D_METHOD("join_multicast_group", "multicast_address", "interface_name"), &PacketPeerUDP::join_multicast_group);
 	ClassDB::bind_method(D_METHOD("leave_multicast_group", "multicast_address", "interface_name"), &PacketPeerUDP::leave_multicast_group);
 }

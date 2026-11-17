@@ -34,6 +34,7 @@
 
 #include "core/variant/variant.h"
 #include "core/variant/variant_parser.h"
+#include "core/variant/variant_utility.h"
 
 #include "tests/test_macros.h"
 
@@ -1954,6 +1955,86 @@ TEST_CASE("[Variant] Writer and parser object") {
 	CHECK_EQ(ref_counted->get_meta("test"), Variant(123));
 }
 
+TEST_CASE("[Variant] Parser typed dictionary with objects") {
+	VariantParser::StreamString ss;
+	Variant parsed;
+	String errs;
+	int line;
+
+	SUBCASE("Object values") {
+		const String encoded = "Dictionary[int, RefCounted]({\n1: Object(RefCounted,\"script\":null,\"metadata/test\":123)\n})";
+
+		ss.s = encoded;
+		ERR_PRINT_OFF;
+		Error error = VariantParser::parse(&ss, parsed, errs, line);
+		ERR_PRINT_ON;
+
+		CHECK_EQ(error, ERR_UNAUTHORIZED);
+
+		ss = VariantParser::StreamString();
+		ss.s = encoded;
+		error = VariantParser::parse(&ss, parsed, errs, line, nullptr, true);
+
+		CHECK_EQ(error, OK);
+		Dictionary dict = parsed;
+		CHECK(dict.is_typed());
+		CHECK_EQ(dict.get_typed_value_class_name(), RefCounted::get_class_static());
+		Ref<RefCounted> ref_counted = dict[1];
+		CHECK(ref_counted.is_valid());
+		if (ref_counted.is_valid()) {
+			CHECK_EQ(ref_counted->get_meta("test"), Variant(123));
+		}
+	}
+
+	SUBCASE("Object keys") {
+		const String encoded = "Dictionary[Resource, int]({\nObject(Resource,\"script\":null,\"resource_name\":\"key\"): 1\n})";
+
+		ss.s = encoded;
+		ERR_PRINT_OFF;
+		Error error = VariantParser::parse(&ss, parsed, errs, line);
+		ERR_PRINT_ON;
+
+		CHECK_EQ(error, ERR_UNAUTHORIZED);
+
+		ss = VariantParser::StreamString();
+		ss.s = encoded;
+		error = VariantParser::parse(&ss, parsed, errs, line, nullptr, true);
+
+		CHECK_EQ(error, OK);
+		Dictionary dict = parsed;
+		CHECK_EQ(dict.get_typed_key_class_name(), Resource::get_class_static());
+		CHECK_EQ(dict.size(), 1);
+		if (dict.size() == 1) {
+			Ref<Resource> key = dict.keys()[0];
+			CHECK(key.is_valid());
+			if (key.is_valid()) {
+				CHECK_EQ(key->get_name(), "key");
+				CHECK_EQ(dict[key], Variant(1));
+			}
+		}
+	}
+
+	SUBCASE("Resource key type") {
+		ss.s = "Dictionary[Resource, int]({\n})";
+		Error error = VariantParser::parse(&ss, parsed, errs, line, nullptr, true);
+
+		CHECK_EQ(error, OK);
+		Dictionary dict = parsed;
+		CHECK(dict.get_typed_key_builtin() == Variant::OBJECT);
+		CHECK_EQ(dict.get_typed_key_class_name(), Resource::get_class_static());
+	}
+
+	SUBCASE("Resource value type") {
+		ss.s = "Dictionary[int, Resource]({\n})";
+		Error error = VariantParser::parse(&ss, parsed, errs, line, nullptr, true);
+
+		CHECK_EQ(error, OK);
+		Dictionary dict = parsed;
+		CHECK(dict.get_typed_value_builtin() == Variant::OBJECT);
+		CHECK_EQ(dict.get_typed_value_class_name(), Resource::get_class_static());
+	}
+}
+
 TEST_CASE("[Variant] Basic comparison") {
 	CHECK_EQ(Variant(1), Variant(1));
 	CHECK_FALSE(Variant(1) != Variant(1));
@@ -2288,6 +2369,84 @@ TEST_CASE("[Variant] Operator NOT") {
 		REQUIRE_EQ(result.get_type(), Variant::BOOL);
 		CHECK_EQ(!value.booleanize(), result.operator bool());
 	}
+}
+
+TEST_CASE("[Variant] VariantParser for Variant::NIL") {
+	String errs;
+	int line;
+	Variant result;
+	Error err;
+
+	// Test Variant::NIL
+	{
+		VariantParser::StreamString ss;
+		ss.s = "Variant::NIL";
+		line = 1;
+		err = VariantParser::parse(&ss, result, errs, line);
+		CHECK_MESSAGE(err == OK, "Variant::NIL should parse without error");
+		CHECK_MESSAGE(result.get_type() == Variant::NIL, "Variant::NIL should result in a nil Variant");
+	}
+
+	// Test null (regression)
+	{
+		VariantParser::StreamString ss;
+		ss.s = "null";
+		line = 1;
+		err = VariantParser::parse(&ss, result, errs, line);
+		CHECK_MESSAGE(err == OK, "null should parse without error");
+		CHECK_MESSAGE(result.get_type() == Variant::NIL, "null should result in a nil Variant");
+	}
+
+	// Test nil (regression)
+	{
+		VariantParser::StreamString ss;
+		ss.s = "nil";
+		line = 1;
+		err = VariantParser::parse(&ss, result, errs, line);
+		CHECK_MESSAGE(err == OK, "nil should parse without error");
+		CHECK_MESSAGE(result.get_type() == Variant::NIL, "nil should result in a nil Variant");
+	}
+
+	// Test Variant::INVALID (error case)
+	{
+		VariantParser::StreamString ss;
+		ss.s = "Variant::INVALID";
+		line = 1;
+		err = VariantParser::parse(&ss, result, errs, line);
+		CHECK_MESSAGE(err != OK, "Variant::INVALID should produce a parse error");
+		CHECK_MESSAGE(errs.contains("Unknown Variant constant 'INVALID'"), "Error message should mention unknown constant");
+	}
+
+	// Test Variant (alone)
+	{
+		VariantParser::StreamString ss;
+		ss.s = "Variant";
+		line = 1;
+		err = VariantParser::parse(&ss, result, errs, line);
+		CHECK_MESSAGE(err != OK, "Variant alone should produce a parse error");
+		CHECK_MESSAGE(errs.contains("Expected '::' after 'Variant'"), "Error message should mention expected '::'");
+	}
+
+	// Test p_allow_objects security gating
+	{
+		VariantParser::StreamString ss;
+		ss.s = "Object(RefCounted, {})";
+		line = 1;
+		err = VariantParser::parse(&ss, result, errs, line, nullptr, false); // p_allow_objects = false
+		CHECK_MESSAGE(err == ERR_UNAUTHORIZED, "Object parsing should be unauthorized when p_allow_objects is false");
+	}
+
+	{
+		VariantParser::StreamString ss;
+		ss.s = "Variant::NIL";
+		line = 1;
+		err = VariantParser::parse(&ss, result, errs, line, nullptr, false); // p_allow_objects = false
+		CHECK_MESSAGE(err == OK, "Variant::NIL should be allowed even when p_allow_objects is false");
+	}
+
+	// Test with str_to_var
+	Variant v = VariantUtilityFunctions::str_to_var("Variant::NIL");
+	CHECK_MESSAGE(v.get_type() == Variant::NIL, "str_to_var(\"Variant::NIL\") should result in a nil Variant");
 }
 
 } // namespace TestVariant

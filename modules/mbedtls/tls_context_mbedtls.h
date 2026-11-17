@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file tls_context_mbedtls.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "crypto_mbedtls.h"
 
 #include "core/object/ref_counted.h"

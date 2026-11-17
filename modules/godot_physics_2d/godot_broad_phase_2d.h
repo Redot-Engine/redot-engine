@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_broad_phase_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/math_funcs.h"
 #include "core/math/rect2.h"
 
@@ -48,7 +54,7 @@ public:
 	typedef void *(*PairCallback)(GodotCollisionObject2D *A, int p_subindex_A, GodotCollisionObject2D *B, int p_subindex_B, void *p_userdata);
 	typedef void (*UnpairCallback)(GodotCollisionObject2D *A, int p_subindex_A, GodotCollisionObject2D *B, int p_subindex_B, void *p_data, void *p_userdata);
 
-	// 0 is an invalid ID
+	/// 0 is an invalid ID
 	virtual ID create(GodotCollisionObject2D *p_object_, int p_subindex = 0, const Rect2 &p_aabb = Rect2(), bool p_static = false) = 0;
 	virtual void move(ID p_id, const Rect2 &p_aabb) = 0;
 	virtual void set_static(ID p_id, bool p_static) = 0;
@@ -65,6 +71,14 @@ public:
 	virtual void set_unpair_callback(UnpairCallback p_unpair_callback, void *p_userdata) = 0;
 
 	virtual void update() = 0;
+
+	/// @brief Sets the broadphase pairing margin used to keep collision pairs alive
+	/// between frames, reducing pair churn for large or overlapping shapes.
+	/// @details Read once when a physics space is created (see GodotSpace2D). The base
+	/// implementation is a no-op; backends that support it override this.
+	/// @param p_expansion Maximum pairing margin in pixels. Values <= 0 disable the
+	/// feature and fall back to the backend's default margin behavior.
+	virtual void set_pairing_expansion(real_t p_expansion) {}
 
 	virtual ~GodotBroadPhase2D();
 };

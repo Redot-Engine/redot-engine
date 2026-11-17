@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file bone_attachment_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "bone_attachment_3d.h"
 #include "bone_attachment_3d.compat.inc"
 
@@ -343,7 +349,6 @@ void BoneAttachment3D::notify_skeleton_bones_renamed(Node *p_base_scene, Skeleto
 }
 
 void BoneAttachment3D::notify_rebind_required() {
-	// Ensures bindings are properly updated after a scene reload.
 	_check_unbind();
 	if (use_external_skeleton) {
 		_update_external_skeleton_cache();

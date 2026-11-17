@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file debug_adapter_protocol.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "debug_adapter_protocol.h"
 
 #include "core/config/project_settings.h"

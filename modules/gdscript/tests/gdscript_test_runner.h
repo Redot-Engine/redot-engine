@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdscript_test_runner.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../gdscript.h"
 
 #include "core/error/error_macros.h"
@@ -132,6 +138,10 @@ public:
 	int run_tests();
 	bool generate_outputs();
 
+	static bool suppress_trait_warning();
+	static void restore_trait_warnings(bool originalState);
+	static bool suppress_struct_warning();
+	static void restore_struct_warning(bool p_original_state);
 	GDScriptTestRunner(const String &p_source_dir, bool p_init_language, bool p_print_filenames = false, bool p_use_binary_tokens = false);
 	~GDScriptTestRunner();
 };

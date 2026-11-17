@@ -30,9 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file camera_feed_linux.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "camera_feed_linux.h"
 
-#include "servers/rendering_server.h"
+#include "servers/rendering/rendering_server.h"
 
 #include <fcntl.h>
 #include <sys/ioctl.h>

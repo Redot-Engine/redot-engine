@@ -32,5 +32,11 @@
 
 #pragma once
 
+/**
+ * @file jolt_globals.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 void jolt_initialize();
 void jolt_deinitialize();

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_export_platform_pc.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_export_platform.h"
 
 class EditorExportPlatformPC : public EditorExportPlatform {

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file import_defaults_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/option_button.h"

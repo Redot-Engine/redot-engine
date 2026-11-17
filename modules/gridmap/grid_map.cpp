@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file grid_map.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "grid_map.h"
 
 #include "core/io/marshalls.h"
@@ -37,7 +43,7 @@
 #include "scene/resources/3d/mesh_library.h"
 #include "scene/resources/3d/primitive_meshes.h"
 #include "scene/resources/surface_tool.h"
-#include "servers/rendering_server.h"
+#include "servers/rendering/rendering_server.h"
 
 #ifndef PHYSICS_3D_DISABLED
 #include "core/math/convex_hull.h"
@@ -54,7 +60,7 @@
 
 #ifndef NAVIGATION_3D_DISABLED
 #include "scene/resources/3d/navigation_mesh_source_geometry_data_3d.h"
-#include "servers/navigation_server_3d.h"
+#include "servers/navigation_3d/navigation_server_3d.h"
 
 Callable GridMap::_navmesh_source_geometry_parsing_callback;
 RID GridMap::_navmesh_source_geometry_parser;
@@ -647,7 +653,7 @@ bool GridMap::_octant_update(const OctantKey &p_key) {
 
 	Vector<Vector3> col_debug;
 
-	/*
+	/**
 	 * foreach item in this octant,
 	 * set item's multimesh's instance count to number of cells which have this item
 	 * and set said multimesh bounding box to one containing all cells which have this item

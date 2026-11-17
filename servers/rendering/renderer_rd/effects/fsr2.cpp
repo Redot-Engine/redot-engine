@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file fsr2.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "fsr2.h"
 
 #include "../storage_rd/material_storage.h"
@@ -176,8 +182,8 @@ static FfxErrorCode create_backend_context_rd(FfxFsr2Interface *p_backend_interf
 	// Store pointer to the device common to all contexts.
 	scratch.device = p_device;
 
-	// Create a ring buffer of uniform buffers.
-	// FIXME: This could be optimized to be a single memory block if it was possible for RD to create views into a particular memory range of a UBO.
+	/// Create a ring buffer of uniform buffers.
+	/// @todo FIXME: This could be optimized to be a single memory block if it was possible for RD to create views into a particular memory range of a UBO.
 	for (uint32_t i = 0; i < FSR2_UBO_RING_BUFFER_SIZE; i++) {
 		scratch.ubo_ring_buffer[i] = RD::get_singleton()->uniform_buffer_create(FFX_MAX_CONST_SIZE * sizeof(uint32_t));
 		ERR_FAIL_COND_V(scratch.ubo_ring_buffer[i].is_null(), FFX_ERROR_BACKEND_API_ERROR);
@@ -342,9 +348,8 @@ static FfxErrorCode create_pipeline_rd(FfxFsr2Interface *p_backend_interface, Ff
 	return FFX_OK;
 }
 
+/// We don't want to destroy pipelines when the FSR2 API deems it necessary as it'll do so whenever the context is destroyed.
 static FfxErrorCode destroy_pipeline_rd(FfxFsr2Interface *p_backend_interface, FfxPipelineState *p_pipeline) {
-	// We don't want to destroy pipelines when the FSR2 API deems it necessary as it'll do so whenever the context is destroyed.
-
 	return FFX_OK;
 }
 
@@ -837,7 +842,7 @@ FSR2Context *FSR2Effect::create_context(Size2i p_internal_size, Size2i p_target_
 }
 
 void FSR2Effect::upscale(const Parameters &p_params) {
-	// TODO: Transparency & Composition mask is not implemented.
+	/// @todo Transparency & Composition mask is not implemented.
 	FfxFsr2DispatchDescription dispatch_desc = {};
 	RID color = p_params.color;
 	RID depth = p_params.depth;

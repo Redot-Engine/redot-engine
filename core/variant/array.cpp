@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file array.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "array.h"
 
 #include "container_type_validate.h"
@@ -43,7 +49,7 @@
 struct ArrayPrivate {
 	SafeRefCount refcount;
 	Vector<Variant> array;
-	Variant *read_only = nullptr; // If enabled, a pointer is used to a temporary value that is used to return read-only values.
+	Variant *read_only = nullptr; ///< If enabled, a pointer is used to a temporary value that is used to return read-only values.
 	ContainerTypeValidate typed;
 
 	ArrayPrivate() {}
@@ -227,9 +233,8 @@ void Array::assign(const Array &p_array) {
 	const Variant *source = p_array._p->array.ptr();
 	int size = p_array._p->array.size();
 
-	if ((source_typed.type == Variant::NIL && typed.type == Variant::OBJECT) || (source_typed.type == Variant::OBJECT && source_typed.can_reference(typed))) {
-		// from variants to objects or
-		// from base classes to subclasses
+	if ((source_typed.type == Variant::NIL && typed.type == Variant::OBJECT) || (source_typed.type == Variant::OBJECT && typed.type == Variant::OBJECT)) {
+		// From variants or another object type, validate each element against the destination type.
 		for (int i = 0; i < size; i++) {
 			const Variant &element = source[i];
 			if (element.get_type() != Variant::NIL && (element.get_type() != Variant::OBJECT || !typed.validate_object(element, "assign"))) {
@@ -340,7 +345,7 @@ void Array::fill(const Variant &p_value) {
 void Array::erase(const Variant &p_value) {
 	ERR_FAIL_COND_MSG(_p->read_only, "Array is in read-only state.");
 	Variant value = p_value;
-	ERR_FAIL_COND(!_p->typed.validate(value, "erase"));
+	ERR_FAIL_COND(!_p->typed.validate_for_lookup(value, "erase"));
 	_p->array.erase(value);
 }
 
@@ -364,7 +369,7 @@ int Array::find(const Variant &p_value, int p_from) const {
 		return -1;
 	}
 	Variant value = p_value;
-	ERR_FAIL_COND_V(!_p->typed.validate(value, "find"), -1);
+	ERR_FAIL_COND_V(!_p->typed.validate_for_lookup(value, "find"), -1);
 
 	int ret = -1;
 
@@ -415,7 +420,7 @@ int Array::rfind(const Variant &p_value, int p_from) const {
 		return -1;
 	}
 	Variant value = p_value;
-	ERR_FAIL_COND_V(!_p->typed.validate(value, "rfind"), -1);
+	ERR_FAIL_COND_V(!_p->typed.validate_for_lookup(value, "rfind"), -1);
 
 	if (p_from < 0) {
 		// Relative offset from the end
@@ -472,7 +477,7 @@ int Array::rfind_custom(const Callable &p_callable, int p_from) const {
 
 int Array::count(const Variant &p_value) const {
 	Variant value = p_value;
-	ERR_FAIL_COND_V(!_p->typed.validate(value, "count"), 0);
+	ERR_FAIL_COND_V(!_p->typed.validate_for_lookup(value, "count"), 0);
 	if (_p->array.is_empty()) {
 		return 0;
 	}
@@ -489,7 +494,7 @@ int Array::count(const Variant &p_value) const {
 
 bool Array::has(const Variant &p_value) const {
 	Variant value = p_value;
-	ERR_FAIL_COND_V(!_p->typed.validate(value, "use 'has'"), false);
+	ERR_FAIL_COND_V(!_p->typed.validate_for_lookup(value, "use 'has'"), false);
 
 	return find(value) != -1;
 }
@@ -748,7 +753,7 @@ void Array::shuffle() {
 
 int Array::bsearch(const Variant &p_value, bool p_before) const {
 	Variant value = p_value;
-	ERR_FAIL_COND_V(!_p->typed.validate(value, "binary search"), -1);
+	ERR_FAIL_COND_V(!_p->typed.validate_for_lookup(value, "binary search"), -1);
 	return _p->array.span().bisect<_ArrayVariantSort>(value, p_before);
 }
 

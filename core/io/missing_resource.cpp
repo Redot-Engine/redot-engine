@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file missing_resource.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "missing_resource.h"
 
 bool MissingResource::_set(const StringName &p_name, const Variant &p_value) {

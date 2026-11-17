@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file material.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "material.h"
 
 #include "core/config/engine.h"
@@ -3985,7 +3991,7 @@ BaseMaterial3D::BaseMaterial3D(bool p_orm) :
 
 	set_heightmap_deep_parallax_min_layers(8);
 	set_heightmap_deep_parallax_max_layers(32);
-	set_heightmap_deep_parallax_flip_tangent(false); //also sets binormal
+	set_heightmap_deep_parallax_flip_tangent(false);
 
 	set_z_clip_scale(1.0);
 	set_fov_override(75.0);

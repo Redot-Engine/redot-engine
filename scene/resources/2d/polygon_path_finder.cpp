@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file polygon_path_finder.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "polygon_path_finder.h"
 #include "core/math/geometry_2d.h"
 

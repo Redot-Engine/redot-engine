@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_properties_vector.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/inspector/editor_inspector.h"
 
 class EditorSpinSlider;

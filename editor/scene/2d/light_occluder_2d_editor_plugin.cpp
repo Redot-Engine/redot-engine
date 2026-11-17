@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file light_occluder_2d_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "light_occluder_2d_editor_plugin.h"
 
 #include "editor/editor_undo_redo_manager.h"
@@ -62,8 +68,8 @@ bool LightOccluder2DEditor::_is_line() const {
 
 int LightOccluder2DEditor::_get_polygon_count() const {
 	Ref<OccluderPolygon2D> occluder = node->get_occluder_polygon();
-	if (occluder.is_valid()) {
-		return occluder->get_polygon().size();
+	if (occluder.is_valid() && !occluder->get_polygon().is_empty()) {
+		return 1;
 	} else {
 		return 0;
 	}

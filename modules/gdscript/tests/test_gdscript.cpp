@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file test_gdscript.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "test_gdscript.h"
 
 #include "../gdscript_analyzer.h"

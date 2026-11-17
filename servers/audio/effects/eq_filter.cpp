@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file eq_filter.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "eq_filter.h"
 
 #include "core/error/error_macros.h"
@@ -38,9 +44,9 @@
 #define POW2(v) ((v) * (v))
 
 /* Helper */
+/// Solves quadractic
+/// @return Number of roots
 static int solve_quadratic(double a, double b, double c, double *r1, double *r2) {
-	//solves quadractic and returns number of roots
-
 	double base = 2 * a;
 	if (base == 0.0f) {
 		return 0;

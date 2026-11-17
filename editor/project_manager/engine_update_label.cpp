@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file engine_update_label.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "engine_update_label.h"
 
 #include "core/io/dir_access.h"

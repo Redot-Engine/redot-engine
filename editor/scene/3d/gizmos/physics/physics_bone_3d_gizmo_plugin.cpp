@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file physics_bone_3d_gizmo_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "physics_bone_3d_gizmo_plugin.h"
 
 #include "editor/scene/3d/gizmos/physics/joint_3d_gizmo_plugin.h"

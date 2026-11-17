@@ -32,6 +32,27 @@
 
 #pragma once
 
+/**
+ * @file error_macros.h
+ *
+ *
+ * @section error_macros Error Macros (ERR_)
+ * @warning These macros work in the opposite way to assert().
+ *
+ * @warning Unlike exceptions and asserts, these macros try to maintain consistency and stability.
+ * In most cases, bugs and/or invalid data are not fatal. They should never allow a perfectly
+ * running application to fail or crash.
+ * Always try to return processable data, so the engine can keep running well.
+ * Use the _MSG versions to print a meaningful message to help with debugging.
+ *
+ * The `((void)0)` no-op statement is used as a trick to force us to put a semicolon after
+ * those macros, making them look like proper statements.
+ * The if wrappers are used to ensure that the macro replacement does not trigger unexpected
+ * issues when expanded e.g. after an `if (cond) ERR_FAIL();` without braces.
+ *
+ * These macros should be used instead of `ERR_FAIL_COND` for bounds checking.
+ */
+
 #include "core/typedefs.h"
 
 #ifdef _MSC_VER
@@ -78,17 +99,32 @@ struct ErrorHandlerList {
 void add_error_handler(ErrorHandlerList *p_handler);
 void remove_error_handler(const ErrorHandlerList *p_handler);
 
-// Functions used by the error macros.
+/// @name Functions used by the error macros
+/// @{
+/**
+ * For printing errors when we may crash at any point, so we must flush ASAP a lot of lines
+ * but we don't want to make it noisy by printing lots of file & line info (because it's already
+ * been printing by a preceding _err_print_error).
+ * */
+void _err_print_error_asap(const String &p_error, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
+/// @}
+
+/// @name Functions used by the error macros:  Errors with messages (All combinations of p_error and p_message as String or char*.)
+/// @{
 _NO_INLINE_ void _err_print_error(const char *p_function, const char *p_file, int p_line, const char *p_error, bool p_editor_notify = false, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
 _NO_INLINE_ void _err_print_error(const char *p_function, const char *p_file, int p_line, const String &p_error, bool p_editor_notify = false, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
 _NO_INLINE_ void _err_print_error(const char *p_function, const char *p_file, int p_line, const char *p_error, const char *p_message, bool p_editor_notify = false, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
 _NO_INLINE_ void _err_print_error(const char *p_function, const char *p_file, int p_line, const String &p_error, const char *p_message, bool p_editor_notify = false, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
 _NO_INLINE_ void _err_print_error(const char *p_function, const char *p_file, int p_line, const char *p_error, const String &p_message, bool p_editor_notify = false, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
 _NO_INLINE_ void _err_print_error(const char *p_function, const char *p_file, int p_line, const String &p_error, const String &p_message, bool p_editor_notify = false, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
-void _err_print_error_asap(const String &p_error, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
+/// @}
+
+/// @name Functions used by the error macros:  Index errors. (All combinations of p_message as String or char*.)
+/// @{
 _NO_INLINE_ void _err_print_index_error(const char *p_function, const char *p_file, int p_line, int64_t p_index, int64_t p_size, const char *p_index_str, const char *p_size_str, const char *p_message = "", bool p_editor_notify = false, bool fatal = false);
 _NO_INLINE_ void _err_print_index_error(const char *p_function, const char *p_file, int p_line, int64_t p_index, int64_t p_size, const char *p_index_str, const char *p_size_str, const String &p_message, bool p_editor_notify = false, bool fatal = false);
 _NO_INLINE_ void _err_flush_stdout();
+/// @}
 
 void _physics_interpolation_warning(const char *p_function, const char *p_file, int p_line, ObjectID p_id, const char *p_warn_string);
 
@@ -112,25 +148,9 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
 #endif
 
 /**
- * Error macros.
- * WARNING: These macros work in the opposite way to assert().
- *
- * Unlike exceptions and asserts, these macros try to maintain consistency and stability.
- * In most cases, bugs and/or invalid data are not fatal. They should never allow a perfectly
- * running application to fail or crash.
- * Always try to return processable data, so the engine can keep running well.
- * Use the _MSG versions to print a meaningful message to help with debugging.
- *
- * The `((void)0)` no-op statement is used as a trick to force us to put a semicolon after
- * those macros, making them look like proper statements.
- * The if wrappers are used to ensure that the macro replacement does not trigger unexpected
- * issues when expanded e.g. after an `if (cond) ERR_FAIL();` without braces.
+ * @name Error Macros: Integer index out of bounds error macros
+ * @{
  */
-
-// Index out of bounds error macros.
-// These macros should be used instead of `ERR_FAIL_COND` for bounds checking.
-
-// Integer index out of bounds error macros.
 
 /**
  * Try using `ERR_FAIL_INDEX_MSG`.
@@ -233,7 +253,9 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
 	} else                                                                                                                          \
 		((void)0)
 
-// Unsigned integer index out of bounds error macros.
+/// @}
+/// @name Error Macros: Unsigned integer index out of bounds error macros
+/// @{
 
 /**
  * Try using `ERR_FAIL_UNSIGNED_INDEX_MSG`.
@@ -336,7 +358,9 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
 	} else                                                                                                                          \
 		((void)0)
 
-// Null reference error macros.
+/// @}
+/// @name Error Macros: Null reference error macros
+/// @{
 
 /**
  * Try using `ERR_FAIL_NULL_MSG`.
@@ -589,7 +613,9 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
 	} else                                                                                                           \
 		((void)0)
 
-// Generic error macros.
+/// @}
+/// @name Error Macros: Generic error macros
+/// @{
 
 /**
  * Try using `ERR_FAIL_COND_MSG` or `ERR_FAIL_MSG`.
@@ -707,7 +733,9 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
 	} else                                                                   \
 		((void)0)
 
-// Print warning message macros.
+/// @}
+/// @name Print warning message macros
+/// @{
 
 /**
  * Prints `m_msg`.
@@ -761,7 +789,9 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
 		}                                 \
 	}
 
-// Print deprecated warning message macros.
+/// @}
+/// @name Print deprecated warning message macros
+/// @{
 
 /**
  * Warns that the current function is deprecated.
@@ -817,7 +847,7 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
 		((void)0)
 
 /**
- * Note: IN MOST CASES YOU SHOULD NOT USE THIS MACRO.
+ * @warning IN MOST CASES YOU SHOULD NOT USE THIS MACRO.
  * Do not use unless you understand the trade-offs.
  *
  * DEV macros will be compiled out in releases, they are wrapped in DEV_ENABLED.
@@ -858,11 +888,15 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
 #endif
 
 /**
- * Physics Interpolation warnings.
+ * @}
+ * @name Physics Interpolation warnings.
  * These are spam protection warnings.
+ * @{
  */
+
 #define PHYSICS_INTERPOLATION_NODE_WARNING(m_object_id, m_string) \
 	_physics_interpolation_warning(FUNCTION_STR, __FILE__, __LINE__, m_object_id, m_string)
 
 #define PHYSICS_INTERPOLATION_WARNING(m_string) \
 	_physics_interpolation_warning(FUNCTION_STR, __FILE__, __LINE__, ObjectID(UINT64_MAX), m_string)
+/// @}

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file render_scene_data.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/class_db.h"
 #include "core/object/gdvirtual.gen.inc"
 #include "core/object/object.h"

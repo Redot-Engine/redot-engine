@@ -32,7 +32,11 @@
 
 #pragma once
 
-// Universal / Universal 2 fat binary file creator and extractor.
+/**
+ * @file lipo.h
+ *
+ * @brief Universal / Universal 2 fat binary file creator and extractor.
+ */
 
 #include "core/io/file_access.h"
 #include "core/object/ref_counted.h"

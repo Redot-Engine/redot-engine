@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file spring_bone_collision_capsule_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "spring_bone_collision_capsule_3d.h"
 
 #include "scene/3d/spring_bone_collision_sphere_3d.h"

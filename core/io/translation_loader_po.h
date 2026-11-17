@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file translation_loader_po.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 #include "core/string/translation.h"

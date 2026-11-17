@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file callable_method_pointer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "callable_method_pointer.h"
 
 bool CallableCustomMethodPointerBase::compare_equal(const CallableCustom *p_a, const CallableCustom *p_b) {

@@ -30,15 +30,25 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mcp_tools.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "mcp_tools.h"
 
 #include "core/config/project_settings.h"
+#include "core/input/input_event.h"
+#include "core/input/input_map.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/io/json.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "core/object/class_db.h"
+#include "core/object/script_language.h"
+#include "core/os/keyboard.h"
 #include "core/version.h"
 #include "mcp_bridge.h"
 #include "mcp_server.h"
@@ -48,6 +58,7 @@
 
 #ifdef MODULE_GDSCRIPT_ENABLED
 #include "modules/gdscript/gdscript_parser.h"
+#include "modules/gdscript/gdscript_tokenizer.h"
 #endif
 
 #include "core/doc_data.h"
@@ -73,6 +84,90 @@ Variant MCPTools::_json_to_variant(const Variant &p_json, Variant::Type p_type) 
 	return p_json;
 }
 
+// Checks a resource against a comma-separated type list, including script classes and traits.
+// Types prefixed with "-" are excluded.
+static bool _resource_matches_type(const Ref<Resource> &p_res, const String &p_types) {
+	Vector<String> types = p_types.split(",");
+	for (const String &type_name : types) {
+		String type = type_name.strip_edges();
+		if (type.begins_with("-") && p_res->is_class(type.substr(1))) {
+			return false;
+		}
+	}
+	Ref<Script> res_script = p_res->get_script();
+	for (const String &type_name : types) {
+		String type = type_name.strip_edges();
+		if (type.begins_with("-")) {
+			continue;
+		}
+		if (p_res->is_class(type) || (res_script.is_valid() && res_script->has_trait(type))) {
+			return true;
+		}
+		for (Ref<Script> scr = res_script; scr.is_valid(); scr = scr->get_base_script()) {
+			if (scr->get_global_name() == StringName(type)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+bool MCPTools::_set_property(Object *p_object, const String &p_property, const Variant &p_json, String &r_error) {
+	Variant value = _json_to_variant(p_json);
+
+	bool is_object_property = false;
+	List<PropertyInfo> plist;
+	p_object->get_property_list(&plist);
+	for (const PropertyInfo &p : plist) {
+		if (p.name != p_property || p.type != Variant::OBJECT) {
+			continue;
+		}
+		is_object_property = true;
+
+		// Object properties (script, shape, texture, ...) take a resource path.
+		if (value.get_type() == Variant::STRING) {
+			String path = value;
+			if (!validate_path(path)) {
+				r_error = "Invalid resource path: " + path;
+				return false;
+			}
+			Ref<Resource> res = ResourceLoader::load(normalize_path(path));
+			if (res.is_null()) {
+				r_error = "Failed to load resource: " + path;
+				return false;
+			}
+			if (p.hint == PROPERTY_HINT_RESOURCE_TYPE && !p.hint_string.is_empty() && !_resource_matches_type(res, p.hint_string)) {
+				r_error = "Resource " + path + " is a " + res->get_class() + ", expected " + p.hint_string;
+				return false;
+			}
+			Ref<Script> scr = res;
+			if (p_property == "script" && scr.is_valid() && !ClassDB::is_parent_class(p_object->get_class_name(), scr->get_instance_base_type())) {
+				r_error = "Script " + path + " extends " + scr->get_instance_base_type() + " and can't be attached to a " + p_object->get_class();
+				return false;
+			}
+			value = res;
+		} else if (value.get_type() != Variant::OBJECT && value.get_type() != Variant::NIL) {
+			r_error = "Property '" + p_property + "' expects a resource path or null";
+			return false;
+		}
+		break;
+	}
+
+	Variant previous = is_object_property ? p_object->get(p_property) : Variant();
+	bool changes = is_object_property && previous != value && !(previous.is_null() && value.is_null());
+	bool valid = false;
+	p_object->set(p_property, value, &valid);
+	// Object setters often reject a value with an error but still report success, leaving the old
+	// value or none (like a script whose instance can't be created). Any other result counts, since
+	// some setters store a copy.
+	Variant result = changes ? p_object->get(p_property) : Variant();
+	if (!valid || (changes && (result == previous || (result.is_null() && !value.is_null())))) {
+		r_error = "Failed to set property '" + p_property + "'";
+		return false;
+	}
+	return true;
+}
+
 Error MCPTools::_ensure_callback_exists(const String &p_script_path, const String &p_callback_name) {
 	String path = normalize_path(p_script_path);
 	Error err;
@@ -84,7 +179,34 @@ Error MCPTools::_ensure_callback_exists(const String &p_script_path, const Strin
 	String content = f->get_as_text();
 	f.unref();
 
-	if (content.contains("func " + p_callback_name)) {
+	// Word-boundary check: find "func <name>" as a token anywhere in the line
+	// (handles "static func", "@rpc(...) func", etc.) followed by "(" or whitespace,
+	// so substrings don't cause false positives.
+	bool exists = false;
+	{
+		String token = "func " + p_callback_name;
+		Vector<String> lines = content.split("\n");
+		for (const String &line : lines) {
+			String trimmed = line.strip_edges();
+			int idx = trimmed.find(token);
+			while (idx >= 0) {
+				// "func" must start at a token boundary (line start or after whitespace).
+				bool boundary_ok = (idx == 0) || trimmed[idx - 1] == ' ' || trimmed[idx - 1] == '\t';
+				if (boundary_ok) {
+					String rest = trimmed.substr(idx + token.length());
+					if (rest.is_empty() || rest[0] == '(' || rest[0] == ' ' || rest[0] == '\t') {
+						exists = true;
+						break;
+					}
+				}
+				idx = trimmed.find(token, idx + 1);
+			}
+			if (exists) {
+				break;
+			}
+		}
+	}
+	if (exists) {
 		return OK;
 	}
 
@@ -98,7 +220,9 @@ Error MCPTools::_ensure_callback_exists(const String &p_script_path, const Strin
 		content += "\n";
 	}
 	content += "\nfunc " + p_callback_name + "():\n\tpass # Added by MCP\n";
-	f->store_string(content);
+	if (!f->store_string(content)) {
+		return ERR_FILE_CANT_WRITE;
+	}
 	return OK;
 }
 
@@ -128,8 +252,16 @@ String MCPTools::normalize_path(const String &p_path) {
 
 bool MCPTools::validate_path(const String &p_path) {
 	String normalized = normalize_path(p_path);
-	if (normalized.contains("..") || !normalized.begins_with("res://")) {
+	if (!normalized.begins_with("res://")) {
 		return false;
+	}
+	// Reject any path segment that is exactly ".." (traversal).
+	// Filenames containing ".." as a substring (e.g. "my..file.gd") are allowed.
+	Vector<String> parts = normalized.split("/");
+	for (const String &p : parts) {
+		if (p == "..") {
+			return false;
+		}
 	}
 	return true;
 }
@@ -157,7 +289,7 @@ Array MCPTools::get_tool_definitions() {
 		props["value"] = MCPSchemaBuilder::make_object_property("Value (supports numbers, strings, and objects like {x:0, y:0})");
 		props["signal"] = MCPSchemaBuilder::make_string_property("Signal name");
 		props["target_node"] = MCPSchemaBuilder::make_string_property("Target node path for connect/reparent");
-		props["method"] = MCPSchemaBuilder::make_string_property("Method name for connect");
+		props["method"] = MCPSchemaBuilder::make_string_property("Valid GDScript method identifier for connect");
 		props["instance_path"] = MCPSchemaBuilder::make_string_property("Path to scene to instance");
 
 		Array required;
@@ -168,6 +300,7 @@ Array MCPTools::get_tool_definitions() {
 		tool["name"] = "scene_action";
 		tool["description"] = "Perform actions within a scene file (add nodes, set properties, wire signals). IMPORTANT: Always use this tool for .tscn files instead of direct text editing to maintain project integrity.";
 		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
+		tool["annotations"] = MCPSchemaBuilder::make_tool_annotations(false, true, false, true);
 		tools.push_back(tool);
 	}
 
@@ -189,6 +322,7 @@ Array MCPTools::get_tool_definitions() {
 		tool["name"] = "resource_action";
 		tool["description"] = "Manage Redot resource files (.tres) and asset imports";
 		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
+		tool["annotations"] = MCPSchemaBuilder::make_tool_annotations(false, true, false, true);
 		tools.push_back(tool);
 	}
 
@@ -206,6 +340,7 @@ Array MCPTools::get_tool_definitions() {
 		tool["name"] = "code_intel";
 		tool["description"] = "Script analysis and engine documentation lookup";
 		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
+		tool["annotations"] = MCPSchemaBuilder::make_tool_annotations(true, false, true, false);
 		tools.push_back(tool);
 	}
 
@@ -213,18 +348,20 @@ Array MCPTools::get_tool_definitions() {
 	{
 		Dictionary props;
 		props["action"] = MCPSchemaBuilder::make_string_property("Action: 'get_info', 'set_setting', 'add_input', 'add_autoload', 'run', 'stop', 'output', 'list_files', 'read_file_res', 'create_file_res', 'open_editor'");
-		props["setting"] = MCPSchemaBuilder::make_string_property("Setting key or Autoload/Input name");
-		props["value"] = MCPSchemaBuilder::make_object_property("Value for setting");
-		props["path"] = MCPSchemaBuilder::make_string_property("File/Directory path (res://)");
+		props["setting"] = MCPSchemaBuilder::make_string_property("Used by 'set_setting' (key), 'add_input' (action name), 'add_autoload' (autoload name)");
+		props["value"] = MCPSchemaBuilder::make_object_property("Used by 'set_setting' (arbitrary value), 'add_input' ({keycode: int|str, deadzone: float}). NOT used by add_autoload.");
+		props["path"] = MCPSchemaBuilder::make_string_property("Used by 'add_autoload' (script path res://), 'list_files', 'read_file_res', 'create_file_res'");
 		props["content"] = MCPSchemaBuilder::make_string_property("Content for 'create_file_res'");
+		props["background"] = MCPSchemaBuilder::make_boolean_property("Used by 'run'. Default true: the game runs muted in an unfocused, off-screen window (screenshots and input still work). Set false to show a normal window with audio. On Wayland the window can't be moved off-screen and stays visible.");
 
 		Array required;
 		required.push_back("action");
 
 		Dictionary tool;
 		tool["name"] = "project_config";
-		tool["description"] = "Global project settings and Redot-specific I/O. Note: For editing existing GDScript files, use native text editing tools for precision.";
+		tool["description"] = "Global project settings and Redot-specific I/O. add_autoload takes setting=name + path=script. add_input takes setting=name + value={keycode,deadzone}. For editing existing GDScript files, use native text editing tools for precision.";
 		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
+		tool["annotations"] = MCPSchemaBuilder::make_tool_annotations(false, true, false, true);
 		tools.push_back(tool);
 	}
 
@@ -238,7 +375,7 @@ Array MCPTools::get_tool_definitions() {
 		props["action_name"] = MCPSchemaBuilder::make_string_property("Action name for 'trigger_action' (e.g. ui_cancel)");
 		props["x"] = MCPSchemaBuilder::make_object_property("X coord for click");
 		props["y"] = MCPSchemaBuilder::make_object_property("Y coord for click");
-		props["seconds"] = MCPSchemaBuilder::make_object_property("Wait duration");
+		props["seconds"] = MCPSchemaBuilder::make_number_property("Duration for 'wait', or how long 'trigger_action' holds the action (default 0.1)");
 		props["recursive"] = MCPSchemaBuilder::make_boolean_property("Recursive tree dump (for inspect_live)");
 		props["depth"] = MCPSchemaBuilder::make_object_property("Max depth for recursive dump");
 
@@ -249,6 +386,7 @@ Array MCPTools::get_tool_definitions() {
 		tool["name"] = "game_control";
 		tool["description"] = "Interact with the running game process (screenshots, input, live tree)";
 		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
+		tool["annotations"] = MCPSchemaBuilder::make_tool_annotations(false, true, false, true);
 		tools.push_back(tool);
 	}
 
@@ -415,33 +553,38 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 	} else if (action == "instance") {
 		String parent_path = p_args.get("node_path", ".");
 		String instance_path = p_args.get("instance_path", "");
-		Node *parent = (parent_path == "." || parent_path.is_empty()) ? root : root->get_node_or_null(parent_path);
-		Ref<PackedScene> sub = ResourceLoader::load(normalize_path(instance_path), "PackedScene");
-		if (!parent || sub.is_null()) {
-			result.set_error("Parent or instance scene not found");
+		if (!validate_path(instance_path)) {
+			result.set_error("Invalid instance_path: " + instance_path);
 		} else {
-			Node *instance = sub->instantiate();
-			if (!instance) {
-				result.set_error("Failed to instantiate scene: " + instance_path);
+			Node *parent = (parent_path == "." || parent_path.is_empty()) ? root : root->get_node_or_null(parent_path);
+			Ref<PackedScene> sub = ResourceLoader::load(normalize_path(instance_path), "PackedScene");
+			if (!parent || sub.is_null()) {
+				result.set_error("Parent or instance scene not found");
 			} else {
-				if (p_args.has("node_name")) {
-					instance->set_name(p_args["node_name"]);
+				Node *instance = sub->instantiate();
+				if (!instance) {
+					result.set_error("Failed to instantiate scene: " + instance_path);
+				} else {
+					if (p_args.has("node_name")) {
+						instance->set_name(p_args["node_name"]);
+					}
+					parent->add_child(instance);
+					instance->set_owner(root);
+					should_save = true;
+					result.add_text("Instanced '" + instance_path + "'");
 				}
-				parent->add_child(instance);
-				instance->set_owner(root);
-				should_save = true;
-				result.add_text("Instanced '" + instance_path + "'");
 			}
 		}
 	} else if (action == "set_prop") {
 		String node_path = p_args.get("node_path", ".");
 		String property = p_args.get("property", "");
-		Variant value = _json_to_variant(p_args.get("value", Variant()));
 		Node *target = (node_path == "." || node_path.is_empty()) ? root : root->get_node_or_null(node_path);
+		String set_error;
 		if (!target) {
 			result.set_error("Node not found");
+		} else if (!_set_property(target, property, p_args.get("value", Variant()), set_error)) {
+			result.set_error(set_error);
 		} else {
-			target->set(property, value);
 			should_save = true;
 			result.add_text("Set property '" + property + "'");
 		}
@@ -450,18 +593,48 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 		String sig = p_args.get("signal", "");
 		String target_path = p_args.get("target_node", ".");
 		String method = p_args.get("method", "");
-		Node *source = (node_path == "." || node_path.is_empty()) ? root : root->get_node_or_null(node_path);
-		Node *target = (target_path == "." || target_path.is_empty()) ? root : root->get_node_or_null(target_path);
-		if (!source || !target) {
-			result.set_error("Node not found");
-		} else {
-			Ref<Resource> script_res = target->get_script();
-			if (script_res.is_valid()) {
-				_ensure_callback_exists(script_res->get_path(), method);
+		bool valid_method = method.is_valid_unicode_identifier();
+#ifdef MODULE_GDSCRIPT_ENABLED
+		if (valid_method) {
+			GDScriptTokenizerText tokenizer;
+			tokenizer.set_source_code(method);
+			GDScriptTokenizer::Token identifier = tokenizer.scan();
+			GDScriptTokenizer::Token end = tokenizer.scan();
+			if (end.type == GDScriptTokenizer::Token::NEWLINE) {
+				end = tokenizer.scan();
 			}
-			source->connect(sig, Callable(target, method));
-			should_save = true;
-			result.add_text("Connected signal");
+			valid_method = identifier.is_identifier() && end.type == GDScriptTokenizer::Token::TK_EOF;
+		}
+#endif
+		if (sig.is_empty() || method.is_empty()) {
+			result.set_error("Missing signal or method");
+		} else if (!valid_method) {
+			result.set_error("Invalid method identifier: " + method);
+		} else {
+			Node *source = (node_path == "." || node_path.is_empty()) ? root : root->get_node_or_null(node_path);
+			Node *target = (target_path == "." || target_path.is_empty()) ? root : root->get_node_or_null(target_path);
+			if (!source || !target) {
+				result.set_error("Node not found");
+			} else if (!source->has_signal(sig)) {
+				result.set_error("Signal '" + sig + "' does not exist on " + source->get_class());
+			} else {
+				Ref<Resource> script_res = target->get_script();
+				Error callback_err = OK;
+				if (script_res.is_valid() && !target->has_method(method)) {
+					callback_err = _ensure_callback_exists(script_res->get_path(), method);
+				}
+				if (callback_err != OK) {
+					result.set_error("Failed to create callback '" + method + "': " + itos(callback_err));
+				} else {
+					Error err = source->connect(sig, Callable(target, method), CONNECT_PERSIST);
+					if (err != OK) {
+						result.set_error("Failed to connect signal '" + sig + "': " + itos(err));
+					} else {
+						should_save = true;
+						result.add_text("Connected signal '" + sig + "' to '" + method + "'");
+					}
+				}
+			}
 		}
 	} else if (action == "reparent") {
 		String node_path = p_args.get("node_path", "");
@@ -483,8 +656,10 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 		Ref<PackedScene> new_scene;
 		new_scene.instantiate();
 		if (new_scene.is_valid()) {
-			new_scene->pack(root);
-			Error err = ResourceSaver::save(new_scene, normalized_scene);
+			Error err = new_scene->pack(root);
+			if (err == OK) {
+				err = ResourceSaver::save(new_scene, normalized_scene);
+			}
 			if (err != OK) {
 				result.set_error("Failed to save scene: " + itos(err));
 			}
@@ -502,6 +677,10 @@ MCPTools::ToolResult MCPTools::tool_resource_action(const Dictionary &p_args) {
 	String path = p_args.get("path", "");
 	if (action.is_empty() || path.is_empty()) {
 		result.set_error("Missing action or path");
+		return result;
+	}
+	if (!validate_path(path)) {
+		result.set_error("Invalid path: " + path);
 		return result;
 	}
 	String normalized = normalize_path(path);
@@ -560,8 +739,11 @@ MCPTools::ToolResult MCPTools::tool_resource_action(const Dictionary &p_args) {
 		result.add_text(JSON::stringify(props, "  "));
 	} else if (action == "modify") {
 		String prop = p_args.get("property", "");
-		Variant val = _json_to_variant(p_args.get("value", Variant()));
-		res->set(prop, val);
+		String set_error;
+		if (!_set_property(res.ptr(), prop, p_args.get("value", Variant()), set_error)) {
+			result.set_error(set_error);
+			return result;
+		}
 		Error err = ResourceSaver::save(res, normalized);
 		if (err != OK) {
 			result.set_error("Failed to save modified resource: " + itos(err));
@@ -572,6 +754,8 @@ MCPTools::ToolResult MCPTools::tool_resource_action(const Dictionary &p_args) {
 		String np = p_args.get("new_path", "");
 		if (np.is_empty()) {
 			result.set_error("Missing new_path");
+		} else if (!validate_path(np)) {
+			result.set_error("Invalid new_path: " + np);
 		} else {
 			Ref<Resource> copy = res->duplicate();
 			Error err = ResourceSaver::save(copy, normalize_path(np));
@@ -632,9 +816,80 @@ MCPTools::ToolResult MCPTools::tool_code_intel(const Dictionary &p_args) {
 		}
 		return result;
 	}
+	if (action == "search") {
+		String query = p_args.get("query", "");
+		if (query.is_empty()) {
+			result.set_error("Missing query");
+			return result;
+		}
+		String search_dir = p_args.get("path", "res://");
+		if (!validate_path(search_dir)) {
+			result.set_error("Invalid path: " + search_dir);
+			return result;
+		}
+		search_dir = normalize_path(search_dir);
+
+		// Recursively scan .gd files for the query string.
+		Array matches;
+		int match_count = 0;
+		const int max_matches = 100;
+		std::function<void(const String &)> scan_dir = [&](const String &p_dir) {
+			if (match_count >= max_matches) {
+				return;
+			}
+			Ref<DirAccess> d = DirAccess::open(p_dir);
+			if (d.is_null()) {
+				return;
+			}
+			d->list_dir_begin();
+			String n = d->get_next();
+			while (!n.is_empty()) {
+				if (n == "." || n == ".." || n.begins_with(".")) {
+					n = d->get_next();
+					continue;
+				}
+				String full = p_dir + (p_dir.ends_with("/") ? "" : "/") + n;
+				if (d->current_is_dir()) {
+					scan_dir(full);
+				} else if (n.ends_with(".gd")) {
+					Error ferr;
+					Ref<FileAccess> f = FileAccess::open(full, FileAccess::READ, &ferr);
+					if (f.is_valid()) {
+						int line_num = 0;
+						while (!f->eof_reached() && match_count < max_matches) {
+							String line = f->get_line();
+							line_num++;
+							if (line.find(query) != -1) {
+								Dictionary m;
+								m["file"] = full;
+								m["line"] = line_num;
+								m["text"] = line.strip_edges();
+								matches.push_back(m);
+								match_count++;
+							}
+						}
+					}
+				}
+				if (match_count >= max_matches) {
+					break;
+				}
+				n = d->get_next();
+			}
+		};
+		scan_dir(search_dir);
+		result.add_text(JSON::stringify(matches, "  "));
+		if (match_count >= max_matches) {
+			result.add_text("\n(Results truncated at " + itos(max_matches) + " matches)");
+		}
+		return result;
+	}
 	String path = p_args.get("path", "");
 	if (path.is_empty()) {
 		result.set_error("Missing path");
+		return result;
+	}
+	if (!validate_path(path)) {
+		result.set_error("Invalid path: " + path);
 		return result;
 	}
 	String normalized = normalize_path(path);
@@ -696,8 +951,8 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 		info["name"] = ProjectSettings::get_singleton()->get_setting("application/config/name", "Unnamed");
 		info["main_scene"] = ProjectSettings::get_singleton()->get_setting("application/run/main_scene", "");
 		Dictionary v;
-		v["major"] = VERSION_MAJOR;
-		v["minor"] = VERSION_MINOR;
+		v["major"] = REDOT_VERSION_MAJOR;
+		v["minor"] = REDOT_VERSION_MINOR;
 		info["version"] = v;
 		result.add_text(JSON::stringify(info, "  "));
 	} else if (action == "run") {
@@ -729,6 +984,9 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 		args.push_back("--no-header");
 		args.push_back("--mcp-bridge-port");
 		args.push_back(itos(b_port));
+		if (bool(p_args.get("background", true))) {
+			args.push_back("--mcp-background");
+		}
 		Error err = MCPServer::get_singleton()->start_game_process(args, ProjectSettings::get_singleton()->globalize_path(lf));
 		if (err != OK) {
 			result.set_error("Failed to run project: " + itos(err));
@@ -817,6 +1075,75 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 		} else {
 			result.set_error("Failed to list: " + p);
 		}
+	} else if (action == "add_input") {
+		String action_name = p_args.get("setting", "");
+		if (action_name.is_empty()) {
+			result.set_error("Missing setting (input action name)");
+			return result;
+		}
+		Dictionary value = p_args.get("value", Dictionary());
+		float deadzone = (float)(double)value.get("deadzone", 0.5);
+
+		Dictionary action_dict;
+		action_dict["deadzone"] = deadzone;
+		Array events;
+
+		Variant key_val = value.get("keycode", Variant());
+		if (key_val.get_type() != Variant::NIL) {
+			uint32_t code = 0;
+			if (key_val.get_type() == Variant::STRING) {
+				code = (uint32_t)find_keycode(key_val);
+			} else if (key_val.get_type() == Variant::INT || key_val.get_type() == Variant::FLOAT) {
+				code = (uint32_t)(int64_t)key_val;
+			}
+			if (code != 0) {
+				Ref<InputEventKey> key;
+				key.instantiate();
+				key->set_keycode((Key)code);
+				events.push_back(key);
+			}
+		}
+		action_dict["events"] = events;
+
+		ProjectSettings::get_singleton()->set_setting("input/" + action_name, action_dict);
+		ProjectSettings::get_singleton()->save();
+
+		// Also register at runtime for immediate availability.
+		InputMap *input_map = InputMap::get_singleton();
+		if (!input_map->has_action(action_name)) {
+			input_map->add_action(action_name, deadzone);
+		} else {
+			input_map->action_set_deadzone(action_name, deadzone);
+			input_map->action_erase_events(action_name);
+		}
+		for (int i = 0; i < events.size(); i++) {
+			Ref<InputEvent> ev = events[i];
+			if (ev.is_valid()) {
+				input_map->action_add_event(action_name, ev);
+			}
+		}
+		result.add_text("Added input action '" + action_name + "' (deadzone " + String::num(deadzone) + ", " + itos(events.size()) + " event(s))");
+	} else if (action == "add_autoload") {
+		String name = p_args.get("setting", "");
+		String p = p_args.get("path", "");
+		if (name.is_empty() || p.is_empty()) {
+			result.set_error("Missing setting (autoload name) or path");
+			return result;
+		}
+		if (!validate_path(p)) {
+			result.set_error("Invalid path: " + p);
+			return result;
+		}
+		String normalized_path = normalize_path(p);
+		if (!FileAccess::exists(normalized_path)) {
+			result.set_error("Autoload file not found: " + normalized_path);
+			return result;
+		}
+		String autoload_path = "*" + normalized_path;
+		ProjectSettings::get_singleton()->set_setting("autoload/" + name, autoload_path);
+		ProjectSettings::get_singleton()->set_as_internal("autoload/" + name, true);
+		ProjectSettings::get_singleton()->save();
+		result.add_text("Added autoload '" + name + "' -> " + autoload_path);
 	} else if (action == "set_setting") {
 		ProjectSettings::get_singleton()->set_setting(p_args.get("setting", ""), p_args.get("value", Variant()));
 		ProjectSettings::get_singleton()->save();

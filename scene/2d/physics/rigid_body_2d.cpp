@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rigid_body_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rigid_body_2d.h"
 
 void RigidBody2D::_body_enter_tree(ObjectID p_id) {

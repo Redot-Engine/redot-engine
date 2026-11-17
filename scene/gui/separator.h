@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file separator.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/control.h"
 class Separator : public Control {
 	GDCLASS(Separator, Control);

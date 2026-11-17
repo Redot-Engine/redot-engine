@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file script_language.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/doc_data.h"
 #include "core/io/resource.h"
 #include "core/object/script_backtrace.h"
@@ -72,6 +78,12 @@ class ScriptServer {
 	static HashMap<StringName, Vector<StringName>> inheriters_cache;
 	static bool inheriters_cache_dirty;
 
+	struct GlobalScriptStruct {
+		StringName language;
+		String path;
+	};
+	static HashMap<StringName, GlobalScriptStruct> global_structs;
+
 public:
 	static ScriptEditRequestFunction edit_request_func;
 
@@ -100,9 +112,18 @@ public:
 	static StringName get_global_class_native_base(const String &p_class);
 	static bool is_global_class_abstract(const String &p_class);
 	static bool is_global_class_tool(const String &p_class);
-	static void get_global_class_list(List<StringName> *r_global_classes);
+	static void get_global_class_list(LocalVector<StringName> &r_global_classes);
 	static void get_inheriters_list(const StringName &p_base_type, List<StringName> *r_classes);
 	static void save_global_classes();
+
+	static void global_structs_clear();
+	static void add_global_struct(const StringName &p_struct, const StringName &p_language, const String &p_path);
+	static void remove_global_struct_by_path(const String &p_path);
+	static bool is_global_struct(const StringName &p_struct);
+	static StringName get_global_struct_language(const StringName &p_struct);
+	static String get_global_struct_path(const StringName &p_struct);
+	static void get_global_struct_list(List<StringName> *r_global_structs);
+	static void save_global_structs();
 
 	static Vector<Ref<ScriptBacktrace>> capture_script_backtraces(bool p_include_variables = false);
 
@@ -119,15 +140,17 @@ class Script : public Resource {
 	OBJ_SAVE_TYPE(Script);
 
 protected:
-	// Scripts are reloaded via the Script Editor when edited in Redot,
-	// the LSP server when edited in a connected external editor, or
-	// through EditorFileSystem::_update_script_documentation when updated directly on disk.
+	/// Scripts are reloaded via the Script Editor when edited in Redot,
+	/// the LSP server when edited in a connected external editor, or
+	/// through EditorFileSystem::_update_script_documentation when updated directly on disk.
 	virtual bool editor_can_reload_from_file() override { return false; }
 	void _notification(int p_what);
 	static void _bind_methods();
 
 	friend class PlaceHolderScriptInstance;
 	virtual void _placeholder_erased(PlaceHolderScriptInstance *p_placeholder) {}
+	/// Checks language-specific export constraints before preserving a placeholder value.
+	virtual bool _placeholder_value_is_valid(const StringName &p_name, const Variant &p_value) const { return true; }
 
 	Variant _get_property_default_value(const StringName &p_property);
 	TypedArray<Dictionary> _get_script_property_list();
@@ -146,11 +169,17 @@ public:
 
 	virtual bool can_instantiate() const = 0;
 
-	virtual Ref<Script> get_base_script() const = 0; //for script inheritance
+	virtual Ref<Script> get_base_script() const = 0; //< For script inheritance
 	virtual StringName get_global_name() const = 0;
+	/// Returns a persistent class identifier, including the enclosing classes for inner classes.
+	virtual StringName get_qualified_class_name() const;
 	virtual bool inherits_script(const Ref<Script> &p_script) const = 0;
+	/// Returns whether this script defines a trait.
+	virtual bool is_trait() const { return false; }
+	/// Returns whether instances of this script implement the named trait.
+	virtual bool has_trait(const StringName &p_trait) const { return false; }
 
-	virtual StringName get_instance_base_type() const = 0; // this may not work in all scripts, will return empty if so
+	virtual StringName get_instance_base_type() const = 0; ///< This may not work in all scripts, will return empty if so
 	virtual ScriptInstance *instance_create(Object *p_this) = 0;
 	virtual PlaceHolderScriptInstance *placeholder_instance_create(Object *p_this) { return nullptr; }
 	virtual bool instance_has(const Object *p_this) const = 0;
@@ -167,7 +196,7 @@ public:
 	virtual PropertyInfo get_class_category() const;
 #endif // TOOLS_ENABLED
 
-	// TODO: In the next compat breakage rename to `*_script_*` to disambiguate from `Object::has_method()`.
+	/// @todo In the next compat breakage rename to `*_script_*` to disambiguate from `Object::has_method()`.
 	virtual bool has_method(const StringName &p_method) const = 0;
 	virtual bool has_static_method(const StringName &p_method) const { return false; }
 
@@ -185,8 +214,10 @@ public:
 	virtual void get_script_signal_list(List<MethodInfo> *r_signals) const = 0;
 
 	virtual bool get_property_default_value(const StringName &p_property, Variant &r_value) const = 0;
+	/// Returns a schema-backed default for elements of a script-defined array property, when available.
+	virtual bool get_property_array_element_default_value(const StringName &p_property, Variant &r_value) const { return false; }
 
-	virtual void update_exports() {} //editor tool
+	virtual void update_exports() {} ///< Editor tool
 	virtual void get_script_method_list(List<MethodInfo> *p_list) const = 0;
 	virtual void get_script_property_list(List<PropertyInfo> *p_list) const = 0;
 
@@ -211,13 +242,13 @@ protected:
 public:
 	virtual String get_name() const = 0;
 
-	/* LANGUAGE FUNCTIONS */
+	/// @name LANGUAGE FUNCTIONS
+	/// @{
 	virtual void init() = 0;
 	virtual String get_type() const = 0;
 	virtual String get_extension() const = 0;
 	virtual void finish() = 0;
-
-	/* EDITOR FUNCTIONS */
+	/// @}
 	struct Warning {
 		int start_line = -1, end_line = -1;
 		int code;
@@ -226,10 +257,18 @@ public:
 	};
 
 	struct ScriptError {
+		struct RelatedError {
+			String path;
+			int line = -1;
+			int column = -1;
+			String message;
+		};
+
 		String path;
 		int line = -1;
 		int column = -1;
 		String message;
+		RelatedError related_error;
 	};
 
 	enum TemplateLocation {
@@ -259,6 +298,8 @@ public:
 		}
 	};
 
+	/// @name EDITOR FUNCTIONS
+	/// @{
 	void get_core_type_words(List<String> *p_core_type_words) const;
 	virtual Vector<String> get_reserved_words() const = 0;
 	virtual bool is_control_flow_keyword(const String &p_string) const = 0;
@@ -283,9 +324,10 @@ public:
 	virtual Error open_in_external_editor(const Ref<Script> &p_script, int p_line, int p_col) { return ERR_UNAVAILABLE; }
 	virtual bool overrides_external_editor() { return false; }
 	virtual ScriptNameCasing preferred_file_name_casing() const { return SCRIPT_NAME_CASING_SNAKE_CASE; }
+	/// @}
 
-	// Keep enums in sync with:
-	// scene/gui/code_edit.h - CodeEdit::CodeCompletionKind
+	/// Keep enums in sync with:
+	/// scene/gui/code_edit.h - CodeEdit::CodeCompletionKind
 	enum CodeCompletionKind {
 		CODE_COMPLETION_KIND_CLASS,
 		CODE_COMPLETION_KIND_FUNCTION,
@@ -300,7 +342,7 @@ public:
 		CODE_COMPLETION_KIND_MAX
 	};
 
-	// scene/gui/code_edit.h - CodeEdit::CodeCompletionLocation
+	/// scene/gui/code_edit.h - CodeEdit::CodeCompletionLocation
 	enum CodeCompletionLocation {
 		LOCATION_LOCAL = 0,
 		LOCATION_PARENT_MASK = 1 << 8,
@@ -316,7 +358,7 @@ public:
 		Ref<Resource> icon;
 		Variant default_value;
 		Vector<Pair<int, int>> matches;
-		Vector<Pair<int, int>> last_matches = { { -1, -1 } }; // This value correspond to an impossible match
+		Vector<Pair<int, int>> last_matches = { { -1, -1 } }; ///< This value correspond to an impossible match
 		int location = LOCATION_OTHER;
 		String theme_color_name;
 
@@ -330,8 +372,12 @@ public:
 			theme_color_name = p_theme_color_name;
 		}
 
+		/// @return Characteristics of the match found by order of importance.
+		/// Matches will be ranked by a lexicographical order on the vector returned by this function.
+		/// The lower values indicate better matches and that they should go before in the order of appearance.
 		TypedArray<int> get_option_characteristics(const String &p_base);
 		void clear_characteristics();
+		/// @return Only the cached value and warns if it was not updated since the last change of matches.
 		TypedArray<int> get_option_cached_characteristics() const;
 
 	private:
@@ -341,14 +387,14 @@ public:
 	virtual Error complete_code(const String &p_code, const String &p_path, Object *p_owner, List<CodeCompletionOption> *r_options, bool &r_force, String &r_call_hint) { return ERR_UNAVAILABLE; }
 
 	enum LookupResultType {
-		LOOKUP_RESULT_SCRIPT_LOCATION, // Use if none of the options below apply.
+		LOOKUP_RESULT_SCRIPT_LOCATION, ///< Use if none of the options below apply.
 		LOOKUP_RESULT_CLASS,
 		LOOKUP_RESULT_CLASS_CONSTANT,
 		LOOKUP_RESULT_CLASS_PROPERTY,
 		LOOKUP_RESULT_CLASS_METHOD,
 		LOOKUP_RESULT_CLASS_SIGNAL,
 		LOOKUP_RESULT_CLASS_ENUM,
-		LOOKUP_RESULT_CLASS_TBD_GLOBALSCOPE, // Deprecated.
+		LOOKUP_RESULT_CLASS_TBD_GLOBALSCOPE, ///< Deprecated.
 		LOOKUP_RESULT_CLASS_ANNOTATION,
 		LOOKUP_RESULT_LOCAL_CONSTANT,
 		LOOKUP_RESULT_LOCAL_VARIABLE,
@@ -358,26 +404,34 @@ public:
 	struct LookupResult {
 		LookupResultType type;
 
-		// For `CLASS_*`.
+		/// @name For `CLASS_*`.
+		/// @{
 		String class_name;
 		String class_member;
+		/// @}
 
-		// For `LOCAL_*`.
+		/// @name For `LOCAL_*`.
+		/// @{
 		String description;
 		bool is_deprecated = false;
 		String deprecated_message;
 		bool is_experimental = false;
 		String experimental_message;
+		/// @}
 
-		// For `LOCAL_*`.
+		/// @name For `LOCAL_*`.
+		/// @{
 		String doc_type;
 		String enumeration;
 		bool is_bitfield = false;
+		/// @}
 
-		// For `LOCAL_*`.
+		/// @name For `LOCAL_*`.
+		/// @{
 		String value;
+		/// @}
 
-		// `SCRIPT_LOCATION` and `LOCAL_*` must have, `CLASS_*` can have.
+		/// `SCRIPT_LOCATION` and `LOCAL_*` must have, `CLASS_*` can have.
 		Ref<Script> script;
 		String script_path;
 		int location = -1;
@@ -390,19 +444,21 @@ public:
 	virtual void add_named_global_constant(const StringName &p_name, const Variant &p_value) {}
 	virtual void remove_named_global_constant(const StringName &p_name) {}
 
-	/* MULTITHREAD FUNCTIONS */
-
-	//some VMs need to be notified of thread creation/exiting to allocate a stack
+	/// @name MULTITHREAD FUNCTIONS
+	/// @details Some VMs need to be notified of thread creation/exiting to allocate a stack
+	/// @{
 	virtual void thread_enter() {}
 	virtual void thread_exit() {}
+	/// @}
 
-	/* DEBUGGER FUNCTIONS */
 	struct StackInfo {
 		String file;
 		String func;
 		int line;
 	};
 
+	/// @name DEBUGGER FUNCTIONS
+	/// @{
 	virtual String debug_get_error() const = 0;
 	virtual int debug_get_stack_level_count() const = 0;
 	virtual int debug_get_stack_level_line(int p_level) const = 0;
@@ -415,16 +471,19 @@ public:
 	virtual String debug_parse_stack_level_expression(int p_level, const String &p_expression, int p_max_subitems = -1, int p_max_depth = -1) = 0;
 
 	virtual Vector<StackInfo> debug_get_current_stack_info() { return Vector<StackInfo>(); }
+	/// @}
 
 	virtual void reload_all_scripts() = 0;
 	virtual void reload_scripts(const Array &p_scripts, bool p_soft_reload) = 0;
 	virtual void reload_tool_script(const Ref<Script> &p_script, bool p_soft_reload) = 0;
-	/* LOADER FUNCTIONS */
 
+	/// @name LOADER FUNCTIONS
+	/// @{
 	virtual void get_recognized_extensions(List<String> *p_extensions) const = 0;
 	virtual void get_public_functions(List<MethodInfo> *p_functions) const = 0;
 	virtual void get_public_constants(List<Pair<String, Variant>> *p_constants) const = 0;
 	virtual void get_public_annotations(List<MethodInfo> *p_annotations) const = 0;
+	/// @}
 
 	struct ProfilingInfo {
 		StringName signature;
@@ -445,6 +504,7 @@ public:
 
 	virtual bool handles_global_class_type(const String &p_type) const { return false; }
 	virtual String get_global_class_name(const String &p_path, String *r_base_type = nullptr, String *r_icon_path = nullptr, bool *r_is_abstract = nullptr, bool *r_is_tool = nullptr) const { return String(); }
+	virtual void get_global_struct_names(const String &p_path, List<StringName> *r_names) const {}
 
 	virtual ~ScriptLanguage() {}
 };
@@ -490,7 +550,7 @@ public:
 
 	Object *get_owner() override { return owner; }
 
-	void update(const List<PropertyInfo> &p_properties, const HashMap<StringName, Variant> &p_values); //likely changed in editor
+	void update(const List<PropertyInfo> &p_properties, const HashMap<StringName, Variant> &p_values); ///< Likely changed in editor
 
 	virtual bool is_placeholder() const override { return true; }
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file file_access_unix.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "file_access_unix.h"
 
 #if defined(UNIX_ENABLED)
@@ -369,9 +375,9 @@ uint64_t FileAccessUnix::_get_modified_time(const String &p_file) {
 			modified_time = st.st_mtime;
 		}
 #ifdef ANDROID_ENABLED
-		// Workaround for GH-101007
-		//FIXME: After saving, all timestamps (st_mtime, st_ctime, st_atime) are set to the same value.
-		// After exporting or after some time, only 'modified_time' resets to a past timestamp.
+		/// Workaround for GH-101007
+		/// @todo FIXME: After saving, all timestamps (st_mtime, st_ctime, st_atime) are set to the same value.
+		/// After exporting or after some time, only 'modified_time' resets to a past timestamp.
 		uint64_t created_time = st.st_ctime;
 		if (modified_time < created_time) {
 			modified_time = created_time;

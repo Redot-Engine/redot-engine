@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_quick_open_dialog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/a_hash_map.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/margin_container.h"

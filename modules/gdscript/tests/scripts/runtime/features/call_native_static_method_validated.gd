@@ -3,4 +3,4 @@ func test():
 	print(FileAccess.file_exists("some_file"))
 
 	# Validated native static call without return value.
-	Node.print_orphan_nodes()
+	PortableCompressedTexture2D.set_keep_all_compressed_buffers(PortableCompressedTexture2D.is_keeping_all_compressed_buffers())

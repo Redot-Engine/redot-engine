@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file generic_6dof_joint_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/physics/joints/joint_3d.h"
 
 class Generic6DOFJoint3D : public Joint3D {

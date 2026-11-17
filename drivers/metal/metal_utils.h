@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file metal_utils.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #import <os/log.h>
 
 #import <functional>

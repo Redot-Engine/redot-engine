@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file node_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/main/canvas_item.h"
 
 class Node2D : public CanvasItem {

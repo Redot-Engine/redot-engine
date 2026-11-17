@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file string_utils.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/ustring.h"
 #include "core/variant/variant.h"
 

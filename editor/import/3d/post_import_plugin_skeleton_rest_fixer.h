@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file post_import_plugin_skeleton_rest_fixer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_importer_scene.h"
 
 class PostImportPluginSkeletonRestFixer : public EditorScenePostImportPlugin {

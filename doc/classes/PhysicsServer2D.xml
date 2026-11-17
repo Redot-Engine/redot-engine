@@ -1024,6 +1024,26 @@
 		<constant name="SPACE_PARAM_SOLVER_ITERATIONS" value="8" enum="SpaceParameter">
 			Constant to set/get the number of solver iterations for all contacts and constraints. The greater the number of iterations, the more accurate the collisions will be. However, a greater number of iterations requires more CPU power, which can decrease performance. The default value of this parameter is [member ProjectSettings.physics/2d/solver/solver_iterations].
 		</constant>
+		<constant name="SPACE_PARAM_SOLVER_MIN_CONSTRAINTS_FOR_THREADING" value="9" enum="SpaceParameter">
+			Constant to set/get the minimum number of constraints a physics step must have before constraint setup and eligible island solving are distributed across the [WorkerThreadPool]. Below this threshold the work is done on the calling thread instead, avoiding thread dispatch and synchronization overhead that would otherwise outweigh the benefit for light workloads.
+			How constraint setup compares against this threshold depends on [constant SPACE_PARAM_SOLVER_SETUP_THREADING_MODE]: the static mode uses the raw candidate constraint count, while the predicted modes use an estimate of useful work (candidate count scaled by a recent step's ratio of active, post-prune, to candidate constraints), which reduces unnecessary threading in scenes with many broadphase pairs but few real contacts. Island solving always uses the [i]actual[/i] current post-prune constraint count, and additionally requires more than one island, since each island is a single unit of parallel work (so reaching the threshold does not by itself thread solving).
+			A value of [code]0[/code] threads as aggressively as possible, that is, whenever there is actual parallel work to distribute. The default value of this parameter is [member ProjectSettings.physics/2d/solver/min_constraints_for_threading].
+		</constant>
+		<constant name="SPACE_PARAM_SOLVER_SETUP_THREADING_MODE" value="10" enum="SpaceParameter">
+			Constant to set/get how the 2D solver decides whether to distribute constraint [i]setup[/i] across the [WorkerThreadPool] (see the [enum SolverSetupThreadingMode] values). Only affects setup scheduling; island solving always uses the actual post-prune work. The default value of this parameter is [member ProjectSettings.physics/2d/solver/setup_threading_mode].
+		</constant>
+		<constant name="SPACE_PARAM_SOLVER_SETUP_PREDICTION_WINDOW" value="11" enum="SpaceParameter">
+			Constant to set/get how many past steps [constant SOLVER_SETUP_THREADING_PREDICTED_BIASED] maxes its work estimate over (the [i]K[/i] in max-over-K). Clamped to [code]1[/code]–[code]8[/code]; [code]1[/code] makes the biased mode behave like [constant SOLVER_SETUP_THREADING_PREDICTED]. Larger values bias further toward threading (they keep threading for more steps after a heavy one). Has no effect in the static or (unbiased) predicted modes. The default value of this parameter is [member ProjectSettings.physics/2d/solver/setup_prediction_window].
+		</constant>
+		<constant name="SOLVER_SETUP_THREADING_STATIC" value="0" enum="SolverSetupThreadingMode">
+			Thread constraint setup purely on the raw candidate constraint count (no prediction). Predictable and free of transition artifacts, but threads setup even for scenes with many broadphase pairs that produce few real contacts.
+		</constant>
+		<constant name="SOLVER_SETUP_THREADING_PREDICTED" value="1" enum="SolverSetupThreadingMode">
+			Thread constraint setup based on an estimate of useful work: the candidate count scaled by the [i]previous[/i] completed step's active/candidate ratio. Avoids threading light workloads, but assumes temporal coherence — an abrupt workload change costs one suboptimally-scheduled step before the estimate adapts, and workloads that alternate sparse/dense every step defeat it. This is the default.
+		</constant>
+		<constant name="SOLVER_SETUP_THREADING_PREDICTED_BIASED" value="2" enum="SolverSetupThreadingMode">
+			As [constant SOLVER_SETUP_THREADING_PREDICTED], but takes the maximum estimate over the last [i]K[/i] steps (K = [member ProjectSettings.physics/2d/solver/setup_prediction_window], default 2), biasing toward threading. This trades a costly mis-serialized dense step for a cheap redundantly-threaded sparse step across transitions, which removes the alternating-workload regression at the cost of adapting a step or two slower when a workload becomes persistently sparse.
+		</constant>
 		<constant name="SHAPE_WORLD_BOUNDARY" value="0" enum="ShapeType">
 			This is the constant for creating world boundary shapes. A world boundary shape is an [i]infinite[/i] line with an origin point, and a normal. Thus, it can be used for front/behind checks.
 		</constant>

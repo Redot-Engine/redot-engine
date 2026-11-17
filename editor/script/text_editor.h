@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file text_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/script/script_editor_plugin.h"
 
 #include "editor/gui/code_editor.h"

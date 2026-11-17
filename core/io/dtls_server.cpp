@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file dtls_server.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "dtls_server.h"
 
 DTLSServer *DTLSServer::create(bool p_notify_postinitialize) {

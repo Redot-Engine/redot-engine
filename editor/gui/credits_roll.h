@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file credits_roll.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/popup.h"
 
 class Label;

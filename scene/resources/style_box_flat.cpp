@@ -30,11 +30,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file style_box_flat.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "style_box_flat.h"
 
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
-#include "servers/rendering_server.h"
+#include "servers/rendering/rendering_server.h"
 
 float StyleBoxFlat::get_style_margin(Side p_side) const {
 	ERR_FAIL_INDEX_V((int)p_side, 4, 0.0);
@@ -370,8 +376,8 @@ inline void draw_rounded_rectangle(Vector<Vector2> &verts, Vector<int> &indices,
 			}
 
 			const real_t pt_angle = (corner_idx + detail / (double)adapted_corner_detail) * quarter_arc_rad + Math::PI;
-			const real_t angle_cosine = Math::cos(pt_angle);
-			const real_t angle_sine = Math::sin(pt_angle);
+			real_t angle_sine, angle_cosine;
+			Math::sin_cos(pt_angle, angle_sine, angle_cosine);
 
 			{
 				const real_t x = inner_corner_radius[corner_idx] * angle_cosine * inner_scale[corner_idx].x + inner_points[corner_idx].x;

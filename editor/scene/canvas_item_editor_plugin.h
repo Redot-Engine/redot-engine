@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file canvas_item_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/box_container.h"
 
@@ -60,6 +66,7 @@ public:
 	Transform2D prev_xform;
 	Rect2 prev_rect;
 	Vector2 prev_pivot;
+	Vector2 prev_pivot_ratio;
 	real_t prev_anchors[4] = { (real_t)0.0 };
 
 	Transform2D pre_drag_xform;
@@ -198,8 +205,8 @@ private:
 	HScrollBar *h_scroll = nullptr;
 	VScrollBar *v_scroll = nullptr;
 
-	// Used for secondary menu items which are displayed depending on the currently selected node
-	// (such as MeshInstance's "Mesh" menu).
+	/// Used for secondary menu items which are displayed depending on the currently selected node
+	/// (such as MeshInstance's "Mesh" menu).
 	PanelContainer *context_toolbar_panel = nullptr;
 	HBoxContainer *context_toolbar_hbox = nullptr;
 	HashMap<Control *, VSeparator *> context_toolbar_separators;
@@ -245,8 +252,8 @@ private:
 	bool snap_rotation = false;
 	bool snap_scale = false;
 	bool snap_relative = false;
-	// Enable pixel snapping even if pixel snap rendering is disabled in the Project Settings.
-	// This results in crisper visuals by preventing 2D nodes from being placed at subpixel coordinates.
+	/// Enable pixel snapping even if pixel snap rendering is disabled in the Project Settings.
+	/// This results in crisper visuals by preventing 2D nodes from being placed at subpixel coordinates.
 	bool snap_pixel = true;
 
 	bool key_pos = true;
@@ -426,7 +433,7 @@ public:
 		THEME_PREVIEW_EDITOR,
 		THEME_PREVIEW_DEFAULT,
 
-		THEME_PREVIEW_MAX // The number of options for enumerating.
+		THEME_PREVIEW_MAX ///< The number of options for enumerating.
 	};
 
 private:
@@ -626,9 +633,9 @@ public:
 class CanvasItemEditorViewport : public Control {
 	GDCLASS(CanvasItemEditorViewport, Control);
 
-	// The type of node that will be created when dropping texture into the viewport.
+	/// The type of node that will be created when dropping texture into the viewport.
 	String default_texture_node_type;
-	// Node types that are available to select from when dropping texture into viewport.
+	/// Node types that are available to select from when dropping texture into viewport.
 	Vector<String> texture_node_types;
 
 	Vector<String> selected_files;

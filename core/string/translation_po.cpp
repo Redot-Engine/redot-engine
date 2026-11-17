@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file translation_po.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "translation_po.h"
 
 #ifdef DEBUG_TRANSLATION_PO
@@ -67,8 +73,6 @@ void TranslationPO::print_translation_map() {
 #endif
 
 Dictionary TranslationPO::_get_messages() const {
-	// Return translation_map as a Dictionary.
-
 	Dictionary d;
 
 	for (const KeyValue<StringName, HashMap<StringName, Vector<StringName>>> &E : translation_map) {
@@ -85,8 +89,6 @@ Dictionary TranslationPO::_get_messages() const {
 }
 
 void TranslationPO::_set_messages(const Dictionary &p_messages) {
-	// Construct translation_map from a Dictionary.
-
 	for (const KeyValue<Variant, Variant> &kv : p_messages) {
 		const Dictionary &id_str_map = kv.value;
 
@@ -118,8 +120,6 @@ Vector<String> TranslationPO::get_translated_message_list() const {
 }
 
 Vector<String> TranslationPO::_get_message_list() const {
-	// Return all keys in translation_map.
-
 	List<StringName> msgs;
 	get_message_list(&msgs);
 
@@ -132,8 +132,6 @@ Vector<String> TranslationPO::_get_message_list() const {
 }
 
 int TranslationPO::_get_plural_index(int p_n) const {
-	// Get a number between [0;number of plural forms).
-
 	input_val.clear();
 	input_val.push_back(p_n);
 
@@ -184,11 +182,6 @@ int TranslationPO::_find_unquoted(const String &p_src, char32_t p_chr) const {
 }
 
 void TranslationPO::_cache_plural_tests(const String &p_plural_rule, Ref<EQNode> &p_node) {
-	// Some examples of p_plural_rule passed in can have the form:
-	// "n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5" (Arabic)
-	// "n >= 2" (French) // When evaluating the last, especially careful with this one.
-	// "n != 1" (English)
-
 	String rule = p_plural_rule;
 	if (rule.begins_with("(") && rule.ends_with(")")) {
 		int bcount = 0;
@@ -221,9 +214,6 @@ void TranslationPO::_cache_plural_tests(const String &p_plural_rule, Ref<EQNode>
 }
 
 void TranslationPO::set_plural_rule(const String &p_plural_rule) {
-	// Set plural_forms and plural_rule.
-	// p_plural_rule passed in has the form "Plural-Forms: nplurals=2; plural=(n >= 2);".
-
 	int first_semi_col = p_plural_rule.find_char(';');
 	plural_forms = p_plural_rule.substr(p_plural_rule.find_char('=') + 1, first_semi_col - (p_plural_rule.find_char('=') + 1)).to_int();
 
@@ -317,9 +307,6 @@ void TranslationPO::erase_message(const StringName &p_src_text, const StringName
 }
 
 void TranslationPO::get_message_list(List<StringName> *r_messages) const {
-	// OptimizedTranslation uses this function to get the list of msgid.
-	// Return all the keys of translation_map under "" context.
-
 	for (const KeyValue<StringName, HashMap<StringName, Vector<StringName>>> &E : translation_map) {
 		if (E.key != StringName()) {
 			continue;

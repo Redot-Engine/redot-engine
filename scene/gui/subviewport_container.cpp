@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file subviewport_container.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "subviewport_container.h"
 
 #include "core/config/engine.h"

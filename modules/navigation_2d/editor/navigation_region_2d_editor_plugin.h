@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file navigation_region_2d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "editor/scene/2d/abstract_polygon_2d_editor.h"
 

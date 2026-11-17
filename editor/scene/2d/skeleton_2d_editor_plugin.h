@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file skeleton_2d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "scene/2d/skeleton_2d.h"
 
@@ -71,7 +77,6 @@ class Skeleton2DEditorPlugin : public EditorPlugin {
 
 public:
 	virtual String get_plugin_name() const override { return "Skeleton2D"; }
-	bool has_main_screen() const override { return false; }
 	virtual void edit(Object *p_object) override;
 	virtual bool handles(Object *p_object) const override;
 	virtual void make_visible(bool p_visible) override;

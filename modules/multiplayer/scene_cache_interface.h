@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file scene_cache_interface.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/ref_counted.h"
 
 class Node;
@@ -43,11 +49,11 @@ class SceneCacheInterface : public RefCounted {
 private:
 	SceneMultiplayer *multiplayer = nullptr;
 
-	//path sent caches
+	/// Path sent caches
 	struct NodeCache {
 		int cache_id = 0;
-		HashMap<int, int> recv_ids; // peer id, remote cache id
-		HashMap<int, bool> confirmed_peers; // peer id, confirmed
+		HashMap<int, int> recv_ids; ///< peer id, remote cache id
+		HashMap<int, bool> confirmed_peers; ///< peer id, confirmed
 	};
 
 	struct RecvNode {
@@ -61,7 +67,7 @@ private:
 	};
 
 	struct PeerInfo {
-		HashMap<int, RecvNode> recv_nodes; // remote cache id, (ObjectID, NodePath)
+		HashMap<int, RecvNode> recv_nodes; ///< remote cache id, (ObjectID, NodePath)
 		HashSet<ObjectID> sent_nodes;
 	};
 
@@ -82,7 +88,7 @@ public:
 	void process_simplify_path(int p_from, const uint8_t *p_packet, int p_packet_len);
 	void process_confirm_path(int p_from, const uint8_t *p_packet, int p_packet_len);
 
-	// Returns true if all peers have cached path.
+	/// @return `true` if all peers have cached path.
 	bool send_object_cache(Object *p_obj, int p_target, int &p_id);
 	int make_object_cache(Object *p_obj);
 	Object *get_cached_object(int p_from, uint32_t p_cache_id);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file math_fieldwise.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef DEBUG_ENABLED
 
 #include "math_fieldwise.h"

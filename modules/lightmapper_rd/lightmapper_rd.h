@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file lightmapper_rd.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/local_vector.h"
 #include "scene/3d/lightmapper.h"
 #include "scene/resources/mesh.h"

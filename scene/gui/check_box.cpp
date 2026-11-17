@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file check_box.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "check_box.h"
 
 #include "scene/theme/theme_db.h"

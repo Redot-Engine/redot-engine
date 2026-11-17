@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_interface.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_interface.h"
 
 #include "core/io/resource_loader.h"
@@ -204,8 +210,6 @@ uint32_t OpenXRInterface::get_capabilities() const {
 }
 
 PackedStringArray OpenXRInterface::get_suggested_tracker_names() const {
-	// These are hardcoded in OpenXR, note that they will only be available if added to our action map
-
 	PackedStringArray arr = {
 		"head", // XRPositionalTracker for the users head (Mapped from OpenXR /user/head)
 		"left_hand", // XRControllerTracker for the users left hand (Mapped from OpenXR /user/hand/left)
@@ -621,7 +625,7 @@ void OpenXRInterface::trigger_haptic_pulse(const String &p_action_name, const St
 	Tracker *tracker = find_tracker(tracker_name);
 	ERR_FAIL_NULL(tracker);
 
-	// TODO OpenXR does not support delay, so we may need to add support for that somehow...
+	/// @todo OpenXR does not support delay, so we may need to add support for that somehow...
 
 	XrDuration duration = XrDuration(p_duration_sec * 1000000000.0); // seconds -> nanoseconds
 
@@ -1026,7 +1030,7 @@ Size2 OpenXRInterface::get_render_target_size() {
 }
 
 uint32_t OpenXRInterface::get_view_count() {
-	// TODO set this based on our configuration
+	/// @todo Set this based on our configuration
 	return 2;
 }
 
@@ -1427,7 +1431,6 @@ OpenXRInterface::SessionState OpenXRInterface::get_session_state() {
 	return SESSION_STATE_UNKNOWN;
 }
 
-/** Hand tracking. */
 void OpenXRInterface::set_motion_range(const Hand p_hand, const HandMotionRange p_motion_range) {
 	ERR_FAIL_INDEX(p_hand, HAND_MAX);
 	ERR_FAIL_INDEX(p_motion_range, HAND_MOTION_RANGE_MAX);

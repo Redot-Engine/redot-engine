@@ -1,0 +1,2 @@
+GDTEST_ANALYZER_ERROR
+>> ERROR at line 5: Too many arguments for struct "CtorS" constructor. Expected at most 1 but received 2.

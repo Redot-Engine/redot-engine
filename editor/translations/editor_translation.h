@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_translation.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/ustring.h"
 #include "core/templates/vector.h"
 

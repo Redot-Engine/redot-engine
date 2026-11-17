@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file collision_shape_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "collision_shape_2d.h"
 
 #include "scene/2d/physics/area_2d.h"

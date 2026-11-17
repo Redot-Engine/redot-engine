@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_scale.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 class EditorScale {
 	static float _scale;
 

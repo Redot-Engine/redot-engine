@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file servers_debugger.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers_debugger.h"
 
 #include "core/config/project_settings.h"
@@ -37,7 +43,7 @@
 #include "core/debugger/engine_profiler.h"
 #include "core/io/resource_loader.h"
 #include "core/object/script_language.h"
-#include "servers/display_server.h"
+#include "servers/display/display_server.h"
 
 #define CHECK_SIZE(arr, expected, what) ERR_FAIL_COND_V_MSG((uint32_t)arr.size() < (uint32_t)(expected), false, String("Malformed ") + what + " message from script debugger, message too short. Expected size: " + itos(expected) + ", actual size: " + itos(arr.size()))
 #define CHECK_END(arr, expected, what) ERR_FAIL_COND_V_MSG((uint32_t)arr.size() > (uint32_t)expected, false, String("Malformed ") + what + " message from script debugger, message too long. Expected size: " + itos(expected) + ", actual size: " + itos(arr.size()))
@@ -495,7 +501,6 @@ void ServersDebugger::_send_resource_usage() {
 	EngineDebugger::get_singleton()->send_message("servers:memory_usage", usage.serialize());
 }
 
-// Done on a best-effort basis.
 String ServersDebugger::_get_resource_type_from_path(const String &p_path) {
 	if (p_path.is_empty()) {
 		return "";

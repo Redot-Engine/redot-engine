@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file regex.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/ref_counted.h"
 #include "core/string/ustring.h"
 #include "core/templates/hash_map.h"

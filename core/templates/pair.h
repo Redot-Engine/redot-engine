@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file pair.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/typedefs.h"
 
 template <typename F, typename S>
@@ -58,14 +64,15 @@ struct PairSort {
 	}
 };
 
-// Pair is zero-constructible if and only if both constrained types are zero-constructible.
+/// Pair is zero-constructible if and only if both constrained types are zero-constructible.
 template <typename F, typename S>
 struct is_zero_constructible<Pair<F, S>> : std::conjunction<is_zero_constructible<F>, is_zero_constructible<S>> {};
 
 template <typename K, typename V>
 struct KeyValue {
 	const K key{};
-	V value{};
+	// If V is empty, such as RBEmptyValue, value will not occupy any space.
+	[[no_unique_address]] V value{};
 
 	KeyValue &operator=(const KeyValue &p_kv) = delete;
 	KeyValue &operator=(KeyValue &&p_kv) = delete;
@@ -92,6 +99,6 @@ struct KeyValueSort {
 	}
 };
 
-// KeyValue is zero-constructible if and only if both constrained types are zero-constructible.
+/// KeyValue is zero-constructible if and only if both constrained types are zero-constructible.
 template <typename K, typename V>
 struct is_zero_constructible<KeyValue<K, V>> : std::conjunction<is_zero_constructible<K>, is_zero_constructible<V>> {};

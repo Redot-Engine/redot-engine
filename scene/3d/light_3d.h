@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file light_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/visual_instance_3d.h"
 
 class Light3D : public VisualInstance3D {
@@ -206,7 +212,7 @@ class OmniLight3D : public Light3D {
 	GDCLASS(OmniLight3D, Light3D);
 
 public:
-	// omni light
+	/// omni light
 	enum ShadowMode {
 		SHADOW_DUAL_PARABOLOID,
 		SHADOW_CUBE,

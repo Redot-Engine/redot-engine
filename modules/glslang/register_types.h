@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file register_types.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #define MODULE_GLSLANG_HAS_PREREGISTER
 
 #include "modules/register_module_types.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file debug_adapter_parser.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/config/project_settings.h"
 #include "core/debugger/remote_debugger.h"
 #include "debug_adapter_protocol.h"
@@ -87,10 +93,13 @@ public:
 	Dictionary req_evaluate(const Dictionary &p_params) const;
 	Dictionary req_godot_put_msg(const Dictionary &p_params) const;
 
-	// Internal requests
+	/// @name Internal requests
+	/// @{
 	Dictionary _launch_process(const Dictionary &p_params) const;
+	/// @}
 
-	// Events
+	/// @name Events
+	/// @{
 	Dictionary ev_initialized() const;
 	Dictionary ev_process(const String &p_command) const;
 	Dictionary ev_terminated() const;
@@ -103,4 +112,5 @@ public:
 	Dictionary ev_output(const String &p_message, RemoteDebugger::MessageType p_type) const;
 	Dictionary ev_custom_data(const String &p_msg, const Array &p_data) const;
 	Dictionary ev_breakpoint(const DAP::Breakpoint &p_breakpoint, const bool &p_enabled) const;
+	/// @}
 };

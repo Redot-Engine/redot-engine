@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file test_regex.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../regex.h"
 
 #include "core/string/ustring.h"

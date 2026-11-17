@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file aes_context.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/crypto/crypto_core.h"
 #include "core/object/ref_counted.h"
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_export_platform_apple_embedded.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_export_platform_apple_embedded.h"
 
 #include "core/io/json.h"
@@ -813,8 +819,8 @@ void EditorExportPlatformAppleEmbedded::_fix_config_file(const Ref<EditorExportP
 		}
 	}
 
-	// !BAS! I'm assuming the 9 in the original code was a typo. I've added -1 or else it seems to also be adding our terminating zero...
-	// should apply the same fix in our macOS export.
+	/// !BAS! I'm assuming the 9 in the original code was a typo. I've added -1 or else it seems to also be adding our terminating zero...
+	/// @todo Should apply the same fix in our macOS export.
 	CharString cs = strnew.utf8();
 	pfile.resize(cs.size() - 1);
 	for (int i = 0; i < cs.size() - 1; i++) {
@@ -1909,9 +1915,9 @@ Error EditorExportPlatformAppleEmbedded::_export_project_helper(const Ref<Editor
 
 	err = _export_apple_embedded_plugins(p_preset, config_data, binary_dir, assets, p_debug);
 	if (err != OK) {
-		// TODO: Improve error reporting by using `add_message` throughout all methods called via `_export_apple_embedded_plugins`.
-		// For now a generic top level message would be fine, but we're ought to use proper reporting here instead of
-		// just fail macros and non-descriptive error return values.
+		/// @todo Improve error reporting by using `add_message` throughout all methods called via `_export_apple_embedded_plugins`.
+		/// For now a generic top level message would be fine, but we're ought to use proper reporting here instead of
+		/// just fail macros and non-descriptive error return values.
 		add_message(EXPORT_MESSAGE_ERROR, TTR("Apple Embedded Plugins"), vformat(TTR("Failed to export Apple Embedded plugins with code %d. Please check the output log."), err));
 		return err;
 	}
@@ -1963,7 +1969,7 @@ Error EditorExportPlatformAppleEmbedded::_export_project_helper(const Ref<Editor
 			project_file_data = data;
 		}
 
-		///@TODO need to parse logo files
+		/// @todo Need to parse logo files
 
 		if (data.size() > 0) {
 			file = file.replace("godot_" + get_platform_name(), binary_name);
@@ -2232,7 +2238,7 @@ Error EditorExportPlatformAppleEmbedded::_export_project_helper(const Ref<Editor
 
 bool EditorExportPlatformAppleEmbedded::has_valid_export_configuration(const Ref<EditorExportPreset> &p_preset, String &r_error, bool &r_missing_templates, bool p_debug) const {
 #if defined(MODULE_MONO_ENABLED) && !defined(MACOS_ENABLED)
-	// TODO: Remove this restriction when we don't rely on macOS tools to package up the native libraries anymore.
+	/// @todo Remove this restriction when we don't rely on macOS tools to package up the native libraries anymore.
 	r_error += TTR("Exporting to an Apple Embedded platform when using C#/.NET is experimental and requires macOS.") + "\n";
 	return false;
 #else

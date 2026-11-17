@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file register_module_types.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/extension/gdextension_interface.h"
 
 enum ModuleInitializationLevel {

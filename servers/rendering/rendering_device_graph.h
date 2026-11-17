@@ -32,15 +32,21 @@
 
 #pragma once
 
+/**
+ * @file rendering_device_graph.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/worker_thread_pool.h"
 #include "rendering_device_commons.h"
 #include "rendering_device_driver.h"
 
-// Buffer barriers have not shown any significant improvement or shown to be
-// even detrimental to performance. However, there are currently some known
-// cases where using them can solve problems that using singular memory
-// barriers does not, probably due to driver issues (see comment on PR #84976
-// https://github.com/godotengine/godot/pull/84976#issuecomment-1878566830).
+/// Buffer barriers have not shown any significant improvement or shown to be
+/// even detrimental to performance. However, there are currently some known
+/// cases where using them can solve problems that using singular memory
+/// barriers does not, probably due to driver issues (see comment on PR #84976
+/// https://github.com/godotengine/godot/pull/84976#issuecomment-1878566830).
 
 #define USE_BUFFER_BARRIERS 1
 
@@ -217,10 +223,10 @@ public:
 	};
 
 	struct CommandBufferPool {
-		// Provided by RenderingDevice.
+		/// Provided by RenderingDevice.
 		RDD::CommandPoolID pool;
 
-		// Created internally by RenderingDeviceGraph.
+		/// Created internally by RenderingDeviceGraph.
 		LocalVector<RDD::CommandBufferID> buffers;
 		LocalVector<RDD::SemaphoreID> semaphores;
 		uint32_t buffers_used = 0;
@@ -231,11 +237,11 @@ public:
 	};
 
 	enum AttachmentOperation {
-		// Loads or ignores if the attachment is discardable.
+		/// Loads or ignores if the attachment is discardable.
 		ATTACHMENT_OPERATION_DEFAULT,
-		// Clear the attachment to a value.
+		/// Clear the attachment to a value.
 		ATTACHMENT_OPERATION_CLEAR,
-		// Ignore any contents from the attachment.
+		/// Ignore any contents from the attachment.
 		ATTACHMENT_OPERATION_IGNORE,
 	};
 

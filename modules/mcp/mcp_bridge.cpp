@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mcp_bridge.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "mcp_bridge.h"
 
 #include "core/crypto/crypto_core.h"
@@ -46,7 +52,7 @@
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
 #include "scene/main/window.h"
-#include "servers/rendering_server.h"
+#include "servers/rendering/rendering_server.h"
 #include <functional>
 
 MCPBridge *MCPBridge::singleton = nullptr;
@@ -104,7 +110,7 @@ Error MCPBridge::connect_to_server(const String &p_host, int p_port) {
 	return connection->connect_to_host(p_host, p_port);
 }
 
-Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_args) {
+Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_args, bool p_wait_for_response) {
 	Ref<StreamPeerTCP> conn;
 	{
 		MutexLock lock(mutex);
@@ -124,34 +130,63 @@ Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_a
 	CharString utf8 = json.utf8();
 	conn->put_data((const uint8_t *)utf8.get_data(), utf8.length());
 	conn->put_u8('\n');
+	if (!p_wait_for_response) {
+		return Dictionary();
+	}
 
 	// Wait for response (blocking with timeout)
 	uint64_t start_time = OS::get_singleton()->get_ticks_msec();
-	String response_str;
+	CharString raw_buffer;
+	bool got_response = false;
 	while (OS::get_singleton()->get_ticks_msec() - start_time < 5000) {
 		conn->poll();
-		if (conn->get_available_bytes() > 0) {
-			uint8_t c;
-			int read_bytes;
-			conn->get_partial_data(&c, 1, read_bytes);
+		int avail = conn->get_available_bytes();
+		if (avail > 0) {
+			uint8_t buf[4096];
+			int to_read = avail < (int)sizeof(buf) ? avail : (int)sizeof(buf);
+			int read_bytes = 0;
+			conn->get_partial_data(buf, to_read, read_bytes);
 			if (read_bytes > 0) {
-				if (c == '\n') {
-					goto parsed;
+				// Append raw bytes to the buffer (resize + copy).
+				int old_len = raw_buffer.length();
+				raw_buffer.resize_uninitialized(old_len + read_bytes + 1);
+				char *dst = raw_buffer.ptrw();
+				memcpy(dst + old_len, buf, read_bytes);
+				dst[old_len + read_bytes] = 0;
+
+				// Only scan the newly appended bytes for the delimiter.
+				for (int i = old_len; i < old_len + read_bytes; i++) {
+					if (raw_buffer[i] == '\n') {
+						got_response = true;
+						break;
+					}
 				}
-				response_str += (char)c;
+				if (got_response) {
+					break;
+				}
 			}
 		} else {
 			OS::get_singleton()->delay_usec(1000);
 		}
 	}
 
-	{
+	if (!got_response) {
 		Dictionary err;
 		err["error"] = "Bridge timeout";
 		return err;
 	}
 
-parsed:
+	// Decode the full buffer at once so multi-byte UTF-8 sequences
+	// spanning TCP chunk boundaries are handled correctly.
+	int nl = -1;
+	for (int i = 0; i < raw_buffer.length(); i++) {
+		if (raw_buffer[i] == '\n') {
+			nl = i;
+			break;
+		}
+	}
+	int len = (nl >= 0) ? nl : raw_buffer.length();
+	String response_str = String::utf8(raw_buffer.get_data(), len);
 	if (response_str.is_empty()) {
 		Dictionary err;
 		err["error"] = "Empty response";
@@ -168,16 +203,35 @@ parsed:
 	return err;
 }
 
+void MCPBridge::disconnect_peer() {
+	MutexLock lock(mutex);
+	if (connection.is_valid()) {
+		connection->disconnect_from_host();
+		connection.unref();
+	}
+	partial_data = "";
+}
+
 void MCPBridge::update() {
 	MutexLock lock(mutex);
 	if (is_host) {
 		if (server->is_connection_available()) {
+			// Only replace the connection if the current one is stale/disconnected,
+			// so we never drop a peer mid-command from the bridge thread.
+			bool current_ok = false;
 			if (connection.is_valid()) {
-				fprintf(stderr, "[MCP] Dropping existing connection for new client\n");
-				connection->disconnect_from_host();
+				connection->poll();
+				current_ok = (connection->get_status() == StreamPeerTCP::STATUS_CONNECTED);
 			}
-			connection = server->take_connection();
-			fprintf(stderr, "[MCP] Game process connected to bridge on host side\n");
+			if (!current_ok) {
+				connection = server->take_connection();
+				fprintf(stderr, "[MCP] Game process connected to bridge on host side\n");
+			} else {
+				// Drain and discard the extra pending connection.
+				Ref<StreamPeerTCP> extra = server->take_connection();
+				extra->disconnect_from_host();
+				fprintf(stderr, "[MCP] Bridge: extra pending connection discarded (active connection in use)\n");
+			}
 		}
 	} else {
 		// Client (Game) side
@@ -222,7 +276,30 @@ void MCPBridge::update() {
 	}
 }
 
-void MCPBridge::_trigger_action_event(const StringName &p_action) {
+// Identifies the key or button an event stands for. Modifiers are separate keys, so they're left out.
+static String _held_input_key(const Ref<InputEvent> &p_event) {
+	Ref<InputEventKey> k = p_event;
+	if (k.is_valid()) {
+		return vformat("%d:key:%d:%d:%d:%d", p_event->get_device(), (int64_t)k->get_keycode(), (int64_t)k->get_physical_keycode(), (int64_t)k->get_key_label(), (int)k->get_location());
+	}
+	Ref<InputEventMouseButton> mb = p_event;
+	return vformat("%d:mouse:%d", p_event->get_device(), (int)mb->get_button_index());
+}
+
+// Whether the key or button an event stands for is currently down.
+static bool _is_input_down(const Ref<InputEvent> &p_event) {
+	Input *input = Input::get_singleton();
+	Ref<InputEventKey> k = p_event;
+	if (k.is_null()) {
+		Ref<InputEventMouseButton> mb = p_event;
+		return input->is_mouse_button_pressed(mb->get_button_index());
+	}
+	return (k->get_keycode() == Key::NONE || input->is_key_pressed(k->get_keycode())) &&
+			(k->get_physical_keycode() == Key::NONE || input->is_physical_key_pressed(k->get_physical_keycode())) &&
+			(k->get_key_label() == Key::NONE || input->is_key_label_pressed(k->get_key_label()));
+}
+
+void MCPBridge::_trigger_action_event(const StringName &p_action, double p_hold_sec) {
 	if (!InputMap::get_singleton()->has_action(p_action)) {
 		return;
 	}
@@ -254,12 +331,38 @@ void MCPBridge::_trigger_action_event(const StringName &p_action) {
 				m_up->set_pressed(false);
 			}
 
-			Input::get_singleton()->parse_input_event(press_ev);
-			OS::get_singleton()->delay_usec(50000); // 50ms hold
-			Input::get_singleton()->parse_input_event(release_ev);
+			// Release on a timer instead of blocking, so the game sees the action held across frames.
+			// Overlapping holds of the same input keep it pressed until the last one ends.
+			SceneTree *st = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
+			if (st) {
+				String key = _held_input_key(press_ev);
+				int &holds = held_inputs[key];
+				// A repeat while the input is still down is sent as an echo, like a held key, so handlers
+				// don't see a second press. If something released it in the meantime, it's pressed again.
+				if (holds == 0 || !_is_input_down(press_ev)) {
+					Input::get_singleton()->parse_input_event(press_ev);
+				} else if (key_ev.is_valid()) {
+					Ref<InputEventKey>(press_ev)->set_echo(true);
+					Input::get_singleton()->parse_input_event(press_ev);
+				}
+				holds++;
+				st->create_timer(p_hold_sec, true, false, true)->connect(SNAME("timeout"), callable_mp(this, &MCPBridge::_release_held_input).bind(key, release_ev), CONNECT_ONE_SHOT);
+			} else {
+				Input::get_singleton()->parse_input_event(press_ev);
+				Input::get_singleton()->parse_input_event(release_ev);
+			}
 			return; // Triggered one valid event for the action
 		}
 	}
+}
+
+void MCPBridge::_release_held_input(const String &p_key, const Ref<InputEvent> &p_release) {
+	int *holds = held_inputs.getptr(p_key);
+	if (holds && --(*holds) > 0) {
+		return;
+	}
+	held_inputs.erase(p_key);
+	Input::get_singleton()->parse_input_event(p_release);
 }
 
 Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
@@ -283,6 +386,10 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 				return resp;
 			}
 			Ref<Image> img = tex->get_image();
+			if (img.is_null()) {
+				resp["error"] = "Viewport returned no image (not rendered yet or headless)";
+				return resp;
+			}
 
 			float scale = args.get("scale", 1.0);
 			if (scale != 1.0) {
@@ -290,6 +397,10 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 			}
 
 			PackedByteArray png_buffer = img->save_png_to_buffer();
+			if (png_buffer.is_empty()) {
+				resp["error"] = "Failed to encode PNG";
+				return resp;
+			}
 			resp["image_base64"] = CryptoCore::b64_encode_str(png_buffer.ptr(), png_buffer.size());
 			resp["format"] = "png";
 			resp["width"] = img->get_width();
@@ -364,7 +475,7 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 				resp["error"] = "No root window found";
 				return resp;
 			}
-			String path = args.get("path", ".");
+			String path = args.get("node_path", args.get("path", "."));
 			Node *node = (path == "." || path.is_empty()) ? (Node *)root_window : root_window->get_node_or_null(path);
 			if (node) {
 				bool recursive = args.get("recursive", false);
@@ -465,8 +576,17 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 		} else if (!InputMap::get_singleton()->has_action(action_name)) {
 			resp["error"] = "Action not found: " + action_name;
 		} else {
-			_trigger_action_event(action_name);
+			double hold_sec = args.get("seconds", 0.1);
+			_trigger_action_event(action_name, MAX(hold_sec, 0.0));
 			resp["status"] = "triggered_action";
+		}
+	} else if (action == "quit") {
+		SceneTree *st = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
+		if (st) {
+			st->quit();
+			resp["status"] = "quitting";
+		} else {
+			resp["error"] = "No scene tree found";
 		}
 	} else if (action == "wait") {
 		resp["status"] = "wait_is_server_side";

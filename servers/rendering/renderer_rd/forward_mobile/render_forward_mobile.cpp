@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file render_forward_mobile.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "render_forward_mobile.h"
 #include "core/config/project_settings.h"
 #include "servers/rendering/renderer_rd/framebuffer_cache_rd.h"
@@ -236,7 +242,7 @@ RID RenderForwardMobile::RenderBufferDataForwardMobile::get_color_fbs(Framebuffe
 		color_buffer_id = textures.size();
 		textures.push_back(render_buffers->get_internal_texture()); // color buffer for resolve
 
-		// TODO add support for resolving depth buffer!!!
+		/// @todo Add support for resolving depth buffer!!!
 	}
 
 	// Now define our subpasses
@@ -1011,6 +1017,8 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 	bool use_ambient_cubemap = false;
 	bool use_reflection_cubemap = false;
 
+	RendererRD::SkyRD::SkyRenderData sky_env;
+
 	if (get_debug_draw_mode() == RS::VIEWPORT_DEBUG_DRAW_OVERDRAW) {
 		clear_color = Color(0, 0, 0, 1); //in overdraw mode, BG should always be black
 	} else if (is_environment(p_render_data->environment)) {
@@ -1069,13 +1077,27 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 			RENDER_TIMESTAMP("Setup Sky");
 			RD::get_singleton()->draw_command_begin_label("Setup Sky");
 
-			sky.setup_sky(p_render_data, screen_size);
+			sky_env.sky = environment_get_sky(p_render_data->environment);
+			sky_env.background = environment_get_background(p_render_data->environment);
+			sky_env.sky_orientation = environment_get_sky_orientation(p_render_data->environment);
+			sky_env.custom_fov = environment_get_sky_custom_fov(p_render_data->environment);
+
+			sky_env.fog_enabled = environment_get_fog_enabled(p_render_data->environment);
+			sky_env.fog_density = environment_get_fog_density(p_render_data->environment);
+			sky_env.fog_aerial_perspective = environment_get_fog_aerial_perspective(p_render_data->environment);
+			sky_env.fog_light_color = environment_get_fog_light_color(p_render_data->environment);
+			sky_env.fog_light_energy = environment_get_fog_light_energy(p_render_data->environment);
+			sky_env.fog_sun_scatter = environment_get_fog_sun_scatter(p_render_data->environment);
+			sky_env.fog_sky_affect = environment_get_fog_sky_affect(p_render_data->environment);
+			sky_env.volumetric_fog_sky_affect = environment_get_volumetric_fog_sky_affect(p_render_data->environment);
+
+			sky.setup_sky(p_render_data, sky_env, screen_size);
 
 			sky_brightness_multiplier *= bg_energy_multiplier;
 
-			RID sky_rid = environment_get_sky(p_render_data->environment);
+			RID sky_rid = sky_env.sky;
 			if (sky_rid.is_valid()) {
-				sky.update_radiance_buffers(rb, p_render_data->environment, p_render_data->scene_data->cam_transform.origin, time, sky_luminance_multiplier, sky_brightness_multiplier);
+				sky.update_radiance_buffers(rb, sky_env, p_render_data->scene_data->cam_transform.origin, time, sky_luminance_multiplier, sky_brightness_multiplier);
 				radiance_texture = sky.sky_get_radiance_texture_rd(sky_rid);
 			} else {
 				// do not try to draw sky if invalid
@@ -1084,7 +1106,7 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 
 			if (draw_sky || draw_sky_fog_only) {
 				// update sky half/quarter res buffers (if required)
-				sky.update_res_buffers(rb, p_render_data->environment, time, sky_luminance_multiplier, sky_brightness_multiplier);
+				sky.update_res_buffers(rb, sky_env, time, sky_luminance_multiplier, sky_brightness_multiplier);
 			}
 			RD::get_singleton()->draw_command_end_label(); // Setup Sky
 		}
@@ -1220,7 +1242,7 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 
 			// Note, sky.setup should have been called up above and setup stuff we need.
 
-			sky.draw_sky(draw_list, rb, p_render_data->environment, framebuffer, time, sky_luminance_multiplier, sky_brightness_multiplier);
+			sky.draw_sky(draw_list, rb, sky_env, framebuffer, time, sky_luminance_multiplier, sky_brightness_multiplier);
 
 			RD::get_singleton()->draw_command_end_label(); // Draw Sky
 		}
@@ -1526,7 +1548,7 @@ void RenderForwardMobile::_render_shadow_append(RID p_framebuffer, const PagedAr
 	}
 
 	RenderSceneDataRD scene_data;
-	scene_data.flip_y = !p_flip_y; // Q: Why is this inverted? Do we assume flip in shadow logic?
+	scene_data.flip_y = !p_flip_y; /// @todo Q: Why is this inverted? Do we assume flip in shadow logic?
 	scene_data.cam_projection = p_projection;
 	scene_data.cam_transform = p_transform;
 	scene_data.view_projection[0] = p_projection;

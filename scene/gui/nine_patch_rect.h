@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file nine_patch_rect.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/control.h"
 
 class NinePatchRect : public Control {

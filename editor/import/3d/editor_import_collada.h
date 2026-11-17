@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_import_collada.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/import/3d/resource_importer_scene.h"
 
 class EditorSceneFormatImporterCollada : public EditorSceneFormatImporter {

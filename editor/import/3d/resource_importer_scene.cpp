@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_importer_scene.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_importer_scene.h"
 
 #include "core/error/error_macros.h"
@@ -2224,7 +2230,7 @@ void ResourceImporterScene::get_internal_import_options(InternalImportCategory p
 			r_options->push_back(ImportOption(PropertyInfo(Variant::FLOAT, "rest_pose/selected_timestamp", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:s", PROPERTY_USAGE_DEFAULT), 0.0f));
 			String mismatched_or_empty_profile_warning = String(
 					"The external rest animation is missing some bones. "
-					"Consider disabling Remove Immutable Tracks on the other file."); // TODO: translate.
+					"Consider disabling Remove Immutable Tracks on the other file."); /// @todo Translate.
 			r_options->push_back(ImportOption(
 					PropertyInfo(
 							Variant::STRING, U"rest_pose/\u26A0_validation_warning/mismatched_or_empty_profile",
@@ -2232,7 +2238,7 @@ void ResourceImporterScene::get_internal_import_options(InternalImportCategory p
 					Variant(mismatched_or_empty_profile_warning)));
 			String profile_must_not_be_retargeted_warning = String(
 					"This external rest animation appears to have been imported with a BoneMap. "
-					"Disable the bone map when exporting a rest animation from the reference model."); // TODO: translate.
+					"Disable the bone map when exporting a rest animation from the reference model."); /// @todo Translate.
 			r_options->push_back(ImportOption(
 					PropertyInfo(
 							Variant::STRING, U"rest_pose/\u26A0_validation_warning/profile_must_not_be_retargeted",
@@ -2240,7 +2246,7 @@ void ResourceImporterScene::get_internal_import_options(InternalImportCategory p
 					Variant(profile_must_not_be_retargeted_warning)));
 			String no_animation_warning = String(
 					"Select an animation: Find a FBX or glTF in a compatible rest pose "
-					"and export a compatible animation from its import settings."); // TODO: translate.
+					"and export a compatible animation from its import settings."); /// @todo Translate.
 			r_options->push_back(ImportOption(
 					PropertyInfo(
 							Variant::STRING, U"rest_pose//no_animation_chosen",
@@ -2450,7 +2456,7 @@ bool ResourceImporterScene::get_internal_option_visibility(InternalImportCategor
 		}
 	}
 
-	// TODO: If there are more than 2 or equal get_internal_option_visibility method, visibility state is broken.
+	/// @todo If there are more than 2 or equal get_internal_option_visibility method, visibility state is broken.
 	for (int i = 0; i < post_importer_plugins.size(); i++) {
 		Variant ret = post_importer_plugins.write[i]->get_internal_option_visibility(EditorScenePostImportPlugin::InternalImportCategory(p_category), _scene_import_type, p_option, p_options);
 		if (ret.get_type() == Variant::BOOL) {
@@ -3219,9 +3225,9 @@ Error ResourceImporterScene::import(ResourceUID::ID p_source_id, const String &p
 
 	String root_name = p_options["nodes/root_name"];
 	if (!root_name.is_empty() && root_name != "Scene Root") {
-		// TODO: Remove `&& root_name != "Scene Root"` for Redot 5.0.
-		// For backwards compatibility with existing .import files,
-		// treat "Scene Root" as having no root name override.
+		/// @todo Remove `&& root_name != "Scene Root"` for Redot 5.0.
+		/// For backwards compatibility with existing .import files,
+		/// treat "Scene Root" as having no root name override.
 		scene->set_name(root_name);
 	} else if (String(scene->get_name()).is_empty()) {
 		scene->set_name(p_save_path.get_file().get_basename());

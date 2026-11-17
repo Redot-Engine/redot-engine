@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file project_list.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "project_list.h"
 
 #include "core/config/project_settings.h"
@@ -459,7 +465,7 @@ void ProjectList::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_TRANSLATION_CHANGED: {
 			if (is_ready()) {
-				// FIXME: Technically this only needs to update some dynamic texts, not the whole list.
+				/// @todo FIXME: Technically this only needs to update some dynamic texts, not the whole list.
 				update_project_list();
 			}
 		} break;
@@ -576,8 +582,6 @@ void ProjectList::save_config() {
 	_config.save(_config_path);
 }
 
-// Load project data from p_property_key and return it in a ProjectList::Item.
-// p_favorite is passed directly into the Item.
 ProjectList::Item ProjectList::load_project_data(const String &p_path, bool p_favorite) {
 	String conf = p_path.path_join("project.godot");
 	bool grayed = false;
@@ -720,10 +724,6 @@ void ProjectList::_load_project_icon(int p_index) {
 // Project list updates.
 
 void ProjectList::update_project_list() {
-	// This is a full, hard reload of the list. Don't call this unless really required, it's expensive.
-	// If you have 150 projects, it may read through 150 files on your disk at once + load 150 icons.
-	// FIXME: Does it really have to be a full, hard reload? Runtime updates should be made much cheaper.
-
 	if (ProjectManager::get_singleton()->is_initialized()) {
 		// Clear whole list
 		for (int i = 0; i < _projects.size(); ++i) {
@@ -918,11 +918,6 @@ void ProjectList::set_project_version(const String &p_project_path, int p_versio
 }
 
 int ProjectList::refresh_project(const String &dir_path) {
-	// Reloads information about a specific project.
-	// If it wasn't loaded and should be in the list, it is added (i.e new project).
-	// If it isn't in the list anymore, it is removed.
-	// If it is in the list but doesn't exist anymore, it is marked as missing.
-
 	bool should_be_in_list = _config.has_section(dir_path);
 	bool is_favourite = _config.get_value(dir_path, "favorite", false);
 
@@ -1013,8 +1008,6 @@ void ProjectList::_create_project_item_control(int p_index) {
 }
 
 void ProjectList::_toggle_project(int p_index) {
-	// This methods adds to the selection or removes from the
-	// selection.
 	Item &item = _projects.write[p_index];
 
 	if (_selected_project_paths.has(item.path)) {
@@ -1158,7 +1151,6 @@ void ProjectList::_select_project_range(int p_begin, int p_end) {
 }
 
 void ProjectList::select_project(int p_index) {
-	// This method keeps only one project selected.
 	_clear_project_selection();
 	_select_project_nocheck(p_index);
 }

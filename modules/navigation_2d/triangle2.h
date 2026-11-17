@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file triangle2.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/vector2.h"
 
 struct Triangle2 {

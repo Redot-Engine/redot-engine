@@ -32,7 +32,16 @@
 
 #pragma once
 
+/**
+ * @file gdscript_highlighter.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/script/script_editor_plugin.h"
+
+class GDScriptParserRef;
+class SceneTreeTimer;
 
 class GDScriptSyntaxHighlighter : public EditorSyntaxHighlighter {
 	GDCLASS(GDScriptSyntaxHighlighter, EditorSyntaxHighlighter)
@@ -41,10 +50,10 @@ private:
 	struct ColorRegion {
 		enum Type {
 			TYPE_NONE,
-			TYPE_STRING, // `"` and `'`, optional prefix `&`, `^`, or `r`.
-			TYPE_MULTILINE_STRING, // `"""` and `'''`, optional prefix `r`.
-			TYPE_COMMENT, // `#` and `##`.
-			TYPE_CODE_REGION, // `#region` and `#endregion`.
+			TYPE_STRING, ///< `"` and `'`, optional prefix `&`, `^`, or `r`.
+			TYPE_MULTILINE_STRING, ///< `"""` and `'''`, optional prefix `r`.
+			TYPE_COMMENT, ///< `#` and `##`.
+			TYPE_CODE_REGION, ///< `#region` and `#endregion`.
 		};
 
 		Type type = TYPE_NONE;
@@ -53,8 +62,8 @@ private:
 		String end_key;
 		bool line_only = false;
 		bool r_prefix = false;
-		bool is_string = false; // `TYPE_STRING` or `TYPE_MULTILINE_STRING`.
-		bool is_comment = false; // `TYPE_COMMENT` or `TYPE_CODE_REGION`.
+		bool is_string = false; ///< `TYPE_STRING` or `TYPE_MULTILINE_STRING`.
+		bool is_comment = false; ///< `TYPE_COMMENT` or `TYPE_CODE_REGION`.
 	};
 	Vector<ColorRegion> color_regions;
 	HashMap<int, int> color_region_cache;
@@ -81,7 +90,18 @@ private:
 		TYPE,
 	};
 
-	// Colors.
+	struct SourceLine {
+		String text;
+		HashMap<int, Type> symbols;
+	};
+	HashMap<int, SourceLine> source_symbols;
+	Vector<Ref<GDScriptParserRef>> source_dependencies;
+	bool source_cache_dirty = true;
+	ObjectID source_text_edit_id;
+	Ref<SceneTreeTimer> source_rebuild_timer;
+
+	/// @name Colors
+	/// @{
 	Color font_color;
 	Color symbol_color;
 	Color function_color;
@@ -96,6 +116,8 @@ private:
 	Color annotation_color;
 	Color string_name_color;
 	Color type_color;
+	Color user_type_color;
+	/// @}
 
 	enum CommentMarkerLevel {
 		COMMENT_MARKER_CRITICAL,
@@ -108,7 +130,12 @@ private:
 
 	void add_color_region(ColorRegion::Type p_type, const String &p_start_key, const String &p_end_key, const Color &p_color, bool p_line_only = false, bool p_r_prefix = false);
 
+	void _update_source_cache();
+	void _source_changed(int p_from_line, int p_to_line);
+	void _source_rebuild_timeout();
+
 public:
+	virtual void _clear_highlighting_cache() override;
 	virtual void _update_cache() override;
 	virtual Dictionary _get_line_syntax_highlighting_impl(int p_line) override;
 

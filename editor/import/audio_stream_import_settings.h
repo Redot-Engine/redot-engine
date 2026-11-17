@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file audio_stream_import_settings.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "scene/audio/audio_stream_player.h"
 #include "scene/gui/color_rect.h"

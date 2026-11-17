@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gradient_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/inspector/editor_inspector.h"
 #include "editor/plugins/editor_plugin.h"
 
@@ -64,9 +70,11 @@ class GradientEdit : public Control {
 	int selected_index = -1;
 	int hovered_index = -1;
 
-	// Make sure to use the scaled values below.
+	/// @name Make sure to use the scaled values below.
+	/// @{
 	const int BASE_SPACING = 4;
 	const int BASE_HANDLE_WIDTH = 8;
+	/// @}
 
 	int draw_spacing = BASE_SPACING;
 	int handle_width = BASE_HANDLE_WIDTH;

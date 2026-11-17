@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file variant_call.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "variant.h"
 
 #include "core/crypto/crypto_core.h"
@@ -2257,6 +2263,7 @@ static void _register_variant_builtin_methods_math() {
 	bind_method(Color, get_luminance, sarray(), varray());
 	bind_method(Color, srgb_to_linear, sarray(), varray());
 	bind_method(Color, linear_to_srgb, sarray(), varray());
+	bind_method(Color, apply_intensity, sarray("intensity"), varray());
 
 	bind_method(Color, is_equal_approx, sarray("to"), varray());
 

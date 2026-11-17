@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file project_export.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "project_export.h"
 
 #include "core/config/project_settings.h"
@@ -1326,10 +1332,10 @@ void ProjectExportDialog::_export_project() {
 		}
 	}
 
-	// Ensure that signal is connected if previous attempt left it disconnected
-	// with _validate_export_path.
-	// FIXME: This is a hack, we should instead change EditorFileDialog to allow
-	// disabling validation by the "text_submitted" signal.
+	/// Ensure that signal is connected if previous attempt left it disconnected
+	/// with _validate_export_path.
+	/// @todo FIXME: This is a hack, we should instead change EditorFileDialog to allow
+	/// disabling validation by the "text_submitted" signal.
 	if (!export_project->get_line_edit()->is_connected(SceneStringName(text_submitted), callable_mp(export_project, &EditorFileDialog::_file_submitted))) {
 		export_project->get_ok_button()->set_disabled(false);
 		export_project->get_line_edit()->connect(SceneStringName(text_submitted), callable_mp(export_project, &EditorFileDialog::_file_submitted));

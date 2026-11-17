@@ -284,7 +284,7 @@ static const char *APK_ASSETS_DIRECTORY = "assets";
 static const char *AAB_ASSETS_DIRECTORY = "assetPackInstallTime/src/main/assets";
 
 static const int DEFAULT_MIN_SDK_VERSION = 24; // Should match the value in 'platform/android/java/app/config.gradle#minSdk'
-static const int DEFAULT_TARGET_SDK_VERSION = 35; // Should match the value in 'platform/android/java/app/config.gradle#targetSdk'
+static const int DEFAULT_TARGET_SDK_VERSION = 36; // Should match the value in 'platform/android/java/app/config.gradle#targetSdk'
 
 #ifndef ANDROID_ENABLED
 void EditorExportPlatformAndroid::_check_for_changes_poll_thread(void *ud) {
@@ -2782,9 +2782,9 @@ bool EditorExportPlatformAndroid::has_valid_export_configuration(const Ref<Edito
 	err += TTR("Exporting to Android when using C#/.NET is experimental.") + "\n";
 
 	if (!gradle_build_enabled) {
-		// For template exports we only support .NET 9 because the template
-		// includes .jar dependencies that may only be compatible with .NET 9.
-		if (!_validate_dotnet_tfm("net9.0", err)) {
+		// For template exports we only support .NET 10 because the template
+		// includes .jar dependencies that may only be compatible with .NET 10.
+		if (!_validate_dotnet_tfm("net10.0", err)) {
 			r_error = err;
 			return false;
 		}

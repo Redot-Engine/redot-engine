@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_audio_buses.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_audio_buses.h"
 
 #include "core/config/project_settings.h"
@@ -48,7 +54,7 @@
 #include "editor/themes/editor_theme_manager.h"
 #include "scene/gui/separator.h"
 #include "scene/resources/font.h"
-#include "servers/audio_server.h"
+#include "servers/audio/audio_server.h"
 
 void EditorAudioBus::_update_visible_channels() {
 	int i = 0;
@@ -387,13 +393,11 @@ float EditorAudioBus::_normalized_volume_to_scaled_db(float normalized) {
 	} else if (normalized < 0.05f) {
 		return 830.72 * normalized - 80.0f;
 	} else {
-		return 45.0f * Math::pow(normalized - 1.0, 3);
+		return 45.0f * Math::pow(normalized - 1.f, 3.f);
 	}
 }
 
 float EditorAudioBus::_scaled_db_to_normalized_volume(float db) {
-	/* Inversion of equations found in _normalized_volume_to_scaled_db.
-	 * IMPORTANT: If one function changes, the other much change to reflect it. */
 	if (db > -2.88) {
 		return (db + 16.2f) / 22.22f;
 	} else if (db < -38.602f) {

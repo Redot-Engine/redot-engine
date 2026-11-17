@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_visual_profiler.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/check_box.h"

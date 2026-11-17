@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_version_button.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_version_button.h"
 
 #include "core/os/time.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file light_storage.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "light_storage.h"
@@ -1639,7 +1645,6 @@ void LightStorage::shadow_atlas_update(RID p_atlas) {
 
 /* DIRECTIONAL SHADOW */
 
-// Create if necessary and clear.
 void LightStorage::update_directional_shadow_atlas() {
 	if (directional_shadow.depth == 0 && directional_shadow.size > 0) {
 		glGenFramebuffers(1, &directional_shadow.fbo);

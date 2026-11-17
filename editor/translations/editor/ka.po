@@ -5672,3 +5672,6 @@ msgstr "პირობა მითითებული არაა."
 
 msgid "Invalid '%s' directive."
 msgstr "არასწორი დირექტორივა '%s'."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "ზედმეტად ბევრი სკრიპტი გარე რედაქტორში გასახსნელად (მაქს. 128)."

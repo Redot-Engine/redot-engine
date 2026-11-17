@@ -30,8 +30,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_effect_phaser.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_effect_phaser.h"
-#include "servers/audio_server.h"
+#include "servers/audio/audio_server.h"
 
 void AudioEffectPhaserInstance::process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) {
 	float sampling_rate = AudioServer::get_singleton()->get_mix_rate();

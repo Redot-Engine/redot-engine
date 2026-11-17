@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_properties.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/inspector/editor_inspector.h"
 
 class CheckBox;
@@ -44,9 +50,14 @@ class EditorSpinSlider;
 class EditorVariantTypePopupMenu;
 class MenuButton;
 class PropertySelector;
+class Resource;
 class SceneTreeDialog;
 class TextEdit;
 class TextureButton;
+
+// Returns true if assigning `p_value` to a property of `p_owner` would create a resource storage
+// cycle (a resource that transitively contains itself), traversing arrays, dictionaries and structs.
+bool editor_property_has_recursive_resource(Resource *p_owner, const Variant &p_value);
 
 class EditorPropertyNil : public EditorProperty {
 	GDCLASS(EditorPropertyNil, EditorProperty);
@@ -291,7 +302,7 @@ private:
 	bool expand_hovered = false;
 	bool expanded = false;
 	int expansion_rows = 0;
-	uint32_t hovered_index = INT32_MAX; // Nothing is hovered.
+	uint32_t hovered_index = INT32_MAX; ///< Nothing is hovered.
 	bool read_only = false;
 	int renamed_layer_index = -1;
 	PopupMenu *layer_rename = nullptr;

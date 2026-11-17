@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file doc_tools.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "doc_tools.h"
 
 #include "core/config/engine.h"
@@ -46,7 +52,7 @@
 #include "scene/resources/theme.h"
 #include "scene/theme/theme_db.h"
 
-// Used for a hack preserving Mono properties on non-Mono builds.
+/// @todo Used for a hack preserving Mono properties on non-Mono builds.
 #include "modules/modules_enabled.gen.h" // For mono.
 
 static String _get_indent(const String &p_text) {
@@ -78,7 +84,7 @@ static String _translate_doc_string(const String &p_text) {
 	return translated.indent(indent);
 }
 
-// Comparator for constructors, based on `MethodDoc` operator.
+/// Comparator for constructors, based on `MethodDoc` operator.
 struct ConstructorCompare {
 	_FORCE_INLINE_ bool operator()(const DocData::MethodDoc &p_lhs, const DocData::MethodDoc &p_rhs) const {
 		// Must be a constructor (i.e. assume named for the class)
@@ -96,7 +102,7 @@ struct ConstructorCompare {
 	}
 };
 
-// Comparator for operators, compares on name and type.
+/// Comparator for operators, compares on name and type.
 struct OperatorCompare {
 	_FORCE_INLINE_ bool operator()(const DocData::MethodDoc &p_lhs, const DocData::MethodDoc &p_rhs) const {
 		if (p_lhs.name == p_rhs.name) {
@@ -112,7 +118,7 @@ struct OperatorCompare {
 	}
 };
 
-// Comparator for methods, compares on names.
+/// Comparator for methods, compares on names.
 struct MethodCompare {
 	_FORCE_INLINE_ bool operator()(const DocData::MethodDoc &p_lhs, const DocData::MethodDoc &p_rhs) const {
 		return p_lhs.name.naturalcasecmp_to(p_rhs.name) < 0;
@@ -124,7 +130,7 @@ static void merge_constructors(Vector<DocData::MethodDoc> &p_to, const Vector<Do
 	const DocData::MethodDoc *from_ptr = p_from.ptr();
 	int64_t from_size = p_from.size();
 
-	// TODO: Improve constructor merging.
+	/// @todo Improve constructor merging.
 	for (DocData::MethodDoc &to : p_to) {
 		for (int64_t from_i = 0; from_i < from_size; ++from_i) {
 			const DocData::MethodDoc &from = from_ptr[from_i];
@@ -407,23 +413,23 @@ void DocTools::generate(BitField<GenerateFlags> p_flags) {
 
 	// Add ClassDB-exposed classes.
 	{
-		List<StringName> classes;
+		LocalVector<StringName> classes;
 		if (p_flags.has_flag(GENERATE_FLAG_EXTENSION_CLASSES_ONLY)) {
-			ClassDB::get_extensions_class_list(&classes);
+			ClassDB::get_extensions_class_list(classes);
 		} else {
-			ClassDB::get_class_list(&classes);
+			ClassDB::get_class_list(classes);
 			// Move ProjectSettings, so that other classes can register properties there.
-			classes.move_to_back(classes.find("ProjectSettings"));
+			classes.erase("ProjectSettings");
+			classes.push_back("ProjectSettings");
 		}
 
 		bool skip_setter_getter_methods = true;
 
 		// Populate documentation data for each exposed class.
-		while (classes.size()) {
-			const String &name = classes.front()->get();
+		for (uint32_t classes_idx = 0; classes_idx < classes.size(); classes_idx++) {
+			const String &name = classes[classes_idx];
 			if (!ClassDB::is_class_exposed(name)) {
 				print_verbose(vformat("Class '%s' is not exposed, skipping.", name));
-				classes.pop_front();
 				continue;
 			}
 
@@ -728,8 +734,6 @@ void DocTools::generate(BitField<GenerateFlags> p_flags) {
 
 				c.theme_properties.sort();
 			}
-
-			classes.pop_front();
 		}
 	}
 
@@ -969,7 +973,7 @@ void DocTools::generate(BitField<GenerateFlags> p_flags) {
 		List<Engine::Singleton> singletons;
 		Engine::get_singleton()->get_singletons(&singletons);
 
-		// FIXME: this is kind of hackish...
+		/// @todo FIXME: This is kind of hackish...
 		for (const Engine::Singleton &s : singletons) {
 			DocData::PropertyDoc pd;
 			if (!s.ptr) {

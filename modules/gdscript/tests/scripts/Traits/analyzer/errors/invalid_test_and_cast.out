@@ -1,0 +1,3 @@
+GDTEST_ANALYZER_ERROR
+>> ERROR at line 19: Expression is of type "Hen" so it can't be of type "Shearable".
+>> ERROR at line 21: Invalid cast. Cannot convert from "FluffySheep" to "Shearable".

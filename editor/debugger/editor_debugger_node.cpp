@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_debugger_node.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_debugger_node.h"
 
 #include "core/object/undo_redo.h"

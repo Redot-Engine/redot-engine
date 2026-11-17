@@ -32,15 +32,17 @@
 
 #pragma once
 
+/**
+ * @file webxr_interface_js.h
+ *
+ * @brief The WebXR interface is a VR/AR interface that can be used on the web.
+ */
+
 #ifdef WEB_ENABLED
 
 #include "servers/xr/xr_controller_tracker.h"
 #include "servers/xr/xr_hand_tracker.h"
 #include "webxr_interface.h"
-
-/**
-	The WebXR interface is a VR/AR interface that can be used on the web.
-*/
 
 namespace GLES3 {
 class TextureStorage;
@@ -143,10 +145,12 @@ public:
 
 	void _on_input_event(int p_event_type, int p_input_source_id);
 
-	// Internal setters used by callbacks from Emscripten.
+	/// @name Internal setters used by callbacks from Emscripten.
+	/// @{
 	inline void _set_reference_space_type(String p_reference_space_type) { reference_space_type = p_reference_space_type; }
 	inline void _set_enabled_features(String p_enabled_features) { enabled_features = p_enabled_features; }
 	void _set_environment_blend_mode(String p_blend_mode_string);
+	/// @}
 
 	WebXRInterfaceJS();
 	~WebXRInterfaceJS();

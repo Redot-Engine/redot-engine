@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_render_model.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/node_3d.h"
 
 #include <openxr/openxr.h>

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file marker_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "marker_2d.h"
 
 void Marker2D::_draw_cross() {

@@ -32,7 +32,13 @@
 
 #pragma once
 
-#include "servers/rendering_server.h"
+/**
+ * @file renderer_fog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
+#include "servers/rendering/rendering_server.h"
 
 class RendererFog {
 public:

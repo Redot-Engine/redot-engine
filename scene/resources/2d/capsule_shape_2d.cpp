@@ -30,11 +30,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file capsule_shape_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "capsule_shape_2d.h"
 
 #include "core/math/geometry_2d.h"
-#include "servers/physics_server_2d.h"
-#include "servers/rendering_server.h"
+#include "servers/physics_2d/physics_server_2d.h"
+#include "servers/rendering/rendering_server.h"
 
 Vector<Vector2> CapsuleShape2D::_get_points() const {
 	Vector<Vector2> points;

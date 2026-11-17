@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_scene_importer_gltf.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_scene_importer_gltf.h"
 
 #include "../gltf_defines.h"

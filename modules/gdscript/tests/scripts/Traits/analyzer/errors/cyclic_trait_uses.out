@@ -1,0 +1,3 @@
+GDTEST_ANALYZER_ERROR
+>> ERROR at line 5: Cyclic use of trait. "TraitA" trait can not use trait that uses it.
+>> ERROR at line 2: Cyclic use of trait. "TraitB" trait can not use trait that uses it.

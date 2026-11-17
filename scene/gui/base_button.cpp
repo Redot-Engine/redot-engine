@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file base_button.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "base_button.h"
 
 #include "core/config/project_settings.h"

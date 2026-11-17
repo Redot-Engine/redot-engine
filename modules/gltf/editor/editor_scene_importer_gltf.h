@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_scene_importer_gltf.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/import/3d/resource_importer_scene.h"
 
 class Animation;

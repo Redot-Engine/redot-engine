@@ -30,13 +30,19 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_hand_tracking_extension.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_hand_tracking_extension.h"
 
 #include "../openxr_api.h"
 
 #include "core/config/project_settings.h"
 #include "core/string/print_string.h"
-#include "servers/xr_server.h"
+#include "servers/xr/xr_server.h"
 
 #include <openxr/openxr.h>
 

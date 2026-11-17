@@ -1,0 +1,2 @@
+GDTEST_ANALYZER_ERROR
+>> ERROR at line 2: "Variant" is already nullable, so the "?" suffix is not allowed.

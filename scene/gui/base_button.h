@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file base_button.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/input/shortcut.h"
 #include "scene/gui/control.h"
 
@@ -110,7 +116,7 @@ public:
 	bool is_pressing() const; ///< return whether button is pressed (toggled in)
 	bool is_hovered() const;
 
-	void set_pressed(bool p_pressed); // Only works in toggle mode.
+	void set_pressed(bool p_pressed); ///< Only works in toggle mode.
 	void set_pressed_no_signal(bool p_pressed);
 	void set_toggle_mode(bool p_on);
 	bool is_toggle_mode() const;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file thorvg_svg_in_ot.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "thorvg_svg_in_ot.h"
 
 #ifdef GDEXTENSION

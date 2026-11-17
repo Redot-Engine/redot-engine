@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_controller_tracker.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "xr_controller_tracker.h"
 
 #include "core/input/input.h"

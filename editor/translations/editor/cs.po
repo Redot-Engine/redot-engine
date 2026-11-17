@@ -19848,3 +19848,6 @@ msgstr ""
 "clip prostoru. Definice clip prostoru se ve verzi 4.3 změnila, takže pokud "
 "byl tento kód napsán před verzí 4.3, nebude nadále fungovat. Zvažte přímé "
 "zadání z-komponenty clip prostoru, tj. použijte `vec4(VERTEX.xy, 1.0, 1.0)`."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Příliš mnoho skriptů k otevření v externím editoru (max. 128)."

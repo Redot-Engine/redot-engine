@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file project_list.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/config_file.h"
 #include "core/os/time.h"
 #include "scene/gui/box_container.h"
@@ -111,7 +117,7 @@ public:
 		TAGS,
 	};
 
-	// Can often be passed by copy.
+	/// Can often be passed by copy.
 	struct Item {
 		String project_name;
 		String description;
@@ -195,11 +201,12 @@ private:
 	String _search_term;
 	FilterOption _order_option = FilterOption::EDIT_DATE;
 	HashSet<String> _selected_project_paths;
-	String _last_clicked; // Project key
+	String _last_clicked; ///< Project key
 
 	VBoxContainer *project_list_vbox = nullptr;
 
-	// Projects scan.
+	/// @name Projects scan
+	/// @{
 
 	struct ScanData {
 		Thread *thread = nullptr;
@@ -212,40 +219,48 @@ private:
 
 	static void _scan_thread(void *p_scan_data);
 	void _scan_finished();
+	/// @}
 
-	// Initialization & loading.
+	/// @name Initialization & loading
+	/// @{
 
 	void _migrate_config();
 
+	/// Load project data from p_property_key and return it in a ProjectList::Item.
+	/// @param p_favorite is passed directly into the Item.
 	static Item load_project_data(const String &p_property_key, bool p_favorite);
 	void _update_icons_async();
 	void _load_project_icon(int p_index);
-
-	// Project list updates.
+	/// @}
+	/// @name Project list updates
+	/// @{
 
 	static void _scan_folder_recursive(const String &p_path, List<String> *r_projects, const SafeFlag &p_scan_active);
-
-	// Project list items.
+	/// @}
+	/// @name Project list items
+	/// @{
 
 	void _create_project_item_control(int p_index);
+	/// This method adds to the selection or removes from the selection.
 	void _toggle_project(int p_index);
 	void _remove_project(int p_index, bool p_update_settings);
 
 	void _list_item_input(const Ref<InputEvent> &p_ev, Node *p_hb);
 	void _on_favorite_pressed(Node *p_hb);
 	void _on_explore_pressed(const String &p_path);
-
-	// Project list selection.
-
+	/// @}
+	/// @name Project list selection
+	/// @{
 	void _clear_project_selection();
 	void _select_project_nocheck(int p_index);
 	void _deselect_project_nocheck(int p_index);
 	void _select_project_range(int p_begin, int p_end);
-
-	// Global menu integration.
-
+	/// @}
+	/// @name Global menu integration
+	/// @{
 	void _global_menu_new_window(const Variant &p_tag);
 	void _global_menu_open_project(const Variant &p_tag);
+	/// @}
 
 protected:
 	void _notification(int p_what);
@@ -258,30 +273,39 @@ public:
 
 	static bool project_feature_looks_like_version(const String &p_feature);
 
-	// Initialization & loading.
-
+	/// @name Initialization & loading
+	/// @{
 	void save_config();
-
-	// Project list updates.
+	/// @}
+	/// @name Project list updates
+	/// @{
 
 	void load_project_list();
+	/// This is a full, hard reload of the list. Don't call this unless really required, it's expensive.
+	/// If you have 150 projects, it may read through 150 files on your disk at once + load 150 icons.
+	/// @todo FIXME: Does it really have to be a full, hard reload? Runtime updates should be made much cheaper.
 	void update_project_list();
 	void sort_projects();
 	int get_project_count() const;
 
 	void find_projects(const String &p_path);
 	void find_projects_multiple(const PackedStringArray &p_paths);
-
-	// Project list items.
-
+	/// @}
+	/// @name Project list items
+	/// @{
 	void add_project(const String &dir_path, bool favorite);
 	void set_project_version(const String &p_project_path, int version);
+	/// Reloads information about a specific project.
+	/// If it wasn't loaded and should be in the list, it is added (i.e new project).
+	/// If it isn't in the list anymore, it is removed.
+	/// If it is in the list but doesn't exist anymore, it is marked as missing.
 	int refresh_project(const String &dir_path);
 	void ensure_project_visible(int p_index);
 	int get_index(const ProjectListItemControl *p_control) const;
-
-	// Project list selection.
-
+	/// @}
+	/// @name Project list selection
+	/// @{
+	/// This method keeps only one project selected.
 	void select_project(int p_index);
 	void deselect_project(int p_index);
 	void select_first_visible_project();
@@ -289,21 +313,21 @@ public:
 	const HashSet<String> &get_selected_project_keys() const;
 	int get_single_selected_index() const;
 	void erase_selected_projects(bool p_delete_project_contents);
-
-	// Missing projects.
-
+	/// @}
+	/// @name Missing projects
+	/// @{
 	bool is_any_project_missing() const;
 	void erase_missing_projects();
-
-	// Project list sorting and filtering.
-
+	/// @}
+	/// @name Project list sorting and filtering
+	/// @{
 	void set_search_term(String p_search_term);
 	void add_search_tag(const String &p_tag);
 	void set_order_option(int p_option);
-
-	// Global menu integration.
-
+	/// @}
+	/// @name Global menu integration
+	/// @{
 	void update_dock_menu();
-
+	/// @}
 	ProjectList();
 };

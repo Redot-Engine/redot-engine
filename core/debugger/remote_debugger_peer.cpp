@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file remote_debugger_peer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "remote_debugger_peer.h"
 
 #include "core/config/project_settings.h"

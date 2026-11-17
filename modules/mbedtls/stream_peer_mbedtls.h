@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file stream_peer_mbedtls.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "tls_context_mbedtls.h"
 
 #include "core/io/stream_peer_tls.h"

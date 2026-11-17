@@ -73,11 +73,11 @@ String DisplayServerWayland::_get_app_id_from_context(Context p_context) {
 
 	switch (p_context) {
 		case CONTEXT_EDITOR: {
-			app_id = "org.godotengine.Editor";
+			app_id = "org.redotengine.Editor";
 		} break;
 
 		case CONTEXT_PROJECTMAN: {
-			app_id = "org.godotengine.ProjectManager";
+			app_id = "org.redotengine.ProjectManager";
 		} break;
 
 		case CONTEXT_ENGINE:
@@ -86,7 +86,7 @@ String DisplayServerWayland::_get_app_id_from_context(Context p_context) {
 			if (config_name.length() != 0) {
 				app_id = config_name;
 			} else {
-				app_id = "org.godotengine.Redot";
+				app_id = "org.redotengine.Redot";
 			}
 		}
 	}
@@ -752,9 +752,9 @@ void DisplayServerWayland::show_window(WindowID p_window_id) {
 
 	if (!wd.visible) {
 		DEBUG_LOG_WAYLAND(vformat("Showing window %d", p_window_id));
-		// Showing this window will reset its mode with whatever the compositor
-		// reports. We'll save the mode beforehand so that we can reapply it later.
-		// TODO: Fix/Port/Move/Whatever to `WaylandThread` APIs.
+		/// Showing this window will reset its mode with whatever the compositor
+		/// reports. We'll save the mode beforehand so that we can reapply it later.
+		/// @todo Fix/Port/Move/Whatever to `WaylandThread` APIs.
 		WindowMode setup_mode = wd.mode;
 
 		// Let's determine the closest toplevel. For toplevels it will be themselves,
@@ -788,6 +788,39 @@ void DisplayServerWayland::show_window(WindowID p_window_id) {
 			if (wd.rect_changed_callback.is_valid()) {
 				wd.rect_changed_callback.call(wd.rect);
 			}
+
+			// After window_create, the compositor may have sent a configure event with the
+			// actual tiling size (e.g. Hyprland). Sync wd.rect.size to the physical size
+			// NOW, before creating the EGL/Vulkan surface.
+			{
+				struct wl_surface *wl_surf = wayland_thread.window_get_wl_surface(p_window_id);
+				WaylandThread::WindowState *ws = wayland_thread.wl_surface_get_window_state(wl_surf);
+				if (ws) {
+					double win_scale = WaylandThread::window_state_get_scale_factor(ws);
+					Size2i physical_size = WaylandThread::scale_vector2i(ws->rect.size, win_scale);
+					if (physical_size != Size2i()) {
+						print_verbose(vformat("[display_server_wayland.cpp|show_window] Compositor physical size %s differs from requested %s, "
+											  "syncing before EGL surface creation",
+								physical_size, wd.rect.size));
+						wd.rect.size = physical_size;
+					}
+
+					// IMPORTANT: The wayland_thread.window_create() method above calls
+					// wl_surface_commit() without a buffer.  That, alone, should probably be done differently.
+					// The buffer scale is normally deferred to the first frame callback
+					// (wayland_thread.cpp::_frame_wl_callback_on_done),
+					// but the EGL surface and VkSurfaceKHR have already been created by then.
+					// So, wl_surface reports an undefined size while the
+					// wl_egl_window has the correct physical buffer size, and the
+					// Vulkan swap chain gets created at the wrong dimensions for the frame.
+					// Setting it here ensures the wl_surface size matches the wl_egl_window buffer for the first frame.
+					int buffer_scale = (win_scale >= 1.0) ? int(win_scale) : 1;
+					if (ws->buffer_scale != buffer_scale) {
+						wl_surface_set_buffer_scale(wl_surf, buffer_scale);
+					}
+				}
+			}
+
 		} else {
 			DEBUG_LOG_WAYLAND("!!!!! Making popup !!!!!");
 
@@ -1587,6 +1620,29 @@ void DisplayServerWayland::try_suspend() {
 	bool frame = wayland_thread.wait_frame_suspend_ms(WAYLAND_MAX_FRAME_TIME_US / 1000);
 	if (!frame) {
 		suspend_state = SuspendState::TIMEOUT;
+	}
+}
+
+void DisplayServerWayland::force_process_and_drop_events() {
+	ERR_FAIL_COND(!Thread::is_main_thread());
+
+	MutexLock mutex_lock(wayland_thread.mutex);
+	LocalVector<Ref<WaylandThread::Message>> deferred_messages;
+	while (wayland_thread.has_message()) {
+		Ref<WaylandThread::Message> msg = wayland_thread.pop_message();
+		Ref<WaylandThread::WindowEventMessage> window_event = msg;
+		if (window_event.is_valid() && window_event->id == MAIN_WINDOW_ID && window_event->event == WINDOW_EVENT_CLOSE_REQUEST) {
+			main_window_close_requested = true;
+			continue;
+		}
+		Ref<WaylandThread::WindowRectMessage> window_rect = msg;
+		if (window_rect.is_valid() || window_event.is_valid()) {
+			// Apply window state changes after continuing, without running callbacks while paused.
+			deferred_messages.push_back(msg);
+		}
+	}
+	for (const Ref<WaylandThread::Message> &msg : deferred_messages) {
+		wayland_thread.push_message(msg);
 	}
 }
 

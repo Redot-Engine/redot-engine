@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file d3d12_hooks.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "d3d12_hooks.h"
 
 D3D12Hooks *D3D12Hooks::singleton = nullptr;

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file resource_format_binary.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
@@ -136,7 +142,8 @@ class ResourceFormatSaverBinaryInstance {
 	String magic;
 	HashSet<Ref<Resource>> resource_set;
 
-	struct NonPersistentKey { //for resource properties generated on the fly
+	/// For resource properties generated on the fly
+	struct NonPersistentKey {
 		Ref<Resource> base;
 		StringName property;
 		bool operator<(const NonPersistentKey &p_key) const { return base == p_key.base ? property < p_key.property : base < p_key.base; }
@@ -172,8 +179,7 @@ public:
 		FORMAT_FLAG_REAL_T_IS_DOUBLE = 4,
 		FORMAT_FLAG_HAS_SCRIPT_CLASS = 8,
 
-		// Amount of reserved 32-bit fields in resource header
-		RESERVED_FIELDS = 11
+		RESERVED_FIELDS = 11 ///< Amount of reserved 32-bit fields in resource header
 	};
 	Error save(const String &p_path, const Ref<Resource> &p_resource, uint32_t p_flags = 0);
 	Error set_uid(const String &p_path, ResourceUID::ID p_uid);

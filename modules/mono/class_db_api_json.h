@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file class_db_api_json.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef DEBUG_ENABLED
 
 #include "core/object/class_db.h"

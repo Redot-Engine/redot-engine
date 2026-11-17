@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file node_3d_editor_gizmos.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "node_3d_editor_gizmos.h"
 
 #include "core/math/geometry_2d.h"
@@ -869,6 +875,7 @@ void EditorNode3DGizmo::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_hidden", "hidden"), &EditorNode3DGizmo::set_hidden);
 	ClassDB::bind_method(D_METHOD("is_subgizmo_selected", "id"), &EditorNode3DGizmo::is_subgizmo_selected);
 	ClassDB::bind_method(D_METHOD("get_subgizmo_selection"), &EditorNode3DGizmo::get_subgizmo_selection);
+	ClassDB::bind_method(D_METHOD("is_selected"), &EditorNode3DGizmo::is_selected);
 
 	GDVIRTUAL_BIND(_redraw);
 	GDVIRTUAL_BIND(_get_handle_name, "id", "secondary");

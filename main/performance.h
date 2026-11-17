@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file performance.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/class_db.h"
 #include "core/templates/hash_map.h"
 
@@ -92,6 +98,7 @@ public:
 		PHYSICS_3D_COLLISION_PAIRS,
 		PHYSICS_3D_ISLAND_COUNT,
 		AUDIO_OUTPUT_LATENCY,
+		// Deprecated, use the 2D/3D specific ones instead.
 		NAVIGATION_ACTIVE_MAPS,
 		NAVIGATION_REGION_COUNT,
 		NAVIGATION_AGENT_COUNT,
@@ -117,6 +124,7 @@ public:
 		NAVIGATION_2D_EDGE_CONNECTION_COUNT,
 		NAVIGATION_2D_EDGE_FREE_COUNT,
 		NAVIGATION_2D_OBSTACLE_COUNT,
+#ifndef _3D_DISABLED
 		NAVIGATION_3D_ACTIVE_MAPS,
 		NAVIGATION_3D_REGION_COUNT,
 		NAVIGATION_3D_AGENT_COUNT,
@@ -127,6 +135,7 @@ public:
 		NAVIGATION_3D_EDGE_CONNECTION_COUNT,
 		NAVIGATION_3D_EDGE_FREE_COUNT,
 		NAVIGATION_3D_OBSTACLE_COUNT,
+#endif // _3D_DISABLED
 		MONITOR_MAX
 	};
 

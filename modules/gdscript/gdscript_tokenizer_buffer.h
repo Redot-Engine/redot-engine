@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdscript_tokenizer_buffer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_tokenizer.h"
 
 class GDScriptTokenizerBuffer : public GDScriptTokenizer {
@@ -41,7 +47,7 @@ public:
 		COMPRESS_ZSTD,
 	};
 
-	static constexpr uint32_t TOKENIZER_VERSION = 101;
+	static constexpr uint32_t TOKENIZER_VERSION = 104;
 	static constexpr uint32_t TOKEN_BYTE_MASK = 0x80;
 	static constexpr uint32_t TOKEN_BITS = 8;
 	static constexpr uint32_t TOKEN_MASK = (1 << (TOKEN_BITS - 1)) - 1;
@@ -57,7 +63,7 @@ public:
 
 	bool multiline_mode = false;
 	List<int> indent_stack;
-	List<List<int>> indent_stack_stack; // For lambdas, which require manipulating the indentation point.
+	List<List<int>> indent_stack_stack; ///< For lambdas, which require manipulating the indentation point.
 	int pending_indents = 0;
 	bool last_token_was_newline = false;
 
@@ -77,8 +83,8 @@ public:
 	virtual void set_cursor_position(int p_line, int p_column) override;
 	virtual void set_multiline_mode(bool p_state) override;
 	virtual bool is_past_cursor() const override;
-	virtual void push_expression_indented_block() override; // For lambdas, or blocks inside expressions.
-	virtual void pop_expression_indented_block() override; // For lambdas, or blocks inside expressions.
+	virtual void push_expression_indented_block() override; ///< For lambdas, or blocks inside expressions.
+	virtual void pop_expression_indented_block() override; ///< For lambdas, or blocks inside expressions.
 	virtual bool is_text() override { return false; }
 
 #ifdef TOOLS_ENABLED

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file fog_volume.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "fog_volume.h"
 
 #include "scene/main/viewport.h"

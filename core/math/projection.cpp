@@ -30,7 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file projection.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "projection.h"
+
+#include "core/math/simd.h"
 
 #include "core/math/aabb.h"
 #include "core/math/math_funcs.h"
@@ -88,6 +96,18 @@ Vector4 Projection::xform(const Vector4 &p_vec4) const {
 			columns[0][3] * p_vec4.x + columns[1][3] * p_vec4.y + columns[2][3] * p_vec4.z + columns[3][3] * p_vec4.w);
 }
 Vector4 Projection::xform_inv(const Vector4 &p_vec4) const {
+#ifdef GODOT_SIMD_REAL_F32X4
+	using namespace simd;
+	f32x4 r0 = load4(columns[0].coord);
+	f32x4 r1 = load4(columns[1].coord);
+	f32x4 r2 = load4(columns[2].coord);
+	f32x4 r3 = load4(columns[3].coord);
+	transpose4(r0, r1, r2, r3);
+	f32x4 v = load4(p_vec4.coord);
+	Vector4 ret;
+	store4(ret.coord, ((r0 * splat_lane<0>(v) + r1 * splat_lane<1>(v)) + r2 * splat_lane<2>(v)) + r3 * splat_lane<3>(v));
+	return ret;
+#endif
 	return Vector4(
 			columns[0][0] * p_vec4.x + columns[0][1] * p_vec4.y + columns[0][2] * p_vec4.z + columns[0][3] * p_vec4.w,
 			columns[1][0] * p_vec4.x + columns[1][1] * p_vec4.y + columns[1][2] * p_vec4.z + columns[1][3] * p_vec4.w,
@@ -245,7 +265,7 @@ Projection Projection::flipped_y() const {
 	return proj;
 }
 
-Projection Projection ::jitter_offseted(const Vector2 &p_offset) const {
+Projection Projection::jitter_offseted(const Vector2 &p_offset) const {
 	Projection proj = *this;
 	proj.add_jitter_offset(p_offset);
 	return proj;
@@ -404,33 +424,19 @@ void Projection::set_frustum(real_t p_size, real_t p_aspect, Vector2 p_offset, r
 }
 
 real_t Projection::get_z_far() const {
-	// NOTE: This assumes z-facing near and far planes, i.e. that :
-	// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
-	// - near and far planes are z-facing (i.e. columns[0][2] and [1][2] == 0)
 	return (columns[3][3] - columns[3][2]) / (columns[2][3] - columns[2][2]);
 }
 
 real_t Projection::get_z_near() const {
-	// NOTE: This assumes z-facing near and far planes, i.e. that :
-	// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
-	// - near and far planes are z-facing (i.e. columns[0][2] and [1][2] == 0)
 	return (columns[3][3] + columns[3][2]) / (columns[2][3] + columns[2][2]);
 }
 
 Vector2 Projection::get_viewport_half_extents() const {
-	// NOTE: This assumes a symmetrical frustum, i.e. that :
-	// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
-	// - the projection plane is rectangular (i.e. columns[0][2] and [1][2] == 0 if columns[2][3] != 0)
-	// - there is no offset / skew (i.e. columns[2][0] == columns[2][1] == 0)
 	real_t w = -get_z_near() * columns[2][3] + columns[3][3];
 	return Vector2(w / columns[0][0], w / columns[1][1]);
 }
 
 Vector2 Projection::get_far_plane_half_extents() const {
-	// NOTE: This assumes a symmetrical frustum, i.e. that :
-	// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
-	// - the projection plane is rectangular (i.e. columns[0][2] and [1][2] == 0 if columns[2][3] != 0)
-	// - there is no offset / skew (i.e. columns[2][0] == columns[2][1] == 0)
 	real_t w = -get_z_far() * columns[2][3] + columns[3][3];
 	return Vector2(w / columns[0][0], w / columns[1][1]);
 }
@@ -462,12 +468,6 @@ bool Projection::get_endpoints(const Transform3D &p_transform, Vector3 *p_8point
 }
 
 Vector<Plane> Projection::get_projection_planes(const Transform3D &p_transform) const {
-	/** Fast Plane Extraction from combined modelview/projection matrices.
-	 * References:
-	 * https://web.archive.org/web/20011221205252/https://www.markmorley.com/opengl/frustumculling.html
-	 * https://web.archive.org/web/20061020020112/https://www2.ravensoft.com/users/ggribb/plane%20extraction.pdf
-	 */
-
 	Vector<Plane> planes;
 	planes.resize(6);
 
@@ -551,8 +551,6 @@ Projection Projection::inverse() const {
 }
 
 void Projection::invert() {
-	// Adapted from Mesa's `src/util/u_math.c` `util_invert_mat4x4`.
-	// MIT licensed. Copyright 2008 VMware, Inc. Authored by Jacques Leroy.
 	Projection temp;
 	real_t *out = (real_t *)temp.columns;
 	real_t *m = (real_t *)columns;
@@ -786,8 +784,8 @@ bool Projection::is_same(const Projection &p_cam) const {
 	return columns[0].is_same(p_cam.columns[0]) && columns[1].is_same(p_cam.columns[1]) && columns[2].is_same(p_cam.columns[2]) && columns[3].is_same(p_cam.columns[3]);
 }
 
+/// p_remap_z is used to convert from OpenGL-style clip space (-1 - 1) to Vulkan style (0 - 1).
 void Projection::set_depth_correction(bool p_flip_y, bool p_reverse_z, bool p_remap_z) {
-	// p_remap_z is used to convert from OpenGL-style clip space (-1 - 1) to Vulkan style (0 - 1).
 	real_t *m = &columns[0][0];
 
 	m[0] = 1;
@@ -858,32 +856,21 @@ Projection::operator String() const {
 }
 
 real_t Projection::get_aspect() const {
-	// NOTE: This assumes a rectangular projection plane, i.e. that :
-	// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
-	// - the projection plane is rectangular (i.e. columns[0][2] and [1][2] == 0 if columns[2][3] != 0)
 	return columns[1][1] / columns[0][0];
 }
 
 int Projection::get_pixels_per_meter(int p_for_pixel_width) const {
-	// NOTE: This assumes a rectangular projection plane, i.e. that :
-	// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
-	// - the projection plane is rectangular (i.e. columns[0][2] and [1][2] == 0 if columns[2][3] != 0)
 	real_t width = 2 * (-get_z_near() * columns[2][3] + columns[3][3]) / columns[0][0];
 	return p_for_pixel_width / width; // Note : return type should be real_t (kept as int for compatibility for now).
 }
 
 bool Projection::is_orthogonal() const {
-	// NOTE: This assumes that the matrix is a projection across z-axis
-	// i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0
 	return columns[2][3] == 0.0;
 }
 
 real_t Projection::get_fov() const {
-	// NOTE: This assumes a rectangular projection plane, i.e. that :
-	// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
-	// - the projection plane is rectangular (i.e. columns[0][2] and [1][2] == 0 if columns[2][3] != 0)
 	if (columns[2][0] == 0) {
-		return Math::rad_to_deg(2 * Math::atan2(1, columns[0][0]));
+		return Math::rad_to_deg(2 * std::atan2(1, columns[0][0]));
 	} else {
 		// The frustum is asymmetrical so we need to calculate the left and right angles separately.
 		real_t right = Math::atan2(columns[2][0] + 1, columns[0][0]);
@@ -893,9 +880,6 @@ real_t Projection::get_fov() const {
 }
 
 real_t Projection::get_lod_multiplier() const {
-	// NOTE: This assumes a rectangular projection plane, i.e. that :
-	// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
-	// - the projection plane is rectangular (i.e. columns[0][2] and [1][2] == 0 if columns[2][3] != 0)
 	return 2 / columns[0][0];
 }
 

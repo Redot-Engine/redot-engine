@@ -1,0 +1,17 @@
+GDTEST_OK
+var trait_group_name: int
+@export_group("trait_group_name")
+var group_value: int
+@export_category("queue_free")
+var category_value: int
+@export_subgroup("First-position Subgroup")
+var subgroup_value: int
+@export_group("trait_group_name")
+var repeated_group_value: int
+@export_group("inherited_group_name")
+var inherited_group_value: int
+var inherited_group_name: int
+var left_value: int
+@export_group("Shared Trait")
+var shared_value: int
+var right_value: int

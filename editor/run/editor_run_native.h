@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_run_native.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/box_container.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/menu_button.h"

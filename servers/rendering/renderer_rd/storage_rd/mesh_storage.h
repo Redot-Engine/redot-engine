@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file mesh_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../../rendering_server_globals.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/rid_owner.h"
@@ -69,7 +75,8 @@ private:
 
 	RID default_rd_storage_buffer;
 
-	/* Mesh */
+	/// @name Mesh
+	/// @{
 
 	RID mesh_default_rd_buffers[DEFAULT_RD_BUFFER_MAX];
 
@@ -106,8 +113,8 @@ private:
 				RID vertex_array;
 			};
 
-			SpinLock version_lock; //needed to access versions
-			Version *versions = nullptr; //allocated on demand
+			SpinLock version_lock; ///< Needed to access versions
+			Version *versions = nullptr; ///< Allocated on demand
 			uint32_t version_count = 0;
 
 			RID index_buffer;
@@ -130,8 +137,8 @@ private:
 
 			Vector<AABB> bone_aabbs;
 
-			// Transform used in runtime bone AABBs compute.
-			// As bone AABBs are saved in Mesh space, but bones animation is in Skeleton space.
+			/// Transform used in runtime bone AABBs compute.
+			/// As bone AABBs are saved in Mesh space, but bones animation is in Skeleton space.
 			Transform3D mesh_to_skeleton_xform;
 
 			Vector4 uv_scale;
@@ -179,8 +186,9 @@ private:
 	};
 
 	mutable RID_Owner<Mesh, true> mesh_owner;
-
-	/* Mesh Instance API */
+	/// @}
+	/// @name Mesh Instance API
+	/// @{
 
 	struct MeshInstance {
 		Mesh *mesh = nullptr;
@@ -192,14 +200,14 @@ private:
 			uint32_t previous_buffer = 0;
 			uint64_t last_change = 0;
 
-			Mesh::Surface::Version *versions = nullptr; //allocated on demand
+			Mesh::Surface::Version *versions = nullptr; ///< Allocated on demand
 			uint32_t version_count = 0;
 		};
 		LocalVector<Surface> surfaces;
 		LocalVector<float> blend_weights;
 
 		RID blend_weights_buffer;
-		List<MeshInstance *>::Element *I = nullptr; //used to erase itself
+		List<MeshInstance *>::Element *I = nullptr; ///< Used to erase itself
 		uint64_t skeleton_version = 0;
 		bool dirty = false;
 		bool weights_dirty = false;
@@ -223,8 +231,9 @@ private:
 
 	SelfList<MeshInstance>::List dirty_mesh_instance_weights;
 	SelfList<MeshInstance>::List dirty_mesh_instance_arrays;
-
-	/* MultiMesh */
+	/// @}
+	/// @name MultiMesh
+	/// @{
 
 	struct MultiMesh {
 		RID mesh;
@@ -246,16 +255,16 @@ private:
 		uint32_t color_offset_cache = 0;
 		uint32_t custom_data_offset_cache = 0;
 
-		Vector<float> data_cache; //used if individual setting is used
+		Vector<float> data_cache; ///< Used if individual setting is used
 		bool *data_cache_dirty_regions = nullptr;
 		uint32_t data_cache_dirty_region_count = 0;
 		bool *previous_data_cache_dirty_regions = nullptr;
 		uint32_t previous_data_cache_dirty_region_count = 0;
 
-		RID buffer; //storage buffer
+		RID buffer; ///< Storage buffer
 		RID uniform_set_3d;
 		RID uniform_set_2d;
-		RID command_buffer; //used if indirect setting is used
+		RID command_buffer; ///< Used if indirect setting is used
 
 		bool dirty = false;
 		MultiMesh *dirty_list = nullptr;
@@ -276,8 +285,9 @@ private:
 	_FORCE_INLINE_ void _multimesh_mark_dirty(MultiMesh *multimesh, int p_index, bool p_aabb);
 	_FORCE_INLINE_ void _multimesh_mark_all_dirty(MultiMesh *multimesh, bool p_data, bool p_aabb);
 	_FORCE_INLINE_ void _multimesh_re_create_aabb(MultiMesh *multimesh, const float *p_data, int p_instances);
-
-	/* Skeleton */
+	/// @}
+	/// @name Skeleton
+	/// @{
 
 	struct SkeletonShader {
 		struct PushConstant {
@@ -353,6 +363,7 @@ private:
 		ATTRIBUTE_LOCATION_PREV_NORMAL = 13,
 		ATTRIBUTE_LOCATION_PREV_TANGENT = 14
 	};
+	/// @}
 
 public:
 	static MeshStorage *get_singleton();
@@ -364,7 +375,8 @@ public:
 
 	RID get_default_rd_storage_buffer() const { return default_rd_storage_buffer; }
 
-	/* MESH API */
+	/// @name MESH API
+	/// @{
 
 	bool owns_mesh(RID p_rid) { return mesh_owner.owns(p_rid); }
 
@@ -374,7 +386,7 @@ public:
 
 	virtual void mesh_set_blend_shape_count(RID p_mesh, int p_blend_shape_count) override;
 
-	/// Return stride
+	/// @return stride
 	virtual void mesh_add_surface(RID p_mesh, const RS::SurfaceData &p_surface) override;
 
 	virtual int mesh_get_blend_shape_count(RID p_mesh) const override;
@@ -632,8 +644,9 @@ public:
 	}
 
 	Dependency *mesh_get_dependency(RID p_mesh) const;
-
-	/* MESH INSTANCE API */
+	/// @}
+	/// @name MESH INSTANCE API
+	/// @{
 
 	bool owns_mesh_instance(RID p_rid) const { return mesh_instance_owner.owns(p_rid); }
 
@@ -644,8 +657,9 @@ public:
 	virtual void mesh_instance_check_for_update(RID p_mesh_instance) override;
 	virtual void mesh_instance_set_canvas_item_transform(RID p_mesh_instance, const Transform2D &p_transform) override;
 	virtual void update_mesh_instances() override;
-
-	/* MULTIMESH API */
+	/// @}
+	/// @name MULTIMESH API
+	/// @{
 
 	bool owns_multimesh(RID p_rid) { return multimesh_owner.owns(p_rid); }
 
@@ -765,8 +779,9 @@ public:
 	}
 
 	Dependency *multimesh_get_dependency(RID p_multimesh) const;
-
-	/* SKELETON API */
+	/// @}
+	/// @name SKELETON API
+	/// @{
 
 	bool owns_skeleton(RID p_rid) const { return skeleton_owner.owns(p_rid); }
 
@@ -811,6 +826,7 @@ public:
 
 		return skeleton->uniform_set_3d;
 	}
+	/// @}
 };
 
 } // namespace RendererRD

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_run.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_run.h"
 
 #include "core/config/project_settings.h"
@@ -38,7 +44,7 @@
 #include "editor/run/run_instances_dialog.h"
 #include "editor/settings/editor_settings.h"
 #include "main/main.h"
-#include "servers/display_server.h"
+#include "servers/display/display_server.h"
 
 EditorRun::Status EditorRun::get_status() const {
 	return status;

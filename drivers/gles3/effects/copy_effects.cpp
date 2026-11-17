@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file copy_effects.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "copy_effects.h"
@@ -213,7 +219,6 @@ void CopyEffects::copy_cube_to_panorama(float p_mip_level) {
 	draw_screen_quad();
 }
 
-// Intended for efficiently mipmapping textures.
 void CopyEffects::bilinear_blur(GLuint p_source_texture, int p_mipmap_count, const Rect2i &p_region) {
 	GLuint framebuffers[2];
 	glGenFramebuffers(2, framebuffers);
@@ -238,7 +243,6 @@ void CopyEffects::bilinear_blur(GLuint p_source_texture, int p_mipmap_count, con
 	glDeleteFramebuffers(2, framebuffers);
 }
 
-// Intended for approximating a gaussian blur. Used for 2D backbuffer mipmaps. Slightly less efficient than bilinear_blur().
 void CopyEffects::gaussian_blur(GLuint p_source_texture, int p_mipmap_count, const Rect2i &p_region, const Size2i &p_size) {
 	GLuint framebuffer;
 	glGenFramebuffers(1, &framebuffer);

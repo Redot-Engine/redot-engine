@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file theme_db.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "theme_db.h"
 
 #include "core/config/project_settings.h"
@@ -41,7 +47,7 @@
 #include "scene/resources/style_box.h"
 #include "scene/resources/texture.h"
 #include "scene/theme/default_theme.h"
-#include "servers/text_server.h"
+#include "servers/text/text_server.h"
 
 // Default engine theme creation and configuration.
 
@@ -202,8 +208,8 @@ void ThemeDB::get_native_type_dependencies(const StringName &p_base_type, Vector
 		return;
 	}
 
-	// TODO: It may make sense to stop at Control/Window, because their parent classes cannot be used in
-	// a meaningful way.
+	/// @todo It may make sense to stop at Control/Window,
+	/// because their parent classes cannot be used in a meaningful way.
 	if (!ClassDB::get_inheritance_chain_nocheck(p_base_type, r_result)) {
 		r_result.push_back(p_base_type);
 	}

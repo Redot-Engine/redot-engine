@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_paths.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_paths.h"
 
 #include "core/config/engine.h"

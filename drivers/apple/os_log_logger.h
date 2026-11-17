@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file os_log_logger.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/logger.h"
 
 #include <os/log.h>

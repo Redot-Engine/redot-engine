@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gltf_document_extension_physics.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gltf_document_extension_physics.h"
 
 #include "scene/3d/physics/area_3d.h"
@@ -373,7 +379,7 @@ Node3D *_generate_shape_node_and_body_if_needed(Ref<GLTFState> p_state, Ref<GLTF
 	return shape_node;
 }
 
-// Either add the child to the parent, or return the child if there is no parent.
+/// Either add the child to the parent, or return the child if there is no parent.
 Node3D *_add_physics_node_to_given_node(Node3D *p_current_node, Node3D *p_child, Ref<GLTFNode> p_gltf_node) {
 	if (!p_current_node) {
 		return p_child;
@@ -482,7 +488,7 @@ Node3D *GLTFDocumentExtensionPhysics::generate_scene_node(Ref<GLTFState> p_state
 	return ret;
 }
 
-// Export process.
+/// Export process.
 bool _are_all_faces_equal(const Vector<Face3> &p_a, const Vector<Face3> &p_b) {
 	if (p_a.size() != p_b.size()) {
 		return false;

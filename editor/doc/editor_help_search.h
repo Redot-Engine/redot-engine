@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_help_search.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/option_button.h"
@@ -209,6 +215,7 @@ class EditorHelpSearch::Runner : public RefCounted {
 	TreeItem *_create_member_item(TreeItem *p_parent, const String &p_class_name, const StringName &p_icon, const String &p_name, const String &p_text, const String &p_type, const String &p_metatype, const String &p_tooltip, const String &p_keywords, bool p_is_deprecated, bool p_is_experimental, const String &p_matching_keyword);
 
 public:
+	/// @return `true` when the search has been completed, otherwise `false`
 	bool work(uint64_t slot = 100000);
 
 	Runner(Control *p_icon_service, Tree *p_results_tree, TreeCache *p_tree_cache, const String &p_term, int p_search_flags);

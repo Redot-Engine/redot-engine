@@ -30,9 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file area_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "area_2d.h"
 
-#include "servers/audio_server.h"
+#include "servers/audio/audio_server.h"
 
 void Area2D::set_gravity_space_override_mode(SpaceOverride p_mode) {
 	gravity_space_override = p_mode;

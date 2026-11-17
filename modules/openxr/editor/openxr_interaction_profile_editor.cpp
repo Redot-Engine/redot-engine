@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_interaction_profile_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_interaction_profile_editor.h"
 #include "../openxr_api.h"
 #include "editor/editor_string_names.h"
@@ -128,9 +134,7 @@ void OpenXRInteractionProfileEditorBase::_theme_changed() {
 }
 
 void OpenXRInteractionProfileEditorBase::remove_all_for_action_set(Ref<OpenXRActionSet> p_action_set) {
-	// Note, don't need to remove bindings themselves as remove_all_for_action will be called for each before this is called.
-
-	// TODO update binding modifiers
+	/// @todo Update binding modifiers
 }
 
 void OpenXRInteractionProfileEditorBase::remove_all_for_action(Ref<OpenXRAction> p_action) {
@@ -183,7 +187,7 @@ OpenXRInteractionProfileEditorBase::OpenXRInteractionProfileEditorBase() {
 	binding_modifiers_btn = memnew(Button);
 	binding_modifiers_btn->set_tooltip_text(TTR("Edit binding modifiers"));
 	binding_modifiers_btn->connect("pressed", callable_mp(this, &OpenXRInteractionProfileEditorBase::_on_open_binding_modifiers));
-	// TODO show visual difference if there are binding modifiers for this interaction profile
+	/// @todo Show visual difference if there are binding modifiers for this interaction profile
 	toolbar_vb->add_child(binding_modifiers_btn);
 }
 
@@ -314,7 +318,7 @@ void OpenXRInteractionProfileEditor::_add_io_path(VBoxContainer *p_container, co
 				action_binding_modifiers_btn->set_button_icon(get_theme_icon(SNAME("Modifiers"), EditorStringName(EditorIcons)));
 				action_binding_modifiers_btn->connect(SceneStringName(pressed), callable_mp((Window *)action_binding_modifiers_dialog, &Window::popup_centered).bind(Size2i(500, 400)));
 				action_binding_modifiers_btn->set_accessibility_name(TTRC("Modifiers"));
-				// TODO change style of button if there are binding modifiers
+				/// @todo Change style of button if there are binding modifiers
 				action_hb->add_child(action_binding_modifiers_btn);
 
 				Button *action_rem = memnew(Button);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file surface_tool.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "surface_tool.h"
 
 #include "core/templates/a_hash_map.h"

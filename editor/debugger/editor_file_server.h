@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_file_server.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/tcp_server.h"
 #include "core/os/thread.h"
 #include "editor/file_system/editor_file_system.h"

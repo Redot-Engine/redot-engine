@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file command_queue_mt.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "command_queue_mt.h"
 
 CommandQueueMT::CommandQueueMT() {

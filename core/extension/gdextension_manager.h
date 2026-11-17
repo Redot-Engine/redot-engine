@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdextension_manager.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/extension/gdextension.h"
 
 class GDExtensionManager : public Object {

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file texture_storage.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "texture_storage.h"
@@ -954,8 +960,6 @@ void TextureStorage::texture_3d_initialize(RID p_texture, Image::Format p_format
 	_texture_set_3d_data(p_texture, p_data, true);
 }
 
-// Called internally when texture_proxy_create(p_base) is called.
-// Note: p_base is the root and p_texture is the proxy.
 void TextureStorage::texture_proxy_initialize(RID p_texture, RID p_base) {
 	Texture *texture = texture_owner.get_or_null(p_base);
 	ERR_FAIL_NULL(texture);
@@ -2025,7 +2029,7 @@ void TextureStorage::update_texture_atlas() {
 	}
 
 	{ // Atlas Texture initialize.
-		// TODO validate texture atlas size with maximum texture size
+		/// @todo Validate texture atlas size with maximum texture size
 		glGenTextures(1, &texture_atlas.texture);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture_atlas.texture);
@@ -2343,87 +2347,7 @@ void TextureStorage::_create_render_target_backbuffer(RenderTarget *rt) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	}
 }
-void GLES3::TextureStorage::check_backbuffer(RenderTarget *rt, const bool uses_screen_texture, const bool uses_depth_texture) {
-	if (rt->backbuffer != 0 && rt->backbuffer_depth != 0) {
-		return;
-	}
 
-	Config *config = Config::get_singleton();
-	bool use_multiview = rt->view_count > 1 && config->multiview_supported;
-	GLenum texture_target = use_multiview ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
-	if (rt->backbuffer_fbo == 0) {
-		glGenFramebuffers(1, &rt->backbuffer_fbo);
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, rt->backbuffer_fbo);
-	if (rt->backbuffer == 0 && uses_screen_texture) {
-		glGenTextures(1, &rt->backbuffer);
-		glBindTexture(texture_target, rt->backbuffer);
-		if (use_multiview) {
-			glTexImage3D(texture_target, 0, rt->color_internal_format, rt->size.x, rt->size.y, rt->view_count, 0, rt->color_format, rt->color_type, nullptr);
-		} else {
-			glTexImage2D(texture_target, 0, rt->color_internal_format, rt->size.x, rt->size.y, 0, rt->color_format, rt->color_type, nullptr);
-		}
-		GLES3::Utilities::get_singleton()->texture_allocated_data(rt->backbuffer, rt->size.x * rt->size.y * rt->view_count * rt->color_format_size, "Render target backbuffer color texture (3D)");
-		glTexParameteri(texture_target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(texture_target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(texture_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(texture_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-#ifndef IOS_ENABLED
-		if (use_multiview) {
-			glFramebufferTextureMultiviewOVR(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, rt->backbuffer, 0, 0, rt->view_count);
-		} else {
-#else
-		{
-#endif
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt->backbuffer, 0);
-		}
-	}
-	if (rt->backbuffer_depth == 0 && uses_depth_texture) {
-		glGenTextures(1, &rt->backbuffer_depth);
-		glBindTexture(texture_target, rt->backbuffer_depth);
-
-		GLint internal_format;
-		GLenum format;
-		GLenum type;
-		GLenum attachment;
-		int element_size;
-
-		if (rt->depth_has_stencil) {
-			internal_format = GL_DEPTH24_STENCIL8;
-			format = GL_DEPTH_STENCIL;
-			type = GL_UNSIGNED_INT_24_8;
-			attachment = GL_DEPTH_STENCIL_ATTACHMENT;
-			element_size = 4;
-		} else {
-			internal_format = GL_DEPTH_COMPONENT24;
-			format = GL_DEPTH_COMPONENT;
-			type = GL_UNSIGNED_INT;
-			attachment = GL_DEPTH_ATTACHMENT;
-			element_size = 3;
-		}
-
-		if (use_multiview) {
-			glTexImage3D(texture_target, 0, internal_format, rt->size.x, rt->size.y, rt->view_count, 0, format, type, nullptr);
-		} else {
-			glTexImage2D(texture_target, 0, internal_format, rt->size.x, rt->size.y, 0, format, type, nullptr);
-		}
-		GLES3::Utilities::get_singleton()->texture_allocated_data(rt->backbuffer_depth, rt->size.x * rt->size.y * rt->view_count * element_size, "Render target backbuffer depth texture");
-
-		glTexParameteri(texture_target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(texture_target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(texture_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(texture_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-#ifndef IOS_ENABLED
-		if (use_multiview) {
-			glFramebufferTextureMultiviewOVR(GL_FRAMEBUFFER, attachment, rt->backbuffer_depth, 0, 0, rt->view_count);
-		} else {
-#else
-		{
-#endif
-			glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, rt->backbuffer_depth, 0);
-		}
-	}
-}
 void TextureStorage::_clear_render_target(RenderTarget *rt) {
 	// there is nothing else to clear when DIRECT_TO_SCREEN is used
 	if (rt->direct_to_screen) {
@@ -2563,7 +2487,7 @@ void TextureStorage::render_target_set_size(RID p_render_target, int p_width, in
 	_update_render_target(rt);
 }
 
-// TODO: convert to Size2i internally
+/// @todo Convert to Size2i internally
 Size2i TextureStorage::render_target_get_size(RID p_render_target) const {
 	RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, Size2i());

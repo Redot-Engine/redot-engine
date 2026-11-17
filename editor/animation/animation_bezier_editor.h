@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file animation_bezier_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_track_editor.h"
 #include "core/templates/hashfuncs.h"
 
@@ -57,7 +63,7 @@ class AnimationBezierTrackEdit : public Control {
 
 	AnimationTimelineEdit *timeline = nullptr;
 	Node *root = nullptr;
-	Control *play_position = nullptr; //separate control used to draw so updates for only position changed are much faster
+	Control *play_position = nullptr; ///< Separate control used to draw so updates for only position changed are much faster
 	real_t play_position_pos = 0;
 
 	Ref<Animation> animation;
@@ -102,7 +108,9 @@ class AnimationBezierTrackEdit : public Control {
 	void _menu_selected(int p_index);
 
 	void _play_position_draw();
+	/// Check if a track is displayed in the bezier editor (track type = bezier and track not filtered).
 	bool _is_track_displayed(int p_track_index);
+	/// Check if the curves for a track are displayed in the editor (not hidden). Includes the check on the track visibility.
 	bool _is_track_curves_displayed(int p_track_index);
 
 	Vector2 insert_at_pos;
@@ -134,12 +142,12 @@ class AnimationBezierTrackEdit : public Control {
 	Vector2 scaling_selection_offset;
 	Point2 scaling_selection_pivot;
 
-	int moving_handle = 0; //0 no move -1 or +1 out, 2 both (drawing only)
+	int moving_handle = 0; ///< 0 no move -1 or +1 out, 2 both (drawing only)
 	int moving_handle_key = 0;
 	int moving_handle_track = 0;
 	Vector2 moving_handle_left;
 	Vector2 moving_handle_right;
-	int moving_handle_mode = 0; // value from Animation::HandleMode
+	int moving_handle_mode = 0; ///< value from Animation::HandleMode
 
 	struct PairHasher {
 		static _FORCE_INLINE_ uint32_t hash(const Pair<int, int> &p_value) {

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gi.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "servers/rendering/environment/renderer_gi.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_stream_wrappers.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef DEBUG_ENABLED
 
 #include "core/io/file_access.h"

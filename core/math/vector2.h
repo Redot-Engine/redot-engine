@@ -32,8 +32,15 @@
 
 #pragma once
 
+/**
+ * @file vector2.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 #include "core/math/math_funcs.h"
+#include "core/math/simd.h"
 
 class String;
 struct Vector2i;
@@ -128,6 +135,7 @@ struct [[nodiscard]] Vector2 {
 
 	Vector2 move_toward(const Vector2 &p_to, real_t p_delta) const;
 
+	/// @return The component of the vector along the given plane, specified by its normal vector.
 	Vector2 slide(const Vector2 &p_normal) const;
 	Vector2 bounce(const Vector2 &p_normal) const;
 	Vector2 reflect(const Vector2 &p_normal) const;
@@ -279,6 +287,13 @@ Vector2 Vector2::slerp(const Vector2 &p_to, real_t p_weight) const {
 
 Vector2 Vector2::cubic_interpolate(const Vector2 &p_b, const Vector2 &p_pre_a, const Vector2 &p_post_b, real_t p_weight) const {
 	Vector2 res = *this;
+#ifdef GODOT_SIMD_REAL_F32X4
+	if (simd::has_fused_cubic()) {
+		using namespace simd;
+		store2(&res.x, cubic_interpolate4_fma(load2(&x), load2(&p_b.x), load2(&p_pre_a.x), load2(&p_post_b.x), p_weight));
+		return res;
+	}
+#endif
 	res.x = Math::cubic_interpolate(res.x, p_b.x, p_pre_a.x, p_post_b.x, p_weight);
 	res.y = Math::cubic_interpolate(res.y, p_b.y, p_pre_a.y, p_post_b.y, p_weight);
 	return res;
@@ -325,9 +340,10 @@ Vector2 Vector2::direction_to(const Vector2 &p_to) const {
 	return ret;
 }
 
-// Multiplication operators required to workaround issues with LLVM using implicit conversion
-// to Vector2i instead for integers where it should not.
-
+/// @name Multiplication operators
+/// @details Required to workaround issues with LLVM using implicit conversion
+/// to Vector2i instead for integers where it should not.
+/// @{
 constexpr Vector2 operator*(float p_scalar, const Vector2 &p_vec) {
 	return p_vec * p_scalar;
 }
@@ -343,6 +359,7 @@ constexpr Vector2 operator*(int32_t p_scalar, const Vector2 &p_vec) {
 constexpr Vector2 operator*(int64_t p_scalar, const Vector2 &p_vec) {
 	return p_vec * p_scalar;
 }
+/// @}
 
 typedef Vector2 Size2;
 typedef Vector2 Point2;

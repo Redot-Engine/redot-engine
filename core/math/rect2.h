@@ -32,7 +32,14 @@
 
 #pragma once
 
+/**
+ * @file rect2.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
+#include "core/math/simd.h"
 #include "core/math/vector2.h"
 
 class String;
@@ -56,6 +63,18 @@ struct [[nodiscard]] Rect2 {
 #ifdef MATH_CHECKS
 		if (unlikely(size.x < 0 || size.y < 0 || p_rect.size.x < 0 || p_rect.size.y < 0)) {
 			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a Rect2 with a positive size.");
+		}
+#endif
+#ifdef GODOT_SIMD_REAL_F32X4
+		{
+			// Lanes: (pos.x, pos.y, o.pos.x, o.pos.y) against (o.end.x, o.end.y, end.x, end.y).
+			using namespace simd;
+			f32x4 r = load4(&position.x);
+			f32x4 o = load4(&p_rect.position.x);
+			f32x4 starts = movelh(r, o);
+			f32x4 ends = movelh(o, r) + shuffle<2, 3, 2, 3>(o, r);
+			mask4 m = p_include_borders ? cmp_gt(starts, ends) : cmp_ge(starts, ends);
+			return !any_lane(m);
 		}
 #endif
 		if (p_include_borders) {
@@ -145,7 +164,7 @@ struct [[nodiscard]] Rect2 {
 		return size.x > 0.0f && size.y > 0.0f;
 	}
 
-	// Returns the intersection between two Rect2s or an empty Rect2 if there is no intersection.
+	/// @return The intersection between two Rect2s or an empty Rect2 if there is no intersection.
 	inline Rect2 intersection(const Rect2 &p_rect) const {
 		Rect2 new_rect = p_rect;
 
@@ -163,20 +182,16 @@ struct [[nodiscard]] Rect2 {
 		return new_rect;
 	}
 
-	inline Rect2 merge(const Rect2 &p_rect) const { ///< return a merged rect
+	inline Rect2 merge(const Rect2 &p_rect) const { ///< @return A merged rect
 #ifdef MATH_CHECKS
 		if (unlikely(size.x < 0 || size.y < 0 || p_rect.size.x < 0 || p_rect.size.y < 0)) {
 			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a Rect2 with a positive size.");
 		}
 #endif
 		Rect2 new_rect;
-
 		new_rect.position = p_rect.position.min(position);
-
 		new_rect.size = (p_rect.position + p_rect.size).max(position + size);
-
 		new_rect.size = new_rect.size - new_rect.position; // Make relative again.
-
 		return new_rect;
 	}
 
@@ -252,7 +267,7 @@ struct [[nodiscard]] Rect2 {
 		return r;
 	}
 
-	inline void expand_to(const Vector2 &p_vector) { // In place function for speed.
+	inline void expand_to(const Vector2 &p_vector) { ///< In place function for speed.
 #ifdef MATH_CHECKS
 		if (unlikely(size.x < 0 || size.y < 0)) {
 			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a Rect2 with a positive size.");

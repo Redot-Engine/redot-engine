@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rb_map.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 #include "core/os/memory.h"
 #include "core/templates/pair.h"
@@ -41,7 +47,8 @@
 // based on the very nice implementation of rb-trees by:
 // https://web.archive.org/web/20120507164830/https://web.mit.edu/~emin/www/source_code/red_black_tree/index.html
 
-template <typename K, typename V, typename C = Comparator<K>, typename A = DefaultAllocator>
+// value_is_key is a hack to make the RBSet easier to implement.
+template <typename K, typename V, typename C = Comparator<K>, typename A = DefaultAllocator, bool value_is_key = false>
 class RBMap {
 	enum Color {
 		RED,
@@ -51,8 +58,7 @@ class RBMap {
 
 public:
 	class Element {
-	private:
-		friend class RBMap<K, V, C, A>;
+		friend class RBMap<K, V, C, A, value_is_key>;
 		int color = RED;
 		Element *right = nullptr;
 		Element *left = nullptr;
@@ -86,11 +92,19 @@ public:
 		const V &value() const {
 			return _data.value;
 		}
-		V &get() {
-			return _data.value;
+		auto &get() {
+			if constexpr (value_is_key) {
+				return (const K &)_data.key;
+			} else {
+				return _data.value;
+			}
 		}
-		const V &get() const {
-			return _data.value;
+		const auto &get() const {
+			if constexpr (value_is_key) {
+				return _data.key;
+			} else {
+				return _data.value;
+			}
 		}
 		Element(const KeyValue<K, V> &p_data) :
 				_data(p_data) {}
@@ -133,10 +147,20 @@ public:
 	};
 
 	struct ConstIterator {
-		_FORCE_INLINE_ const KeyValue<K, V> &operator*() const {
-			return E->key_value();
+		_FORCE_INLINE_ const auto &operator*() const {
+			if constexpr (value_is_key) {
+				return E->key();
+			} else {
+				return E->key_value();
+			}
 		}
-		_FORCE_INLINE_ const KeyValue<K, V> *operator->() const { return &E->key_value(); }
+		_FORCE_INLINE_ const auto *operator->() const {
+			if constexpr (value_is_key) {
+				return &E->key();
+			} else {
+				return &E->key_value();
+			}
+		}
 		_FORCE_INLINE_ ConstIterator &operator++() {
 			E = E->next();
 			return *this;
@@ -172,7 +196,7 @@ public:
 	}
 
 #if 0
-	//to use when replacing find()
+	/// To use when replacing find()
 	_FORCE_INLINE_ Iterator find(const K &p_key) {
 		return Iterator(find(p_key));
 	}
@@ -189,7 +213,7 @@ public:
 	}
 
 #if 0
-	//to use when replacing find()
+	/// To use when replacing find()
 	_FORCE_INLINE_ ConstIterator find(const K &p_key) const {
 		return ConstIterator(find(p_key));
 	}
@@ -736,8 +760,8 @@ public:
 		return _data.size_cache;
 	}
 
+	/// Used for debug, mostly
 	int calculate_depth() const {
-		// used for debug mostly
 		if (!_data._root) {
 			return 0;
 		}

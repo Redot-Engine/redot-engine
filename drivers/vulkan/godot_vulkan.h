@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_vulkan.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef USE_VOLK
 #include <volk.h>
 #else

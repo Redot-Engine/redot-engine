@@ -8555,7 +8555,7 @@ msgstr "சாதாரணமாகத் திருத்தவும்"
 msgid "Edit in Recovery Mode"
 msgstr "மீட்பு பயன்முறையில் திருத்து"
 
-msgid "Backup project first"
+msgid "Back up project first"
 msgstr "முதலில் காப்புப்பிரதி திட்டம்"
 
 msgid "Convert Full Project"
@@ -20375,3 +20375,6 @@ msgstr ""
 "4.3 க்கு முன்னர் எழுதப்பட்டிருந்தால், அது தொடர்ந்து செயல்படாது. கிளிப் ச்பேச் இசட்-கூறு "
 "நேரடியாகக் குறிப்பிடுவதைக் கவனியுங்கள், அதாவது `VEC4 (vertex.xy, 1.0, 1.0)` ஐப் "
 "பயன்படுத்தவும்."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "வெளிப்புற எடிட்டரில் திறக்க பல ஸ்கிரிப்டுகள் (அதிகபட்சம் 128)."

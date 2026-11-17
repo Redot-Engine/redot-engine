@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_driver_xaudio2.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_driver_xaudio2.h"
 
 #include "core/config/project_settings.h"
@@ -43,7 +49,7 @@ Error AudioDriverXAudio2::init() {
 
 	mix_rate = _get_configured_mix_rate();
 
-	// FIXME: speaker_mode seems unused in the Xaudio2 driver so far
+	/// @todo FIXME: speaker_mode seems unused in the Xaudio2 driver so far
 	speaker_mode = SPEAKER_MODE_STEREO;
 	channels = 2;
 

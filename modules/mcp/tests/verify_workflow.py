@@ -40,6 +40,11 @@ def send_request(proc, method, params, req_id=1):
     proc.stdin.flush()
 
 
+def send_notification(proc, method):
+    proc.stdin.write(json.dumps({"jsonrpc": "2.0", "method": method}) + "\n")
+    proc.stdin.flush()
+
+
 def read_response(proc, timeout=5.0):
     start_time = time.time()
     while time.time() - start_time < timeout:
@@ -102,6 +107,7 @@ def main():
         )
         resp = read_response(proc)
         print(f"Response: {json.dumps(resp, indent=2)}")
+        send_notification(proc, "notifications/initialized")
 
         # 2. Run Game
         print("\n--- Launching Game ---")

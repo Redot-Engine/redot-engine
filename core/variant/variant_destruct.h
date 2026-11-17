@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file variant_destruct.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/variant/variant.h"
 
 #include "core/object/class_db.h"
@@ -55,6 +61,7 @@ MAKE_PTRDESTRUCT(StringName);
 MAKE_PTRDESTRUCT(NodePath);
 MAKE_PTRDESTRUCT(Callable);
 MAKE_PTRDESTRUCT(Signal);
+MAKE_PTRDESTRUCT(Struct);
 MAKE_PTRDESTRUCT(Dictionary);
 MAKE_PTRDESTRUCT(Array);
 MAKE_PTRDESTRUCT(PackedByteArray);

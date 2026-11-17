@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file lightmap_gi_gizmo_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "lightmap_gi_gizmo_plugin.h"
 
 #include "editor/editor_node.h"
@@ -37,9 +43,9 @@
 #include "editor/settings/editor_settings.h"
 #include "scene/3d/lightmap_gi.h"
 
+/// @note This gizmo only renders solid spheres for previewing indirect lighting on dynamic objects.
+/// The wireframe representation for LightmapProbe nodes is handled in LightmapProbeGizmoPlugin.
 LightmapGIGizmoPlugin::LightmapGIGizmoPlugin() {
-	// NOTE: This gizmo only renders solid spheres for previewing indirect lighting on dynamic objects.
-	// The wireframe representation for LightmapProbe nodes is handled in LightmapProbeGizmoPlugin.
 	Color gizmo_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/lightmap_lines");
 	probe_size = EDITOR_GET("editors/3d_gizmos/gizmo_settings/lightmap_gi_probe_size");
 

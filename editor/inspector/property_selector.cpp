@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file property_selector.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "property_selector.h"
 
 #include "editor/doc/editor_help.h"
@@ -191,7 +197,7 @@ void PropertySelector::_update_search() {
 				List<MethodInfo> script_methods;
 				script_ref->get_script_method_list(&script_methods);
 
-				methods.push_back(MethodInfo("*Script Methods")); // TODO: Split by inheritance.
+				methods.push_back(MethodInfo("*Script Methods")); /// @todo Split by inheritance.
 
 				for (const MethodInfo &mi : script_methods) {
 					if (mi.name.begins_with("@")) {

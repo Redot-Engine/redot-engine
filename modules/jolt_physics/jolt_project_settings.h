@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_project_settings.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include <cstdint>
 
 enum JoltJointWorldNode : int {

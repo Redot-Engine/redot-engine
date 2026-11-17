@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_binding_modifier_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../action_map/openxr_action_map.h"
 #include "../action_map/openxr_action_set.h"
 #include "../action_map/openxr_binding_modifier.h"

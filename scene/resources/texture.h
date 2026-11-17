@@ -32,12 +32,18 @@
 
 #pragma once
 
+/**
+ * @file texture.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 #include "core/math/rect2.h"
 #include "scene/resources/curve.h"
 #include "scene/resources/gradient.h"
-#include "servers/camera_server.h"
-#include "servers/rendering_server.h"
+#include "servers/camera/camera_server.h"
+#include "servers/rendering/rendering_server.h"
 
 class Texture : public Resource {
 	GDCLASS(Texture, Resource);
@@ -45,7 +51,7 @@ class Texture : public Resource {
 
 class Texture2D : public Texture {
 	GDCLASS(Texture2D, Texture);
-	OBJ_SAVE_TYPE(Texture2D); // Saves derived classes with common type so they can be interchanged.
+	OBJ_SAVE_TYPE(Texture2D); ///< Saves derived classes with common type so they can be interchanged.
 
 protected:
 	static void _bind_methods();

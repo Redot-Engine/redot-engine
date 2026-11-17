@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file video_stream.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/texture.h"
 
 class VideoStreamPlayback : public Resource {
@@ -43,7 +49,7 @@ public:
 protected:
 	AudioMixCallback mix_callback = nullptr;
 	void *mix_udata = nullptr;
-	mutable int _channel_count = 0; // Used only to assist with bounds checking in mix_audio.
+	mutable int _channel_count = 0; ///< Used only to assist with bounds checking in mix_audio.
 
 	static void _bind_methods();
 	GDVIRTUAL0(_stop);

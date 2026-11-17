@@ -32,9 +32,15 @@
 
 #pragma once
 
+/**
+ * @file movie_writer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 #include "core/templates/local_vector.h"
-#include "servers/audio_server.h"
+#include "servers/audio/audio_server.h"
 
 class MovieWriter : public Object {
 	GDCLASS(MovieWriter, Object);
@@ -43,8 +49,8 @@ class MovieWriter : public Object {
 	uint64_t mix_rate = 0;
 	uint32_t audio_channels = 0;
 
-	// The output resolution, which can differ from the window size.
-	// Used as a base for resizing all subsequent frames if their resolution differs.
+	/// The output resolution, which can differ from the window size.
+	/// Used as a base for resizing all subsequent frames if their resolution differs.
 	Vector2i movie_size;
 
 	float cpu_time = 0.0f;
@@ -64,6 +70,12 @@ class MovieWriter : public Object {
 protected:
 	virtual uint32_t get_audio_mix_rate() const;
 	virtual AudioServer::SpeakerMode get_audio_speaker_mode() const;
+
+	// Writers that output floating-point / deep-color frames (e.g. EXR) return true so add_frame()
+	// keeps the linear float image instead of converting it to 8-bit sRGB. Note this is
+	// display-referred deep color (more bits of precision to avoid banding), not scene-referred
+	// HDR: the frame is still the tonemapped [0,1] output, just stored at higher precision.
+	virtual bool wants_float_output() const { return false; }
 
 	virtual Error write_begin(const Size2i &p_movie_size, uint32_t p_fps, const String &p_base_path);
 	virtual Error write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data);
@@ -87,6 +99,11 @@ public:
 
 	static void add_writer(MovieWriter *p_writer);
 	static MovieWriter *find_writer_for_file(const String &p_file);
+
+	// The effective output resolution used when recording, derived from the project's
+	// viewport size and (when the stretch mode is not "viewport") the window size overrides.
+	// Single source of truth shared by the recorder and the editor camera preview.
+	static Size2i get_output_size();
 
 	void begin(const Size2i &p_movie_size, uint32_t p_fps, const String &p_base_path);
 	void add_frame();

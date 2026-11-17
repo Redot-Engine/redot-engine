@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file missing_node.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/main/node.h"
 
 class MissingNode : public Node {

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file view_panner.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "view_panner.h"
 
 #include "core/input/input.h"

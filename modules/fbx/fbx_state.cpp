@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file fbx_state.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "fbx_state.h"
 
 void FBXState::_bind_methods() {

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_player.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_player.h"
 #include "animation_player.compat.inc"
 
@@ -180,21 +186,21 @@ void AnimationPlayer::_process_playback_data(PlaybackData &cd, double p_delta, f
 		} break;
 
 		case Animation::LOOP_LINEAR: {
-			if (Animation::is_less_approx(next_pos, start) && Animation::is_greater_or_equal_approx(cd.pos, start)) {
+			if (next_pos < start && Animation::is_greater_or_equal_approx(cd.pos, start)) {
 				looped_flag = Animation::LOOPED_FLAG_START;
 			}
-			if (Animation::is_greater_approx(next_pos, end) && Animation::is_less_or_equal_approx(cd.pos, end)) {
+			if (next_pos > end && Animation::is_less_or_equal_approx(cd.pos, end)) {
 				looped_flag = Animation::LOOPED_FLAG_END;
 			}
 			next_pos = Math::fposmod(next_pos - start, end - start) + start;
 		} break;
 
 		case Animation::LOOP_PINGPONG: {
-			if (Animation::is_less_approx(next_pos, start) && Animation::is_greater_or_equal_approx(cd.pos, start)) {
+			if (next_pos < start && Animation::is_greater_or_equal_approx(cd.pos, start)) {
 				cd.speed_scale *= -1.0;
 				looped_flag = Animation::LOOPED_FLAG_START;
 			}
-			if (Animation::is_greater_approx(next_pos, end) && Animation::is_less_or_equal_approx(cd.pos, end)) {
+			if (next_pos > end && Animation::is_less_or_equal_approx(cd.pos, end)) {
 				cd.speed_scale *= -1.0;
 				looped_flag = Animation::LOOPED_FLAG_END;
 			}
@@ -279,6 +285,9 @@ void AnimationPlayer::_blend_playback_data(double p_delta, bool p_started) {
 	// Finally, if not end the animation, do blending.
 	if (end_reached) {
 		playback.blend.clear();
+		if (end_notify) {
+			finished_anim = playback.assigned;
+		}
 		return;
 	}
 	List<List<Blend>::Element *> to_erase;
@@ -308,6 +317,8 @@ bool AnimationPlayer::_blend_pre_process(double p_delta, int p_track_count, cons
 	end_reached = false;
 	end_notify = false;
 
+	finished_anim = StringName();
+
 	bool started = playback.started; // The animation may be changed during process, so it is safer that the state is changed before process.
 	if (playback.started) {
 		playback.started = false;
@@ -328,10 +339,17 @@ void AnimationPlayer::_blend_capture(double p_delta) {
 }
 
 void AnimationPlayer::_blend_post_process() {
+	if (!finished_anim.is_empty()) {
+		emit_signal(SceneStringName(animation_finished), finished_anim);
+	}
+
 	if (end_reached) {
 		// If the method track changes current animation, the animation is not finished.
 		if (tmp_from == playback.current.from->animation->get_instance_id()) {
 			if (playback_queue.size()) {
+				if (!finished_anim.is_empty()) {
+					emit_signal(SceneStringName(animation_finished), finished_anim);
+				}
 				String old = playback.assigned;
 				play(playback_queue.front()->get());
 				String new_name = playback.assigned;
@@ -344,7 +362,9 @@ void AnimationPlayer::_blend_post_process() {
 				playing = false;
 				_set_process(false);
 				if (end_notify) {
-					emit_signal(SceneStringName(animation_finished), playback.assigned);
+					if (!finished_anim.is_empty()) {
+						emit_signal(SceneStringName(animation_finished), finished_anim);
+					}
 					emit_signal(SNAME("current_animation_changed"), "");
 					if (movie_quit_on_finish && OS::get_singleton()->has_feature("movie")) {
 						print_line(vformat("Movie Maker mode is enabled. Quitting on animation finish as requested by: %s", get_path()));

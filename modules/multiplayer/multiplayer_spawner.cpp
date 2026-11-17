@@ -30,12 +30,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file multiplayer_spawner.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "multiplayer_spawner.h"
 
 #include "scene/main/multiplayer_api.h"
 
 #ifdef TOOLS_ENABLED
-/* This is editor only */
+
 bool MultiplayerSpawner::_set(const StringName &p_name, const Variant &p_value) {
 	if (p_name == "_spawnable_scene_count") {
 		spawnable_scenes.resize(p_value);

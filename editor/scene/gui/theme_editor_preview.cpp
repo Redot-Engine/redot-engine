@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file theme_editor_preview.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "theme_editor_preview.h"
 
 #include "core/config/project_settings.h"

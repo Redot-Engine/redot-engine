@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file bone_map.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "bone_map.h"
 
 bool BoneMap::_set(const StringName &p_path, const Variant &p_value) {

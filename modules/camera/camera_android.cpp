@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file camera_android.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "camera_android.h"
 
 #include "core/os/os.h"

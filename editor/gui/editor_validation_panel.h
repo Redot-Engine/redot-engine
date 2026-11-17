@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_validation_panel.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/panel_container.h"
 
 class Button;
@@ -49,7 +55,7 @@ public:
 		MSG_INFO,
 	};
 
-	static const int MSG_ID_DEFAULT = 0; // Avoids hard-coding ID in dialogs with single-line validation.
+	static const int MSG_ID_DEFAULT = 0; ///< Avoids hard-coding ID in dialogs with single-line validation.
 
 private:
 	VBoxContainer *message_container = nullptr;

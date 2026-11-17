@@ -30,10 +30,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_body_modifier_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "xr_body_modifier_3d.h"
 
 #include "scene/3d/skeleton_3d.h"
-#include "servers/xr_server.h"
+#include "servers/xr/xr_server.h"
 
 void XRBodyModifier3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_body_tracker", "tracker_name"), &XRBodyModifier3D::set_body_tracker);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_stream_player.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_stream_player.h"
 #include "audio_stream_player.compat.inc"
 
@@ -191,8 +197,8 @@ Vector<AudioFrame> AudioStreamPlayer::_get_volume_vector() {
 
 	float volume_linear = Math::db_to_linear(internal->volume_db);
 
-	// Set the volume vector up according to the speaker mode and mix target.
-	// TODO do we need to scale the volume down when we output to more channels?
+	/// Set the volume vector up according to the speaker mode and mix target.
+	/// @todo Do we need to scale the volume down when we output to more channels?
 	if (AudioServer::get_singleton()->get_speaker_mode() == AudioServer::SPEAKER_MODE_STEREO) {
 		volume_vector.write[0] = AudioFrame(volume_linear, volume_linear);
 	} else {
@@ -201,14 +207,14 @@ Vector<AudioFrame> AudioStreamPlayer::_get_volume_vector() {
 				volume_vector.write[0] = AudioFrame(volume_linear, volume_linear);
 			} break;
 			case MIX_TARGET_SURROUND: {
-				// TODO Make sure this is right.
+				/// @todo Make sure this is right.
 				volume_vector.write[0] = AudioFrame(volume_linear, volume_linear);
 				volume_vector.write[1] = AudioFrame(volume_linear, /* LFE= */ 1.0f);
 				volume_vector.write[2] = AudioFrame(volume_linear, volume_linear);
 				volume_vector.write[3] = AudioFrame(volume_linear, volume_linear);
 			} break;
 			case MIX_TARGET_CENTER: {
-				// TODO Make sure this is right.
+				/// @todo Make sure this is right.
 				volume_vector.write[1] = AudioFrame(volume_linear, /* LFE= */ 1.0f);
 			} break;
 		}

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file nav_agent_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "nav_agent_2d.h"
 
 #include "nav_map_2d.h"
@@ -190,8 +196,6 @@ void NavAgent2D::set_target_position(const Vector2 &p_target_position) {
 }
 
 void NavAgent2D::set_velocity(const Vector2 &p_velocity) {
-	// Sets the "wanted" velocity for an agent as a suggestion
-	// This velocity is not guaranteed, RVO simulation will only try to fulfill it
 	velocity = p_velocity;
 	if (avoidance_enabled) {
 		rvo_agent.prefVelocity_ = RVO2D::Vector2(velocity.x, velocity.y);
@@ -202,10 +206,6 @@ void NavAgent2D::set_velocity(const Vector2 &p_velocity) {
 }
 
 void NavAgent2D::set_velocity_forced(const Vector2 &p_velocity) {
-	// This function replaces the internal rvo simulation velocity
-	// should only be used after the agent was teleported
-	// as it destroys consistency in movement in cramped situations
-	// use velocity instead to update with a safer "suggestion"
 	velocity_forced = p_velocity;
 	if (avoidance_enabled) {
 		rvo_agent.velocity_ = RVO2D::Vector2(p_velocity.x, p_velocity.y);
@@ -257,7 +257,6 @@ void NavAgent2D::sync() {
 }
 
 const Dictionary NavAgent2D::get_avoidance_data() const {
-	// Returns debug data from RVO simulation internals of this agent.
 	Dictionary _avoidance_data;
 
 	_avoidance_data["max_neighbors"] = int(rvo_agent.maxNeighbors_);

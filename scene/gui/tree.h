@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file tree.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/control.h"
 #include "scene/resources/text_paragraph.h"
 
@@ -139,21 +145,21 @@ private:
 
 	Vector<Cell> cells;
 
-	bool collapsed = false; // Won't show children.
+	bool collapsed = false; ///< Won't show children.
 	bool visible = true;
 	bool parent_visible_in_tree = true;
 	bool disable_folding = false;
 	int custom_min_height = 0;
 
-	TreeItem *parent = nullptr; // Parent item.
-	TreeItem *prev = nullptr; // Previous in list.
-	TreeItem *next = nullptr; // Next in list.
+	TreeItem *parent = nullptr; ///< Parent item.
+	TreeItem *prev = nullptr; ///< Previous in list.
+	TreeItem *next = nullptr; ///< Next in list.
 	TreeItem *first_child = nullptr;
 	TreeItem *last_child = nullptr;
 
 	Vector<TreeItem *> children_cache;
-	bool is_root = false; // For tree root.
-	Tree *tree = nullptr; // Tree (for reference).
+	bool is_root = false; ///< For tree root.
+	Tree *tree = nullptr; ///< Tree (for reference).
 
 	TreeItem(Tree *p_tree);
 
@@ -223,7 +229,8 @@ protected:
 	static void _bind_compatibility_methods();
 #endif
 
-	// Bind helpers.
+	/// @name Bind Helpers
+	/// @{
 	Dictionary _get_range_config(int p_column) {
 		Dictionary d;
 		double min = 0.0, max = 0.0, step = 0.0;
@@ -237,21 +244,26 @@ protected:
 	}
 
 	void _call_recursive_bind(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
+	/// @}
 
 public:
-	// Cell mode.
+	/// @name Cell Mode
+	/// @{
 	void set_cell_mode(int p_column, TreeCellMode p_mode);
 	TreeCellMode get_cell_mode(int p_column) const;
-
-	// Auto translate mode.
+	/// @}
+	/// @name Auto-Translate Mode
+	/// @{
 	void set_auto_translate_mode(int p_column, Node::AutoTranslateMode p_mode);
 	Node::AutoTranslateMode get_auto_translate_mode(int p_column) const;
-
-	// Multiline editable.
+	/// @}
+	/// @name Multiline Editable
+	/// @{
 	void set_edit_multiline(int p_column, bool p_multiline);
 	bool is_edit_multiline(int p_column) const;
-
-	// Check mode.
+	/// @}
+	/// @name Check Mode
+	/// @{
 	void set_checked(int p_column, bool p_checked);
 	void set_indeterminate(int p_column, bool p_indeterminate);
 	bool is_checked(int p_column) const;
@@ -260,11 +272,13 @@ public:
 	void propagate_check(int p_column, bool p_emit_signal = true);
 
 	String atr(int p_column, const String &p_text) const;
-
+	/// @}
 private:
-	// Check helpers.
+	/// @name Check Helpers
+	/// @{
 	void _propagate_check_through_children(int p_column, bool p_checked, bool p_emit_signal);
 	void _propagate_check_through_parents(int p_column, bool p_emit_signal);
+	/// @}
 
 	TreeItem *_get_prev_in_tree(bool p_wrap = false, bool p_include_invisible = false);
 	TreeItem *_get_next_in_tree(bool p_wrap = false, bool p_include_invisible = false);
@@ -328,13 +342,15 @@ public:
 	void set_button_disabled(int p_column, int p_index, bool p_disabled);
 	bool is_button_disabled(int p_column, int p_index) const;
 
-	// Range works for mode number or mode combo.
+	/// @name Range works for mode number or mode combo.
+	/// @{
 	void set_range(int p_column, double p_value);
 	double get_range(int p_column) const;
 
 	void set_range_config(int p_column, double p_min, double p_max, double p_step, bool p_exp = false);
 	void get_range_config(int p_column, double &r_min, double &r_max, double &r_step) const;
 	bool is_range_exponential(int p_column) const;
+	/// @}
 
 	void set_metadata(int p_column, const Variant &p_meta);
 	Variant get_metadata(int p_column) const;
@@ -402,10 +418,12 @@ public:
 
 	Size2 get_minimum_size(int p_column);
 
-	// Item manipulation.
+	/// @name Item Manipulation
+	/// @{
 	TreeItem *create_child(int p_index = -1);
 	void add_child(TreeItem *p_item);
 	void remove_child(TreeItem *p_item);
+	/// @}
 
 	Tree *get_tree() const;
 
@@ -428,7 +446,7 @@ public:
 	int get_index();
 
 #ifdef DEV_ENABLED
-	// This debugging code can be removed once the current refactoring of this class is complete.
+	/// @todo This debugging code can be removed once the current refactoring of this class is complete.
 	void validate_cache() const;
 #else
 	void validate_cache() const {}
@@ -469,7 +487,7 @@ private:
 	TreeItem *edited_item = nullptr;
 	TreeItem *shift_anchor = nullptr;
 
-	TreeItem *popup_pressing_edited_item = nullptr; // Candidate.
+	TreeItem *popup_pressing_edited_item = nullptr; ///< Candidate.
 	int popup_pressing_edited_item_column = -1;
 
 	TreeItem *drop_mode_over = nullptr;
@@ -755,7 +773,7 @@ private:
 	bool _scroll(bool p_horizontal, float p_pages);
 
 	Rect2 _get_scrollbar_layout_rect() const;
-	Rect2 _get_content_rect() const; // Considering the background stylebox and scrollbars.
+	Rect2 _get_content_rect() const; ///< Considering the background stylebox and scrollbars.
 	Rect2 _get_item_focus_rect(const TreeItem *p_item) const;
 
 	void _check_item_accessibility(TreeItem *p_item, PackedStringArray &r_warnings, int &r_row) const;
@@ -862,9 +880,9 @@ public:
 	bool is_editing();
 	void set_editor_selection(int p_from_line, int p_to_line, int p_from_column = -1, int p_to_column = -1, int p_caret = 0);
 
-	// First item that starts with the text, from the current focused item down and wraps around.
+	/// First item that starts with the text, from the current focused item down and wraps around.
 	TreeItem *search_item_text(const String &p_find, int *r_col = nullptr, bool p_selectable = false);
-	// First item that matches the whole text, from the first item down.
+	/// First item that matches the whole text, from the first item down.
 	TreeItem *get_item_with_text(const String &p_find) const;
 	TreeItem *get_item_with_metadata(const Variant &p_find, int p_column = -1) const;
 

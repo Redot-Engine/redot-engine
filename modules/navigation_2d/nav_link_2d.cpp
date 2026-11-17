@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file nav_link_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "nav_link_2d.h"
 
 #include "nav_map_2d.h"
@@ -205,7 +211,7 @@ Ref<NavLinkIteration2D> NavLink2D::get_iteration() {
 
 NavLink2D::NavLink2D() :
 		sync_dirty_request_list_element(this) {
-	type = NavigationUtilities::PathSegmentType::PATH_SEGMENT_TYPE_LINK;
+	type = NavigationEnums2D::PathSegmentType::PATH_SEGMENT_TYPE_LINK;
 	iteration.instantiate();
 }
 

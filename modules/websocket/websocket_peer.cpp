@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file websocket_peer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "websocket_peer.h"
 
 WebSocketPeer *(*WebSocketPeer::_create)(bool p_notify_postinitialize) = nullptr;

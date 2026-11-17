@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shader_rd.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "shader_rd.h"
 
 #include "core/io/dir_access.h"
@@ -533,8 +539,6 @@ void ShaderRD::_allocate_placeholders(Version *p_version, int p_group) {
 	}
 }
 
-// Try to compile all variants for a given group.
-// Will skip variants that are disabled.
 void ShaderRD::_compile_version_start(Version *p_version, int p_group) {
 	if (!group_enabled[p_group]) {
 		return;
@@ -881,7 +885,6 @@ void ShaderRD::_initialize_cache() {
 	}
 }
 
-// Same as above, but allows specifying shader compilation groups.
 void ShaderRD::initialize(const Vector<VariantDefine> &p_variant_defines, const String &p_general_defines, const Vector<RD::PipelineImmutableSampler> &p_immutable_samplers) {
 	ERR_FAIL_COND(variant_defines.size());
 	ERR_FAIL_COND(p_variant_defines.is_empty());

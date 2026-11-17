@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file debugger_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 
 class EditorFileServer;
@@ -69,7 +75,6 @@ private:
 
 public:
 	virtual String get_plugin_name() const override { return "Debugger"; }
-	bool has_main_screen() const override { return false; }
 
 	DebuggerEditorPlugin(PopupMenu *p_menu);
 	~DebuggerEditorPlugin();

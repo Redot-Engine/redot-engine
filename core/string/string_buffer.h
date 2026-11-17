@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file string_buffer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/print_string.h"
 #include "core/string/ustring.h"
 

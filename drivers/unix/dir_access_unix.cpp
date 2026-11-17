@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file dir_access_unix.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "dir_access_unix.h"
 
 #if defined(UNIX_ENABLED)
@@ -679,7 +685,7 @@ String DirAccessUnix::get_filesystem_type() const {
 			return "";
 	}
 #else
-	return ""; //TODO this should be implemented
+	return ""; /// @todo Ghis should be implemented
 #endif
 }
 

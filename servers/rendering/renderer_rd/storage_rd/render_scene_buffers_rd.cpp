@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file render_scene_buffers_rd.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "render_scene_buffers_rd.h"
 #include "render_scene_buffers_rd.compat.inc"
 
@@ -181,8 +187,8 @@ void RenderSceneBuffersRD::configure(const RenderSceneBuffersConfiguration *p_co
 	const bool resolve_target = msaa_3d != RS::VIEWPORT_MSAA_DISABLED;
 	create_texture(RB_SCOPE_BUFFERS, RB_TEX_COLOR, base_data_format, get_color_usage_bits(resolve_target, false, can_be_storage));
 
-	// TODO: Detect when it is safe to use RD::TEXTURE_USAGE_TRANSIENT_BIT for RB_TEX_DEPTH, RB_TEX_COLOR_MSAA and/or RB_TEX_DEPTH_MSAA.
-	// (it means we cannot sample from it, we cannot copy from/to it) to save VRAM (and maybe performance too).
+	/// @todo Detect when it is safe to use RD::TEXTURE_USAGE_TRANSIENT_BIT for RB_TEX_DEPTH, RB_TEX_COLOR_MSAA and/or RB_TEX_DEPTH_MSAA.
+	/// (it means we cannot sample from it, we cannot copy from/to it) to save VRAM (and maybe performance too).
 
 	// Create our depth buffer.
 	create_texture(RB_SCOPE_BUFFERS, RB_TEX_DEPTH, get_depth_format(resolve_target, false, can_be_storage), get_depth_usage_bits(resolve_target, false, can_be_storage));
@@ -209,8 +215,8 @@ void RenderSceneBuffersRD::configure(const RenderSceneBuffersConfiguration *p_co
 }
 
 void RenderSceneBuffersRD::configure_for_reflections(const Size2i p_reflection_size) {
-	// For now our render buffers for reflections are only used for effects/environment (Sky/Fog/Etc)
-	// Possibly at some point move our entire reflection atlas buffer management into this class
+	/// For now our render buffers for reflections are only used for effects/environment (Sky/Fog/Etc)
+	/// @todo Possibly at some point move our entire reflection atlas buffer management into this class
 
 	target_size = p_reflection_size;
 	internal_size = p_reflection_size;
@@ -322,7 +328,7 @@ RID RenderSceneBuffersRD::_create_texture_from_format(const StringName &p_contex
 }
 
 RID RenderSceneBuffersRD::create_texture_from_format(const StringName &p_context, const StringName &p_texture_name, const RD::TextureFormat &p_texture_format, RD::TextureView p_view, bool p_unique) {
-	// TODO p_unique, if p_unique is true, this is a texture that can be shared. This will be implemented later as an optimization.
+	/// @todo p_unique, if p_unique is true, this is a texture that can be shared. This will be implemented later as an optimization.
 
 	NTKey key(p_context, p_texture_name);
 
@@ -535,7 +541,7 @@ void RenderSceneBuffersRD::allocate_blur_textures() {
 		create_texture(RB_SCOPE_BUFFERS, RB_TEX_HALF_BLUR, base_data_format, usage_bits, RD::TEXTURE_SAMPLES_1, Size2i(blur_size.x >> 1, blur_size.y), 1, mipmaps_required);
 	}
 
-	// TODO redo this:
+	/// @todo Redo this:
 	if (!can_be_storage) {
 		// create 4 weight textures, 2 full size, 2 half size
 

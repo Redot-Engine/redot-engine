@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file os_apple_embedded.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef APPLE_EMBEDDED_ENABLED
 
 #import "apple_embedded.h"
@@ -39,7 +45,7 @@
 #import "drivers/apple/joypad_apple.h"
 #import "drivers/coreaudio/audio_driver_coreaudio.h"
 #include "drivers/unix/os_unix.h"
-#include "servers/audio_server.h"
+#include "servers/audio/audio_server.h"
 #include "servers/rendering/renderer_compositor.h"
 
 #if defined(RD_ENABLED)

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file subviewport_container.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/container.h"
 
 class SubViewportContainer : public Container {

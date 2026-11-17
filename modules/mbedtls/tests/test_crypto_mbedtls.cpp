@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file test_crypto_mbedtls.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "test_crypto_mbedtls.h"
 
 #include "../crypto_mbedtls.h"

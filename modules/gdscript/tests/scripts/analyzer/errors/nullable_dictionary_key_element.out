@@ -1,0 +1,2 @@
+GDTEST_ANALYZER_ERROR
+>> ERROR at line 2: Nullable element types (e.g. "Array[int?]") are not supported. Only the collection itself can be made nullable (e.g. "Array[int]?").

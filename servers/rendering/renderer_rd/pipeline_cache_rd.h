@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file pipeline_cache_rd.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/os/spin_lock.h"
 #include "servers/rendering/rendering_device.h"
 

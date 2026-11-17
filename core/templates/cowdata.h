@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file cowdata.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 #include "core/os/memory.h"
 #include "core/templates/safe_refcount.h"
@@ -60,6 +66,8 @@ private:
 	//             │ ref. count         │░░│ data size   │░░│ data
 	//             └────────────────────┴──┴─────────────┴──┴───────────...
 	// Offset:     ↑ REF_COUNT_OFFSET      ↑ SIZE_OFFSET    ↑ DATA_OFFSET
+
+	static_assert(alignof(USize) > 0);
 
 	static constexpr size_t REF_COUNT_OFFSET = 0;
 	static constexpr size_t SIZE_OFFSET = ((REF_COUNT_OFFSET + sizeof(SafeNumeric<USize>)) % alignof(USize) == 0) ? (REF_COUNT_OFFSET + sizeof(SafeNumeric<USize>)) : ((REF_COUNT_OFFSET + sizeof(SafeNumeric<USize>)) + alignof(USize) - ((REF_COUNT_OFFSET + sizeof(SafeNumeric<USize>)) % alignof(USize)));
@@ -117,16 +125,16 @@ private:
 		return *out;
 	}
 
-	// Decrements the reference count. Deallocates the backing buffer if needed.
-	// After this function, _ptr is guaranteed to be NULL.
+	/// Decrements the reference count. Deallocates the backing buffer if needed.
+	/// After this function, _ptr is guaranteed to be NULL.
 	void _unref();
 	void _ref(const CowData *p_from);
 	void _ref(const CowData &p_from);
 
-	// Ensures that the backing buffer is at least p_size wide, and that this CowData instance is
-	// the only reference to it. The buffer is populated with as many element copies from the old
-	// array as possible.
-	// It is the responsibility of the caller to populate newly allocated space up to p_size.
+	/// Ensures that the backing buffer is at least p_size wide, and that this CowData instance is
+	/// the only reference to it. The buffer is populated with as many element copies from the old
+	/// array as possible.
+	/// It is the responsibility of the caller to populate newly allocated space up to p_size.
 	Error _fork_allocate(USize p_size);
 	Error _copy_on_write() { return _fork_allocate(size()); }
 
@@ -134,10 +142,10 @@ private:
 	// It is the responsibility of the caller to populate the array and the new size property.
 	Error _alloc(USize p_alloc_size);
 
-	// Re-allocates the backing array to the given capacity. The reference count is initialized to 1.
-	// It is the responsibility of the caller to populate the array and the new size property.
-	// The caller must also make sure there are no other references to the data, as pointers may
-	// be invalidated.
+	/// Re-allocates the backing array to the given capacity. The reference count is initialized to 1.
+	/// It is the responsibility of the caller to populate the array and the new size property.
+	/// The caller must also make sure there are no other references to the data, as pointers may
+	/// be invalidated.
 	Error _realloc(USize p_alloc_size);
 
 public:
@@ -161,6 +169,11 @@ public:
 		return _ptr;
 	}
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4724) // prevent false positive warning for potential modulo zero
+#endif
+
 	_FORCE_INLINE_ Size size() const {
 		USize *size = (USize *)_get_size();
 		if (size) {
@@ -169,6 +182,10 @@ public:
 			return 0;
 		}
 	}
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 	_FORCE_INLINE_ void clear() { _unref(); }
 	_FORCE_INLINE_ bool is_empty() const { return _ptr == nullptr; }
@@ -444,6 +461,6 @@ CowData<T>::CowData(std::initializer_list<T> p_init) {
 
 GODOT_GCC_WARNING_POP
 
-// Zero-constructing CowData initializes _ptr to nullptr (and thus empty).
+/// Zero-constructing CowData initializes _ptr to nullptr (and thus empty).
 template <typename T>
 struct is_zero_constructible<CowData<T>> : std::true_type {};

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_android_extension.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_android_extension.h"
 
 #include "../../openxr_api.h"
@@ -85,8 +91,8 @@ void OpenXRAndroidExtension::on_before_instance_created() {
 	ERR_FAIL_COND_MSG(XR_FAILED(result), "Failed to call xrInitializeLoaderKHR");
 }
 
-// We're keeping the Android create info struct here to avoid including openxr_platform.h in a header, which would break other extensions.
-// This is reasonably safe as the struct is only used during initialization and the extension is a singleton.
+/// We're keeping the Android create info struct here to avoid including openxr_platform.h in a header, which would break other extensions.
+/// This is reasonably safe as the struct is only used during initialization and the extension is a singleton.
 static XrInstanceCreateInfoAndroidKHR instance_create_info;
 
 void *OpenXRAndroidExtension::set_instance_create_info_and_get_next_pointer(void *p_next_pointer) {

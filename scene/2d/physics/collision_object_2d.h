@@ -32,10 +32,16 @@
 
 #pragma once
 
+/**
+ * @file collision_object_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/2d/node_2d.h"
 #include "scene/main/viewport.h"
 #include "scene/resources/2d/shape_2d.h"
-#include "servers/physics_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 
 class CollisionObject2D : public Node2D {
 	GDCLASS(CollisionObject2D, Node2D);
@@ -79,7 +85,7 @@ private:
 	int total_subshapes = 0;
 
 	RBMap<uint32_t, ShapeData> shapes;
-	bool only_update_transform_changes = false; // This is used for sync to physics.
+	bool only_update_transform_changes = false; ///< This is used for sync to physics.
 
 	void _apply_disabled();
 	void _apply_enabled();

@@ -14,5 +14,7 @@ reviews:
     drafts: false
     base_branches:
       - "dev"
+  path_filters:
+    - "!thirdparty/**"
 chat:
   auto_reply: true

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file animation_library.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/rb_map.h"
 #include "core/variant/typed_array.h"
 #include "scene/resources/animation.h"

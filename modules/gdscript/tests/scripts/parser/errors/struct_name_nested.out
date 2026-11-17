@@ -1,0 +1,2 @@
+GDTEST_PARSER_ERROR
+Only top-level structs can be declared with "struct_name". Use "struct" for nested structs.

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file variant_construct.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "variant_construct.h"
 
 struct VariantConstructData {
@@ -197,6 +203,9 @@ void Variant::_register_variant_constructors() {
 	add_constructor<VariantConstructNoArgs<Signal>>(sarray());
 	add_constructor<VariantConstructor<Signal, Signal>>(sarray("from"));
 	add_constructor<VariantConstructorSignalArgs>(sarray("object", "signal"));
+
+	add_constructor<VariantConstructNoArgs<Struct>>(sarray());
+	add_constructor<VariantConstructor<Struct, Struct>>(sarray("from"));
 
 	add_constructor<VariantConstructNoArgs<Dictionary>>(sarray());
 	add_constructor<VariantConstructor<Dictionary, Dictionary>>(sarray("from"));

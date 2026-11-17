@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file back_buffer_copy.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/2d/node_2d.h"
 
 class BackBufferCopy : public Node2D {

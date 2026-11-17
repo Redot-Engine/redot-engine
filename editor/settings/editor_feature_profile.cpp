@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_feature_profile.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_feature_profile.h"
 
 #include "core/io/dir_access.h"
@@ -889,8 +895,8 @@ void EditorFeatureProfileManager::set_current_profile(const String &p_profile_na
 		ERR_FAIL_COND_MSG(da.is_null(), "Cannot open directory '" + EditorPaths::get_singleton()->get_feature_profiles_dir() + "'.");
 		ERR_FAIL_COND_MSG(!da->file_exists(p_profile_name + ".profile"), "Feature profile '" + p_profile_name + "' does not exist.");
 
-		// Change profile selection to emulate the UI interaction. Otherwise, the wrong profile would get activated.
-		// FIXME: Ideally, _update_selected_profile() should not rely on the user interface state to function properly.
+		/// Change profile selection to emulate the UI interaction. Otherwise, the wrong profile would get activated.
+		/// @todo FIXME: Ideally, _update_selected_profile() should not rely on the user interface state to function properly.
 		for (int i = 0; i < profile_list->get_item_count(); i++) {
 			if (profile_list->get_item_metadata(i) == p_profile_name) {
 				profile_list->select(i);

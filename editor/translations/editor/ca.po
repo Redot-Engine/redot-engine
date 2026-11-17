@@ -7144,3 +7144,6 @@ msgstr "Font no vàlida pel Shader."
 
 msgid "Constants cannot be modified."
 msgstr "Les constants no es poden modificar."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Massa scripts per obrir en un editor extern (màxim 128)."

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file find_in_files.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "find_in_files.h"
 
 #include "core/config/project_settings.h"
@@ -50,7 +56,7 @@
 
 const char *FindInFiles::SIGNAL_RESULT_FOUND = "result_found";
 
-// TODO: Would be nice in Vector and Vectors.
+///< @todo Would be nice in Vector and Vectors.
 template <typename T>
 inline void pop_back(T &container) {
 	container.resize(container.size() - 1);
@@ -1072,7 +1078,7 @@ void FindInFilesPanel::_on_button_clicked(TreeItem *p_item, int p_column, int p_
 	update_matches_text();
 }
 
-// Same as get_line, but preserves line ending characters.
+/// Same as get_line, but preserves line ending characters.
 class ConservativeGetLine {
 public:
 	String get_line(Ref<FileAccess> f) {
@@ -1106,10 +1112,6 @@ private:
 };
 
 void FindInFilesPanel::apply_replaces_in_file(const String &fpath, const Vector<Result> &locations, const String &new_text) {
-	// If the file is already open, I assume the editor will reload it.
-	// If there are unsaved changes, the user will be asked on focus,
-	// however that means either losing changes or losing replaces.
-
 	Ref<FileAccess> f = FileAccess::open(fpath, FileAccess::READ);
 	ERR_FAIL_COND_MSG(f.is_null(), "Cannot open file from path '" + fpath + "'.");
 

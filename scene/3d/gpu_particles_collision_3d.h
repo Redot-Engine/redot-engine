@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gpu_particles_collision_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/local_vector.h"
 #include "scene/3d/visual_instance_3d.h"
 
@@ -226,7 +232,7 @@ public:
 	};
 
 private:
-	uint32_t heightfield_mask = (1 << 20) - 1; // Only the first 20 bits are set by default to ignore editor layers.
+	uint32_t heightfield_mask = (1 << 20) - 1; ///< Only the first 20 bits are set by default to ignore editor layers.
 	Vector3 size = Vector3(2, 2, 2);
 	Resolution resolution = RESOLUTION_1024;
 	bool follow_camera_mode = false;

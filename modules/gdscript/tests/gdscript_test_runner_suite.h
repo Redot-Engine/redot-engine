@@ -32,16 +32,198 @@
 
 #pragma once
 
+/**
+ * @file gdscript_test_runner_suite.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_test_runner.h"
 
+#include "../gdscript_analyzer.h"
+#include "../gdscript_cache.h"
+#include "../gdscript_parser.h"
+#include "../gdscript_warning.h"
+
+#include "core/config/engine.h"
+#include "core/config/project_settings.h"
+#include "core/io/dir_access.h"
+#include "core/io/json.h"
+#include "core/io/marshalls.h"
+#include "core/io/resource_loader.h"
+#include "core/io/resource_saver.h"
+#include "core/object/script_language_extension.h"
+#include "core/variant/struct.h"
+#include "core/variant/struct_info.h"
+#include "core/variant/variant_parser.h"
+#include "scene/3d/node_3d.h"
+#include "scene/resources/packed_scene.h"
+
 #include "tests/test_macros.h"
+#include "tests/test_utils.h"
 
 namespace GDScriptTests {
 
-// TODO: Handle some cases failing on release builds. See: https://github.com/godotengine/godot/pull/88452
+TEST_CASE("[Modules][GDScript] Reserved keywords identify the invalid declaration") {
+	for (const String keyword : { "uses", "while", "and", "trait_name" }) {
+		GDScriptParser parser;
+		CHECK(parser.parse("var " + keyword + " = 1\n", "res://keyword_name.gd", false) == ERR_PARSE_ERROR);
+		REQUIRE_FALSE(parser.get_errors().is_empty());
+		const GDScriptParser::ParserError &error = parser.get_errors().front()->get();
+		CHECK(error.message.contains("\"" + keyword + "\" is a reserved keyword"));
+		CHECK(error.line == 1);
+		CHECK(error.column == 5);
+	}
+
+	SUBCASE("Parameter names") {
+		GDScriptParser parser;
+		CHECK(parser.parse("func example(uses: Dictionary):\n\tpass\n", "res://keyword_parameter.gd", false) == ERR_PARSE_ERROR);
+		REQUIRE_FALSE(parser.get_errors().is_empty());
+		CHECK(parser.get_errors().front()->get().message.contains("\"uses\" is a reserved keyword"));
+	}
+	SUBCASE("Identifier-compatible keywords remain valid") {
+		GDScriptParser parser;
+		CHECK(parser.parse("var when = 1\nvar match = 2\n", "res://keyword_control.gd", false) == OK);
+	}
+	SUBCASE("Non-keyword errors retain their context") {
+		GDScriptParser parser;
+		CHECK(parser.parse("var 123 = 1\n", "res://invalid_name.gd", false) == ERR_PARSE_ERROR);
+		REQUIRE_FALSE(parser.get_errors().is_empty());
+		CHECK(parser.get_errors().front()->get().message == "Expected variable name after \"var\".");
+	}
+}
+
+#ifdef TOOLS_ENABLED
+TEST_CASE("[Modules][GDScript] Dependency diagnostics retain the original source location") {
+	GDScriptLanguage::get_singleton()->init();
+	const String dependency_path = TestUtils::get_temp_path("dependency_diagnostic.gd");
+	const String intermediate_path = TestUtils::get_temp_path("dependency_diagnostic_intermediate.gd");
+	{
+		Ref<FileAccess> file = FileAccess::open(dependency_path, FileAccess::WRITE);
+		REQUIRE(file.is_valid());
+		file->store_string("extends RefCounted\n\nvar uses := {}\n");
+	}
+	{
+		Ref<FileAccess> file = FileAccess::open(intermediate_path, FileAccess::WRITE);
+		REQUIRE(file.is_valid());
+		file->store_string("extends TestDiagnosticDependency\n");
+	}
+	ScriptServer::add_global_class("TestDiagnosticDependency", "RefCounted", "GDScript", dependency_path, false, false);
+	ScriptServer::add_global_class("TestDiagnosticIntermediate", "RefCounted", "GDScript", intermediate_path, false, false);
+	ProjectSettings::get_singleton()->add_autoload({ "TestDiagnosticAutoload", dependency_path, true });
+	String source = "extends RefCounted\nvar value = TestDiagnosticDependency.new()\n";
+	int error_line = 2;
+	SUBCASE("Direct dependency") {
+	}
+	SUBCASE("Inheritance chain") {
+		source = "extends RefCounted\nvar value = TestDiagnosticIntermediate.new()\n";
+	}
+	SUBCASE("Global class type annotation") {
+		source = "extends RefCounted\nvar value: TestDiagnosticDependency\n";
+	}
+	SUBCASE("Autoload inheritance") {
+		source = "extends TestDiagnosticAutoload\n";
+		error_line = 1;
+	}
+	SUBCASE("Trait path dependency") {
+		source = "extends RefCounted\nuses \"" + dependency_path + "\"\n";
+	}
+
+	List<ScriptLanguage::ScriptError> errors;
+	CHECK_FALSE(GDScriptLanguage::get_singleton()->validate(source, "res://dependency_diagnostic_consumer.gd", nullptr, &errors));
+	CHECK_FALSE(errors.is_empty());
+	if (!errors.is_empty()) {
+		const ScriptLanguage::ScriptError &error = errors.front()->get();
+		CHECK(error.path == "res://dependency_diagnostic_consumer.gd");
+		CHECK(error.line == error_line);
+		CHECK(error.related_error.path == dependency_path);
+		CHECK(error.related_error.line == 3);
+		CHECK(error.related_error.column == 5);
+		CHECK(error.related_error.message.contains("\"uses\" is a reserved keyword"));
+		CHECK(error.message.contains(dependency_path + ":3:5:"));
+		CHECK(error.message.count("\"uses\" is a reserved keyword") == 1);
+	}
+
+	ProjectSettings::get_singleton()->remove_autoload("TestDiagnosticAutoload");
+	ScriptServer::remove_global_class("TestDiagnosticIntermediate");
+	ScriptServer::remove_global_class("TestDiagnosticDependency");
+	GDScriptCache::remove_parser(intermediate_path);
+	GDScriptCache::remove_parser(dependency_path);
+	CHECK(DirAccess::remove_absolute(intermediate_path) == OK);
+	CHECK(DirAccess::remove_absolute(dependency_path) == OK);
+}
+
+TEST_CASE("[Modules][GDScript] Missing global class type dependency retains its fallback error") {
+	GDScriptLanguage::get_singleton()->init();
+	const String dependency_path = TestUtils::get_temp_path("missing_dependency_diagnostic.gd");
+	REQUIRE_FALSE(FileAccess::exists(dependency_path));
+	ScriptServer::add_global_class("TestDiagnosticMissing", "RefCounted", "GDScript", dependency_path, false, false);
+
+	List<ScriptLanguage::ScriptError> errors;
+	CHECK_FALSE(GDScriptLanguage::get_singleton()->validate("extends RefCounted\nvar value: TestDiagnosticMissing\n", "res://missing_dependency_diagnostic_consumer.gd", nullptr, &errors));
+	CHECK_FALSE(errors.is_empty());
+	if (!errors.is_empty()) {
+		const ScriptLanguage::ScriptError &error = errors.front()->get();
+		CHECK(error.message == "Could not parse global class \"TestDiagnosticMissing\" from \"" + dependency_path + "\".");
+		CHECK(error.related_error.path.is_empty());
+	}
+
+	ScriptServer::remove_global_class("TestDiagnosticMissing");
+	GDScriptCache::remove_parser(dependency_path);
+}
+#endif
+
+#if defined(TOOLS_ENABLED) && defined(DEBUG_ENABLED)
+TEST_CASE("[Modules][GDScript] Experimental struct warning") {
+	const String warning_setting = GDScriptWarning::get_settings_path_from_code(GDScriptWarning::EXPERIMENTAL_STRUCT);
+	const String show_warning_setting = "debug/gdscript/warnings/show_experimental_struct_warning";
+	const int original_warning_level = GLOBAL_GET(warning_setting);
+	const bool original_show_warning = GLOBAL_GET(show_warning_setting);
+	const bool original_warnings_enabled = GLOBAL_GET("debug/gdscript/warnings/enable");
+	ProjectSettings::get_singleton()->set_setting("debug/gdscript/warnings/enable", true);
+
+	auto count_struct_warnings = [&](bool p_show_warning, GDScriptWarning::WarnLevel p_level) {
+		ProjectSettings::get_singleton()->set_setting(show_warning_setting, p_show_warning);
+		ProjectSettings::get_singleton()->set_setting(warning_setting, p_level);
+
+		GDScriptParser parser;
+		const Error parse_error = parser.parse(R"(
+struct First:
+	var value: int
+
+struct Second:
+	var value: int
+)",
+				"res://experimental_struct_warning.gd", false);
+		CHECK(parse_error == OK);
+
+		GDScriptAnalyzer analyzer(&parser);
+		const Error analyze_error = analyzer.analyze();
+		CHECK(analyze_error == OK);
+
+		int warning_count = 0;
+		for (const GDScriptWarning &warning : parser.get_warnings()) {
+			if (warning.code == GDScriptWarning::EXPERIMENTAL_STRUCT) {
+				warning_count++;
+			}
+		}
+		return warning_count;
+	};
+
+	CHECK(count_struct_warnings(true, GDScriptWarning::WARN) == 1);
+	CHECK(count_struct_warnings(false, GDScriptWarning::WARN) == 0);
+	CHECK(count_struct_warnings(true, GDScriptWarning::IGNORE) == 0);
+
+	ProjectSettings::get_singleton()->set_setting(warning_setting, original_warning_level);
+	ProjectSettings::get_singleton()->set_setting(show_warning_setting, original_show_warning);
+	ProjectSettings::get_singleton()->set_setting("debug/gdscript/warnings/enable", original_warnings_enabled);
+}
+#endif
+
+/// @todo Handle some cases failing on release builds. See: https://github.com/godotengine/godot/pull/88452
 #ifdef TOOLS_ENABLED
 TEST_SUITE("[Modules][GDScript]") {
-	TEST_CASE("Script compilation and runtime") {
+	TEST_CASE("[SceneTree] Script compilation and runtime") {
 		bool print_filenames = OS::get_singleton()->get_cmdline_args().find("--print-filenames") != nullptr;
 		bool use_binary_tokens = OS::get_singleton()->get_cmdline_args().find("--use-binary-tokens") != nullptr;
 		GDScriptTestRunner runner("modules/gdscript/tests/scripts", true, print_filenames, use_binary_tokens);
@@ -49,6 +231,729 @@ TEST_SUITE("[Modules][GDScript]") {
 		INFO("Make sure `*.out` files have expected results.");
 		REQUIRE_MESSAGE(fail_count == 0, "All GDScript tests should pass.");
 	}
+}
+#endif // TOOLS_ENABLED
+
+#ifdef TOOLS_ENABLED
+TEST_CASE("[Modules][GDScript] Exported struct array elements retain schema defaults") {
+	GDScriptLanguage::get_singleton()->init();
+	Ref<GDScript> script;
+	script.instantiate();
+	script->set_source_code(R"(
+extends Resource
+
+struct Record:
+	var enabled: bool = true
+	var count: int = 4
+
+@export var records: Array[Record]
+)");
+	REQUIRE(script->reload() == OK);
+	script->update_exports();
+
+	Variant element_default;
+	REQUIRE(script->get_property_array_element_default_value("records", element_default));
+	REQUIRE(element_default.get_type() == Variant::STRUCT);
+	Struct record = element_default;
+	REQUIRE_FALSE(record.is_null());
+	REQUIRE(record.get_field_count() == 2);
+	CHECK(bool(record.get_member(0)) == true);
+	CHECK(int(record.get_member(1)) == 4);
+}
+
+TEST_CASE("[Modules][GDScript] A trait can't be set as an object's script") {
+	GDScriptLanguage::get_singleton()->init();
+	Ref<GDScript> script;
+	script.instantiate();
+	script->set_source_code(R"(
+trait_name SetScriptTrait
+extends Node
+
+func _ready() -> void:
+	print("unreachable")
+)");
+	REQUIRE(script->reload() == OK);
+	REQUIRE(script->is_trait());
+
+	Node *node = memnew(Node);
+	ERR_PRINT_OFF;
+	node->set_script(script);
+	ERR_PRINT_ON;
+	CHECK(node->get_script().is_null());
+	CHECK(node->get_script_instance() == nullptr);
+	memdelete(node);
+}
+
+TEST_CASE("[Modules][GDScript] Struct object fields retain script and trait constraints") {
+	GDScriptLanguage::get_singleton()->init();
+	Ref<GDScript> script;
+	script.instantiate();
+	script->set_source_code(R"(
+class_name StructConstraintRoot
+
+class Base:
+	var value: int = 7
+
+class Derived extends Base:
+	pass
+
+trait Feature:
+	var marker: int = 42
+
+trait ExtraFeature:
+	uses Feature
+
+class Implementer extends Base:
+	uses ExtraFeature
+
+class InheritedImplementer extends Implementer:
+	pass
+
+class Unrelated:
+	pass
+
+struct Record:
+	var object: Base
+	var feature: Feature
+
+func make_record():
+	return Record.new()
+)");
+	REQUIRE(script->reload() == OK);
+	Ref<RefCounted> owner;
+	owner.instantiate();
+	owner->set_script(script);
+	Struct record = owner->call("make_record");
+	REQUIRE_FALSE(record.is_null());
+	const Ref<StructInfo> info = record.get_info();
+	CHECK(info->get_field_class_name(0) == StringName(script->get_fully_qualified_name() + "::Base"));
+	CHECK(info->get_field_class_name(1) == StringName(script->get_fully_qualified_name() + "::Feature"));
+
+	auto instantiate = [&](const String &p_class) {
+		Ref<RefCounted> object;
+		object.instantiate();
+		object->set_script(script->find_class(p_class));
+		return object;
+	};
+	Ref<RefCounted> base = instantiate("Base");
+	Ref<RefCounted> derived = instantiate("Derived");
+	Ref<RefCounted> implementer = instantiate("InheritedImplementer");
+	Ref<RefCounted> unrelated = instantiate("Unrelated");
+	Ref<RefCounted> native;
+	native.instantiate();
+
+	auto check_constraints = [&](Struct p_record) {
+		REQUIRE_FALSE(p_record.is_null());
+		CHECK(p_record.get_info()->is_same_layout_as(*info.ptr()));
+		CHECK(p_record.get_info()->get_schema_fingerprint() == info->get_schema_fingerprint());
+		CHECK(p_record.try_set_member(0, base));
+		CHECK(p_record.try_set_member(0, derived));
+		CHECK(p_record.try_set_member(0, implementer));
+		CHECK_FALSE(p_record.try_set_member(0, unrelated));
+		CHECK_FALSE(p_record.try_set_member(0, native));
+		CHECK(p_record.try_set_member(1, implementer));
+		CHECK_FALSE(p_record.try_set_member(1, base));
+		CHECK_FALSE(p_record.try_set_member(1, unrelated));
+		CHECK_FALSE(p_record.try_set_member(1, native));
+		Variant dynamic = p_record;
+		bool valid = true;
+		ERR_PRINT_OFF;
+		dynamic.set_named("object", unrelated, valid);
+		ERR_PRINT_ON;
+		CHECK_FALSE(valid);
+		ERR_PRINT_OFF;
+		dynamic.set(1, base, &valid);
+		ERR_PRINT_ON;
+		CHECK_FALSE(valid);
+		CHECK(Struct(dynamic).get_member(0) == Variant(implementer));
+		CHECK(Struct(dynamic).get_member(1) == Variant(implementer));
+		CHECK(p_record.try_set_member(0, Variant()));
+		CHECK(p_record.try_set_member(1, Variant()));
+	};
+	check_constraints(record);
+
+	String text;
+	VariantWriter::write_to_string(record, text);
+	VariantParser::StreamString stream;
+	stream.s = text;
+	Variant restored;
+	String error;
+	int line = 0;
+	REQUIRE(VariantParser::parse(&stream, restored, error, line) == OK);
+	check_constraints(restored);
+	check_constraints(JSON::to_native(JSON::from_native(record, true), true));
+	int length = 0;
+	REQUIRE(encode_variant(record, nullptr, length, false) == OK);
+	Vector<uint8_t> bytes;
+	bytes.resize(length);
+	REQUIRE(encode_variant(record, bytes.ptrw(), length, false) == OK);
+	REQUIRE(decode_variant(restored, bytes.ptr(), bytes.size(), nullptr, false) == OK);
+	check_constraints(restored);
+
+	Ref<Resource> resource;
+	resource.instantiate();
+	resource->set_meta("record", record);
+	for (const char *extension : { "tres", "res" }) {
+		const String path = TestUtils::get_temp_path(String("struct_script_constraints.") + extension);
+		REQUIRE(ResourceSaver::save(resource, path) == OK);
+		Ref<Resource> loaded = ResourceLoader::load(path, "", ResourceFormatLoader::CACHE_MODE_IGNORE);
+		REQUIRE(loaded.is_valid());
+		check_constraints(loaded->get_meta("record"));
+	}
+	REQUIRE(script->reload(true) == OK);
+	Ref<RefCounted> reloaded_implementer = instantiate("InheritedImplementer");
+	Struct old_schema(info);
+	CHECK(old_schema.try_set_member(0, reloaded_implementer));
+	CHECK(old_schema.try_set_member(1, reloaded_implementer));
+	CHECK(old_schema.try_set_member(0, Variant()));
+	CHECK(old_schema.try_set_member(1, Variant()));
+}
+
+TEST_CASE("[Modules][GDScript] Struct script and trait resource fields survive save and load") {
+	if (ProjectSettings::get_singleton()->get_resource_path().is_empty()) {
+		REQUIRE(ProjectSettings::get_singleton()->setup("modules/gdscript/tests/scripts", String(), true) == OK);
+	}
+	GDScriptLanguage::get_singleton()->init();
+	const String fixture_dir = ProjectSettings::get_singleton()->localize_path(TestUtils::get_executable_dir().path_join("../modules/gdscript/tests/scripts/runtime/features").simplify_path());
+	Ref<GDScript> script = ResourceLoader::load(fixture_dir.path_join("struct_reference_payload.notest.gd"));
+	Ref<GDScript> trait = ResourceLoader::load(fixture_dir.path_join("struct_reference_trait.notest.gd"));
+	REQUIRE(script.is_valid());
+	REQUIRE(script->is_valid());
+	REQUIRE(trait.is_valid());
+	REQUIRE(trait->is_trait());
+	Ref<Resource> payload;
+	payload.instantiate();
+	payload->set_script(script);
+	payload->set("custom_field", 23);
+	StructInfoBuilder builder;
+	builder.set_logical_type_id("SavedReferences");
+	StructInfo::Field field;
+	field.name = "object";
+	field.is_typed = true;
+	field.type = Variant::OBJECT;
+	field.class_name = script->get_qualified_class_name();
+	builder.add_field(field);
+	field.name = "trait";
+	field.class_name = trait->get_qualified_class_name();
+	builder.add_field(field);
+	Struct record(builder.build());
+	REQUIRE(record.try_set_member(0, payload));
+	REQUIRE(record.try_set_member(1, payload));
+	Ref<Resource> resource;
+	resource.instantiate();
+	resource->set_meta("record", record);
+	for (const char *extension : { "tres", "res" }) {
+		const String path = TestUtils::get_temp_path(String("struct_script_resource.") + extension);
+		REQUIRE(ResourceSaver::save(resource, path) == OK);
+		Ref<Resource> loaded = ResourceLoader::load(path, "", ResourceFormatLoader::CACHE_MODE_IGNORE);
+		REQUIRE(loaded.is_valid());
+		Struct restored = loaded->get_meta("record");
+		REQUIRE_FALSE(restored.is_null());
+		CHECK(restored.get_info()->is_same_layout_as(*record.get_info().ptr()));
+		for (int i = 0; i < 2; i++) {
+			Ref<Resource> restored_payload = restored.get_member(i);
+			REQUIRE(restored_payload.is_valid());
+			CHECK(int(restored_payload->get("custom_field")) == 23);
+			CHECK_FALSE(restored.try_set_member(i, resource));
+		}
+		CHECK(restored.get_member(0) == restored.get_member(1));
+	}
+}
+
+TEST_CASE("[Modules][GDScript] Exported struct edits reset incompatible placeholder values") {
+	GDScriptLanguage::get_singleton()->init();
+	Ref<GDScript> script;
+	script.instantiate();
+	const String source = R"(
+extends RefCounted
+
+struct First:
+	var count: int = 4
+
+struct Second:
+	var count: int = 4
+
+@export var record: First
+@export var optional_record: First?
+)";
+	script->set_source_code(source);
+	REQUIRE(script->reload() == OK);
+	Ref<RefCounted> edited;
+	edited.instantiate();
+	PlaceHolderScriptInstance *placeholder = script->placeholder_instance_create(edited.ptr());
+	edited->set_script_instance(placeholder);
+	Ref<RefCounted> untouched;
+	untouched.instantiate();
+	untouched->set_script_instance(script->placeholder_instance_create(untouched.ptr()));
+	Variant value;
+	REQUIRE(placeholder->get("record", value));
+	REQUIRE(value.get_type() == Variant::STRUCT);
+	Struct record = value;
+	CHECK(record.set_named("count", 42));
+	CHECK(placeholder->set("record", record));
+	CHECK(placeholder->set("optional_record", record));
+
+	script->set_source_code(source.replace("count: int = 4", "count: int = 7"));
+	script->update_exports();
+	CHECK(placeholder->get("record", value));
+	CHECK(int(Struct(value).get_member(0)) == 42);
+	CHECK(placeholder->get("optional_record", value));
+	CHECK(int(Struct(value).get_member(0)) == 42);
+	CHECK(int(Struct(untouched->get("record")).get_member(0)) == 7);
+
+	script->set_source_code(source.replace("record: First", "record: Second"));
+	script->update_exports();
+	CHECK(placeholder->get("record", value));
+	CHECK(Struct(value).get_type_id() == StringName("Second"));
+	CHECK(int(Struct(value).get_member(0)) == 4);
+	CHECK(placeholder->get("optional_record", value));
+	CHECK(value.get_type() == Variant::NIL);
+
+	record = edited->get("record");
+	CHECK(record.set_named("count", 99));
+	CHECK(placeholder->set("record", record));
+	script->set_source_code(source.replace("record: First", "record: Second").replace("struct Second:\n\tvar count: int = 4", "struct Second:\n\tvar count: int = 4\n\tvar enabled: bool = true"));
+	script->update_exports();
+	CHECK(placeholder->get("record", value));
+	CHECK(Struct(value).get_type_id() == StringName("Second"));
+	CHECK(int(Struct(value).get_member(0)) == 4);
+	CHECK(bool(Struct(value).get_member(1)));
+}
+
+TEST_CASE("[Modules][GDScript] Exported object edits validate placeholder constraints") {
+	GDScriptLanguage::get_singleton()->init();
+	Ref<GDScript> script;
+	script.instantiate();
+	const String source = R"(
+extends Node
+
+class Base extends Resource:
+	pass
+
+class Derived extends Base:
+	pass
+
+class Other extends Resource:
+	pass
+
+trait Feature extends Node:
+	pass
+
+trait OtherFeature extends Node:
+	pass
+
+class Implementer extends Node:
+	uses Feature
+
+@export var resource: Base
+@export var feature: Feature
+@export var native: Node3D
+)";
+	script->set_source_code(source);
+	REQUIRE(script->reload() == OK);
+	Node *owner = memnew(Node);
+	owner->set_script_instance(script->placeholder_instance_create(owner));
+	Ref<Resource> resource;
+	resource.instantiate();
+	resource->set_script_instance(script->find_class("Derived")->placeholder_instance_create(resource.ptr()));
+	Node *feature = memnew(Node);
+	feature->set_script_instance(script->find_class("Implementer")->placeholder_instance_create(feature));
+	Node3D *native = memnew(Node3D);
+	owner->set("resource", resource);
+	owner->set("feature", feature);
+	owner->set("native", native);
+
+	script->set_source_code(source + "\n@export var added: int = 3\n");
+	script->update_exports();
+	CHECK(owner->get("resource") == Variant(resource));
+	CHECK(owner->get("feature") == Variant(feature));
+	CHECK(owner->get("native") == Variant(native));
+
+	script->set_source_code(source.replace("resource: Base", "resource: Other").replace("feature: Feature", "feature: OtherFeature").replace("native: Node3D", "native: Node2D"));
+	script->update_exports();
+	CHECK(owner->get("resource").is_null());
+	CHECK(owner->get("feature").is_null());
+	CHECK(owner->get("native").is_null());
+	memdelete(owner);
+	memdelete(feature);
+	memdelete(native);
+}
+
+TEST_CASE("[Modules][GDScript] Exported script references without a native base retain compatible values") {
+	class ScriptWithoutNativeBase : public ScriptExtension {
+	public:
+		StringName get_instance_base_type() const override { return StringName(); }
+		StringName get_global_name() const override { return StringName(); }
+		Ref<Script> get_base_script() const override { return Ref<Script>(); }
+	};
+	GDScriptLanguage::get_singleton()->init();
+	Ref<ScriptWithoutNativeBase> external_script;
+	external_script.instantiate();
+	external_script->set_path("res://gdscript_export_without_native_base.script");
+	REQUIRE(external_script->get_instance_base_type().is_empty());
+	Ref<ScriptWithoutNativeBase> unrelated_script;
+	unrelated_script.instantiate();
+	unrelated_script->set_path("res://gdscript_export_unrelated.script");
+	Ref<GDScript> script;
+	script.instantiate();
+	const String source = R"(
+extends RefCounted
+
+const External = preload("res://gdscript_export_without_native_base.script")
+
+@export_storage var stored: External
+@export_custom(PROPERTY_HINT_NONE, "") var custom: External
+)";
+	script->set_source_code(source);
+	REQUIRE(script->reload() == OK);
+	Ref<Resource> matching;
+	matching.instantiate();
+	matching->set_script_instance(memnew(PlaceHolderScriptInstance(GDScriptLanguage::get_singleton(), external_script, matching.ptr())));
+	Ref<Resource> unrelated;
+	unrelated.instantiate();
+	unrelated->set_script_instance(memnew(PlaceHolderScriptInstance(GDScriptLanguage::get_singleton(), unrelated_script, unrelated.ptr())));
+	Ref<RefCounted> matching_owner;
+	matching_owner.instantiate();
+	matching_owner->set_script_instance(script->placeholder_instance_create(matching_owner.ptr()));
+	Ref<RefCounted> unrelated_owner;
+	unrelated_owner.instantiate();
+	unrelated_owner->set_script_instance(script->placeholder_instance_create(unrelated_owner.ptr()));
+	for (const StringName &property : { SNAME("stored"), SNAME("custom") }) {
+		matching_owner->set(property, matching);
+		unrelated_owner->set(property, unrelated);
+		CHECK(matching_owner->get(property) == Variant(matching));
+		CHECK(unrelated_owner->get(property) == Variant(unrelated));
+	}
+
+	script->set_source_code(source + "\n@export var added: int = 3\n");
+	script->update_exports();
+	for (const StringName &property : { SNAME("stored"), SNAME("custom") }) {
+		CHECK(matching_owner->get(property) == Variant(matching));
+		CHECK(unrelated_owner->get(property).is_null());
+	}
+	matching->set_script_instance(nullptr);
+	unrelated->set_script_instance(nullptr);
+	GDScriptCache::remove_script(script->get_script_path());
+}
+
+TEST_CASE("[Modules][GDScript] Trait base edits refresh type reference exports") {
+	if (ProjectSettings::get_singleton()->get_resource_path().is_empty()) {
+		REQUIRE(ProjectSettings::get_singleton()->setup("modules/gdscript/tests/scripts", String(), true) == OK);
+	}
+	GDScriptLanguage::get_singleton()->init();
+	const String fixture_dir = ProjectSettings::get_singleton()->localize_path(TestUtils::get_executable_dir().path_join("../modules/gdscript/tests/scripts/Traits/analyzer/features").simplify_path());
+	const String trait_path = fixture_dir.path_join("export_type_reference_trait.notest.gd");
+	const String owner_path = fixture_dir.path_join("export_type_reference_owner.notest.gd");
+	const String consumer_path = fixture_dir.path_join("export_type_reference_consumer.notest.gd");
+	const StringName trait_name = "ExportTypeReferenceTrait";
+	const bool registered_before = ScriptServer::is_global_class(trait_name);
+	if (!registered_before) {
+		ScriptServer::add_global_class(trait_name, "Node", "GDScript", trait_path, false, false);
+	}
+	Ref<GDScript> trait = ResourceLoader::load(trait_path);
+	Ref<GDScript> owner = ResourceLoader::load(owner_path);
+	Ref<GDScript> consumer = ResourceLoader::load(consumer_path);
+	REQUIRE(trait.is_valid());
+	REQUIRE(owner.is_valid());
+	REQUIRE(consumer.is_valid());
+	REQUIRE(consumer->is_valid());
+	Ref<GDScript> inner = consumer->find_class("Inner");
+	REQUIRE(inner.is_valid());
+	CHECK_FALSE(owner->has_trait(trait->get_fully_qualified_name()));
+	CHECK_FALSE(consumer->has_trait(trait->get_fully_qualified_name()));
+
+	Ref<GDScript> implementation;
+	implementation.instantiate();
+	implementation->set_source_code("extends Node\nuses \"" + trait_path + "\"\n");
+	REQUIRE(implementation->reload() == OK);
+	Node *target = memnew(Node);
+	target->set_script_instance(implementation->placeholder_instance_create(target));
+	Node *direct_target = memnew(Node);
+	direct_target->set_script_instance(trait->placeholder_instance_create(direct_target));
+	Node *owner_node = memnew(Node);
+	owner_node->set_script_instance(owner->placeholder_instance_create(owner_node));
+	Node *consumer_node = memnew(Node);
+	consumer_node->set_script_instance(consumer->placeholder_instance_create(consumer_node));
+	Node *inner_node = memnew(Node);
+	inner_node->set_script_instance(inner->placeholder_instance_create(inner_node));
+	owner_node->set("attachment", target);
+	consumer_node->set("attachment", target);
+	inner_node->set("attachment", direct_target);
+	consumer_node->set("own", 42);
+
+	auto property_hint = [](Object *p_object) {
+		List<PropertyInfo> properties;
+		p_object->get_property_list(&properties);
+		for (const PropertyInfo &property : properties) {
+			if (property.name == SNAME("attachment")) {
+				return property.hint;
+			}
+		}
+		return PROPERTY_HINT_NONE;
+	};
+	CHECK(property_hint(owner_node) == PROPERTY_HINT_NODE_TYPE);
+	CHECK(property_hint(consumer_node) == PROPERTY_HINT_NODE_TYPE);
+	CHECK(property_hint(inner_node) == PROPERTY_HINT_NODE_TYPE);
+	const String original_source = trait->get_source_code();
+	const bool old_editor_hint = Engine::get_singleton()->is_editor_hint();
+	Engine::get_singleton()->set_editor_hint(true);
+	trait->set_source_code(original_source + "\n@export var added: int = 3\n");
+	trait->update_exports();
+	CHECK(owner_node->get("attachment") == Variant(target));
+	CHECK(consumer_node->get("attachment") == Variant(target));
+	CHECK(inner_node->get("attachment") == Variant(direct_target));
+
+	target->set_script_instance(nullptr);
+	direct_target->set_script_instance(nullptr);
+	implementation->set_source_code("extends Node\n");
+	CHECK(implementation->reload() == OK);
+	GDScriptCache::remove_script(implementation->get_script_path());
+	implementation.unref();
+	trait->set_source_code(original_source.replace("extends Node", "extends Resource"));
+	CHECK(trait->reload(true) == OK);
+	CHECK(property_hint(owner_node) == PROPERTY_HINT_RESOURCE_TYPE);
+	CHECK(property_hint(consumer_node) == PROPERTY_HINT_RESOURCE_TYPE);
+	CHECK(property_hint(inner_node) == PROPERTY_HINT_RESOURCE_TYPE);
+	CHECK(owner_node->get("attachment").is_null());
+	CHECK(consumer_node->get("attachment").is_null());
+	CHECK(inner_node->get("attachment").is_null());
+	CHECK(int(consumer_node->get("own")) == 42);
+
+	Ref<GDScript> resource_implementation;
+	resource_implementation.instantiate();
+	resource_implementation->set_source_code("extends Resource\nuses \"" + trait_path + "\"\n");
+	CHECK(resource_implementation->reload() == OK);
+	Ref<Resource> resource_target;
+	resource_target.instantiate();
+	resource_target->set_script_instance(resource_implementation->placeholder_instance_create(resource_target.ptr()));
+	consumer_node->set("attachment", resource_target);
+	trait->set_source_code(original_source.replace("extends Node", "extends Resource") + "\n@export var added: int = 3\n");
+	trait->update_exports();
+	CHECK(property_hint(consumer_node) == PROPERTY_HINT_RESOURCE_TYPE);
+	CHECK(consumer_node->get("attachment") == Variant(resource_target));
+	resource_target->set_script_instance(nullptr);
+	resource_implementation->set_source_code("extends Resource\n");
+	CHECK(resource_implementation->reload() == OK);
+	GDScriptCache::remove_script(resource_implementation->get_script_path());
+	resource_implementation.unref();
+
+	trait->set_source_code(original_source);
+	trait->update_exports();
+	CHECK(property_hint(owner_node) == PROPERTY_HINT_NODE_TYPE);
+	CHECK(property_hint(consumer_node) == PROPERTY_HINT_NODE_TYPE);
+	CHECK(property_hint(inner_node) == PROPERTY_HINT_NODE_TYPE);
+	CHECK(consumer_node->get("attachment").is_null());
+	Engine::get_singleton()->set_editor_hint(old_editor_hint);
+	memdelete(inner_node);
+	memdelete(consumer_node);
+	memdelete(owner_node);
+	memdelete(target);
+	memdelete(direct_target);
+	if (!registered_before) {
+		ScriptServer::remove_global_class(trait_name);
+	}
+}
+
+TEST_CASE("[Modules][GDScript] Trait edits refresh consumer exports") {
+	if (ProjectSettings::get_singleton()->get_resource_path().is_empty()) {
+		REQUIRE(ProjectSettings::get_singleton()->setup("modules/gdscript/tests/scripts", String(), true) == OK);
+	}
+	GDScriptLanguage::get_singleton()->init();
+	const String fixture_dir = ProjectSettings::get_singleton()->localize_path(TestUtils::get_executable_dir().path_join("../modules/gdscript/tests/scripts/Traits/analyzer/features").simplify_path());
+	const String trait_path = fixture_dir.path_join("trait_export_refresh_trait.notest.gd");
+	const String consumer_path = fixture_dir.path_join("trait_export_refresh_consumer.notest.gd");
+	const String transitive_path = fixture_dir.path_join("trait_export_refresh_transitive.notest.gd");
+	const String inner_path = fixture_dir.path_join("trait_export_refresh_inner.notest.gd");
+	const String extra_path = fixture_dir.path_join("trait_export_refresh_extra.notest.gd");
+	Ref<GDScript> trait = ResourceLoader::load(trait_path);
+	Ref<GDScript> consumer = ResourceLoader::load(consumer_path);
+	Ref<GDScript> transitive = ResourceLoader::load(transitive_path);
+	Ref<GDScript> inner_root = ResourceLoader::load(inner_path);
+	Ref<GDScript> extra = ResourceLoader::load(extra_path);
+	CHECK(trait.is_valid());
+	CHECK(consumer.is_valid());
+	CHECK(transitive.is_valid());
+	CHECK(inner_root.is_valid());
+	CHECK(extra.is_valid());
+	if (trait.is_null() || consumer.is_null() || transitive.is_null() || inner_root.is_null() || extra.is_null()) {
+		return;
+	}
+	CHECK(trait_path.is_resource_file());
+	CHECK(trait->get_path().is_resource_file());
+	CHECK_FALSE(trait->get_fully_qualified_name().is_empty());
+	CHECK(consumer->has_trait(StringName(trait->get_fully_qualified_name())));
+	REQUIRE(consumer->is_valid());
+	REQUIRE(transitive->is_valid());
+	REQUIRE(inner_root->is_valid());
+	if (!consumer->is_valid() || !transitive->is_valid() || !inner_root->is_valid()) {
+		return;
+	}
+	Ref<GDScript> inner = inner_root->find_class("Inner");
+	REQUIRE(inner.is_valid());
+	if (inner.is_null()) {
+		return;
+	}
+	CHECK_FALSE(inner_root->has_trait(StringName(trait->get_fully_qualified_name())));
+	CHECK(inner->has_trait(StringName(trait->get_fully_qualified_name())));
+	const bool old_editor_hint = Engine::get_singleton()->is_editor_hint();
+	Engine::get_singleton()->set_editor_hint(false);
+	Ref<RefCounted> live_object;
+	live_object.instantiate();
+	live_object->set_script(consumer);
+	ScriptInstance *live_instance = live_object->get_script_instance();
+	CHECK(live_instance != nullptr);
+	if (live_instance == nullptr) {
+		Engine::get_singleton()->set_editor_hint(old_editor_hint);
+		return;
+	}
+	CHECK_FALSE(live_instance->is_placeholder());
+	live_object->set(SNAME("own"), 42);
+	CHECK(int(live_object->get(SNAME("own"))) == 42);
+
+	Ref<RefCounted> object;
+	object.instantiate();
+	PlaceHolderScriptInstance *placeholder = consumer->placeholder_instance_create(object.ptr());
+	Ref<RefCounted> transitive_object;
+	transitive_object.instantiate();
+	PlaceHolderScriptInstance *transitive_placeholder = transitive->placeholder_instance_create(transitive_object.ptr());
+	Ref<RefCounted> inner_object;
+	inner_object.instantiate();
+	PlaceHolderScriptInstance *inner_placeholder = inner->placeholder_instance_create(inner_object.ptr());
+	Ref<RefCounted> inner_root_object;
+	inner_root_object.instantiate();
+	PlaceHolderScriptInstance *inner_root_placeholder = inner_root->placeholder_instance_create(inner_root_object.ptr());
+	const String original_source = trait->get_source_code();
+	const String original_extra_source = extra->get_source_code();
+	Engine::get_singleton()->set_editor_hint(true);
+
+	auto has_export = [](PlaceHolderScriptInstance *p_placeholder, const StringName &p_name) {
+		List<PropertyInfo> properties;
+		p_placeholder->get_property_list(&properties);
+		for (const PropertyInfo &property : properties) {
+			if (property.name == p_name) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	CHECK(has_export(placeholder, SNAME("own")));
+	CHECK_FALSE(has_export(placeholder, SNAME("added")));
+	CHECK_FALSE(has_export(transitive_placeholder, SNAME("added")));
+	CHECK(has_export(inner_placeholder, SNAME("inner_own")));
+	CHECK(has_export(inner_placeholder, SNAME("original")));
+	CHECK_FALSE(has_export(inner_placeholder, SNAME("added")));
+	CHECK_FALSE(has_export(inner_root_placeholder, SNAME("original")));
+	CHECK(placeholder->set(SNAME("own"), 42));
+	trait->set_source_code(original_source + "\n@export var added: int = 3\n");
+	trait->update_exports();
+	CHECK(has_export(placeholder, SNAME("added")));
+	CHECK(has_export(transitive_placeholder, SNAME("added")));
+	CHECK(has_export(inner_placeholder, SNAME("added")));
+	CHECK(consumer->debug_get_member_indices().has(SNAME("added")));
+	CHECK(inner->debug_get_member_indices().has(SNAME("added")));
+	CHECK(int(live_object->get(SNAME("own"))) == 42);
+	Variant own_value;
+	CHECK(placeholder->get(SNAME("own"), own_value));
+	CHECK(int(own_value) == 42);
+	trait->set_source_code(original_source);
+	trait->update_exports();
+	CHECK_FALSE(has_export(placeholder, SNAME("added")));
+	CHECK_FALSE(has_export(transitive_placeholder, SNAME("added")));
+	CHECK_FALSE(has_export(inner_placeholder, SNAME("added")));
+	CHECK_FALSE(consumer->debug_get_member_indices().has(SNAME("added")));
+	CHECK(has_export(placeholder, SNAME("own")));
+
+	trait->set_source_code(original_source.replace("trait_name ExportRefreshTrait", "trait_name ExportRefreshTrait\nuses \"trait_export_refresh_extra.notest.gd\""));
+	trait->update_exports();
+	CHECK(consumer->has_trait(StringName(extra->get_fully_qualified_name())));
+	extra->set_source_code(original_extra_source + "\n@export var extra_added: int = 6\n");
+	extra->update_exports();
+	CHECK(has_export(placeholder, SNAME("extra_added")));
+	CHECK(consumer->debug_get_member_indices().has(SNAME("extra_added")));
+	extra->set_source_code(original_extra_source);
+	extra->update_exports();
+	trait->set_source_code(original_source);
+	trait->update_exports();
+
+	Engine::get_singleton()->set_editor_hint(old_editor_hint);
+	memdelete(placeholder);
+	memdelete(transitive_placeholder);
+	memdelete(inner_placeholder);
+	memdelete(inner_root_placeholder);
+}
+#endif // TOOLS_ENABLED
+
+#ifdef TOOLS_ENABLED
+TEST_CASE("[Modules][GDScript] Trait-typed exported arrays retain node references") {
+	if (ProjectSettings::get_singleton()->get_resource_path().is_empty()) {
+		REQUIRE(ProjectSettings::get_singleton()->setup("modules/gdscript/tests/scripts", String(), true) == OK);
+	}
+	GDScriptLanguage::get_singleton()->init();
+	const String script_path = ProjectSettings::get_singleton()->localize_path(TestUtils::get_executable_dir().path_join("../modules/gdscript/tests/scripts/Traits/analyzer/features/trait_exported_array_scene.notest.gd").simplify_path());
+	Ref<GDScript> script = ResourceLoader::load(script_path);
+	REQUIRE(script.is_valid());
+	REQUIRE(script->is_valid());
+	Ref<GDScript> owner_script = script->find_class("Owner");
+	Ref<GDScript> enemy_script = script->find_class("Enemy");
+	REQUIRE(owner_script.is_valid());
+	REQUIRE(enemy_script.is_valid());
+
+	Node *owner = memnew(Node);
+	owner->set_name("Owner");
+	owner->set_script(owner_script);
+	Node *enemy = memnew(Node);
+	enemy->set_name("Enemy");
+	enemy->set_script(enemy_script);
+	owner->add_child(enemy);
+	enemy->set_owner(owner);
+
+	Array targets = owner->get("targets");
+	const StringName damageable_trait = script->get_fully_qualified_name() + "::Damageable";
+	CHECK(targets.get_typed_builtin() == Variant::OBJECT);
+	CHECK(targets.get_typed_class_name() == damageable_trait);
+	CHECK(enemy_script->has_trait(targets.get_typed_class_name()));
+	targets.push_back(enemy);
+	CHECK(targets.size() == 1);
+	Array nodes;
+	nodes.set_typed(Variant::OBJECT, "Node", Variant());
+	nodes.assign(targets);
+	CHECK(nodes.size() == 1);
+	Array converted;
+	converted.set_typed(Variant::OBJECT, targets.get_typed_class_name(), Variant());
+	converted.assign(nodes);
+	CHECK(converted.size() == 1);
+
+	Node *unrelated = memnew(Node);
+	ERR_PRINT_OFF;
+	targets.push_back(unrelated);
+	ERR_PRINT_ON;
+	CHECK(targets.size() == 1);
+	nodes.push_back(unrelated);
+	ERR_PRINT_OFF;
+	converted.assign(nodes);
+	ERR_PRINT_ON;
+	CHECK(converted.size() == 1);
+	memdelete(unrelated);
+
+	bool valid = false;
+	owner->set("targets", targets, &valid);
+	CHECK(valid);
+	CHECK(Array(owner->get("targets")).size() == 1);
+
+	Ref<PackedScene> scene;
+	scene.instantiate();
+	CHECK(scene->pack(owner) == OK);
+	Node *loaded = scene->instantiate();
+	REQUIRE(loaded != nullptr);
+	Array loaded_targets = loaded->get("targets");
+	REQUIRE(loaded_targets.size() == 1);
+	CHECK(loaded_targets.get_typed_class_name() == targets.get_typed_class_name());
+	Object *loaded_target = loaded_targets[0];
+	CHECK(loaded_target == loaded->get_node(NodePath("Enemy")));
+
+	memdelete(loaded);
+	memdelete(owner);
 }
 #endif // TOOLS_ENABLED
 

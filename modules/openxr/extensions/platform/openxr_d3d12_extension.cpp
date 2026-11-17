@@ -30,14 +30,20 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_d3d12_extension.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_d3d12_extension.h"
 
 #ifdef D3D12_ENABLED
 
 #include "../../openxr_util.h"
 
+#include "servers/rendering/rendering_server.h"
 #include "servers/rendering/rendering_server_globals.h"
-#include "servers/rendering_server.h"
 
 HashMap<String, bool *> OpenXRD3D12Extension::get_requested_extensions() {
 	HashMap<String, bool *> request_extensions;

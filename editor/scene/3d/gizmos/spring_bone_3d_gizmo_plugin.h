@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file spring_bone_3d_gizmo_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "editor/scene/3d/node_3d_editor_plugin.h"
 #include "scene/3d/spring_bone_collision_3d.h"

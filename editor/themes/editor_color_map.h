@@ -32,19 +32,25 @@
 
 #pragma once
 
+/**
+ * @file editor_color_map.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/color.h"
 #include "core/string/string_name.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/hash_set.h"
 
-// The default icon theme is designed to be used for a dark theme. This map stores
-// Color values to convert to other colors for better readability on a light theme.
+/// The default icon theme is designed to be used for a dark theme. This map stores
+/// Color values to convert to other colors for better readability on a light theme.
 class EditorColorMap {
-	// Redot Color values are used to avoid the ambiguity of strings
-	// (where "#ffffff", "fff", and "white" are all equivalent).
+	/// Redot Color values are used to avoid the ambiguity of strings
+	/// (where "#ffffff", "fff", and "white" are all equivalent).
 	static HashMap<Color, Color> color_conversion_map;
-	// The names of the icons to never convert, even if one of their colors
-	// are contained in the color map from above.
+	/// The names of the icons to never convert, even if one of their colors
+	/// are contained in the color map from above.
 	static HashSet<StringName> color_conversion_exceptions;
 
 public:

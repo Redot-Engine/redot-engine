@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file node_dock.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "node_dock.h"
 
 #include "core/io/config_file.h"

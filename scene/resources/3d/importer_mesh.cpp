@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file importer_mesh.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "importer_mesh.h"
 
 #include "core/io/marshalls.h"

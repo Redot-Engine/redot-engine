@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file noise_texture_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "noise_texture_3d.h"
 
 #include "noise.h"

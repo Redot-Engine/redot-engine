@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file sky_material.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "sky_material.h"
 
 #include "core/config/project_settings.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file visual_shader_nodes.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "visual_shader_nodes.h"
 #include "visual_shader_nodes.compat.inc"
 

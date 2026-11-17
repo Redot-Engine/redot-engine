@@ -1,23 +1,17 @@
 // File: basisu_math.h
 #pragma once
 
+#include <bit>
+
 // TODO: Would prefer this in the basisu namespace, but to avoid collisions with the existing vec/matrix classes I'm placing this in "bu_math".
 namespace bu_math
 {
 	// Cross-platform 1.0f/sqrtf(x) approximation. See https://en.wikipedia.org/wiki/Fast_inverse_square_root#cite_note-37.
 	// Would prefer using SSE1 etc. but that would require implementing multiple versions and platform divergence (needing more testing).
-	BASISU_FORCE_INLINE float inv_sqrt(float v)
+	constexpr float inv_sqrt(float v)
 	{
-		union 
-		{ 
-			float flt; 
-			uint32_t ui; 
-		} un;
-
-		un.flt = v;
-		un.ui = 0x5F1FFFF9UL - (un.ui >> 1);
-
-		return 0.703952253f * un.flt * (2.38924456f - v * (un.flt * un.flt));
+		const float flt = std::bit_cast<float>(0x5F1FFFF9U - (std::bit_cast<uint32_t>(v) >> 1));
+		return 0.703952253f * flt * (2.38924456f - v * (flt * flt));
 	}
 
 	inline float smoothstep(float edge0, float edge1, float x)
@@ -34,15 +28,10 @@ namespace bu_math
 	class vec : public basisu::rel_ops<vec<N, T> >
 	{
 	public:
-		typedef T scalar_type;
-		enum
-		{
-			num_elements = N
-		};
+		using scalar_type = T;
+		static constexpr uint32_t num_elements = N;
 
-		inline vec()
-		{
-		}
+		inline vec() = default;
 
 		inline vec(basisu::eClear)
 		{
@@ -77,7 +66,7 @@ namespace bu_math
 
 		inline void clear()
 		{
-			if (N > 4)
+			if constexpr (N > 4)
 				memset(m_s, 0, sizeof(m_s));
 			else
 			{
@@ -123,20 +112,20 @@ namespace bu_math
 			T values[] = { static_cast<T>(args)... };
 
 			// Special case if setting with a scalar
-			if (sizeof...(args) == 1)
+			if constexpr (sizeof...(args) == 1)
 			{
 				set_all(values[0]);
 			}
 			else
 			{
 				// Copy the values into the vector
-				for (std::size_t i = 0; i < sizeof...(args); ++i)
+				for (std::size_t i = 0; i < sizeof...(args); i++)
 				{
 					m_s[i] = values[i];
 				}
 
 				// Zero-initialize the remaining elements (if any)
-				if (sizeof...(args) < N)
+				if constexpr (sizeof...(args) < N)
 				{
 					std::fill(m_s + sizeof...(args), m_s + N, T{});
 				}
@@ -243,12 +232,12 @@ namespace bu_math
 			static_assert(index < N);
 			static_assert((sizeof(T) == sizeof(uint16_t)) || (sizeof(T) == sizeof(uint32_t)) || (sizeof(T) == sizeof(uint64_t)), "Unsupported type");
 
-			if (sizeof(T) == sizeof(uint16_t))
-				return *reinterpret_cast<const uint16_t*>(&m_s[index]);
-			else if (sizeof(T) == sizeof(uint32_t))
-				return *reinterpret_cast<const uint32_t*>(&m_s[index]);
-			else if (sizeof(T) == sizeof(uint64_t))
-				return *reinterpret_cast<const uint64_t*>(&m_s[index]);
+			if constexpr (sizeof(T) == sizeof(uint16_t))
+				return std::bit_cast<uint16_t>(m_s[index]);
+			else if constexpr (sizeof(T) == sizeof(uint32_t))
+				return std::bit_cast<uint32_t>(m_s[index]);
+			else if constexpr (sizeof(T) == sizeof(uint64_t))
+				return std::bit_cast<uint64_t>(m_s[index]);
 			else
 			{
 				assert(0);
@@ -1185,22 +1174,17 @@ namespace bu_math
 	class matrix
 	{
 	public:
-		typedef T scalar_type;
-		enum
-		{
-			num_rows = R,
-			num_cols = C
-		};
+		using scalar_type = T;
+		static constexpr uint32_t num_rows = R;
+		static constexpr uint32_t num_cols = C;
 
-		typedef vec<R, T> col_vec;
+		using col_vec = vec<R, T>;
 		typedef vec < (R > 1) ? (R - 1) : 0, T > subcol_vec;
 
-		typedef vec<C, T> row_vec;
+		using row_vec = vec<C, T>;
 		typedef vec < (C > 1) ? (C - 1) : 0, T > subrow_vec;
 
-		inline matrix()
-		{
-		}
+		inline matrix() = default;
 
 		inline matrix(basisu::eClear)
 		{
@@ -1279,7 +1263,7 @@ namespace bu_math
 			T val10, T val11)
 		{
 			m_rows[0].set(val00, val01);
-			if (R >= 2)
+			if constexpr (R >= 2)
 			{
 				m_rows[1].set(val10, val11);
 
@@ -1293,11 +1277,11 @@ namespace bu_math
 			T val20, T val21)
 		{
 			m_rows[0].set(val00, val01);
-			if (R >= 2)
+			if constexpr (R >= 2)
 			{
 				m_rows[1].set(val10, val11);
 
-				if (R >= 3)
+				if constexpr (R >= 3)
 				{
 					m_rows[2].set(val20, val21);
 
@@ -1312,10 +1296,10 @@ namespace bu_math
 			T val20, T val21, T val22)
 		{
 			m_rows[0].set(val00, val01, val02);
-			if (R >= 2)
+			if constexpr (R >= 2)
 			{
 				m_rows[1].set(val10, val11, val12);
-				if (R >= 3)
+				if constexpr (R >= 3)
 				{
 					m_rows[2].set(val20, val21, val22);
 
@@ -1331,14 +1315,14 @@ namespace bu_math
 			T val30, T val31, T val32, T val33)
 		{
 			m_rows[0].set(val00, val01, val02, val03);
-			if (R >= 2)
+			if constexpr (R >= 2)
 			{
 				m_rows[1].set(val10, val11, val12, val13);
-				if (R >= 3)
+				if constexpr (R >= 3)
 				{
 					m_rows[2].set(val20, val21, val22, val23);
 
-					if (R >= 4)
+					if constexpr (R >= 4)
 					{
 						m_rows[3].set(val30, val31, val32, val33);
 
@@ -1354,10 +1338,10 @@ namespace bu_math
 			T val20, T val21, T val22, T val23)
 		{
 			m_rows[0].set(val00, val01, val02, val03);
-			if (R >= 2)
+			if constexpr (R >= 2)
 			{
 				m_rows[1].set(val10, val11, val12, val13);
-				if (R >= 3)
+				if constexpr (R >= 3)
 				{
 					m_rows[2].set(val20, val21, val22, val23);
 
@@ -1367,17 +1351,17 @@ namespace bu_math
 			}
 		}
 
-		inline uint32_t get_num_rows() const
+		consteval uint32_t get_num_rows() const
 		{
 			return num_rows;
 		}
 
-		inline uint32_t get_num_cols() const
+		consteval uint32_t get_num_cols() const
 		{
 			return num_cols;
 		}
 
-		inline uint32_t get_total_elements() const
+		consteval uint32_t get_total_elements() const
 		{
 			return num_rows * num_cols;
 		}
@@ -1715,10 +1699,10 @@ namespace bu_math
 		{
 			matrix<1, R, T> result;
 
-			for (uint32_t r = 0; r < R; r++)
+			for (uint32_t r = 0; r < R; ++r)
 			{
 				T sum = 0;
-				for (uint32_t c = 0; c < C; c++)
+				for (uint32_t c = 0; c < C; ++c)
 					sum += m_rows[r][c] * b[0][c];
 
 				result[0][r] = static_cast<T>(sum);
@@ -2201,7 +2185,7 @@ namespace bu_math
 			else
 			{
 				d = 0;
-				for (uint32_t j1 = 1; j1 <= n; j1++)
+				for (uint32_t j1 = 1; j1 <= n; ++j1)
 				{
 					for (uint32_t i = 2; i <= n; i++)
 					{
@@ -2222,16 +2206,16 @@ namespace bu_math
 		}
 	};
 
-	typedef matrix<2, 2, float> matrix22F;
-	typedef matrix<2, 2, double> matrix22D;
+	using matrix22F = matrix<2, 2, float>;
+	using matrix22D = matrix<2, 2, double>;
 
-	typedef matrix<3, 3, float> matrix33F;
-	typedef matrix<3, 3, double> matrix33D;
+	using matrix33F = matrix<3, 3, float>;
+	using matrix33D = matrix<3, 3, double>;
 
-	typedef matrix<4, 4, float> matrix44F;
-	typedef matrix<4, 4, double> matrix44D;
+	using matrix44F = matrix<4, 4, float>;
+	using matrix44D = matrix<4, 4, double>;
 
-	typedef matrix<8, 8, float> matrix88F;
+	using matrix88F = matrix<8, 8, float>;
 
 	// These helpers create good old D3D-style matrices.
 	inline matrix44F matrix44F_make_perspective_offcenter_lh(float l, float r, float b, float t, float nz, float fz)
@@ -2323,14 +2307,14 @@ namespace bu_math
 		const uint32_t N = R::num_cols;
 
 		R result;
-		for (uint32_t k = 0; k < N; k++)
+		for (uint32_t k = 0; k < N; ++k)
 		{
-			for (uint32_t n = 0; n < N; n++)
+			for (uint32_t n = 0; n < N; ++n)
 			{
 				double f;
 
 				if (!k)
-					f = 1.0f / sqrt(float(N));
+					f = inv_sqrt(float(N));
 				else
 					f = sqrt(2.0f / float(N)) * cos((basisu::cPiD * (2.0f * float(n) + 1.0f) * float(k)) / (2.0f * float(N)));
 
@@ -2380,12 +2364,12 @@ namespace bu_math
 	{
 		matrix<X::num_rows + Y::num_rows, X::num_cols, typename X::scalar_type> result;
 
-		for (uint32_t r = 0; r < X::num_rows; r++)
-			for (uint32_t c = 0; c < X::num_cols; c++)
+		for (uint32_t r = 0; r < X::num_rows; ++r)
+			for (uint32_t c = 0; c < X::num_cols; ++c)
 				result(r, c) = a(r, c);
 
-		for (uint32_t r = 0; r < Y::num_rows; r++)
-			for (uint32_t c = 0; c < Y::num_cols; c++)
+		for (uint32_t r = 0; r < Y::num_rows; ++r)
+			for (uint32_t c = 0; c < Y::num_cols; ++c)
 				result(r + X::num_rows, c) = b(r, c);
 
 		return result;
@@ -2427,7 +2411,7 @@ namespace bu_math
 
 	inline matrix44F get_haar4()
 	{
-		const float sqrt2 = 1.4142135623730951f;
+		constexpr float sqrt2 = 1.4142135623730951f;
 
 		return matrix44F(
 			.5f * 1, .5f * 1, .5f * 1, .5f * 1,

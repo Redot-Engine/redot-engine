@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file collada.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "collada.h"
 
 #include "core/config/project_settings.h"
@@ -359,7 +365,6 @@ void Collada::_parse_material(XMLParser &p_parser) {
 	state.material_map[id] = material;
 }
 
-//! reads floats from inside of xml element until end of xml element
 Vector<float> Collada::_read_float_array(XMLParser &p_parser) {
 	if (p_parser.is_empty()) {
 		return Vector<float>();
@@ -373,8 +378,7 @@ Vector<float> Collada::_read_float_array(XMLParser &p_parser) {
 
 	Vector<float> array;
 	while (p_parser.read() == OK) {
-		// TODO: check for comments inside the element
-		// and ignore them.
+		/// @todo Check for comments inside the element and ignore them.
 
 		if (p_parser.get_node_type() == XMLParser::NODE_TEXT) {
 			// parse float data
@@ -396,8 +400,7 @@ Vector<String> Collada::_read_string_array(XMLParser &p_parser) {
 
 	Vector<String> array;
 	while (p_parser.read() == OK) {
-		// TODO: check for comments inside the element
-		// and ignore them.
+		/// @todo Check for comments inside the element and ignore them.
 
 		if (p_parser.get_node_type() == XMLParser::NODE_TEXT) {
 			// parse String data
@@ -418,8 +421,7 @@ Transform3D Collada::_read_transform(XMLParser &p_parser) {
 
 	Vector<String> array;
 	while (p_parser.read() == OK) {
-		// TODO: check for comments inside the element
-		// and ignore them.
+		/// @todo Check for comments inside the element and ignore them.
 
 		if (p_parser.get_node_type() == XMLParser::NODE_TEXT) {
 			// parse float data
@@ -1216,7 +1218,7 @@ void Collada::_parse_skin_controller(XMLParser &p_parser, const String &p_id) {
 
 	for (int i = 0; i < joint_source.sarray.size(); i++) {
 		String name = joint_source.sarray[i];
-		Transform3D xform = _read_transform_from_array(ibm_source.array, i * 16); //<- this is a mistake, it must be applied to vertices
+		Transform3D xform = _read_transform_from_array(ibm_source.array, i * 16); ///< @todo <- this is a mistake, it must be applied to vertices
 		xform.affine_invert(); // inverse for rest, because it's an inverse
 #ifdef COLLADA_IMPORT_SCALE_SCENE
 		xform.origin *= state.unit_scale;
@@ -2183,9 +2185,6 @@ bool Collada::_optimize_skeletons(VisualScene *p_vscene, Node *p_node) {
 }
 
 bool Collada::_move_geometry_to_skeletons(VisualScene *p_vscene, Node *p_node, List<Node *> *p_mgeom) {
-	// Bind Shape Matrix scales the bones and makes them gigantic, so the matrix then shrinks the model?
-	// Solution: apply the Bind Shape Matrix to the VERTICES, and if the object comes scaled, it seems to be left alone!
-
 	if (p_node->type == Node::TYPE_GEOMETRY) {
 		NodeGeometry *ng = static_cast<NodeGeometry *>(p_node);
 		if (ng->ignore_anim) {

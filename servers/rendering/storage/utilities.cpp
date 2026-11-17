@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file utilities.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "utilities.h"
 
 void Dependency::changed_notify(DependencyChangedNotification p_notification) {

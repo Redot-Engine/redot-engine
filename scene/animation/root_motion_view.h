@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file root_motion_view.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/immediate_mesh.h"
 class RootMotionView : public VisualInstance3D {

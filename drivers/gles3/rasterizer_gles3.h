@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rasterizer_gles3.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "effects/copy_effects.h"
@@ -84,6 +90,7 @@ protected:
 	RasterizerSceneGLES3 *scene = nullptr;
 	static RasterizerGLES3 *singleton;
 
+	/// Is this p_screen useless in a multi window environment?
 	void _blit_render_target_to_screen(DisplayServer::WindowID p_screen, const BlitToScreen &p_blit, bool p_first = true);
 
 public:

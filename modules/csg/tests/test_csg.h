@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file test_csg.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../csg.h"
 #include "../csg_shape.h"
 

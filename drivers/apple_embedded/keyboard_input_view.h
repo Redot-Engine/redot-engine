@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file keyboard_input_view.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #import <UIKit/UIKit.h>
 
 @interface GDTKeyboardInputView : UITextView

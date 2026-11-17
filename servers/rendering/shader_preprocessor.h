@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file shader_preprocessor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/ustring.h"
 #include "core/templates/list.h"
 #include "core/templates/local_vector.h"
@@ -74,7 +80,7 @@ private:
 		Token(char32_t p_text, int p_line);
 	};
 
-	// The real preprocessor that understands basic shader and preprocessor language syntax.
+	/// The real preprocessor that understands basic shader and preprocessor language syntax.
 	class Tokenizer {
 	public:
 		String code;
@@ -151,7 +157,7 @@ private:
 		Branch *current_branch = nullptr;
 		int condition_depth = 0;
 		RBSet<String> includes;
-		List<uint64_t> cyclic_include_hashes; // Holds code hash of includes.
+		List<uint64_t> cyclic_include_hashes; ///< Holds code hash of includes.
 		int include_depth = 0;
 		String current_filename;
 		String current_shader_type;

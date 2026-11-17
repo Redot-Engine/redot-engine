@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file register_types.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GDEXTENSION
 #include <godot_cpp/core/class_db.hpp>
 using namespace godot;

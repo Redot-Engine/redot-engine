@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file plane.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/vector3.h"
 
 class Variant;
@@ -46,7 +52,8 @@ struct [[nodiscard]] Plane {
 	void normalize();
 	Plane normalized() const;
 
-	/* Plane-Point operations */
+	/// @name Plane-Point operations
+	/// @{
 
 	_FORCE_INLINE_ Vector3 get_center() const { return normal * d; }
 	Vector3 get_any_perpendicular_normal() const;
@@ -55,22 +62,28 @@ struct [[nodiscard]] Plane {
 	_FORCE_INLINE_ real_t distance_to(const Vector3 &p_point) const;
 	_FORCE_INLINE_ bool has_point(const Vector3 &p_point, real_t p_tolerance = CMP_EPSILON) const;
 
-	/* intersections */
+	/// @}
+	/// @name Intersections
+	/// @{
 
 	bool intersect_3(const Plane &p_plane1, const Plane &p_plane2, Vector3 *r_result = nullptr) const;
 	bool intersects_ray(const Vector3 &p_from, const Vector3 &p_dir, Vector3 *p_intersection) const;
 	bool intersects_segment(const Vector3 &p_begin, const Vector3 &p_end, Vector3 *p_intersection) const;
+	/// @}
 
-	// For Variant bindings.
+	/// @name For Variant bindings
+	/// @{
 	Variant intersect_3_bind(const Plane &p_plane1, const Plane &p_plane2) const;
 	Variant intersects_ray_bind(const Vector3 &p_from, const Vector3 &p_dir) const;
 	Variant intersects_segment_bind(const Vector3 &p_begin, const Vector3 &p_end) const;
+	/// @}
 
 	_FORCE_INLINE_ Vector3 project(const Vector3 &p_point) const {
 		return p_point - normal * distance_to(p_point);
 	}
 
-	/* misc */
+	/// @name Misc.
+	/// @{
 
 	constexpr Plane operator-() const { return Plane(-normal, -d); }
 	bool is_equal_approx(const Plane &p_plane) const;
@@ -90,6 +103,7 @@ struct [[nodiscard]] Plane {
 	constexpr Plane(const Vector3 &p_normal, real_t p_d = 0.0);
 	_FORCE_INLINE_ Plane(const Vector3 &p_normal, const Vector3 &p_point);
 	_FORCE_INLINE_ Plane(const Vector3 &p_point1, const Vector3 &p_point2, const Vector3 &p_point3, ClockDirection p_dir = CLOCKWISE);
+	/// @}
 };
 
 bool Plane::is_point_over(const Vector3 &p_point) const {

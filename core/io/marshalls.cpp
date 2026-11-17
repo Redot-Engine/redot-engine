@@ -30,12 +30,21 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file marshalls.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "marshalls.h"
 
 #include "core/io/resource_loader.h"
 #include "core/object/ref_counted.h"
 #include "core/object/script_language.h"
 #include "core/variant/container_type_validate.h"
+#include "core/variant/struct.h"
+#include "core/variant/struct_info.h"
+#include "core/variant/variant_internal.h"
 
 #include <climits>
 #include <cstdio>
@@ -58,25 +67,25 @@ ObjectID EncodedObjectAsID::get_object_id() const {
 #define ERR_FAIL_ADD_OF(a, b, err) ERR_FAIL_COND_V(((int32_t)(b)) < 0 || ((int32_t)(a)) < 0 || ((int32_t)(a)) > INT_MAX - ((int32_t)(b)), err)
 #define ERR_FAIL_MUL_OF(a, b, err) ERR_FAIL_COND_V(((int32_t)(a)) < 0 || ((int32_t)(b)) <= 0 || ((int32_t)(a)) > INT_MAX / ((int32_t)(b)), err)
 
-// Byte 0: `Variant::Type`, byte 1: unused, bytes 2 and 3: additional data.
+/// Byte 0: `Variant::Type`, byte 1: unused, bytes 2 and 3: additional data.
 #define HEADER_TYPE_MASK 0xFF
 
-// For `Variant::INT`, `Variant::FLOAT` and other math types.
+/// For `Variant::INT`, `Variant::FLOAT` and other math types.
 #define HEADER_DATA_FLAG_64 (1 << 16)
 
-// For `Variant::OBJECT`.
+/// For `Variant::OBJECT`.
 #define HEADER_DATA_FLAG_OBJECT_AS_ID (1 << 16)
 
-// For `Variant::ARRAY`.
-// Occupies bits 16 and 17.
+/// For `Variant::ARRAY`.
+/// Occupies bits 16 and 17.
 #define HEADER_DATA_FIELD_TYPED_ARRAY_MASK (0b11 << 16)
 #define HEADER_DATA_FIELD_TYPED_ARRAY_SHIFT 16
 
-// For `Variant::DICTIONARY`.
-// Occupies bits 16 and 17.
+/// For `Variant::DICTIONARY`.
+/// Occupies bits 16 and 17.
 #define HEADER_DATA_FIELD_TYPED_DICTIONARY_KEY_MASK (0b11 << 16)
 #define HEADER_DATA_FIELD_TYPED_DICTIONARY_KEY_SHIFT 16
-// Occupies bits 18 and 19.
+/// Occupies bits 18 and 19.
 #define HEADER_DATA_FIELD_TYPED_DICTIONARY_VALUE_MASK (0b11 << 18)
 #define HEADER_DATA_FIELD_TYPED_DICTIONARY_VALUE_SHIFT 18
 
@@ -201,9 +210,9 @@ Error decode_variant(Variant &r_variant, const uint8_t *p_buffer, int p_len, int
 		*r_len = 4;
 	}
 
-	// NOTE: We cannot use `sizeof(real_t)` for decoding, in case a different size is encoded.
-	// Decoding math types always checks for the encoded size, while encoding always uses compilation setting.
-	// This does lead to some code duplication for decoding, but compatibility is the priority.
+	/// @note We cannot use `sizeof(real_t)` for decoding, in case a different size is encoded.
+	/// Decoding math types always checks for the encoded size, while encoding always uses compilation setting.
+	/// This does lead to some code duplication for decoding, but compatibility is the priority.
 	switch (header & HEADER_TYPE_MASK) {
 		case Variant::NIL: {
 			r_variant = Variant();
@@ -1296,6 +1305,120 @@ Error decode_variant(Variant &r_variant, const uint8_t *p_buffer, int p_len, int
 			r_variant = varray;
 
 		} break;
+		case Variant::STRUCT: {
+			String id;
+			{
+				Error err = _decode_string(buf, len, r_len, id);
+				if (err) {
+					return err;
+				}
+			}
+			if (id.is_empty()) {
+				r_variant = Struct();
+				break;
+			}
+
+			ERR_FAIL_COND_V(len < 4, ERR_INVALID_DATA);
+			uint32_t version = decode_uint32(buf);
+			buf += 4;
+			len -= 4;
+			if (r_len) {
+				(*r_len) += 4;
+			}
+			ERR_FAIL_COND_V_MSG(version != StructInfo::SERIALIZATION_VERSION, ERR_INVALID_DATA, "Unsupported struct schema version.");
+
+			ERR_FAIL_COND_V(len < 4, ERR_INVALID_DATA);
+			int32_t field_count = decode_uint32(buf);
+			buf += 4;
+			len -= 4;
+			if (r_len) {
+				(*r_len) += 4;
+			}
+			ERR_FAIL_COND_V(field_count < 0, ERR_INVALID_DATA);
+
+			StructInfoBuilder b;
+			b.set_logical_type_id(StringName(id));
+			for (int i = 0; i < field_count; i++) {
+				StructInfo::Field f;
+				{
+					String name;
+					Error err = _decode_string(buf, len, r_len, name);
+					if (err) {
+						return err;
+					}
+					f.name = StringName(name);
+				}
+				{
+					String token;
+					Error err = _decode_string(buf, len, r_len, token);
+					if (err) {
+						return err;
+					}
+					f.type = StructInfo::type_from_token(token);
+					ERR_FAIL_COND_V_MSG(f.type == Variant::VARIANT_MAX, ERR_INVALID_DATA, "Unknown struct field type token.");
+				}
+				ERR_FAIL_COND_V(len < 4, ERR_INVALID_DATA);
+				f.is_typed = decode_uint32(buf) != 0;
+				buf += 4;
+				len -= 4;
+				if (r_len) {
+					(*r_len) += 4;
+				}
+				ERR_FAIL_COND_V(len < 4, ERR_INVALID_DATA);
+				f.is_nullable = decode_uint32(buf) != 0;
+				buf += 4;
+				len -= 4;
+				if (r_len) {
+					(*r_len) += 4;
+				}
+				{
+					String cn;
+					Error err = _decode_string(buf, len, r_len, cn);
+					if (err) {
+						return err;
+					}
+					f.class_name = StringName(cn);
+				}
+				{
+					String st;
+					Error err = _decode_string(buf, len, r_len, st);
+					if (err) {
+						return err;
+					}
+					f.struct_type_id = StringName(st);
+				}
+				{
+					int used;
+					Error err = decode_variant(f.default_value, buf, len, &used, p_allow_objects, p_depth + 1);
+					ERR_FAIL_COND_V_MSG(err, err, "Error decoding struct field default.");
+					buf += used;
+					len -= used;
+					if (r_len) {
+						(*r_len) += used;
+					}
+				}
+				b.add_field(f);
+			}
+			Ref<StructInfo> info = b.build();
+			ERR_FAIL_COND_V(info.is_null(), ERR_INVALID_DATA);
+			ERR_FAIL_COND_V_MSG(info->get_field_count() != field_count, ERR_INVALID_DATA, "Decoded struct schema field count mismatch.");
+
+			Struct s(info);
+			for (int i = 0; i < field_count; i++) {
+				Variant value;
+				int used;
+				Error err = decode_variant(value, buf, len, &used, p_allow_objects, p_depth + 1);
+				ERR_FAIL_COND_V_MSG(err, err, "Error decoding struct value.");
+				buf += used;
+				len -= used;
+				if (r_len) {
+					(*r_len) += used;
+				}
+				ERR_FAIL_COND_V_MSG(!s.try_set_member(i, value), ERR_INVALID_DATA, "Struct value incompatible with its field schema.");
+			}
+			r_variant = s;
+
+		} break;
 		default: {
 			ERR_FAIL_V(ERR_BUG);
 		}
@@ -1898,6 +2021,67 @@ Error encode_variant(const Variant &p_variant, uint8_t *r_buffer, int &r_len, bo
 			}
 
 		} break;
+		case Variant::STRUCT: {
+			const Struct &s = *VariantInternal::get_struct(&p_variant);
+			const Ref<StructInfo> info = s.get_info();
+			const int field_count = info.is_valid() ? info->get_field_count() : 0;
+
+			_encode_string(info.is_valid() ? String(info->get_logical_type_id()) : String(), buf, r_len);
+			if (info.is_null()) {
+				break;
+			}
+
+			if (buf) {
+				encode_uint32(StructInfo::SERIALIZATION_VERSION, buf);
+				buf += 4;
+			}
+			r_len += 4;
+
+			if (buf) {
+				encode_uint32(uint32_t(field_count), buf);
+				buf += 4;
+			}
+			r_len += 4;
+
+			for (int i = 0; i < field_count; i++) {
+				_encode_string(String(info->get_field_name(i)), buf, r_len);
+				_encode_string(String(StructInfo::type_to_token(info->get_field_type(i))), buf, r_len);
+				if (buf) {
+					encode_uint32(info->is_field_typed(i) ? 1 : 0, buf);
+					buf += 4;
+				}
+				r_len += 4;
+				if (buf) {
+					encode_uint32(info->is_field_nullable(i) ? 1 : 0, buf);
+					buf += 4;
+				}
+				r_len += 4;
+				_encode_string(String(info->get_field_class_name(i)), buf, r_len);
+				_encode_string(String(info->get_field_struct_type_id(i)), buf, r_len);
+
+				int len;
+				Error err = encode_variant(Struct::_make_serializable(info->_get_field_default_raw(i)), buf, len, p_full_objects, p_depth + 1);
+				ERR_FAIL_COND_V(err, err);
+				ERR_FAIL_COND_V(len % 4, ERR_BUG);
+				r_len += len;
+				if (buf) {
+					buf += len;
+				}
+			}
+
+			for (int i = 0; i < field_count; i++) {
+				const Variant member = s.get_member_serializable(i);
+				int len;
+				Error err = encode_variant(member, buf, len, p_full_objects, p_depth + 1);
+				ERR_FAIL_COND_V(err, err);
+				ERR_FAIL_COND_V(len % 4, ERR_BUG);
+				r_len += len;
+				if (buf) {
+					buf += len;
+				}
+			}
+
+		} break;
 
 		// Packed arrays.
 		case Variant::PACKED_BYTE_ARRAY: {
@@ -2133,10 +2317,6 @@ Error encode_variant(const Variant &p_variant, uint8_t *r_buffer, int &r_len, bo
 }
 
 Vector<float> vector3_to_float32_array(const Vector3 *vecs, size_t count) {
-	// We always allocate a new array, and we don't `memcpy()`.
-	// We also don't consider returning a pointer to the passed vectors when `sizeof(real_t) == 4`.
-	// One reason is that we could decide to put a 4th component in `Vector3` for SIMD/mobile performance,
-	// which would cause trouble with these optimizations.
 	Vector<float> floats;
 	if (count == 0) {
 		return floats;

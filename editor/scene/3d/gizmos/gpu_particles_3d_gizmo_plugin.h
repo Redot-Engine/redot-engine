@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gpu_particles_3d_gizmo_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
 
 class GPUParticles3DGizmoPlugin : public EditorNode3DGizmoPlugin {

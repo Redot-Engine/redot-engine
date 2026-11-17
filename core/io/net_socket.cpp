@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file net_socket.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "net_socket.h"
 
 NetSocket *(*NetSocket::_create)() = nullptr;

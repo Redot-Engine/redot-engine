@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file project_export.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/export/editor_export_preset.h"
 #include "scene/gui/dialogs.h"
 

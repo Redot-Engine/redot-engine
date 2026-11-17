@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file file_dialog.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "file_dialog.h"
 
 #include "core/config/project_settings.h"
@@ -1607,7 +1613,7 @@ void FileDialog::_update_favorite_list() {
 		favorited_names.append(name);
 	}
 
-	// EditorNode::disambiguate_filenames(favorited_paths, favorited_names); // TODO Needs a non-editor method.
+	// EditorNode::disambiguate_filenames(favorited_paths, favorited_names); ///< @todo Needs a non-editor method.
 
 	const int favorites_size = favorited_paths.size();
 	for (int i = 0; i < favorites_size; i++) {
@@ -1694,7 +1700,7 @@ void FileDialog::_update_recent_list() {
 		recent_dir_names.append(name);
 	}
 
-	// EditorNode::disambiguate_filenames(recent_dir_paths, recent_dir_names); // TODO Needs a non-editor method.
+	// EditorNode::disambiguate_filenames(recent_dir_paths, recent_dir_names); ///< @toodo Needs a non-editor method.
 
 	const int recent_size = recent_dir_paths.size();
 	for (int i = 0; i < recent_size; i++) {
@@ -2005,7 +2011,7 @@ void FileDialog::_bind_methods() {
 	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, FileDialog, file_icon_color);
 	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, FileDialog, file_disabled_color);
 
-	// TODO: Define own colors?
+	///@todo Define own colors?
 	BIND_THEME_ITEM_EXT(Theme::DATA_TYPE_COLOR, FileDialog, icon_normal_color, "font_color", "Button");
 	BIND_THEME_ITEM_EXT(Theme::DATA_TYPE_COLOR, FileDialog, icon_hover_color, "font_hover_color", "Button");
 	BIND_THEME_ITEM_EXT(Theme::DATA_TYPE_COLOR, FileDialog, icon_focus_color, "font_focus_color", "Button");

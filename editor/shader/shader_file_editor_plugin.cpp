@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shader_file_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "shader_file_editor_plugin.h"
 
 #include "editor/editor_node.h"
@@ -39,7 +45,7 @@
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/item_list.h"
 #include "scene/gui/split_container.h"
-#include "servers/display_server.h"
+#include "servers/display/display_server.h"
 
 /*** SHADER SCRIPT EDITOR ****/
 

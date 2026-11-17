@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file csg_gizmos.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "csg_gizmos.h"
 
 #include "editor/editor_node.h"

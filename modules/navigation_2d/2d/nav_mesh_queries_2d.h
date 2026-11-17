@@ -32,16 +32,23 @@
 
 #pragma once
 
+/**
+ * @file nav_mesh_queries_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../nav_utils_2d.h"
 
 #include "core/templates/a_hash_map.h"
 
-#include "servers/navigation/navigation_globals.h"
-#include "servers/navigation/navigation_path_query_parameters_2d.h"
-#include "servers/navigation/navigation_path_query_result_2d.h"
-#include "servers/navigation/navigation_utilities.h"
+#include "servers/nav_heap.h"
+#include "servers/navigation_2d/navigation_constants_2d.h"
+#include "servers/navigation_2d/navigation_path_query_parameters_2d.h"
+#include "servers/navigation_2d/navigation_path_query_result_2d.h"
 
-using namespace NavigationUtilities;
+using namespace NavigationDefaults2D;
+using namespace NavigationEnums2D;
 
 class NavMap2D;
 struct NavMapIteration2D;
@@ -65,7 +72,8 @@ public:
 			CALLBACK_FAILED,
 		};
 
-		// Parameters.
+		/// @name Parameters
+		/// @{
 		Vector2 start_position;
 		Vector2 target_position;
 		uint32_t navigation_layers;
@@ -84,24 +92,28 @@ public:
 		float path_return_max_radius = 0.0;
 		int path_search_max_polygons = NavigationDefaults2D::path_search_max_polygons;
 		float path_search_max_distance = 0.0;
-
-		// Path building.
+		/// @}
+		/// @name Path Building
+		/// @{
 		Vector2 begin_position;
 		Vector2 end_position;
 		const Nav2D::Polygon *begin_polygon = nullptr;
 		const Nav2D::Polygon *end_polygon = nullptr;
 		uint32_t least_cost_id = 0;
-
-		// Map.
+		/// @}
+		/// @name Map
+		/// @{
 		NavMap2D *map = nullptr;
 		PathQuerySlot *path_query_slot = nullptr;
-
-		// Path points.
+		/// @}
+		/// @name Path Points
+		/// @{
 		LocalVector<Vector2> path_points;
 		LocalVector<int32_t> path_meta_point_types;
 		LocalVector<RID> path_meta_point_rids;
 		LocalVector<int64_t> path_meta_point_owners;
 		float path_length = 0.0;
+		/// @}
 
 		Ref<NavigationPathQueryParameters2D> query_parameters;
 		Ref<NavigationPathQueryResult2D> query_result;

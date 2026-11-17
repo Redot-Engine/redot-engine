@@ -30,14 +30,20 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shader.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "shader.h"
 #include "shader.compat.inc"
 
 #include "core/io/file_access.h"
 #include "scene/main/scene_tree.h"
+#include "servers/rendering/rendering_server.h"
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering/shader_preprocessor.h"
-#include "servers/rendering_server.h"
 #include "texture.h"
 
 #ifdef TOOLS_ENABLED
@@ -79,8 +85,6 @@ void Shader::set_path(const String &p_path, bool p_take_over) {
 }
 
 void Shader::set_include_path(const String &p_path) {
-	// Used only if the shader does not have a resource path set,
-	// for example during loading stage or when created by code.
 	include_path = p_path;
 }
 

@@ -48,9 +48,9 @@
 #include "drivers/windows/net_socket_winsock.h"
 #include "drivers/windows/thread_windows.h"
 #include "main/main.h"
-#include "servers/audio_server.h"
+#include "servers/audio/audio_server.h"
 #include "servers/rendering/rendering_server_default.h"
-#include "servers/text_server.h"
+#include "servers/text/text_server.h"
 
 #include <avrt.h>
 #include <bcrypt.h>
@@ -86,9 +86,6 @@ extern "C" {
 #endif
 #if defined(D3D12_ENABLED)
 #include "drivers/d3d12/rendering_context_driver_d3d12.h"
-#endif
-#if defined(GLES3_ENABLED)
-#include "drivers/gles3/rasterizer_gles3.h"
 #endif
 
 #ifdef DEBUG_ENABLED
@@ -2051,24 +2048,51 @@ String OS_Windows::get_system_font_path(const String &p_font_name, int p_weight,
 	return String();
 }
 
+String OS_Windows::get_real_path(const String &p_path) const {
+	WCHAR buf[4096];
+	String res = p_path;
+	HANDLE handle = CreateFileW((const WCHAR *)res.utf16().get_data(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+	if (handle != INVALID_HANDLE_VALUE) {
+		DWORD len = GetFinalPathNameByHandleW(handle, buf, 4096, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+		if (len && len < 4096) {
+			res = String::utf16((const char16_t *)buf);
+			if (res.begins_with("\\\\?\\UNC\\")) {
+				res = "\\" + res.substr(7);
+			} else if (res.begins_with("\\\\?\\")) {
+				res = res.substr(4);
+			}
+		}
+		CloseHandle(handle);
+	}
+	return res.replace_char('\\', '/');
+}
+
 String OS_Windows::get_executable_path() const {
-	WCHAR bufname[4096];
-	GetModuleFileNameW(nullptr, bufname, 4096);
-	String s = String::utf16((const char16_t *)bufname).replace_char('\\', '/');
-	return s;
+	WCHAR buf[4096];
+	if (!GetModuleFileNameW(nullptr, buf, 4096)) {
+		WARN_PRINT("Couldn't get executable path from GetModuleFileName");
+		return OS::get_executable_path().replace_char('\\', '/');
+	}
+	return get_real_path(String::utf16((const char16_t *)buf));
 }
 
 bool OS_Windows::has_environment(const String &p_var) const {
-	return GetEnvironmentVariableW((LPCWSTR)(p_var.utf16().get_data()), nullptr, 0) > 0;
+	// An environment variable can still exist in the environment block, but just have an empty value; check for ERROR_ENVVAR_NOT_FOUND:
+	return (!(GetEnvironmentVariableW((LPCWSTR)(p_var.utf16().get_data()), nullptr, 0) == 0 && GetLastError() == ERROR_ENVVAR_NOT_FOUND));
 }
 
 String OS_Windows::get_environment(const String &p_var) const {
-	WCHAR wval[0x7fff]; // MSDN says 32767 char is the maximum
-	int wlen = GetEnvironmentVariableW((LPCWSTR)(p_var.utf16().get_data()), wval, 0x7fff);
-	if (wlen > 0) {
-		return String::utf16((const char16_t *)wval);
+	String res;
+	DWORD len = GetEnvironmentVariableW((LPCWSTR)(p_var.utf16().get_data()), nullptr, 0);
+	if (len) {
+		WCHAR *val = new WCHAR[len]();
+		len = GetEnvironmentVariableW((LPCWSTR)(p_var.utf16().get_data()), val, len);
+		if (len) {
+			res = String::utf16((const char16_t *)val);
+		}
+		delete[] val;
 	}
-	return "";
+	return res;
 }
 
 void OS_Windows::set_environment(const String &p_var, const String &p_value) const {
@@ -2510,6 +2534,36 @@ String OS_Windows::expand_path(const String &p_path) const {
 		}
 	}
 
+	int pos = 0;
+
+	while (true) {
+		int left = path.find_char('%', pos);
+		if (left == -1) {
+			break;
+		}
+
+		int right = path.find_char('%', left + 1);
+		if (right == -1) {
+			break;
+		}
+
+		String var = path.substr(left + 1, right - left - 1);
+
+		if (var.is_empty()) {
+			pos = right + 1;
+			continue;
+		}
+
+		String value = get_environment(var);
+
+		if (!value.is_empty()) {
+			path = path.substr(0, left) + value.replace_char('\\', '/') + path.substr(right + 1);
+			pos = left + value.length();
+		} else {
+			pos = right + 1;
+		}
+	}
+
 	return path;
 }
 
@@ -2731,9 +2785,7 @@ bool OS_Windows::_test_create_rendering_device_and_gl(const String &p_display_dr
 	bool ok = true;
 #ifdef GLES3_ENABLED
 	GLManagerNative_Windows *test_gl_manager_native = memnew(GLManagerNative_Windows);
-	if (test_gl_manager_native->window_create(DisplayServer::MAIN_WINDOW_ID, hWnd, GetModuleHandle(nullptr), 800, 600) == OK) {
-		RasterizerGLES3::make_current(true);
-	} else {
+	if (test_gl_manager_native->window_create(DisplayServer::MAIN_WINDOW_ID, hWnd, GetModuleHandle(nullptr), 800, 600) != OK) {
 		ok = false;
 	}
 #endif

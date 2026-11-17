@@ -30,11 +30,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file navigation_region_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "navigation_region_2d.h"
 
 #include "core/math/random_pcg.h"
 #include "scene/resources/world_2d.h"
-#include "servers/navigation_server_2d.h"
+#include "servers/navigation_2d/navigation_server_2d.h"
 
 RID NavigationRegion2D::get_rid() const {
 	return region;
@@ -358,7 +364,6 @@ void NavigationRegion2D::_bind_methods() {
 }
 
 #ifndef DISABLE_DEPRECATED
-// Compatibility with earlier 4.0 betas.
 bool NavigationRegion2D::_set(const StringName &p_name, const Variant &p_value) {
 	if (p_name == "navpoly") {
 		set_navigation_polygon(p_value);

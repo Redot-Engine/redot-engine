@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file static_body_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/2d/physics/physics_body_2d.h"
 
 class NavigationPolygon;

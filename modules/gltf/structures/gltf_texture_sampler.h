@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gltf_texture_sampler.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/material.h"
 
 class GLTFTextureSampler : public Resource {
@@ -130,10 +136,10 @@ public:
 		}
 	}
 
+	/// BaseMaterial3D presents wrapping as a boolean property. Either the texture is repeated
+	/// in both dimensions, non-mirrored, or it isn't repeated at all. This will cause oddities
+	/// when people import models having other wrapping mode combinations.
 	bool get_wrap_mode() const {
-		// BaseMaterial3D presents wrapping as a boolean property. Either the texture is repeated
-		// in both dimensions, non-mirrored, or it isn't repeated at all. This will cause oddities
-		// when people import models having other wrapping mode combinations.
 		return (wrap_s == WrapMode::REPEAT) && (wrap_t == WrapMode::REPEAT);
 	}
 

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file app_delegate_service.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #import <UIKit/UIKit.h>
 
 @class GDTViewController;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file default_theme.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "default_theme.h"
 
 #include "core/io/image.h"
@@ -43,7 +49,7 @@
 #include "scene/scene_string_names.h"
 #include "scene/theme/default_theme_icons.gen.h"
 #include "scene/theme/theme_db.h"
-#include "servers/text_server.h"
+#include "servers/text/text_server.h"
 
 #ifdef BROTLI_ENABLED
 #include "scene/theme/default_font.gen.h"
@@ -80,7 +86,7 @@ static Ref<StyleBoxFlat> sb_expand(Ref<StyleBoxFlat> p_sbox, float p_left, float
 	return p_sbox;
 }
 
-// See also `editor_generate_icon()` in `editor/themes/editor_icons.cpp`.
+/// @see ...also `editor_generate_icon()` in `editor/themes/editor_icons.cpp`.
 static Ref<DPITexture> generate_icon(int p_index) {
 	return DPITexture::create_from_string(default_theme_icons_sources[p_index], scale);
 }

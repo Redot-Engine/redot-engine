@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file util.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #define UNPACK(...) __VA_ARGS__
 
 #define INIT_XR_FUNC_V(openxr_api, name)                                                                              \

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file canvas_item_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "canvas_item_editor_plugin.h"
 
 #include "core/config/project_settings.h"
@@ -181,7 +187,7 @@ public:
 		primary_grid_step_y->set_step(1);
 		primary_grid_step_y->set_max(SPIN_BOX_GRID_RANGE);
 		primary_grid_step_y->set_allow_greater(true);
-		primary_grid_step_y->set_suffix(TTRC("steps")); // TODO: Add suffix auto-translation.
+		primary_grid_step_y->set_suffix(TTRC("steps")); /// @todo Add suffix auto-translation.
 		primary_grid_step_y->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 		primary_grid_step_y->set_select_all_on_focus(true);
 		primary_grid_step_y->set_accessibility_name(TTRC("Y Primary Step"));
@@ -477,8 +483,8 @@ Point2 CanvasItemEditor::snap_point(Point2 p_target, unsigned int p_modes, unsig
 			}
 		}
 		Point2 grid_output;
-		grid_output.x = Math::snapped(p_target.x - offset.x, grid_step.x * Math::pow(2.0, grid_step_multiplier)) + offset.x;
-		grid_output.y = Math::snapped(p_target.y - offset.y, grid_step.y * Math::pow(2.0, grid_step_multiplier)) + offset.y;
+		grid_output.x = Math::snapped(p_target.x - offset.x, grid_step.x * Math::pow(static_cast<real_t>(2.f), static_cast<real_t>(grid_step_multiplier))) + offset.x;
+		grid_output.y = Math::snapped(p_target.y - offset.y, grid_step.y * Math::pow(static_cast<real_t>(2.f), static_cast<real_t>(grid_step_multiplier))) + offset.y;
 		_snap_if_closer_point(p_target, output, snap_target, grid_output, SNAP_TARGET_GRID, 0.0, -1.0);
 	}
 
@@ -523,7 +529,7 @@ void CanvasItemEditor::shortcut_input(const Ref<InputEvent> &p_ev) {
 				viewport->queue_redraw();
 			} else if (divide_grid_step_shortcut.is_valid() && divide_grid_step_shortcut->matches_event(p_ev)) {
 				// Divide the grid size
-				Point2 new_grid_step = grid_step * Math::pow(2.0, grid_step_multiplier - 1);
+				Point2 new_grid_step = grid_step * Math::pow(static_cast<real_t>(2.f), static_cast<real_t>(grid_step_multiplier - 1));
 				if (new_grid_step.x >= 1.0 && new_grid_step.y >= 1.0) {
 					grid_step_multiplier--;
 				}
@@ -2348,12 +2354,12 @@ bool CanvasItemEditor::_gui_input_move(const Ref<InputEvent> &p_event) {
 				dir += Vector2(1, 0);
 			}
 			if (k->is_shift_pressed()) {
-				dir *= grid_step * Math::pow(2.0, grid_step_multiplier);
+				dir *= grid_step * Math::pow(static_cast<real_t>(2.f), static_cast<real_t>(grid_step_multiplier));
 			}
 
 			drag_to += dir;
 			if (k->is_shift_pressed()) {
-				drag_to = drag_to.snapped(grid_step * Math::pow(2.0, grid_step_multiplier));
+				drag_to = drag_to.snapped(grid_step * Math::pow(static_cast<real_t>(2.f), static_cast<real_t>(grid_step_multiplier)));
 			}
 
 			Point2 previous_pos;
@@ -2845,7 +2851,7 @@ void CanvasItemEditor::_update_cursor() {
 			break;
 	}
 	if (pan_pressed) {
-		c = CURSOR_DRAG;
+		c = CURSOR_CAN_DROP;
 	}
 	set_default_cursor_shape(c);
 }
@@ -2960,7 +2966,7 @@ Control::CursorShape CanvasItemEditor::get_cursor_shape(const Point2 &p_pos) con
 	}
 
 	if (pan_pressed) {
-		c = CURSOR_DRAG;
+		c = CURSOR_CAN_DROP;
 	}
 	return c;
 }
@@ -3094,10 +3100,10 @@ void CanvasItemEditor::_draw_rulers() {
 		List<CanvasItem *> selection = _get_edited_canvas_items();
 		if (snap_relative && selection.size() > 0) {
 			ruler_transform.translate_local(_get_encompassing_rect_from_list(selection).position);
-			ruler_transform.scale_basis(grid_step * Math::pow(2.0, grid_step_multiplier));
+			ruler_transform.scale_basis(grid_step * Math::pow(static_cast<real_t>(2.f), static_cast<real_t>(grid_step_multiplier)));
 		} else {
 			ruler_transform.translate_local(grid_offset);
-			ruler_transform.scale_basis(grid_step * Math::pow(2.0, grid_step_multiplier));
+			ruler_transform.scale_basis(grid_step * Math::pow(static_cast<real_t>(2.f), static_cast<real_t>(grid_step_multiplier)));
 		}
 		while ((transform * ruler_transform).get_scale().x < 50.0 * ruler_tick_scale || (transform * ruler_transform).get_scale().y < 50.0 * ruler_tick_scale) {
 			ruler_transform.scale_basis(Point2(2, 2));
@@ -3177,8 +3183,8 @@ void CanvasItemEditor::_draw_grid() {
 
 		if (snap_relative && selection.size() > 0) {
 			const Vector2 topleft = _get_encompassing_rect_from_list(selection).position;
-			real_grid_offset.x = std::fmod(topleft.x, grid_step.x * (real_t)Math::pow(2.0, grid_step_multiplier));
-			real_grid_offset.y = std::fmod(topleft.y, grid_step.y * (real_t)Math::pow(2.0, grid_step_multiplier));
+			real_grid_offset.x = std::fmod(topleft.x, grid_step.x * (real_t)Math::pow(static_cast<real_t>(2.f), static_cast<real_t>(grid_step_multiplier)));
+			real_grid_offset.y = std::fmod(topleft.y, grid_step.y * (real_t)Math::pow(static_cast<real_t>(2.f), static_cast<real_t>(grid_step_multiplier)));
 		} else {
 			real_grid_offset = grid_offset;
 		}
@@ -3196,7 +3202,7 @@ void CanvasItemEditor::_draw_grid() {
 		if (grid_step.x != 0) {
 			for (int i = 0; i < viewport_size.width; i++) {
 				const int cell =
-						Math::fast_ftoi(Math::floor((xform.xform(Vector2(i, 0)).x - real_grid_offset.x) / (grid_step.x * Math::pow(2.0, grid_step_multiplier))));
+						Math::fast_ftoi(Math::floor((xform.xform(Vector2(i, 0)).x - real_grid_offset.x) / (grid_step.x * Math::pow(static_cast<real_t>(2.f), static_cast<real_t>(grid_step_multiplier)))));
 
 				if (i == 0) {
 					last_cell = cell;
@@ -3219,7 +3225,7 @@ void CanvasItemEditor::_draw_grid() {
 		if (grid_step.y != 0) {
 			for (int i = 0; i < viewport_size.height; i++) {
 				const int cell =
-						Math::fast_ftoi(Math::floor((xform.xform(Vector2(0, i)).y - real_grid_offset.y) / (grid_step.y * Math::pow(2.0, grid_step_multiplier))));
+						Math::fast_ftoi(Math::floor((xform.xform(Vector2(0, i)).y - real_grid_offset.y) / (grid_step.y * Math::pow(static_cast<real_t>(2.f), static_cast<real_t>(grid_step_multiplier)))));
 
 				if (i == 0) {
 					last_cell = cell;
@@ -4177,7 +4183,7 @@ void CanvasItemEditor::_notification(int p_what) {
 			RID ae = get_accessibility_element();
 			ERR_FAIL_COND(ae.is_null());
 
-			//TODO
+			/// @todo
 			DisplayServer::get_singleton()->accessibility_update_set_role(ae, DisplayServer::AccessibilityRole::ROLE_STATIC_TEXT);
 			DisplayServer::get_singleton()->accessibility_update_set_value(ae, TTR(vformat("The %s is not accessible at this time.", "Canvas item editor")));
 		} break;
@@ -4204,17 +4210,18 @@ void CanvasItemEditor::_notification(int p_what) {
 
 				Control *control = Object::cast_to<Control>(ci);
 				if (control) {
-					real_t anchors[4];
-					Vector2 pivot;
+					Vector2 pivot = control->get_pivot_offset();
+					Vector2 pivot_ratio = control->get_pivot_offset_ratio();
 
-					pivot = control->get_pivot_offset();
+					real_t anchors[4];
 					anchors[SIDE_LEFT] = control->get_anchor(SIDE_LEFT);
 					anchors[SIDE_RIGHT] = control->get_anchor(SIDE_RIGHT);
 					anchors[SIDE_TOP] = control->get_anchor(SIDE_TOP);
 					anchors[SIDE_BOTTOM] = control->get_anchor(SIDE_BOTTOM);
 
-					if (pivot != se->prev_pivot || anchors[SIDE_LEFT] != se->prev_anchors[SIDE_LEFT] || anchors[SIDE_RIGHT] != se->prev_anchors[SIDE_RIGHT] || anchors[SIDE_TOP] != se->prev_anchors[SIDE_TOP] || anchors[SIDE_BOTTOM] != se->prev_anchors[SIDE_BOTTOM]) {
+					if (pivot != se->prev_pivot || pivot_ratio != se->prev_pivot_ratio || anchors[SIDE_LEFT] != se->prev_anchors[SIDE_LEFT] || anchors[SIDE_RIGHT] != se->prev_anchors[SIDE_RIGHT] || anchors[SIDE_TOP] != se->prev_anchors[SIDE_TOP] || anchors[SIDE_BOTTOM] != se->prev_anchors[SIDE_BOTTOM]) {
 						se->prev_pivot = pivot;
+						se->prev_pivot_ratio = pivot_ratio;
 						se->prev_anchors[SIDE_LEFT] = anchors[SIDE_LEFT];
 						se->prev_anchors[SIDE_RIGHT] = anchors[SIDE_RIGHT];
 						se->prev_anchors[SIDE_TOP] = anchors[SIDE_TOP];
@@ -4467,6 +4474,11 @@ void CanvasItemEditor::_insert_animation_keys(bool p_location, bool p_rotation, 
 	AnimationTrackEditor *te = AnimationPlayerEditor::get_singleton()->get_track_editor();
 	ERR_FAIL_COND_MSG(te->get_current_animation().is_null(), "Cannot insert animation key. No animation selected.");
 
+	bool is_read_only = te->is_read_only();
+	if (is_read_only) {
+		te->popup_read_only_dialog();
+		return;
+	}
 	te->make_insert_queue();
 	for (const KeyValue<Node *, Object *> &E : selection) {
 		CanvasItem *ci = Object::cast_to<CanvasItem>(E.key);

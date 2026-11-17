@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file resource_importer_dynamic_font.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource_importer.h"
 
 class ResourceImporterDynamicFont : public ResourceImporter {

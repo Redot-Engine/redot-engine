@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file file_dialog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/dialogs.h"
 #include "scene/property_list_helper.h"
 
@@ -162,7 +168,7 @@ private:
 	inline static bool default_show_hidden_files = false;
 	bool show_hidden_files = false;
 	bool use_native_dialog = false;
-	bool customization_flags[CUSTOMIZATION_MAX]; // Initialized to true in the constructor.
+	bool customization_flags[CUSTOMIZATION_MAX]; ///< Initialized to true in the constructor.
 
 	inline static LocalVector<String> global_favorites;
 	inline static LocalVector<String> global_recents;

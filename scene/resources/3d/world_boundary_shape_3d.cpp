@@ -30,10 +30,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file world_boundary_shape_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "world_boundary_shape_3d.h"
 
 #include "scene/resources/mesh.h"
-#include "servers/physics_server_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 
 Vector<Vector3> WorldBoundaryShape3D::get_debug_mesh_lines() const {
 	Plane p = get_plane();

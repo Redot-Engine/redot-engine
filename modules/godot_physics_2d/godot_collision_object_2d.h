@@ -32,11 +32,17 @@
 
 #pragma once
 
+/**
+ * @file godot_collision_object_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_broad_phase_2d.h"
 #include "godot_shape_2d.h"
 
 #include "core/templates/self_list.h"
-#include "servers/physics_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 
 class GodotSpace2D;
 
@@ -58,7 +64,8 @@ private:
 		Transform2D xform;
 		Transform2D xform_inv;
 		GodotBroadPhase2D::ID bpid = 0;
-		Rect2 aabb_cache; //for rayqueries
+		Rect2 aabb_cache; ///< Grown, for broadphase and rayqueries
+		Rect2 aabb_tight; ///< Ungrown world AABB, for narrow-phase reject
 		GodotShape2D *shape = nullptr;
 		bool disabled = false;
 		bool one_way_collision = false;
@@ -129,6 +136,10 @@ public:
 	_FORCE_INLINE_ const Rect2 &get_shape_aabb(int p_index) const {
 		CRASH_BAD_INDEX(p_index, shapes.size());
 		return shapes[p_index].aabb_cache;
+	}
+	_FORCE_INLINE_ const Rect2 &get_shape_tight_aabb(int p_index) const {
+		CRASH_BAD_INDEX(p_index, shapes.size());
+		return shapes[p_index].aabb_tight;
 	}
 
 	_FORCE_INLINE_ const Transform2D &get_transform() const { return transform; }

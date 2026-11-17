@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shader_include_db.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "shader_include_db.h"
 
 HashMap<String, String> ShaderIncludeDB::built_in_includes;

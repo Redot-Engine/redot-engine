@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file code_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/box_container.h"
 #include "scene/gui/code_edit.h"
 #include "scene/gui/dialogs.h"
@@ -104,6 +110,7 @@ class FindReplaceBar : public HBoxContainer {
 	bool replace_all_mode = false;
 	bool preserve_cursor = false;
 
+	/// Implemented in input(..) as the LineEdit consumes the Escape pressed key.
 	virtual void input(const Ref<InputEvent> &p_event) override;
 
 	void _get_search_from(int &r_line, int &r_col, SearchMode p_search_mode);
@@ -187,6 +194,7 @@ class CodeTextEditor : public VBoxContainer {
 	RichTextLabel *error = nullptr;
 	int error_line;
 	int error_column;
+	String error_path;
 
 	bool preview_navigation_change = false;
 	Dictionary previous_state;
@@ -196,6 +204,8 @@ class CodeTextEditor : public VBoxContainer {
 	void _complete_request();
 	Ref<Texture2D> _get_completion_icon(const ScriptLanguage::CodeCompletionOption &p_option);
 
+	/// This function should be used to handle shortcuts that could otherwise
+	/// be handled too late if they weren't handled here.
 	virtual void input(const Ref<InputEvent> &event) override;
 	void _text_editor_gui_input(const Ref<InputEvent> &p_event);
 
@@ -277,7 +287,7 @@ public:
 
 	void update_editor_settings();
 	void set_error(const String &p_error);
-	void set_error_pos(int p_line, int p_column);
+	void set_error_pos(int p_line, int p_column, const String &p_path = String());
 	Point2i get_error_pos() const;
 	void update_line_and_column() { _line_col_changed(); }
 	CodeEdit *get_text_editor() { return text_editor; }

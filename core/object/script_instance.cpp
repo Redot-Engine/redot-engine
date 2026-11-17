@@ -30,12 +30,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file script_instance.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "script_instance.h"
 
 #include "core/object/script_language.h"
 
 int ScriptInstance::get_method_argument_count(const StringName &p_method, bool *r_is_valid) const {
-	// Default implementation simply traverses hierarchy.
 	Ref<Script> script = get_script();
 	while (script.is_valid()) {
 		bool valid = false;

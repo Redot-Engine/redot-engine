@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file render_buffer_custom_data_rd.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/ref_counted.h"
 
 class RenderSceneBuffersRD;
@@ -41,7 +47,7 @@ class RenderBufferCustomDataRD : public RefCounted {
 
 public:
 	virtual void configure(RenderSceneBuffersRD *p_render_buffers) = 0;
-	virtual void free_data() = 0; // called on cleanup
+	virtual void free_data() = 0; ///< Called on cleanup
 
 private:
 };

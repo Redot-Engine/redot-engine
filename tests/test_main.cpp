@@ -80,6 +80,8 @@
 #include "tests/core/math/test_random_number_generator.h"
 #include "tests/core/math/test_rect2.h"
 #include "tests/core/math/test_rect2i.h"
+#include "tests/core/math/test_simd.h"
+#include "tests/core/math/test_simd_benchmark.h"
 #include "tests/core/math/test_transform_2d.h"
 #include "tests/core/math/test_transform_3d.h"
 #include "tests/core/math/test_vector2.h"
@@ -119,6 +121,7 @@
 #include "tests/core/variant/test_array.h"
 #include "tests/core/variant/test_callable.h"
 #include "tests/core/variant/test_dictionary.h"
+#include "tests/core/variant/test_struct.h"
 #include "tests/core/variant/test_variant.h"
 #include "tests/core/variant/test_variant_utility.h"
 #include "tests/scene/test_animation.h"
@@ -148,6 +151,7 @@
 #include "tests/scene/test_style_box_texture.h"
 #include "tests/scene/test_texture_progress_bar.h"
 #include "tests/scene/test_theme.h"
+#include "tests/scene/test_tile_map_layer.h"
 #include "tests/scene/test_timer.h"
 #include "tests/scene/test_viewport.h"
 #include "tests/scene/test_visual_shader.h"
@@ -211,19 +215,19 @@
 #include "scene/theme/theme_db.h"
 
 #ifndef NAVIGATION_2D_DISABLED
-#include "servers/navigation_server_2d.h"
+#include "servers/navigation_2d/navigation_server_2d.h"
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
-#include "servers/navigation_server_3d.h"
+#include "servers/navigation_3d/navigation_server_3d.h"
 #endif // NAVIGATION_3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-#include "servers/physics_server_2d.h"
-#include "servers/physics_server_2d_dummy.h"
+#include "servers/physics_2d/physics_server_2d.h"
+#include "servers/physics_2d/physics_server_2d_dummy.h"
 #endif // PHYSICS_2D_DISABLED
 #ifndef PHYSICS_3D_DISABLED
-#include "servers/physics_server_3d.h"
-#include "servers/physics_server_3d_dummy.h"
+#include "servers/physics_3d/physics_server_3d.h"
+#include "servers/physics_3d/physics_server_3d_dummy.h"
 #endif // PHYSICS_3D_DISABLED
 
 #include "servers/rendering/rendering_server_default.h"
@@ -322,6 +326,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 #endif // NAVIGATION_3D_DISABLED
 
 	void test_case_start(const doctest::TestCaseData &p_in) override {
+		print_line(String("Running test: ") + p_in.m_name);
 		reinitialize();
 
 		String name = String(p_in.m_name);

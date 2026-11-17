@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_util.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_util.h"
 
 #include "core/math/math_funcs.h"
@@ -80,22 +86,6 @@ String OpenXRUtil::make_xr_version_string(XrVersion p_version) {
 	return version;
 }
 
-// Based on the OpenXR xr_linear.h private header, so we can still link against
-// system-provided packages without relying on our `thirdparty` code.
-
-// Copyright (c) 2017 The Khronos Group Inc.
-// Copyright (c) 2016 Oculus VR, LLC.
-//
-// SPDX-License-Identifier: Apache-2.0
-
-// Creates a projection matrix based on the specified dimensions.
-// The projection matrix transforms -Z=forward, +Y=up, +X=right to the appropriate clip space for Godot (OpenGL convention).
-// The far plane is placed at infinity if farZ <= nearZ.
-// An infinite projection matrix is preferred for rasterization because, except for
-// things *right* up against the near plane, it always provides better precision:
-//              "Tightening the Precision of Perspective Rendering"
-//              Paul Upchurch, Mathieu Desbrun
-//              Journal of Graphics Tools, Volume 16, Issue 1, 2012
 void OpenXRUtil::XrMatrix4x4f_CreateProjection(XrMatrix4x4f *result, const float tanAngleLeft, const float tanAngleRight,
 		const float tanAngleUp, float const tanAngleDown, const float nearZ, const float farZ) {
 	const float tanAngleWidth = tanAngleRight - tanAngleLeft;
@@ -151,7 +141,6 @@ void OpenXRUtil::XrMatrix4x4f_CreateProjection(XrMatrix4x4f *result, const float
 	}
 }
 
-// Creates a projection matrix based on the specified FOV.
 void OpenXRUtil::XrMatrix4x4f_CreateProjectionFov(XrMatrix4x4f *result, const XrFovf fov, const float nearZ, const float farZ) {
 	const float tanLeft = std::tan(fov.angleLeft);
 	const float tanRight = std::tan(fov.angleRight);

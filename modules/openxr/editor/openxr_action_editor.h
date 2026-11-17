@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_action_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../action_map/openxr_action.h"
 
 #include "editor/editor_undo_redo_manager.h"

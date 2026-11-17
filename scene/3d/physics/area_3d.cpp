@@ -30,9 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file area_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "area_3d.h"
 
-#include "servers/audio_server.h"
+#include "servers/audio/audio_server.h"
 
 void Area3D::set_gravity_space_override_mode(SpaceOverride p_mode) {
 	if (gravity_space_override == p_mode) {

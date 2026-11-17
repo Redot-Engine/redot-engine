@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_app_delegate.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #import <UIKit/UIKit.h>
 
 typedef NSObject<UIApplicationDelegate> GDTAppDelegateServiceProtocol;

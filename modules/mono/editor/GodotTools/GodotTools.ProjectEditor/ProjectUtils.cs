@@ -97,7 +97,8 @@ namespace GodotTools.ProjectEditor
         {
             var root = project.Root;
             string minTfmValue = ProjectGenerator.GodotMinimumRequiredTfm;
-            var minTfmVersion = NuGetFramework.Parse(minTfmValue).Version;
+            var minTfm = NuGetFramework.Parse(minTfmValue);
+            var minTfmVersion = minTfm.Version;
 
             ProjectPropertyGroupElement? mainPropertyGroup = null;
             ProjectPropertyElement? mainTargetFrameworkProperty = null;
@@ -174,39 +175,40 @@ namespace GodotTools.ProjectEditor
             }
             else
             {
-                var tfmVersion = NuGetFramework.Parse(mainTargetFrameworkProperty.Value).Version;
-                if (tfmVersion < minTfmVersion)
+                var tfm = NuGetFramework.Parse(mainTargetFrameworkProperty.Value);
+                if (tfm.Version < minTfmVersion)
                 {
-                    mainTargetFrameworkProperty.Value = minTfmValue;
+                    mainTargetFrameworkProperty.Value = UpgradeTargetFramework(tfm).GetShortFolderName();
                     project.HasUnsavedChanges = true;
                 }
             }
 
-            var mainTfmVersion = NuGetFramework.Parse(mainTargetFrameworkProperty.Value).Version;
+            var mainTfm = NuGetFramework.Parse(mainTargetFrameworkProperty.Value);
             foreach (var property in propertiesToChange)
             {
-                // If the main 'TargetFramework' property targets a version newer than
-                // the minimum required by Godot, we don't want to remove the conditional
-                // 'TargetFramework' properties, only upgrade them to the new minimum.
-                // Otherwise, it can be removed.
-                if (mainTfmVersion > minTfmVersion)
-                {
-                    var propertyTfmVersion = NuGetFramework.Parse(property.Value).Version;
-                    if (propertyTfmVersion == minTfmVersion)
-                    {
-                        // The 'TargetFramework' property already matches the minimum version.
-                        continue;
-                    }
+                var tfm = NuGetFramework.Parse(property.Value);
+                var upgradedTfm = UpgradeTargetFramework(tfm);
 
-                    property.Value = minTfmValue;
+                // A conditional target is redundant only if its upgraded framework,
+                // platform and platform version all match the main target.
+                if (mainTfm.Equals(upgradedTfm))
+                {
+                    property.Parent.RemoveChild(property);
+                }
+                else if (tfm.Version < minTfmVersion)
+                {
+                    property.Value = upgradedTfm.GetShortFolderName();
                 }
                 else
                 {
-                    property.Parent.RemoveChild(property);
+                    continue;
                 }
 
                 project.HasUnsavedChanges = true;
             }
+
+            NuGetFramework UpgradeTargetFramework(NuGetFramework framework)
+                => new NuGetFramework(minTfm.Framework, minTfmVersion, framework.Platform, framework.PlatformVersion);
 
             static bool ConditionMatchesGodotPlatform(string condition)
             {

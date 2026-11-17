@@ -1,0 +1,1 @@
+trait_name TraitStructClash

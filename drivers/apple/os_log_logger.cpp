@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file os_log_logger.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "os_log_logger.h"
 
 #include "core/string/print_string.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdextension_interface.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdextension_interface.h"
 
 #include "core/config/engine.h"
@@ -635,6 +641,7 @@ static GDExtensionVariantFromTypeConstructorFunc gdextension_get_variant_from_ty
 			return VariantTypeConstructor<PackedVector4Array>::variant_from_type;
 		case GDEXTENSION_VARIANT_TYPE_PACKED_COLOR_ARRAY:
 			return VariantTypeConstructor<PackedColorArray>::variant_from_type;
+		case GDEXTENSION_VARIANT_TYPE_STRUCT:
 		case GDEXTENSION_VARIANT_TYPE_NIL:
 		case GDEXTENSION_VARIANT_TYPE_VARIANT_MAX:
 			ERR_FAIL_V_MSG(nullptr, "Getting Variant conversion function with invalid type");
@@ -720,6 +727,7 @@ static GDExtensionTypeFromVariantConstructorFunc gdextension_get_variant_to_type
 			return VariantTypeConstructor<PackedVector4Array>::type_from_variant;
 		case GDEXTENSION_VARIANT_TYPE_PACKED_COLOR_ARRAY:
 			return VariantTypeConstructor<PackedColorArray>::type_from_variant;
+		case GDEXTENSION_VARIANT_TYPE_STRUCT:
 		case GDEXTENSION_VARIANT_TYPE_NIL:
 		case GDEXTENSION_VARIANT_TYPE_VARIANT_MAX:
 			ERR_FAIL_V_MSG(nullptr, "Getting Variant conversion function with invalid type");
@@ -805,6 +813,7 @@ static GDExtensionVariantGetInternalPtrFunc gdextension_variant_get_ptr_internal
 			return reinterpret_cast<GDExtensionVariantGetInternalPtrFunc>(static_cast<PackedColorArray *(*)(Variant *)>(VariantInternal::get_color_array));
 		case GDEXTENSION_VARIANT_TYPE_PACKED_VECTOR4_ARRAY:
 			return reinterpret_cast<GDExtensionVariantGetInternalPtrFunc>(static_cast<PackedVector4Array *(*)(Variant *)>(VariantInternal::get_vector4_array));
+		case GDEXTENSION_VARIANT_TYPE_STRUCT:
 		case GDEXTENSION_VARIANT_TYPE_NIL:
 		case GDEXTENSION_VARIANT_TYPE_VARIANT_MAX:
 			ERR_FAIL_V_MSG(nullptr, "Getting Variant get internal pointer function with invalid type.");
@@ -1428,7 +1437,7 @@ static void gdextension_object_call_script_method(GDExtensionObjectPtr p_object,
 	const StringName method = *reinterpret_cast<const StringName *>(p_method);
 	const Variant **args = (const Variant **)p_args;
 
-	Callable::CallError error; // TODO: Check `error`?
+	Callable::CallError error; /// @todo Check `error`?
 	memnew_placement(r_return, Variant);
 	*(Variant *)r_return = o->callp(method, args, p_argument_count, error);
 

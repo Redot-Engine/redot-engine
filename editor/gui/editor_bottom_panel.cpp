@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_bottom_panel.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_bottom_panel.h"
 
 #include "editor/debugger/editor_debugger_node.h"

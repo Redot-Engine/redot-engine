@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file triangle2.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "triangle2.h"
 
 Vector2 Triangle2::get_random_point_inside() const {

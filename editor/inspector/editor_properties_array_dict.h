@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_properties_array_dict.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/inspector/editor_inspector.h"
 #include "editor/translations/editor_locale_dialog.h"
 
@@ -133,6 +139,7 @@ class EditorPropertyArray : public EditorProperty {
 	int reorder_to_index = -1;
 	float reorder_mouse_y_delta = 0.0f;
 	void initialize_array(Variant &p_array);
+	bool _get_struct_element_default(Variant &r_value);
 
 	void _page_changed(int p_page);
 
@@ -272,6 +279,49 @@ public:
 	virtual void update_property() override;
 	virtual bool is_colored(ColorationMode p_mode) override;
 	EditorPropertyDictionary();
+};
+
+class EditorPropertyStructObject : public RefCounted {
+	GDCLASS(EditorPropertyStructObject, RefCounted);
+
+	Variant struct_value;
+
+protected:
+	bool _set(const StringName &p_name, const Variant &p_value);
+	bool _get(const StringName &p_name, Variant &r_ret) const;
+
+public:
+	void set_struct(const Variant &p_struct);
+	Variant get_struct() const;
+};
+
+class EditorPropertyStruct : public EditorProperty {
+	GDCLASS(EditorPropertyStruct, EditorProperty);
+
+	struct Slot {
+		EditorProperty *prop = nullptr;
+		int field_index = -1; // Index into StructInfo; not every field necessarily gets an editor.
+		Variant::Type type = Variant::NIL; // Resolved type the editor was built for (matters for untyped fields).
+	};
+
+	Ref<EditorPropertyStructObject> object;
+	Button *edit = nullptr;
+	PanelContainer *container = nullptr;
+	VBoxContainer *property_vbox = nullptr;
+	uint64_t built_layout_hash = 0;
+	LocalVector<Slot> slots;
+
+	void _clear_property_editors();
+	void _rebuild_property_editors(const Variant &p_value);
+
+	void _edit_pressed();
+	void _property_changed(const String &p_property, Variant p_value, const String &p_name = "", bool p_changing = false);
+	void _object_id_selected(const StringName &p_property, ObjectID p_id);
+	void _resource_selected(const String &p_path, Ref<Resource> p_resource);
+
+public:
+	virtual void update_property() override;
+	EditorPropertyStruct();
 };
 
 class EditorPropertyLocalizableString : public EditorProperty {

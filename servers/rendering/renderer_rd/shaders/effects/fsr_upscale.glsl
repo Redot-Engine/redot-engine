@@ -116,33 +116,39 @@ void FsrRcasInputH(inout AH1 r, inout AH1 g, inout AH1 b) {}
 #include "thirdparty/amd-fsr/ffx_fsr1.h"
 
 void fsr_easu_pass(AU2 pos) {
+	// EASU only upscales RGB; upscale alpha with a bilinear sample at the same position
+	// so transparent viewport backgrounds survive FSR.
+	AF2 alpha_uv = (AF2(pos) + AF2(0.5, 0.5)) / AF2(params.upscaled_width, params.upscaled_height);
+	AF1 alpha = textureLod(source_image, alpha_uv, 0.0).a;
 #ifdef MODE_FSR_UPSCALE_NORMAL
 
 	AH3 Gamma2Color = AH3(0, 0, 0);
 	FsrEasuH(Gamma2Color, pos, Const0, Const1, Const2, Const3);
-	imageStore(fsr_image, ASU2(pos), AH4(Gamma2Color, 1));
+	imageStore(fsr_image, ASU2(pos), AH4(Gamma2Color, AH1(alpha)));
 
 #else
 
 	AF3 Gamma2Color = AF3(0, 0, 0);
 	FsrEasuF(Gamma2Color, pos, Const0, Const1, Const2, Const3);
-	imageStore(fsr_image, ASU2(pos), AF4(Gamma2Color, 1));
+	imageStore(fsr_image, ASU2(pos), AF4(Gamma2Color, alpha));
 
 #endif
 }
 
 void fsr_rcas_pass(AU2 pos) {
+	// RCAS is 1:1 with its input; carry the input alpha through unchanged.
+	AF1 alpha = texelFetch(source_image, ASU2(pos), 0).a;
 #ifdef MODE_FSR_UPSCALE_NORMAL
 
 	AH3 Gamma2Color = AH3(0, 0, 0);
 	FsrRcasH(Gamma2Color.r, Gamma2Color.g, Gamma2Color.b, pos, Const0);
-	imageStore(fsr_image, ASU2(pos), AH4(Gamma2Color, 1));
+	imageStore(fsr_image, ASU2(pos), AH4(Gamma2Color, AH1(alpha)));
 
 #else
 
 	AF3 Gamma2Color = AF3(0, 0, 0);
 	FsrRcasF(Gamma2Color.r, Gamma2Color.g, Gamma2Color.b, pos, Const0);
-	imageStore(fsr_image, ASU2(pos), AF4(Gamma2Color, 1));
+	imageStore(fsr_image, ASU2(pos), AF4(Gamma2Color, alpha));
 
 #endif
 }

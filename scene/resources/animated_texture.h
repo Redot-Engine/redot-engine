@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file animated_texture.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image_frames.h"
 #include "core/io/resource_loader.h"
 #include "scene/resources/texture.h"
@@ -39,7 +45,7 @@
 class AnimatedTexture : public Texture2D {
 	GDCLASS(AnimatedTexture, Texture2D);
 
-	// Use readers writers lock for this, since its far more times read than written to.
+	/// Use readers writers lock for this, since its far more times read than written to.
 	RWLock rw_lock;
 
 public:
@@ -68,6 +74,7 @@ private:
 	uint64_t prev_ticks = 0;
 
 	void _update_proxy();
+	void _frame_texture_changed(int p_frame);
 	void _finish_non_thread_safe_setup();
 
 protected:
@@ -99,6 +106,10 @@ public:
 	virtual int get_width() const override;
 	virtual int get_height() const override;
 	virtual RID get_rid() const override;
+
+	virtual void draw(RID p_canvas_item, const Point2 &p_pos, const Color &p_modulate = Color(1, 1, 1), bool p_transpose = false) const override;
+	virtual void draw_rect(RID p_canvas_item, const Rect2 &p_rect, bool p_tile = false, const Color &p_modulate = Color(1, 1, 1), bool p_transpose = false) const override;
+	virtual void draw_rect_region(RID p_canvas_item, const Rect2 &p_rect, const Rect2 &p_src_rect, const Color &p_modulate = Color(1, 1, 1), bool p_transpose = false, bool p_clip_uv = true) const override;
 
 	virtual bool has_alpha() const override;
 

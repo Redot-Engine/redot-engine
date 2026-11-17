@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file graph_edit_arranger.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/ref_counted.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/hash_set.h"

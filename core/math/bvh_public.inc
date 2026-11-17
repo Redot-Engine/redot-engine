@@ -112,8 +112,19 @@ bool item_move(BVHHandle p_handle, const BOUNDS &p_aabb) {
 
 #ifdef BVH_EXPAND_LEAF_AABBS
 	if (USE_PAIRS) {
-		// scale the pairing expansion by the number of pairs.
-		abb.expand(_pairs[ref_id].scale_expansion_margin(_pairing_expansion));
+		if (_size_relative_margin) {
+			// Margin proportional to object size (capped), so small objects don't
+			// pair with far-away neighbors while large ones still get hysteresis.
+			real_t extent = 0.0;
+			for (int axis = 0; axis < POINT::AXIS_COUNT; ++axis) {
+				extent += p_aabb.size[axis];
+			}
+			extent /= POINT::AXIS_COUNT;
+			abb.expand(MIN(_pairing_expansion, extent * _pairing_expansion_ratio));
+		} else {
+			// scale the pairing expansion by the number of pairs.
+			abb.expand(_pairs[ref_id].scale_expansion_margin(_pairing_expansion));
+		}
 	} else {
 		abb.expand(_pairing_expansion);
 	}
@@ -467,6 +478,13 @@ void params_set_pairing_expansion(real_t p_value) {
 	// calculate shrinking threshold
 	const real_t fudge_factor = 1.1;
 	_aabb_shrinkage_threshold = _pairing_expansion * POINT::AXIS_COUNT * 2.0 * fudge_factor;
+}
+
+void params_set_size_relative_margin(bool p_enable, real_t p_ratio) {
+	_size_relative_margin = p_enable;
+	if (p_ratio >= 0.0) {
+		_pairing_expansion_ratio = p_ratio;
+	}
 }
 
 // This routine is not just an enclose check, it also checks for special case of shrinkage

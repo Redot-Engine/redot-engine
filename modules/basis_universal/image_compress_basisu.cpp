@@ -30,13 +30,19 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file image_compress_basisu.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "image_compress_basisu.h"
 
 #include "core/config/project_settings.h"
 #include "core/io/image.h"
 #include "core/os/os.h"
 #include "core/string/print_string.h"
-#include "servers/rendering_server.h"
+#include "servers/rendering/rendering_server.h"
 
 #include <transcoder/basisu_transcoder.h>
 #ifdef TOOLS_ENABLED

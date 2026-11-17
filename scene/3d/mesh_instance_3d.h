@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file mesh_instance_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/local_vector.h"
 #include "scene/3d/visual_instance_3d.h"
 
@@ -60,6 +66,8 @@ protected:
 	void _resolve_skeleton_path();
 
 protected:
+	/// This is not _too_ bad performance-wise, really. It only arrives here if the property was not set anywhere else.
+	/// Add to it that it's probably found on first call to _set anyway.
 	bool _set(const StringName &p_name, const Variant &p_value);
 	bool _get(const StringName &p_name, Variant &r_ret) const;
 	void _get_property_list(List<PropertyInfo> *p_list) const;
@@ -70,6 +78,10 @@ protected:
 
 	bool _property_can_revert(const StringName &p_name) const;
 	bool _property_get_revert(const StringName &p_name, Variant &r_property) const;
+
+private:
+	Vector3i _get_surface_face_positions(const Ref<Mesh> &p_mesh, int32_t surface_index, int32_t face_index) const;
+	void _create_intersection_dictionary(Dictionary &result, const Vector3 &global_point, const Vector3 &global_normal, const Vector3 &local_point, const Vector3 &local_normal, const int32_t surf_index, const int32_t face_index, const bool p_include_uv) const;
 
 public:
 	void set_mesh(const Ref<Mesh> &p_mesh);
@@ -113,6 +125,9 @@ public:
 	Ref<ArrayMesh> bake_mesh_from_current_skeleton_pose(Ref<ArrayMesh> p_existing = Ref<ArrayMesh>());
 
 	virtual Ref<TriangleMesh> generate_triangle_mesh() const override;
+
+	Dictionary intersect_ray(const Vector3 &p_origin, const Vector3 &p_dir, const bool p_include_uv = false) const;
+	Dictionary intersect_segment(const Vector3 &p_from, const Vector3 &p_to, const bool p_include_uv = false) const;
 
 #ifndef NAVIGATION_3D_DISABLED
 private:

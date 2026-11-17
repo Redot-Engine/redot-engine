@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file animation_node_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/animation/animation_tree.h"
 
 class AnimationNodeExtension : public AnimationNode {

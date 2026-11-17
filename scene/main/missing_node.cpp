@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file missing_node.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "missing_node.h"
 
 bool MissingNode::_set(const StringName &p_name, const Variant &p_value) {

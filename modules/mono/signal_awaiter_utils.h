@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file signal_awaiter_utils.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "csharp_script.h"
 #include "mono_gc_handle.h"
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_icons.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_icons.h"
 
 #include "editor/editor_string_names.h"
@@ -49,7 +55,7 @@ void editor_configure_icons(bool p_dark_theme) {
 	}
 }
 
-// See also `generate_icon()` in `scene/theme/default_theme.cpp`.
+/// @see also `generate_icon()` in `scene/theme/default_theme.cpp`.
 Ref<DPITexture> editor_generate_icon(int p_index, float p_scale, float p_saturation, const Dictionary &p_convert_colors = Dictionary()) {
 	return DPITexture::create_from_string(editor_icons_sources[p_index], p_scale, p_saturation, p_convert_colors);
 }
@@ -243,7 +249,7 @@ void editor_copy_icons(const Ref<Theme> &p_theme, const Ref<Theme> &p_old_theme)
 
 // Returns the SVG code for the default project icon.
 String get_default_project_icon() {
-	// FIXME: This icon can probably be predefined in editor_icons.gen.h so we don't have to look up.
+	/// @todo FIXME: This icon can probably be predefined in editor_icons.gen.h so we don't have to look up.
 	for (int i = 0; i < editor_icons_count; i++) {
 		if (strcmp(editor_icons_names[i], "DefaultProjectIcon") == 0) {
 			return String(editor_icons_sources[i]);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file font.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "font.h"
 #include "font.compat.inc"
 

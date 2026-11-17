@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="MCPServer" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
 	<brief_description>
+		Stdio-based MCP (Model Context Protocol) server for AI agent integration.
 	</brief_description>
 	<description>
+		The MCP server exposes the running Redot project to AI coding assistants over a JSON-RPC stdio transport. It is started with the [code]--mcp-server[/code] command-line flag, which implies headless mode. The server reads newline-delimited JSON-RPC requests on stdin and writes responses to stdout. A TCP bridge ([MCPBridge]) is used to forward tool calls (screenshots, input, tree inspection) to a separately launched game process. See [url=https://modelcontextprotocol.io/]the MCP specification[/url] for protocol details.
 	</description>
 	<tutorials>
 	</tutorials>
@@ -10,16 +12,19 @@
 		<method name="is_running" qualifiers="const">
 			<return type="bool" />
 			<description>
+				Returns [code]true[/code] while the server loop is processing requests.
 			</description>
 		</method>
 		<method name="start">
 			<return type="void" />
 			<description>
+				Starts the blocking server loop. Reads requests from stdin and dispatches them to the registered protocol handlers. Returns when the input stream is closed or [method stop] is requested.
 			</description>
 		</method>
 		<method name="stop">
 			<return type="void" />
 			<description>
+				Signals the server loop to stop and wakes the stdin poll.
 			</description>
 		</method>
 	</methods>

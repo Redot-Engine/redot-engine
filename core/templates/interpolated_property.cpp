@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file interpolated_property.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "interpolated_property.h"
 
 #include "core/math/vector2.h"

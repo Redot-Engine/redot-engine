@@ -32,5 +32,11 @@
 
 #pragma once
 
+/**
+ * @file register_editor_types.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 void register_editor_types();
 void unregister_editor_types();

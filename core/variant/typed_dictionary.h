@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file typed_dictionary.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/object.h"
 #include "core/variant/binder_common.h"
 #include "core/variant/dictionary.h"
@@ -102,8 +108,7 @@ struct GetTypeInfo<TypedDictionary<K, V>> {
 	}
 };
 
-// Specialization for the rest of the Variant types.
-
+/// Specialization for the rest of the Variant types.
 #define MAKE_TYPED_DICTIONARY_WITH_OBJECT(m_type, m_variant_type)                                                                                  \
 	template <typename T>                                                                                                                          \
 	class TypedDictionary<T, m_type> : public Dictionary {                                                                                         \

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file skeleton_modification_2d_physicalbones.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "skeleton_modification_2d_physicalbones.h"
 #include "scene/2d/physics/physical_bone_2d.h"
 #include "scene/2d/skeleton_2d.h"

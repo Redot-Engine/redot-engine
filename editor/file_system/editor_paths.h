@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_paths.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/class_db.h"
 #include "core/object/object.h"
 #include "core/string/ustring.h"
@@ -39,14 +45,14 @@
 class EditorPaths : public Object {
 	GDCLASS(EditorPaths, Object)
 
-	bool paths_valid = false; // If any of the paths can't be created, this is false.
-	String data_dir; // Editor data (templates, shader cache, etc.).
-	String config_dir; // Editor config (settings, profiles, themes, etc.).
-	String cache_dir; // Editor cache (thumbnails, tmp generated files).
-	String temp_dir; // Editor temporary directory.
-	String project_data_dir; // Project-specific data (metadata, shader cache, etc.).
-	bool self_contained = false; // Self-contained means everything goes to `editor_data` dir.
-	String self_contained_file; // Self-contained file with configuration.
+	bool paths_valid = false; ///< If any of the paths can't be created, this is false.
+	String data_dir; ///< Editor data (templates, shader cache, etc.).
+	String config_dir; ///< Editor config (settings, profiles, themes, etc.).
+	String cache_dir; ///< Editor cache (thumbnails, tmp generated files).
+	String temp_dir; ///< Editor temporary directory.
+	String project_data_dir; ///< Project-specific data (metadata, shader cache, etc.).
+	bool self_contained = false; ///< Self-contained means everything goes to `editor_data` dir.
+	String self_contained_file; ///< Self-contained file with configuration.
 	String export_templates_folder = "export_templates";
 	String text_editor_themes_folder = "text_editor_themes";
 	String script_templates_folder = "script_templates";

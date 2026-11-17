@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file lightmapper.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/ref_counted.h"
 
 class Image;
@@ -52,9 +58,9 @@ protected:
 	static LightmapRaycaster *(*create_function)();
 
 public:
-	// Compatible with embree4 rays.
+	/// Compatible with embree4 rays.
 	struct alignas(16) Ray {
-		const static unsigned int INVALID_GEOMETRY_ID = ((unsigned int)-1); // from rtcore_common.h
+		const static unsigned int INVALID_GEOMETRY_ID = ((unsigned int)-1); ///< From rtcore_common.h
 
 		/*! Default construction does nothing. */
 		_FORCE_INLINE_ Ray() :
@@ -155,10 +161,10 @@ public:
 
 protected:
 public:
-	typedef bool (*BakeStepFunc)(float, const String &, void *, bool); //step index, step total, step description, userdata
+	typedef bool (*BakeStepFunc)(float, const String &, void *, bool); ///< step index, step total, step description, userdata
 
 	struct MeshData {
-		//triangle data
+		// triangle data
 		Vector<Vector3> points;
 		Vector<Vector2> uv2;
 		Vector<Vector3> normal;

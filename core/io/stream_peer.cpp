@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file stream_peer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "stream_peer.h"
 
 #include "core/io/marshalls.h"
@@ -675,8 +681,8 @@ Error StreamPeerBuffer::get_partial_data(uint8_t *p_buffer, int p_bytes, int &r_
 	memcpy(p_buffer, r + pointer, r_received);
 
 	pointer += r_received;
-	// FIXME: return what? OK or ERR_*
-	// return OK for now so we don't maybe return garbage
+	/// @todo FIXME: return what? OK or ERR_*
+	/// return OK for now so we don't maybe return garbage
 	return OK;
 }
 

@@ -32,10 +32,17 @@
 
 #pragma once
 
+/**
+ * @file mcp_bridge.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/stream_peer_tcp.h"
 #include "core/io/tcp_server.h"
 #include "core/object/class_db.h"
 #include "core/os/mutex.h"
+#include "core/templates/hash_map.h"
 #include "core/variant/dictionary.h"
 
 class MCPBridge : public Object {
@@ -51,10 +58,12 @@ private:
 	bool is_host = false;
 	int port = 0;
 	String partial_data;
+	HashMap<String, int> held_inputs; ///< Active trigger_action holds per input
 
-	// Internal command handling
+	/// Internal command handling
 	Dictionary _process_command(const Dictionary &p_cmd);
-	void _trigger_action_event(const StringName &p_action);
+	void _trigger_action_event(const StringName &p_action, double p_hold_sec = 0.1);
+	void _release_held_input(const String &p_key, const Ref<InputEvent> &p_release);
 
 protected:
 	static void _bind_methods();
@@ -65,15 +74,17 @@ public:
 	MCPBridge();
 	~MCPBridge();
 
-	// Host (MCP Server) side
+	/// Host (MCP Server) side
 	Error start_server(int p_port = 0); // 0 = find available
 	int get_port() const { return port; }
 	bool is_client_connected() const;
 
-	// Client (Game) side
+	/// Client (Game) side
 	Error connect_to_server(const String &p_host, int p_port);
 
-	// Communication
-	Dictionary send_command(const String &p_action, const Dictionary &p_args = Dictionary());
-	void update(); // Called by MainLoop or Server loop
+	/// Communication
+	/// Sends a command and optionally waits for its response.
+	Dictionary send_command(const String &p_action, const Dictionary &p_args = Dictionary(), bool p_wait_for_response = true);
+	void disconnect_peer(); ///< Closes and clears the current bridge connection.
+	void update(); ///< Called by MainLoop or Server loop
 };

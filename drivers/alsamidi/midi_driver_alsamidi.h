@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file midi_driver_alsamidi.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef ALSAMIDI_ENABLED
 
 #include "core/os/midi_driver.h"
@@ -57,7 +63,7 @@ class MIDIDriverALSAMidi : public MIDIDriver {
 		Parser parser;
 		snd_rawmidi_t *rawmidi_ptr = nullptr;
 
-		// Read in and parse available data, forwarding complete events to Input.
+		/// Read in and parse available data, forwarding complete events to Input.
 		void read();
 	};
 

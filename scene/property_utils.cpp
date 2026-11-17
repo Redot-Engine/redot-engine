@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file property_utils.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "property_utils.h"
 
 #include "core/config/engine.h"
@@ -78,12 +84,6 @@ bool PropertyUtils::is_property_value_different(const Object *p_object, const Va
 }
 
 Variant PropertyUtils::get_property_default_value(const Object *p_object, const StringName &p_property, bool *r_is_valid, const Vector<SceneState::PackState> *p_states_stack_cache, bool p_update_exports, const Node *p_owner, bool *r_is_class_default) {
-	// This function obeys the way property values are set when an object is instantiated,
-	// which is the following (the latter wins):
-	// 1. Default value from builtin class
-	// 2. Default value from script exported variable (from the topmost script)
-	// 3. Value overrides from the instantiation/inheritance stack
-
 	if (r_is_class_default) {
 		*r_is_class_default = false;
 	}
@@ -202,8 +202,8 @@ Variant PropertyUtils::get_property_default_value(const Object *p_object, const 
 	}
 }
 
-// Like SceneState::PackState, but using a raw pointer to avoid the cost of
-// updating the reference count during the internal work of the functions below
+/// Like SceneState::PackState, but using a raw pointer to avoid the cost of
+/// updating the reference count during the internal work of the functions below
 namespace {
 struct _FastPackState {
 	SceneState *state = nullptr;

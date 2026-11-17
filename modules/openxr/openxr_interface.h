@@ -32,28 +32,32 @@
 
 #pragma once
 
-// A note on multithreading and thread safety in OpenXR.
-//
-// Most entry points will be called from the main thread in Godot
-// however a number of entry points will be called from the
-// rendering thread, potentially while we're already processing
-// the next frame on the main thread.
-//
-// OpenXR itself has been designed with threading in mind including
-// a high likelihood that the XR runtime runs in separate threads
-// as well.
-// Hence all the frame timing information, use of swapchains and
-// sync functions.
-// Do note that repeated calls to tracking APIs will provide
-// increasingly more accurate data for the same timestamp as
-// tracking data is continuously updated.
-//
-// For our code we mostly implement this in our OpenXRAPI class.
-// We store data accessed from the rendering thread in a separate
-// struct, setting values through our renderer command queue.
-//
-// As some data is setup before we start rendering, and cleaned up
-// after we've stopped, that is accessed directly from both threads.
+/**
+ * @file openxr_interface.h
+ *
+ * A note on multithreading and thread safety in OpenXR.
+ *
+ * Most entry points will be called from the main thread in Godot
+ * however a number of entry points will be called from the
+ * rendering thread, potentially while we're already processing
+ * the next frame on the main thread.
+ *
+ * OpenXR itself has been designed with threading in mind including
+ * a high likelihood that the XR runtime runs in separate threads
+ * as well.
+ * Hence all the frame timing information, use of swapchains and
+ * sync functions.
+ * Do note that repeated calls to tracking APIs will provide
+ * increasingly more accurate data for the same timestamp as
+ * tracking data is continuously updated.
+ *
+ * For our code we mostly implement this in our OpenXRAPI class.
+ * We store data accessed from the rendering thread in a separate
+ * struct, setting values through our renderer command queue.
+ *
+ * As some data is setup before we start rendering, and cleaned up
+ * after we've stopped, that is accessed directly from both threads.
+ */
 
 #include "action_map/openxr_action_map.h"
 #include "extensions/openxr_hand_tracking_extension.h"
@@ -74,35 +78,35 @@ private:
 	bool reference_stage_changing = false;
 	XRInterface::TrackingStatus tracking_state;
 
-	// At a minimum we need a tracker for our head
+	/// At a minimum we need a tracker for our head
 	Ref<XRPositionalTracker> head;
 	Transform3D head_transform;
 	Vector3 head_linear_velocity;
 	Vector3 head_angular_velocity;
 	XRPose::TrackingConfidence head_confidence;
-	Transform3D transform_for_view[2]; // We currently assume 2, but could be 4 for VARJO which we do not support yet
+	Transform3D transform_for_view[2]; ///< We currently assume 2, but could be 4 for VARJO which we do not support yet
 
 	XRVRS xr_vrs;
 
 	void _load_action_map();
 
-	struct Action { // An action we've registered with OpenXR
-		String action_name; // Name of our action as presented to Godot (can be altered from the action map)
-		OpenXRAction::ActionType action_type; // The action type of this action
-		RID action_rid; // RID of the action registered with our OpenXR API
+	struct Action { ///< An action we've registered with OpenXR
+		String action_name; ///< Name of our action as presented to Godot (can be altered from the action map)
+		OpenXRAction::ActionType action_type; ///< The action type of this action
+		RID action_rid; ///< RID of the action registered with our OpenXR API
 	};
-	struct ActionSet { // An action set we've registered with OpenXR
-		String action_set_name; // Name of our action set
-		bool is_active; // If true this action set is active and we will sync it
-		Vector<Action *> actions; // List of actions in this action set
-		RID action_set_rid; // RID of the action registered with our OpenXR API
+	struct ActionSet { ///< An action set we've registered with OpenXR
+		String action_set_name; ///< Name of our action set
+		bool is_active; ///< If true this action set is active and we will sync it
+		Vector<Action *> actions; ///< List of actions in this action set
+		RID action_set_rid; ///< RID of the action registered with our OpenXR API
 	};
-	struct Tracker { // A tracker we've registered with OpenXR
-		String tracker_name; // Name of our tracker (can be altered from the action map)
-		Vector<Action *> actions; // Actions related to this tracker
-		Ref<XRControllerTracker> controller_tracker; // Our positional tracker object that holds our tracker state
-		RID tracker_rid; // RID of the tracker registered with our OpenXR API
-		RID interaction_profile; // RID of the interaction profile bound to this tracker (can be null)
+	struct Tracker { ///< A tracker we've registered with OpenXR
+		String tracker_name; ///< Name of our tracker (can be altered from the action map)
+		Vector<Action *> actions; ///< Actions related to this tracker
+		Ref<XRControllerTracker> controller_tracker; ///< Our positional tracker object that holds our tracker state
+		RID tracker_rid; ///< RID of the tracker registered with our OpenXR API
+		RID interaction_profile; ///< RID of the interaction profile bound to this tracker (can be null)
 	};
 
 	Vector<ActionSet *> action_sets;
@@ -133,8 +137,11 @@ public:
 	virtual StringName get_name() const override;
 	virtual uint32_t get_capabilities() const override;
 
+	/// @name These are hardcoded in OpenXR, note that they will only be available if added to our action map
+	/// @{
 	virtual PackedStringArray get_suggested_tracker_names() const override;
 	virtual TrackingStatus get_tracking_status() const override;
+	/// @}
 
 	bool is_hand_tracking_supported();
 	bool is_hand_interaction_supported() const;
@@ -247,6 +254,7 @@ public:
 		HAND_MOTION_RANGE_MAX
 	};
 
+	/** Hand tracking. */
 	void set_motion_range(const Hand p_hand, const HandMotionRange p_motion_range);
 	HandMotionRange get_motion_range(const Hand p_hand) const;
 
@@ -310,7 +318,8 @@ public:
 	virtual RID get_vrs_texture() override;
 	virtual VRSTextureFormat get_vrs_texture_format() override;
 
-	// Performance settings.
+	/// @name Performance Settings
+	/// @{
 	enum PerfSettingsLevel {
 		PERF_SETTINGS_LEVEL_POWER_SAVINGS,
 		PERF_SETTINGS_LEVEL_SUSTAINED_LOW,
@@ -329,6 +338,7 @@ public:
 		PERF_SETTINGS_NOTIF_LEVEL_WARNING,
 		PERF_SETTINGS_NOTIF_LEVEL_IMPAIRED,
 	};
+	/// @}
 
 	void set_cpu_level(PerfSettingsLevel p_level);
 	void set_gpu_level(PerfSettingsLevel p_level);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file back_buffer_copy.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "back_buffer_copy.h"
 
 void BackBufferCopy::_update_copy_mode() {

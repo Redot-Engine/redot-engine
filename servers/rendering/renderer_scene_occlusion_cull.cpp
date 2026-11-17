@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file renderer_scene_occlusion_cull.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "renderer_scene_occlusion_cull.h"
 
 RendererSceneOcclusionCull *RendererSceneOcclusionCull::singleton = nullptr;

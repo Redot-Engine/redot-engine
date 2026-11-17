@@ -32,7 +32,17 @@
 
 #pragma once
 
+/**
+ * @file eq_filter.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/vector.h"
+
+namespace AudioMixKernels {
+struct EQProcess;
+}
 
 class EQ {
 public:
@@ -46,6 +56,7 @@ public:
 
 	class BandProcess {
 		friend class EQ;
+		friend struct AudioMixKernels::EQProcess;
 		float c1, c2, c3;
 		struct History {
 			float a1, a2, a3;

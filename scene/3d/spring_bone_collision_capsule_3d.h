@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file spring_bone_collision_capsule_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/spring_bone_collision_3d.h"
 
 class SpringBoneCollisionCapsule3D : public SpringBoneCollision3D {
@@ -56,6 +62,6 @@ public:
 	void set_inside(bool p_enabled);
 	bool is_inside() const;
 
-	// Helper.
+	/// Helper.
 	Pair<Vector3, Vector3> get_head_and_tail(const Transform3D &p_center) const;
 };

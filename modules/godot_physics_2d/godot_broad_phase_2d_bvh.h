@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_broad_phase_2d_bvh.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_broad_phase_2d.h"
 
 #include "core/math/bvh.h"
@@ -94,6 +100,13 @@ public:
 	virtual void set_unpair_callback(UnpairCallback p_unpair_callback, void *p_userdata) override;
 
 	virtual void update() override;
+
+	/// @brief Configures the BVH to use a size-relative pairing margin capped at
+	/// @p p_expansion, so large objects gain hysteresis while small objects keep a
+	/// tiny margin.
+	/// @param p_expansion Maximum pairing margin in pixels. Values <= 0 leave the
+	/// BVH's default pair-count-based margin scaling in place.
+	virtual void set_pairing_expansion(real_t p_expansion) override;
 
 	static GodotBroadPhase2D *_create();
 	GodotBroadPhase2DBVH();

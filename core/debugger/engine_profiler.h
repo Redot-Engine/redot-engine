@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file engine_profiler.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/gdvirtual.gen.inc"
 #include "core/object/ref_counted.h"
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file file_access.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "file_access.h"
 #include "file_access.compat.inc"
 
@@ -252,8 +258,6 @@ FileAccess::AccessType FileAccess::get_access_type() const {
 }
 
 String FileAccess::fix_path(const String &p_path) const {
-	// Helper used by file accesses that use a single filesystem.
-
 	String r_path = p_path.replace_char('\\', '/');
 
 	switch (_access_type) {
@@ -301,7 +305,6 @@ String FileAccess::fix_path(const String &p_path) const {
 	return r_path;
 }
 
-/* these are all implemented for ease of porting, then can later be optimized */
 uint8_t FileAccess::get_8() const {
 	uint8_t data = 0;
 	get_buffer(&data, sizeof(uint8_t));

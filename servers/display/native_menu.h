@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file native_menu.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/input/input.h"
 #include "core/variant/callable.h"
 

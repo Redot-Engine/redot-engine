@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_color_map.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_color_map.h"
 
 HashMap<Color, Color> EditorColorMap::color_conversion_map;

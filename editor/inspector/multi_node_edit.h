@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file multi_node_edit.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/ref_counted.h"
 
 class MultiNodeEdit : public RefCounted {

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file sprite_frames_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "sprite_frames_editor_plugin.h"
 
 #include "core/io/resource_loader.h"
@@ -1027,8 +1033,21 @@ void SpriteFramesEditor::_animation_selected() {
 	edited_anim = selected->get_text(0);
 
 	if (animated_sprite) {
+		String previous = animated_sprite->call("get_animation");
 		sprite_node_updating = true;
-		animated_sprite->call("set_animation", edited_anim);
+		// Only record an undo step for an actual change with a valid previous animation to
+		// restore to. AnimatedSprite2D/3D::set_animation() rejects names not present in
+		// `frames` (ERR_FAIL_MSG), so if `previous` is empty or no longer valid there is no
+		// way to undo back to it; just apply the change directly in that case.
+		if (previous != edited_anim && !previous.is_empty() && frames.is_valid() && frames->has_animation(previous)) {
+			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+			undo_redo->create_action(TTR("Change Animation"), UndoRedo::MERGE_DISABLE, animated_sprite);
+			undo_redo->add_do_method(animated_sprite, "set_animation", edited_anim);
+			undo_redo->add_undo_method(animated_sprite, "set_animation", previous);
+			undo_redo->commit_action();
+		} else {
+			animated_sprite->call("set_animation", edited_anim);
+		}
 		sprite_node_updating = false;
 	}
 
@@ -2032,7 +2051,7 @@ SpriteFramesEditor::SpriteFramesEditor() {
 	sub_vb->add_child(animations);
 	animations->set_v_size_flags(SIZE_EXPAND_FILL);
 	animations->set_hide_root(true);
-	// HACK: The cell_selected signal is emitted before the FPS spinbox loses focus and applies the change.
+	/// @todo HACK: The cell_selected signal is emitted before the FPS spinbox loses focus and applies the change.
 	animations->connect("cell_selected", callable_mp(this, &SpriteFramesEditor::_animation_selected), CONNECT_DEFERRED);
 	animations->connect("item_edited", callable_mp(this, &SpriteFramesEditor::_animation_name_edited));
 	animations->set_theme_type_variation("TreeSecondary");
@@ -2222,7 +2241,7 @@ SpriteFramesEditor::SpriteFramesEditor() {
 	frame_list->set_max_text_lines(2);
 	SET_DRAG_FORWARDING_GCD(frame_list, SpriteFramesEditor);
 	frame_list->connect(SceneStringName(gui_input), callable_mp(this, &SpriteFramesEditor::_frame_list_gui_input));
-	// HACK: The item_selected signal is emitted before the Frame Duration spinbox loses focus and applies the change.
+	/// @todo HACK: The item_selected signal is emitted before the Frame Duration spinbox loses focus and applies the change.
 	frame_list->connect("multi_selected", callable_mp(this, &SpriteFramesEditor::_frame_list_item_selected), CONNECT_DEFERRED);
 
 	sub_vb->add_child(frame_list);

@@ -10,40 +10,36 @@ layout(push_constant, std430) uniform Params {
 params;
 
 vec3 texelCoordToVec(vec2 uv, uint faceID) {
-	mat3 faceUvVectors[6];
+	vec3 a, b, c;
 
-	// -x
-	faceUvVectors[1][0] = vec3(0.0, 0.0, 1.0); // u -> +z
-	faceUvVectors[1][1] = vec3(0.0, -1.0, 0.0); // v -> -y
-	faceUvVectors[1][2] = vec3(-1.0, 0.0, 0.0); // -x face
-
-	// +x
-	faceUvVectors[0][0] = vec3(0.0, 0.0, -1.0); // u -> -z
-	faceUvVectors[0][1] = vec3(0.0, -1.0, 0.0); // v -> -y
-	faceUvVectors[0][2] = vec3(1.0, 0.0, 0.0); // +x face
-
-	// -y
-	faceUvVectors[3][0] = vec3(1.0, 0.0, 0.0); // u -> +x
-	faceUvVectors[3][1] = vec3(0.0, 0.0, -1.0); // v -> -z
-	faceUvVectors[3][2] = vec3(0.0, -1.0, 0.0); // -y face
-
-	// +y
-	faceUvVectors[2][0] = vec3(1.0, 0.0, 0.0); // u -> +x
-	faceUvVectors[2][1] = vec3(0.0, 0.0, 1.0); // v -> +z
-	faceUvVectors[2][2] = vec3(0.0, 1.0, 0.0); // +y face
-
-	// -z
-	faceUvVectors[5][0] = vec3(-1.0, 0.0, 0.0); // u -> -x
-	faceUvVectors[5][1] = vec3(0.0, -1.0, 0.0); // v -> -y
-	faceUvVectors[5][2] = vec3(0.0, 0.0, -1.0); // -z face
-
-	// +z
-	faceUvVectors[4][0] = vec3(1.0, 0.0, 0.0); // u -> +x
-	faceUvVectors[4][1] = vec3(0.0, -1.0, 0.0); // v -> -y
-	faceUvVectors[4][2] = vec3(0.0, 0.0, 1.0); // +z face
+	if (faceID == 1) { // -x
+		a = vec3(0.0, 0.0, 1.0); // u -> +z
+		b = vec3(0.0, -1.0, 0.0); // v -> -y
+		c = vec3(-1.0, 0.0, 0.0); // -x face
+	} else if (faceID == 0) { // +x
+		a = vec3(0.0, 0.0, -1.0); // u -> -z
+		b = vec3(0.0, -1.0, 0.0); // v -> -y
+		c = vec3(1.0, 0.0, 0.0); // +x face
+	} else if (faceID == 3) { // -y
+		a = vec3(1.0, 0.0, 0.0); // u -> +x
+		b = vec3(0.0, 0.0, -1.0); // v -> -z
+		c = vec3(0.0, -1.0, 0.0); // -y face
+	} else if (faceID == 2) { // +y
+		a = vec3(1.0, 0.0, 0.0); // u -> +x
+		b = vec3(0.0, 0.0, 1.0); // v -> +z
+		c = vec3(0.0, 1.0, 0.0); // +y face
+	} else if (faceID == 5) { // -z
+		a = vec3(-1.0, 0.0, 0.0); // u -> -x
+		b = vec3(0.0, -1.0, 0.0); // v -> -y
+		c = vec3(0.0, 0.0, -1.0); // -z face
+	} else /* if (faceID == 4) */ { // +z
+		a = vec3(1.0, 0.0, 0.0); // u -> +x
+		b = vec3(0.0, -1.0, 0.0); // v -> -y
+		c = vec3(0.0, 0.0, 1.0); // +z face
+	}
 
 	// out = u * s_faceUv[0] + v * s_faceUv[1] + s_faceUv[2].
-	vec3 result = (faceUvVectors[faceID][0] * uv.x) + (faceUvVectors[faceID][1] * uv.y) + faceUvVectors[faceID][2];
+	vec3 result = (a * uv.x) + (b * uv.y) + c;
 	return normalize(result);
 }
 

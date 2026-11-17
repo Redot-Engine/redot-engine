@@ -6,7 +6,7 @@ contact_links:
     about: Please submit feature proposals on the Redot proposals repository, not here.
 
   - name: Redot documentation repository
-    url: https://github.com/Redot-Engine/redot-docs
+    url: https://github.com/Redot-Engine/Redot-Documentation
     about: Please report issues with documentation on the Redot documentation repository, not here.
 
   - name: Redot community channels

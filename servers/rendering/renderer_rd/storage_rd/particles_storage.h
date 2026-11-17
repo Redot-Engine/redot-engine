@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file particles_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/local_vector.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
@@ -49,10 +55,12 @@ class ParticlesStorage : public RendererParticlesStorage {
 private:
 	static ParticlesStorage *singleton;
 
-	/* EFFECTS */
+	/// @name EFFECTS
+	/// @{
 	SortEffects *sort_effects = nullptr;
-
-	/* PARTICLES */
+	/// @}
+	/// @name PARTICLES
+	/// @{
 
 	enum {
 		BASE_UNIFORM_SET,
@@ -85,10 +93,10 @@ private:
 
 		struct Attractor {
 			float transform[16];
-			float extents[3]; //exents or radius
+			float extents[3]; ///< Exents or radius
 			uint32_t type;
 
-			uint32_t texture_index; //texture index for vector field
+			uint32_t texture_index; ///< Texture index for vector field
 			float strength;
 			float attenuation;
 			float directionality;
@@ -105,10 +113,10 @@ private:
 
 		struct Collider {
 			float transform[16];
-			float extents[3]; //exents or radius
+			float extents[3]; ///< Exents or radius
 			uint32_t type;
 
-			uint32_t texture_index; //texture index for vector field
+			uint32_t texture_index; ///< Texture index for vector field
 			float scale;
 			uint32_t pad[2];
 		};
@@ -155,7 +163,7 @@ private:
 		int32_t particle_max;
 		uint32_t pad1;
 		uint32_t pad2;
-		Data data[1]; //its 2020 and empty arrays are still non standard in C++
+		Data data[1]; ///< It's 2020 and empty arrays are still non standard in C++
 	};
 
 	struct Particles {
@@ -340,8 +348,9 @@ private:
 	SelfList<Particles>::List particle_update_list;
 
 	mutable RID_Owner<Particles, true> particles_owner;
-
-	/* Particle Shader */
+	/// @}
+	/// @name Particle Shader
+	/// @{
 
 	struct ParticlesShaderData : public MaterialStorage::ShaderData {
 		bool valid = false;
@@ -391,8 +400,9 @@ private:
 	static MaterialStorage::MaterialData *_create_particles_material_funcs(MaterialStorage::ShaderData *p_shader) {
 		return ParticlesStorage::get_singleton()->_create_particles_material_func(static_cast<ParticlesShaderData *>(p_shader));
 	}
-
-	/* Particles Collision */
+	/// @}
+	/// @name Particles Collision
+	/// @{
 
 	struct ParticlesCollision {
 		RS::ParticlesCollisionType type = RS::PARTICLES_COLLISION_TYPE_SPHERE_ATTRACT;
@@ -430,8 +440,9 @@ public:
 	virtual ~ParticlesStorage();
 
 	bool free(RID p_rid);
-
-	/* PARTICLES */
+	/// @}
+	/// @name PARTICLES
+	/// @{
 
 	bool owns_particles(RID p_rid) { return particles_owner.owns(p_rid); }
 
@@ -561,8 +572,9 @@ public:
 
 	void particles_update_dependency(RID p_particles, DependencyTracker *p_instance);
 	Dependency *particles_get_dependency(RID p_particles) const;
-
-	/* Particles Collision */
+	/// @}
+	/// @name Particles Collision
+	/// @{
 
 	bool owns_particles_collision(RID p_rid) { return particles_collision_owner.owns(p_rid); }
 
@@ -590,13 +602,14 @@ public:
 
 	Dependency *particles_collision_get_dependency(RID p_particles) const;
 
-	//used from 2D and 3D
+	/// Used from 2D and 3D
 	bool owns_particles_collision_instance(RID p_rid) { return particles_collision_instance_owner.owns(p_rid); }
 
 	virtual RID particles_collision_instance_create(RID p_collision) override;
 	virtual void particles_collision_instance_free(RID p_rid) override;
 	virtual void particles_collision_instance_set_transform(RID p_collision_instance, const Transform3D &p_transform) override;
 	virtual void particles_collision_instance_set_active(RID p_collision_instance, bool p_active) override;
+	/// @}
 };
 
 } // namespace RendererRD

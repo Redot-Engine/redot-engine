@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file shader_warnings.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef DEBUG_ENABLED
 
 #include "core/string/string_name.h"

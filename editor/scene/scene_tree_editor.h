@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file scene_tree_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/check_box.h"
 #include "scene/gui/check_button.h"
 #include "scene/gui/dialogs.h"
@@ -67,13 +73,13 @@ class SceneTreeEditor : public Control {
 		bool has_moved_children = false;
 		bool removed = false;
 
-		// Store the iterator for faster removal. This is safe as
-		// HashMap never moves elements.
+		/// Store the iterator for faster removal. This is safe as
+		/// HashMap never moves elements.
 		HashMap<Node *, CachedNode>::Iterator cache_iterator;
-		// This is safe because it gets compared to a uint8_t.
+		/// This is safe because it gets compared to a uint8_t.
 		uint16_t delete_serial = UINT16_MAX;
 
-		// To know whether to update children or not.
+		/// To know whether to update children or not.
 		bool can_process = false;
 
 		CachedNode() = delete; // Always an error.
@@ -226,7 +232,7 @@ class SceneTreeEditor : public Control {
 	void _revoke_unique_name();
 
 public:
-	// Public for use with callable_mp.
+	/// Public for use with callable_mp.
 	void _update_tree(bool p_scroll_to_selected = false);
 
 	void rename_node(Node *p_node, const String &p_name, TreeItem *p_item = nullptr);

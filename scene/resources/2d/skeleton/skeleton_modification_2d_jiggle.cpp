@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file skeleton_modification_2d_jiggle.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "skeleton_modification_2d_jiggle.h"
 
 #include "scene/2d/skeleton_2d.h"
@@ -157,9 +163,6 @@ void SkeletonModification2DJiggle::_execute(float p_delta) {
 }
 
 void SkeletonModification2DJiggle::_execute_jiggle_joint(int p_joint_idx, Node2D *p_target, float p_delta) {
-	// Adopted from: https://wiki.unity3d.com/index.php/JiggleBone
-	// With modifications by TwistedTwigleg.
-
 	if (jiggle_data_chain[p_joint_idx].bone_idx <= -1 || jiggle_data_chain[p_joint_idx].bone_idx > stack->skeleton->get_bone_count()) {
 		ERR_PRINT_ONCE("Jiggle joint " + itos(p_joint_idx) + " bone index is invalid. Cannot execute modification on joint...");
 		return;

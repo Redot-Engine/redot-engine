@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file tile_proxies_manager_dialog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/inspector/editor_properties.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/item_list.h"

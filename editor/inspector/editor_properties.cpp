@@ -30,10 +30,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_properties.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_properties.h"
 
 #include "core/config/project_settings.h"
 #include "core/input/input_map.h"
+#include "core/variant/struct.h"
 #include "editor/docks/inspector_dock.h"
 #include "editor/docks/scene_tree_dock.h"
 #include "editor/editor_node.h"
@@ -1121,7 +1128,7 @@ void EditorPropertyLayersGrid::_notification(int p_what) {
 			RID ae = get_accessibility_element();
 			ERR_FAIL_COND(ae.is_null());
 
-			//TODO
+			/// @todo
 			DisplayServer::get_singleton()->accessibility_update_set_role(ae, DisplayServer::AccessibilityRole::ROLE_STATIC_TEXT);
 			DisplayServer::get_singleton()->accessibility_update_set_value(ae, TTR(vformat("The %s is not accessible at this time.", "Layers grid property editor")));
 		} break;
@@ -3180,7 +3187,7 @@ static bool _find_recursive_resources(const Variant &v, HashSet<Resource *> &res
 			Array a = v;
 			for (int i = 0; i < a.size(); i++) {
 				Variant v2 = a[i];
-				if (v2.get_type() != Variant::ARRAY && v2.get_type() != Variant::DICTIONARY && v2.get_type() != Variant::OBJECT) {
+				if (v2.get_type() != Variant::ARRAY && v2.get_type() != Variant::DICTIONARY && v2.get_type() != Variant::OBJECT && v2.get_type() != Variant::STRUCT) {
 					continue;
 				}
 				if (_find_recursive_resources(v2, resources_found)) {
@@ -3193,15 +3200,28 @@ static bool _find_recursive_resources(const Variant &v, HashSet<Resource *> &res
 			for (const KeyValue<Variant, Variant> &kv : d) {
 				const Variant &k = kv.key;
 				const Variant &v2 = kv.value;
-				if (k.get_type() == Variant::ARRAY || k.get_type() == Variant::DICTIONARY || k.get_type() == Variant::OBJECT) {
+				if (k.get_type() == Variant::ARRAY || k.get_type() == Variant::DICTIONARY || k.get_type() == Variant::OBJECT || k.get_type() == Variant::STRUCT) {
 					if (_find_recursive_resources(k, resources_found)) {
 						return true;
 					}
 				}
-				if (v2.get_type() == Variant::ARRAY || v2.get_type() == Variant::DICTIONARY || v2.get_type() == Variant::OBJECT) {
+				if (v2.get_type() == Variant::ARRAY || v2.get_type() == Variant::DICTIONARY || v2.get_type() == Variant::OBJECT || v2.get_type() == Variant::STRUCT) {
 					if (_find_recursive_resources(v2, resources_found)) {
 						return true;
 					}
+				}
+			}
+		} break;
+		case Variant::STRUCT: {
+			const Struct s = v;
+			const int count = s.get_field_count();
+			for (int i = 0; i < count; i++) {
+				Variant v2 = s.get_member(i);
+				if (v2.get_type() != Variant::ARRAY && v2.get_type() != Variant::DICTIONARY && v2.get_type() != Variant::OBJECT && v2.get_type() != Variant::STRUCT) {
+					continue;
+				}
+				if (_find_recursive_resources(v2, resources_found)) {
+					return true;
 				}
 			}
 		} break;
@@ -3239,6 +3259,15 @@ static bool _find_recursive_resources(const Variant &v, HashSet<Resource *> &res
 		}
 	}
 	return false;
+}
+
+bool editor_property_has_recursive_resource(Resource *p_owner, const Variant &p_value) {
+	if (p_owner == nullptr) {
+		return false;
+	}
+	HashSet<Resource *> resources_found;
+	resources_found.insert(p_owner);
+	return _find_recursive_resources(p_value, resources_found);
 }
 
 void EditorPropertyResource::_resource_changed(const Ref<Resource> &p_resource) {
@@ -3667,8 +3696,8 @@ static EditorPropertyRangeHint _parse_range_hint(PropertyHint p_hint, const Stri
 }
 
 static EditorProperty *get_input_action_editor(const String &p_hint_text, bool is_string_name) {
-	// TODO: Should probably use a better editor GUI with a search bar.
-	// Said GUI could also handle showing builtin options, requiring 1 less hint.
+	/// @todo Should probably use a better editor GUI with a search bar.
+	/// Said GUI could also handle showing builtin options, requiring 1 less hint.
 	EditorPropertyTextEnum *editor = memnew(EditorPropertyTextEnum);
 	Vector<String> options;
 	Vector<String> builtin_options;
@@ -4043,6 +4072,10 @@ EditorProperty *EditorInspectorDefaultPlugin::get_editor_for_property(Object *p_
 		case Variant::ARRAY: {
 			EditorPropertyArray *editor = memnew(EditorPropertyArray);
 			editor->setup(Variant::ARRAY, p_hint_text);
+			return editor;
+		} break;
+		case Variant::STRUCT: {
+			EditorPropertyStruct *editor = memnew(EditorPropertyStruct);
 			return editor;
 		} break;
 		case Variant::PACKED_BYTE_ARRAY: {

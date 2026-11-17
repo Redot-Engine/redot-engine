@@ -5236,3 +5236,6 @@ msgstr "sina toki e nanpa awen '%s' taso sina kepeken ala e ona."
 
 msgid "The local variable '%s' is declared but never used."
 msgstr "sina toki e nanpa ante '%s' pi ma ni taso sina kepeken ala e ona."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "lipu nanpa mute pi pali lili li wile open lon ilo ante (nanpa 128 li suli nanpa wan)."

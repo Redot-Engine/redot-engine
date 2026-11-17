@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_body_pair_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_body_2d.h"
 #include "godot_constraint_2d.h"
 
@@ -60,11 +66,11 @@ class GodotBodyPair2D : public GodotConstraint2D {
 		Vector2 position;
 		Vector2 normal;
 		Vector2 local_A, local_B;
-		Vector2 acc_impulse; // accumulated impulse
-		real_t acc_normal_impulse = 0.0; // accumulated normal impulse (Pn)
-		real_t acc_tangent_impulse = 0.0; // accumulated tangent impulse (Pt)
-		real_t acc_bias_impulse = 0.0; // accumulated normal impulse for position bias (Pnb)
-		real_t acc_bias_impulse_center_of_mass = 0.0; // accumulated normal impulse for position bias applied to com
+		Vector2 acc_impulse; ///< accumulated impulse
+		real_t acc_normal_impulse = 0.0; ///< accumulated normal impulse (Pn)
+		real_t acc_tangent_impulse = 0.0; ///< accumulated tangent impulse (Pt)
+		real_t acc_bias_impulse = 0.0; ///< accumulated normal impulse for position bias (Pnb)
+		real_t acc_bias_impulse_center_of_mass = 0.0; ///< accumulated normal impulse for position bias applied to com
 		real_t mass_normal, mass_tangent = 0.0;
 		real_t bias = 0.0;
 
@@ -75,7 +81,7 @@ class GodotBodyPair2D : public GodotConstraint2D {
 		real_t bounce = 0.0;
 	};
 
-	Vector2 offset_B; //use local A coordinates to avoid numerical issues on collision detection
+	Vector2 offset_B; ///< Use local A coordinates to avoid numerical issues on collision detection
 
 	Vector2 sep_axis;
 	Contact contacts[MAX_CONTACTS];
@@ -85,6 +91,13 @@ class GodotBodyPair2D : public GodotConstraint2D {
 	bool oneway_disabled = false;
 	bool report_contacts_only = false;
 
+	/// `_test_ccd` prevents tunneling by slowing down a high velocity body that is about to collide so
+	/// that next frame it will be at an appropriate location to collide (i.e. slight overlap).
+	/// @warning The way velocity is adjusted down to cause a collision means the momentum will be
+	/// weaker than it should for a bounce!
+	/// Process: Only proceed if body A's motion is high relative to its size.
+	/// Cast forward along motion vector to see if A is going to enter/pass B's collider next frame, only proceed if it does.
+	/// Adjust the velocity of A down so that it will just slightly intersect the collider instead of blowing right past it.
 	bool _test_ccd(real_t p_step, GodotBody2D *p_A, int p_shape_A, const Transform2D &p_xform_A, GodotBody2D *p_B, int p_shape_B, const Transform2D &p_xform_B);
 	void _validate_contacts();
 	static void _add_contact(const Vector2 &p_point_A, const Vector2 &p_point_B, void *p_self);

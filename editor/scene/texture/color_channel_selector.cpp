@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file color_channel_selector.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "color_channel_selector.h"
 
 #include "editor/themes/editor_scale.h"
@@ -109,7 +115,6 @@ uint32_t ColorChannelSelector::get_selected_channels_mask() const {
 	return mask;
 }
 
-// Helper
 Vector4 ColorChannelSelector::get_selected_channel_factors() const {
 	Vector4 channel_factors;
 	const uint32_t mask = get_selected_channels_mask();

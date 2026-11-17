@@ -30,39 +30,38 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gjk_epa.cpp
+ *
+ * @brief GJK-EPA collision solver by Nathanael Presson, 2008
+ *
+ * @details Bullet's GJK-EPA2 IMPLEMENTATION
+ * Bullet Continuous Collision Detection and Physics Library
+ * @copyright Copyright (c) 2003-2008 Erwin Coumans  http://continuousphysics.com/Bullet/
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * In no event will the authors be held liable for any damages arising from the
+ * use of this software.
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it
+ * freely,
+ * subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not
+ * claim that you wrote the original software. If you use this software in a
+ * product, an acknowledgment in the product documentation would be appreciated
+ * but is not required.
+ * 2. Altered source versions must be plainly marked as such, and must not be
+ * misrepresented as being the original software.
+ * 3. This notice may not be removed or altered from any source distribution.
+ */
+
 #include "gjk_epa.h"
 
 /* Disabling formatting for thirdparty code snippet */
 /* clang-format off */
 
-/*************** Bullet's GJK-EPA2 IMPLEMENTATION *******************/
-
-/*
-Bullet Continuous Collision Detection and Physics Library
-Copyright (c) 2003-2008 Erwin Coumans  http://continuousphysics.com/Bullet/
-
-This software is provided 'as-is', without any express or implied warranty.
-In no event will the authors be held liable for any damages arising from the
-use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely,
-subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-claim that you wrote the original software. If you use this software in a
-product, an acknowledgment in the product documentation would be appreciated
-but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-*/
-
-/*
-GJK-EPA collision solver by Nathanael Presson, 2008
-*/
-
-	// Config
+// Config
 
 /* GJK	*/
 #define GJK_MAX_ITERATIONS	128
@@ -90,10 +89,10 @@ namespace GjkEpa2 {
 
 struct sResults	{
 	enum eStatus {
-		Separated,		/* Shapes doesn't penetrate */
-		Penetrating,	/* Shapes are penetrating */
-		GJK_Failed,		/* GJK phase fail, no big issue, shapes are probably just 'touching'	*/
-		EPA_Failed /* EPA phase fail, bigger problem, need to save parameters, and debug	*/
+		Separated,		///< Shapes doesn't penetrate
+		Penetrating,	///< Shapes are penetrating
+		GJK_Failed,		///< GJK phase fail, no big issue, shapes are probably just 'touching'
+		EPA_Failed 		///< EPA phase fail, bigger problem, need to save parameters, and debug
 	} status;
 
 	Vector3	witnesses[2];
@@ -101,9 +100,11 @@ struct sResults	{
 	real_t	distance = 0.0;
 };
 
-// Shorthands
+/// @name Shorthands
+/// @{
 typedef unsigned int	U;
 typedef unsigned char	U1;
+/// @}
 
 // MinkowskiDiff
 struct	MinkowskiDiff {
@@ -147,7 +148,7 @@ struct	MinkowskiDiff {
 		return p_shape->get_support(local_dir_norm) + p_margin * local_dir_norm;
 	}
 
-	// i wonder how this could be sped up... if it can
+	/// I wonder how this could be sped up... if it can
 	_FORCE_INLINE_ Vector3 Support0(const Vector3& d) const {
 		return transform_A.xform(get_support(m_shapes[0], transform_A.basis.xform_inv(d), margin_A));
 	}

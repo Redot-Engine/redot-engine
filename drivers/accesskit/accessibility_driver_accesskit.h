@@ -32,10 +32,16 @@
 
 #pragma once
 
+/**
+ * @file accessibility_driver_accesskit.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef ACCESSKIT_ENABLED
 
 #include "core/templates/rid_owner.h"
-#include "servers/display_server.h"
+#include "servers/display/display_server.h"
 
 #ifdef ACCESSKIT_DYNAMIC
 #ifdef LINUXBSD_ENABLED

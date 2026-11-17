@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gltf_animation.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/animation.h"
 
 class GLTFAnimation : public Resource {

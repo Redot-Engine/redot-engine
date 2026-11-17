@@ -30,9 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_effect_capture.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_effect_capture.h"
 
-#include "servers/audio_server.h"
+#include "servers/audio/audio_server.h"
 
 bool AudioEffectCapture::can_get_buffer(int p_frames) const {
 	return buffer.data_left() >= p_frames;

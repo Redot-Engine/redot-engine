@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scene_cache_interface.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene_cache_interface.h"
 
 #include "scene_multiplayer.h"
@@ -57,7 +63,7 @@ void SceneCacheInterface::_remove_node_cache(ObjectID p_oid) {
 		assigned_ids.erase(nc->cache_id);
 	}
 #if 0
-	// TODO: Find a way to cleanup recv_nodes without breaking visibility and RPCs interactions.
+	/// @todo Find a way to cleanup recv_nodes without breaking visibility and RPCs interactions.
 	for (KeyValue<int, int> &E : nc->recv_ids) {
 		PeerInfo *pinfo = peers_info.getptr(E.key);
 		ERR_CONTINUE(!pinfo);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file texture_loader_ktx.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "texture_loader_ktx.h"
 
 #include "core/io/file_access.h"
@@ -264,7 +270,7 @@ static Ref<Image> load_from_file_access(Ref<FileAccess> f, Error *r_error) {
 				ktx_transcode_fmt_e ktxfmt;
 				switch (ktxTexture2_GetNumComponents(ktx_texture2)) {
 					case 1: {
-						if (ktxTexture2_GetOETF_e(ktx_texture2) == KHR_DF_TRANSFER_SRGB) { // TODO srgb native support
+						if (ktxTexture2_GetOETF_e(ktx_texture2) == KHR_DF_TRANSFER_SRGB) { ///< @todo srgb native support
 							ktxfmt = KTX_TTF_RGBA32;
 						} else if (RS::get_singleton()->has_os_feature("rgtc")) {
 							ktxfmt = KTX_TTF_BC4_R;
@@ -274,7 +280,7 @@ static Ref<Image> load_from_file_access(Ref<FileAccess> f, Error *r_error) {
 						break;
 					}
 					case 2: {
-						if (ktxTexture2_GetOETF_e(ktx_texture2) == KHR_DF_TRANSFER_SRGB) { // TODO srgb native support
+						if (ktxTexture2_GetOETF_e(ktx_texture2) == KHR_DF_TRANSFER_SRGB) { ///< @todo srgb native support
 							ktxfmt = KTX_TTF_RGBA32;
 						} else if (RS::get_singleton()->has_os_feature("rgtc")) {
 							ktxfmt = KTX_TTF_BC5_RG;
@@ -284,7 +290,7 @@ static Ref<Image> load_from_file_access(Ref<FileAccess> f, Error *r_error) {
 						break;
 					}
 					case 3: {
-						if (ktxTexture2_GetOETF_e(ktx_texture2) == KHR_DF_TRANSFER_SRGB) { // TODO: srgb native support
+						if (ktxTexture2_GetOETF_e(ktx_texture2) == KHR_DF_TRANSFER_SRGB) { ///< @todo srgb native support
 							ktxfmt = KTX_TTF_RGBA32;
 						} else if (RS::get_singleton()->has_os_feature("bptc")) {
 							ktxfmt = KTX_TTF_BC7_RGBA;
@@ -298,7 +304,7 @@ static Ref<Image> load_from_file_access(Ref<FileAccess> f, Error *r_error) {
 						break;
 					}
 					case 4: {
-						if (ktxTexture2_GetOETF_e(ktx_texture2) == KHR_DF_TRANSFER_SRGB) { // TODO srgb native support
+						if (ktxTexture2_GetOETF_e(ktx_texture2) == KHR_DF_TRANSFER_SRGB) { ///< @todo srgb native support
 							ktxfmt = KTX_TTF_RGBA32;
 						} else if (RS::get_singleton()->has_os_feature("astc")) {
 							ktxfmt = KTX_TTF_ASTC_4x4_RGBA;
@@ -460,8 +466,8 @@ static Ref<Image> load_from_file_access(Ref<FileAccess> f, Error *r_error) {
 
 	Vector<uint8_t> src_data;
 
-	// KTX use 4-bytes padding, don't use mipmaps if padding is effective
-	// TODO: unpad dynamically
+	/// KTX use 4-bytes padding, don't use mipmaps if padding is effective
+	/// @todo Unpad dynamically
 	int pixel_size = Image::get_format_pixel_size(format);
 	int pixel_rshift = Image::get_format_pixel_rshift(format);
 	int block = Image::get_format_block_size(format);

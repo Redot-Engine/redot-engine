@@ -4161,3 +4161,6 @@ msgstr "Virsmas Indekss"
 
 msgid "Constants cannot be modified."
 msgstr "Konstantes nevar pārveidot."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Pārāk daudz skriptu atvēršanai ārējā redaktorā (maks. 128)."

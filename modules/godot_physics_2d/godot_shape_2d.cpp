@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_shape_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_shape_2d.h"
 
 #include "core/math/geometry_2d.h"
@@ -457,7 +463,7 @@ bool GodotCapsuleShape2D::intersect_segment(const Vector2 &p_begin, const Vector
 	}
 
 	//return get_aabb().intersects_segment(p_begin,p_end,&r_point,&r_normal);
-	return collided; //todo
+	return collided; /// @todo
 }
 
 real_t GodotCapsuleShape2D::get_moment_of_inertia(real_t p_mass, const Size2 &p_scale) const {

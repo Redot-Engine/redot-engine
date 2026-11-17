@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godotsharp_dirs.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godotsharp_dirs.h"
 
 #include "mono_gd/gd_mono.h"
@@ -140,7 +146,7 @@ private:
 		String res_data_dir = ProjectSettings::get_singleton()->get_project_data_path().path_join("mono");
 		res_metadata_dir = res_data_dir.path_join("metadata");
 
-		// TODO use paths from csproj
+		/// @todo Use paths from csproj
 		res_temp_assemblies_dir = res_data_dir.path_join("temp").path_join("bin").path_join(_get_expected_build_config());
 
 #ifdef WEB_ENABLED

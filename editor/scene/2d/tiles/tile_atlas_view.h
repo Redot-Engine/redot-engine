@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file tile_atlas_view.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/gui/editor_zoom_widget.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
@@ -77,13 +83,15 @@ private:
 	HBoxContainer *hbox = nullptr;
 	Label *missing_source_label = nullptr;
 
-	// Background
+	/// @name Background
+	/// @{
 	Control *background_left = nullptr;
 	void _draw_background_left();
 	Control *background_right = nullptr;
 	void _draw_background_right();
-
-	// Left side.
+	/// @}
+	/// @name Left side
+	/// @{
 	Control *base_tiles_root_control = nullptr;
 	void _base_tiles_root_control_gui_input(const Ref<InputEvent> &p_event);
 
@@ -103,8 +111,9 @@ private:
 	void _draw_base_tiles_shape_grid();
 
 	Size2i _compute_base_tiles_control_size();
-
-	// Right side.
+	/// @}
+	/// @name Right side
+	/// @{
 	Control *alternative_tiles_root_control = nullptr;
 	void _alternative_tiles_root_control_gui_input(const Ref<InputEvent> &p_event);
 
@@ -114,6 +123,7 @@ private:
 	void _draw_alternatives();
 
 	Size2i _compute_alternative_tiles_control_size();
+	/// @}
 
 	struct ThemeCache {
 		Ref<Texture2D> center_view_icon;
@@ -127,15 +137,17 @@ protected:
 	static void _bind_methods();
 
 public:
-	// Global.
+	/// @name Global
+	/// @{
 	void set_atlas_source(TileSet *p_tile_set, TileSetAtlasSource *p_tile_set_atlas_source, int p_source_id);
 
 	float get_zoom() const;
 	void set_transform(float p_zoom, Vector2i p_panning);
 
 	void set_padding(Side p_side, int p_padding);
-
-	// Left side.
+	/// @}
+	/// @name Left side
+	/// @{
 	void set_texture_grid_visible(bool p_visible) { base_tiles_texture_grid->set_visible(p_visible); }
 	void set_tile_shape_grid_visible(bool p_visible) { base_tiles_shape_grid->set_visible(p_visible); }
 
@@ -150,8 +162,9 @@ public:
 		p_control->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
 		p_control->set_mouse_filter(Control::MOUSE_FILTER_PASS);
 	}
-
-	// Right side.
+	/// @}
+	/// @name Right side
+	/// @{
 	Vector3i get_alternative_tile_at_pos(const Vector2 p_pos) const;
 	Rect2i get_alternative_tile_rect(const Vector2i p_coords, int p_alternative_tile);
 
@@ -164,6 +177,7 @@ public:
 		p_control->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
 		p_control->set_mouse_filter(Control::MOUSE_FILTER_PASS);
 	}
+	/// @}
 
 	// Redraw everything.
 	void queue_redraw();

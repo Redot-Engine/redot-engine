@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file project_settings.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "project_settings.h"
 
 #include "core/core_bind.h" // For Compression enum.
@@ -71,8 +77,7 @@ String ProjectSettings::get_imported_files_path() const {
 }
 
 #ifdef TOOLS_ENABLED
-// Returns the features that a project must have when opened with this build of Redot.
-// This is used by the project manager to provide the initial_settings for config/features.
+
 const PackedStringArray ProjectSettings::get_required_features() {
 	PackedStringArray features;
 	features.append(REDOT_VERSION_BRANCH);
@@ -83,7 +88,6 @@ const PackedStringArray ProjectSettings::get_required_features() {
 	return features;
 }
 
-// Returns the features supported by this build of Redot. Includes all required features.
 const PackedStringArray ProjectSettings::_get_supported_features() {
 	PackedStringArray features = get_required_features();
 #ifdef MODULE_MONO_ENABLED
@@ -106,7 +110,6 @@ const PackedStringArray ProjectSettings::_get_supported_features() {
 	return features;
 }
 
-// Returns the features that this project needs but this build of Redot lacks.
 const PackedStringArray ProjectSettings::get_unsupported_features(const PackedStringArray &p_project_features) {
 	PackedStringArray unsupported_features;
 	PackedStringArray supported_features = singleton->_get_supported_features();
@@ -123,7 +126,6 @@ const PackedStringArray ProjectSettings::get_unsupported_features(const PackedSt
 	return unsupported_features;
 }
 
-// Returns the features that both this project has and this build of Redot has, ensuring required features exist.
 const PackedStringArray ProjectSettings::_trim_to_supported_features(const PackedStringArray &p_project_features) {
 	// Remove unsupported features if present.
 	PackedStringArray features = PackedStringArray(p_project_features);
@@ -571,6 +573,9 @@ bool ProjectSettings::_load_resource_pack(const String &p_pack, bool p_replace_f
 		// This pack may have declared new global classes (make sure they are picked up).
 		refresh_global_class_list();
 
+		// This pack may have declared new global structs (make sure they are picked up).
+		refresh_global_struct_list();
+
 		// This pack may have defined new UIDs, make sure they are cached.
 		ResourceUID::get_singleton()->load_from_cache(false);
 	}
@@ -602,33 +607,6 @@ void ProjectSettings::_convert_to_last_version(int p_from_version) {
 #endif // DISABLE_DEPRECATED
 }
 
-/*
- * This method is responsible for loading a project.godot file and/or data file
- * using the following merit order:
- *  - If using NetworkClient, try to lookup project file or fail.
- *  - If --main-pack was passed by the user (`p_main_pack`), load it or fail.
- *  - Search for project PCKs automatically. For each step we try loading a potential
- *    PCK, and if it doesn't work, we proceed to the next step. If any step succeeds,
- *    we try loading the project settings, and abort if it fails. Steps:
- *    o Bundled PCK in the executable.
- *    o [macOS only] PCK with same basename as the binary in the .app resource dir.
- *    o PCK with same basename as the binary in the binary's directory. We handle both
- *      changing the extension to '.pck' (e.g. 'win_game.exe' -> 'win_game.pck') and
- *      appending '.pck' to the binary name (e.g. 'linux_game' -> 'linux_game.pck').
- *    o PCK with the same basename as the binary in the current working directory.
- *      Same as above for the two possible PCK file names.
- *  - On Android, look for 'assets.sparsepck' and try loading it, if it doesn't work,
- *    proceed to the next step.
- *  - On relevant platforms (Android/iOS), lookup project file in OS resource path.
- *    If found, load it or fail.
- *  - Lookup project file in passed `p_path` (--path passed by the user), i.e. we
- *    are running from source code.
- *    If not found and `p_upwards` is true (--upwards passed by the user), look for
- *    project files in parent folders up to the system root (used to run a game
- *    from command line while in a subfolder).
- *    If a project file is found, load it or fail.
- *    If nothing was found, error out.
- */
 Error ProjectSettings::_setup(const String &p_path, const String &p_main_pack, bool p_upwards, bool p_ignore_override) {
 	if (!OS::get_singleton()->get_resource_dir().is_empty()) {
 		// OS will call ProjectSettings->get_resource_path which will be empty if not overridden!
@@ -864,8 +842,8 @@ Error ProjectSettings::_load_settings_text(const String &p_path) {
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ, &err);
 
 	if (f.is_null()) {
-		// FIXME: Above 'err' error code is ERR_FILE_CANT_OPEN if the file is missing
-		// This needs to be streamlined if we want decent error reporting
+		/// @todo FIXME: Above 'err' error code is ERR_FILE_CANT_OPEN if the file is missing
+		/// This needs to be streamlined if we want decent error reporting
 		return ERR_FILE_NOT_FOUND;
 	}
 
@@ -1317,7 +1295,6 @@ Variant ProjectSettings::get_setting(const String &p_setting, const Variant &p_d
 }
 
 void ProjectSettings::refresh_global_class_list() {
-	// This is called after mounting a new PCK file to pick up class changes.
 	is_global_class_list_loaded = false; // Make sure we read from the freshly mounted PCK.
 	Array script_classes = get_global_class_list();
 	for (int i = 0; i < script_classes.size(); i++) {
@@ -1363,6 +1340,48 @@ void ProjectSettings::store_global_class_list(const Array &p_classes) {
 	cf->save(get_global_class_list_path());
 
 	global_class_list = p_classes;
+}
+
+void ProjectSettings::refresh_global_struct_list() {
+	is_global_struct_list_loaded = false; // Make sure we read from the freshly mounted PCK.
+	Array structs = get_global_struct_list();
+	for (int i = 0; i < structs.size(); i++) {
+		Dictionary c = structs[i];
+		if (!c.has("struct") || !c.has("language") || !c.has("path")) {
+			continue;
+		}
+		ScriptServer::add_global_struct(c["struct"], c["language"], c["path"]);
+	}
+}
+
+TypedArray<Dictionary> ProjectSettings::get_global_struct_list() {
+	if (is_global_struct_list_loaded) {
+		return global_struct_list;
+	}
+
+	Ref<ConfigFile> cf;
+	cf.instantiate();
+	if (cf->load(get_global_struct_list_path()) == OK) {
+		global_struct_list = cf->get_value("", "list", Array());
+	}
+
+	// A project may legitimately have no structs, so a missing cache is not an error.
+	is_global_struct_list_loaded = true;
+
+	return global_struct_list;
+}
+
+String ProjectSettings::get_global_struct_list_path() const {
+	return get_project_data_path().path_join("global_struct_cache.cfg");
+}
+
+void ProjectSettings::store_global_struct_list(const Array &p_structs) {
+	Ref<ConfigFile> cf;
+	cf.instantiate();
+	cf->set_value("", "list", p_structs);
+	cf->save(get_global_struct_list_path());
+
+	global_struct_list = p_structs;
 }
 
 bool ProjectSettings::has_custom_feature(const String &p_feature) const {
@@ -1539,9 +1558,6 @@ void ProjectSettings::_add_builtin_input_map() {
 }
 
 ProjectSettings::ProjectSettings() {
-	// Initialization of engine variables should be done in the setup() method,
-	// so that the values can be overridden from project.redot or project.binary.
-
 	CRASH_COND_MSG(singleton != nullptr, "Instantiating a new ProjectSettings singleton is not supported.");
 	singleton = this;
 
@@ -1611,7 +1627,7 @@ ProjectSettings::ProjectSettings() {
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "display/window/size/window_width_override", PROPERTY_HINT_RANGE, "0,7680,1,or_greater"), 0); // 8K resolution
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "display/window/size/window_height_override", PROPERTY_HINT_RANGE, "0,4320,1,or_greater"), 0); // 8K resolution
 
-	GLOBAL_DEF("display/window/energy_saving/keep_screen_on", true);
+	GLOBAL_DEF("display/window/energy_saving/keep_screen_on", false);
 	GLOBAL_DEF("animation/warnings/check_invalid_track_paths", true);
 	GLOBAL_DEF("animation/warnings/check_angle_interpolation_type_conflicting", true);
 
@@ -1656,6 +1672,8 @@ ProjectSettings::ProjectSettings() {
 
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "debug/settings/profiler/max_functions", PROPERTY_HINT_RANGE, "128,65535,1"), 16384);
 	GLOBAL_DEF_RST(PropertyInfo(Variant::INT, "debug/settings/profiler/max_timestamp_query_elements", PROPERTY_HINT_RANGE, "256,65535,1"), 256);
+	GLOBAL_DEF("debug/gdscript/warnings/show_experimental_struct_warning", true);
+	GLOBAL_DEF("debug/gdscript/warnings/show_experimental_trait_warning", true); // @todo: remove experimental tag in 27.1-rc.1
 
 	GLOBAL_DEF(PropertyInfo(Variant::BOOL, "compression/formats/zstd/long_distance_matching"), Compression::zstd_long_distance_matching);
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "compression/formats/zstd/compression_level", PROPERTY_HINT_RANGE, "1,22,1"), Compression::zstd_level);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file grid_container.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "grid_container.h"
 
 #include "core/templates/rb_set.h"

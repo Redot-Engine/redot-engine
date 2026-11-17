@@ -30,9 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_pose.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "xr_pose.h"
 
-#include "servers/xr_server.h"
+#include "servers/xr/xr_server.h"
 
 void XRPose::_bind_methods() {
 	BIND_ENUM_CONSTANT(XR_TRACKING_CONFIDENCE_NONE);

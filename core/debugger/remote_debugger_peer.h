@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file remote_debugger_peer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/stream_peer_tcp.h"
 #include "core/object/ref_counted.h"
 #include "core/os/mutex.h"
@@ -50,7 +56,7 @@ public:
 	virtual Array get_message() = 0;
 	virtual void close() = 0;
 	virtual void poll() = 0;
-	virtual bool can_block() const { return true; } // If blocking io is allowed on main thread (debug).
+	virtual bool can_block() const { return true; } ///< If blocking io is allowed on main thread (debug).
 
 	RemoteDebuggerPeer();
 };

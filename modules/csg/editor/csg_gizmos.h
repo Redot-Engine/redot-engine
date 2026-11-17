@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file csg_gizmos.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../csg_shape.h"
 
 #include "editor/plugins/editor_plugin.h"

@@ -63,7 +63,7 @@ To get the most out of Redot's MCP server, agents should follow these guidelines
 
 1.  **Scene Editing**: Use `redot_scene_action` for all `.tscn` modifications. Avoid editing TSCN files as raw text to prevent breaking node UIDs and internal references.
 2.  **Scripting**: For existing `.gd` files, use **native text editing tools** (like `edit`) for precise logic changes. Use `redot_project_config(action="create_file_res")` only when creating new scripts from scratch.
-3.  **Live Interaction**: Always `wait` 3-5 seconds after `run` before attempting vision or input actions to allow the bridge to initialize.
+3.  **Live Interaction**: Always `wait` 3-5 seconds after `run` before attempting vision or input actions to allow the bridge to initialize. By default `run` starts the game in the background: muted, in an unfocused window placed off-screen, so it doesn't interrupt the user. Screenshots and input still work. Pass `background=false` to show a normal window with audio. On Wayland the window can't be moved off-screen or kept from taking focus, so it stays visible there.
 4.  **Spatial Awareness**: Use `redot_game_control(action="inspect_live", recursive=true)` to discover UI paths and their pre-calculated screen coordinates for 100% accurate clicking.
 5.  **Debugging**: Use `redot_project_config(action="output")` to read real-time logs and `redot_code_intel(action="validate")` to syntax-check fixes before running the game.
 6.  **Script Editing Policy**: The MCP tool `create_file_res` is restricted to creating **new** files. To edit existing `.gd` scripts, agents **must** use native text editing tools (like `edit`). This ensures precision and prevents accidental overwrites of complex logic.

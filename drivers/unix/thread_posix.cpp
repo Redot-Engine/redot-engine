@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file thread_posix.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #if defined(UNIX_ENABLED)
 
 #include "thread_posix.h"

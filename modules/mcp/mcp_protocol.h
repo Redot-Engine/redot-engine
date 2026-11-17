@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file mcp_protocol.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "mcp_types.h"
 
 #include "core/object/class_db.h"
@@ -47,21 +53,25 @@ private:
 	bool initialized = false;
 	MCPTools *tools = nullptr;
 
-	// MCP method handlers
+	/// @name MCP method handlers
+	/// @{
 	Variant _handle_initialize(const Variant &p_params);
 	Variant _handle_tools_list(const Variant &p_params);
 	Variant _handle_tools_call(const Variant &p_params);
 	Variant _handle_initialized_notification(const Variant &p_params);
 	Variant _handle_ping(const Variant &p_params);
-
-	// Helper methods
+	/// @}
+	/// @name Helper methods
+	/// @{
 	Dictionary _make_capabilities() const;
 	Dictionary _make_server_info() const;
 	Array _get_tool_definitions() const;
+	static String _negotiate_version(const String &p_client_version);
+	/// @}
 
-	// Make MCP-formatted tool result
+	/// Make MCP-formatted tool result
 	Dictionary _make_tool_result(const Array &p_content, bool p_is_error = false) const;
-	Dictionary _make_text_content(const String &p_text) const;
+	Dictionary _make_tool_result_error(const String &p_message) const;
 
 protected:
 	static void _bind_methods();
@@ -71,4 +81,8 @@ public:
 	~MCPProtocol();
 
 	bool is_initialized() const { return initialized; }
+
+	/// Override to gate pre-initialization requests (avoids double-wrapped errors).
+	/// Shadows JSONRPC::process_string; called via MCPProtocol* static dispatch.
+	String process_string(const String &p_input);
 };

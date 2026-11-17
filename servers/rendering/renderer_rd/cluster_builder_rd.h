@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file cluster_builder_rd.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/renderer_rd/shaders/cluster_debug.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/cluster_render.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/cluster_store.glsl.gen.h"
@@ -44,13 +50,13 @@ class ClusterBuilderSharedDataRD {
 	RID sphere_vertex_array;
 	RID sphere_index_buffer;
 	RID sphere_index_array;
-	float sphere_overfit = 0.0; // Because an icosphere is not a perfect sphere, we need to enlarge it to cover the sphere area.
+	float sphere_overfit = 0.0; ///< Because an icosphere is not a perfect sphere, we need to enlarge it to cover the sphere area.
 
 	RID cone_vertex_buffer;
 	RID cone_vertex_array;
 	RID cone_index_buffer;
 	RID cone_index_array;
-	float cone_overfit = 0.0; // Because an cone mesh is not a perfect cone, we need to enlarge it to cover the actual cone area.
+	float cone_overfit = 0.0; ///< Because an cone mesh is not a perfect cone, we need to enlarge it to cover the actual cone area.
 
 	RID box_vertex_buffer;
 	RID box_vertex_array;
@@ -95,11 +101,11 @@ class ClusterBuilderSharedDataRD {
 
 	struct ClusterStore {
 		struct PushConstant {
-			uint32_t cluster_render_data_size; // how much data for a single cluster takes
-			uint32_t max_render_element_count_div_32; // divided by 32
+			uint32_t cluster_render_data_size; ///< How much data for a single cluster takes
+			uint32_t max_render_element_count_div_32; ///< Divided by 32
 			uint32_t cluster_screen_size[2];
-			uint32_t render_element_count_div_32; // divided by 32
-			uint32_t max_cluster_element_count_div_32; // divided by 32
+			uint32_t render_element_count_div_32; ///< Divided by 32
+			uint32_t max_cluster_element_count_div_32; ///< Divided by 32
 
 			uint32_t pad1;
 			uint32_t pad2;
@@ -165,14 +171,14 @@ private:
 	ClusterBuilderSharedDataRD *shared = nullptr;
 
 	struct RenderElementData {
-		uint32_t type; // 0-4
+		uint32_t type; ///< 0-4
 		uint32_t touches_near;
 		uint32_t touches_far;
 		uint32_t original_index;
-		float transform_inv[12]; // Transposed transform for less space.
+		float transform_inv[12]; ///< Transposed transform for less space.
 		float scale[3];
 		uint32_t has_wide_spot_angle;
-	}; // Keep aligned to 32 bytes.
+	}; /// Keep aligned to 32 bytes.
 
 	uint32_t cluster_count_by_type[ELEMENT_TYPE_MAX] = {};
 	uint32_t max_elements_by_type = 0;
@@ -196,9 +202,9 @@ private:
 
 	uint32_t cluster_size = 32;
 #if defined(MACOS_ENABLED) || defined(APPLE_EMBEDDED_ENABLED)
-	// Results in visual artifacts on macOS and iOS/visionOS when using MSAA and subgroups.
-	// Using subgroups and disabling MSAA is the optimal solution for now and also works
-	// with MoltenVK.
+	/// Results in visual artifacts on macOS and iOS/visionOS when using MSAA and subgroups.
+	/// Using subgroups and disabling MSAA is the optimal solution for now and also works
+	/// with MoltenVK.
 	bool use_msaa = false;
 #else
 	bool use_msaa = true;
@@ -209,9 +215,9 @@ private:
 	Size2i cluster_screen_size;
 
 	RID framebuffer;
-	RID cluster_render_buffer; // Used for creating.
-	RID cluster_buffer; // Used for rendering.
-	RID element_buffer; // Used for storing, to hint element touches far plane or near plane.
+	RID cluster_render_buffer; ///< Used for creating.
+	RID cluster_buffer; ///< Used for rendering.
+	RID element_buffer; ///< Used for storing, to hint element touches far plane or near plane.
 	uint32_t cluster_render_buffer_size = 0;
 	uint32_t cluster_buffer_size = 0;
 
@@ -225,9 +231,9 @@ private:
 	struct StateUniform {
 		float projection[16];
 		float inv_z_far;
-		uint32_t screen_to_clusters_shift; // Shift to obtain coordinates in block indices.
+		uint32_t screen_to_clusters_shift; ///< Shift to obtain coordinates in block indices.
 		uint32_t cluster_screen_width;
-		uint32_t cluster_data_size; // How much data is needed for a single cluster.
+		uint32_t cluster_data_size; ///< How much data is needed for a single cluster.
 		uint32_t cluster_depth_offset;
 
 		uint32_t pad0;

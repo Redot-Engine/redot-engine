@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file popup_menu.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/input/shortcut.h"
 #include "scene/gui/popup.h"
 #include "scene/gui/scroll_container.h"
@@ -74,7 +80,7 @@ class PopupMenu : public Popup {
 		bool dirty = true;
 		int id = 0;
 		Variant metadata;
-		String submenu_name; // Compatibility.
+		String submenu_name; ///< Compatibility
 		PopupMenu *submenu = nullptr;
 		String tooltip;
 		Key accel = Key::NONE;
@@ -108,7 +114,7 @@ class PopupMenu : public Popup {
 	static inline PropertyListHelper base_property_helper;
 	PropertyListHelper property_helper;
 
-	// To make Item available.
+	/// To make Item available
 	friend class OptionButton;
 	friend class MenuButton;
 
@@ -256,8 +262,8 @@ protected:
 #endif
 
 public:
-	// ATTENTION: This is used by the POT generator's scene parser. If the number of properties returned by `_get_items()` ever changes,
-	// this value should be updated to reflect the new size.
+	/// @note This is used by the POT generator's scene parser. If the number of properties returned by `_get_items()` ever changes,
+	/// this value should be updated to reflect the new size.
 	static const int ITEM_PROPERTY_SIZE = 10;
 
 	virtual RID get_focused_accessibility_element() const override;
@@ -380,6 +386,7 @@ public:
 	void add_autohide_area(const Rect2 &p_area);
 	void clear_autohide_areas();
 
+	/// Hide on item selection determines whether or not the popup will close after item selection
 	void set_hide_on_item_selection(bool p_enabled);
 	bool is_hide_on_item_selection() const;
 

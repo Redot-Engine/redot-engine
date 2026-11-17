@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file transform_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "transform_3d.h"
 
 #include "core/string/ustring.h"
@@ -51,8 +57,6 @@ void Transform3D::invert() {
 }
 
 Transform3D Transform3D::inverse() const {
-	// FIXME: this function assumes the basis is a rotation matrix, with no scaling.
-	// Transform3D::affine_inverse can handle matrices with scaling, so GDScript should eventually use that.
 	Transform3D ret = *this;
 	ret.invert();
 	return ret;
@@ -63,13 +67,11 @@ void Transform3D::rotate(const Vector3 &p_axis, real_t p_angle) {
 }
 
 Transform3D Transform3D::rotated(const Vector3 &p_axis, real_t p_angle) const {
-	// Equivalent to left multiplication
 	Basis p_basis(p_axis, p_angle);
 	return Transform3D(p_basis * basis, p_basis.xform(origin));
 }
 
 Transform3D Transform3D::rotated_local(const Vector3 &p_axis, real_t p_angle) const {
-	// Equivalent to right multiplication
 	Basis p_basis(p_axis, p_angle);
 	return Transform3D(basis * p_basis, origin);
 }
@@ -118,12 +120,10 @@ void Transform3D::scale(const Vector3 &p_scale) {
 }
 
 Transform3D Transform3D::scaled(const Vector3 &p_scale) const {
-	// Equivalent to left multiplication
 	return Transform3D(basis.scaled(p_scale), origin * p_scale);
 }
 
 Transform3D Transform3D::scaled_local(const Vector3 &p_scale) const {
-	// Equivalent to right multiplication
 	return Transform3D(basis.scaled_local(p_scale), origin);
 }
 
@@ -142,12 +142,10 @@ void Transform3D::translate_local(const Vector3 &p_translation) {
 }
 
 Transform3D Transform3D::translated(const Vector3 &p_translation) const {
-	// Equivalent to left multiplication
 	return Transform3D(basis, origin + p_translation);
 }
 
 Transform3D Transform3D::translated_local(const Vector3 &p_translation) const {
-	// Equivalent to right multiplication
 	return Transform3D(basis, origin + basis.xform(p_translation));
 }
 

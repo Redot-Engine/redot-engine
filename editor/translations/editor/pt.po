@@ -21040,3 +21040,6 @@ msgstr ""
 "4.3, então se este código foi escrito antes desta, não irá continuar "
 "funcionando. Considere especificar o componente z do espaço de corte "
 "diretamente (use `vec4(VERTEX.xy, 1.0,1.0)`."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Demasiados scripts para abrir no editor externo (máximo 128)."

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file file_access_memory.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/file_access.h"
 
 class FileAccessMemory : public FileAccess {
@@ -48,7 +54,7 @@ public:
 
 	virtual Error open_custom(const uint8_t *p_data, uint64_t p_len); ///< open a file
 	virtual Error open_internal(const String &p_path, int p_mode_flags) override; ///< open a file
-	virtual bool is_open() const override; ///< true when file is open
+	virtual bool is_open() const override; ///< @return `true` when file is open
 
 	virtual void seek(uint64_t p_position) override; ///< seek to a given position
 	virtual void seek_end(int64_t p_position) override; ///< seek from the end of file
@@ -65,7 +71,7 @@ public:
 	virtual void flush() override;
 	virtual bool store_buffer(const uint8_t *p_src, uint64_t p_length) override; ///< store an array of bytes
 
-	virtual bool file_exists(const String &p_name) override; ///< return true if a file exists
+	virtual bool file_exists(const String &p_name) override; ///< @return `true` if a file exists
 
 	virtual uint64_t _get_modified_time(const String &p_file) override { return 0; }
 	virtual uint64_t _get_access_time(const String &p_file) override { return 0; }

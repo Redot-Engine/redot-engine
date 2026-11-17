@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file string_name.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/ustring.h"
 #include "core/templates/safe_refcount.h"
 
@@ -109,9 +115,9 @@ public:
 	_FORCE_INLINE_ bool operator>=(const StringName &p_name) const {
 		return _data >= p_name._data;
 	}
+	/// The real magic of all this mess happens here.
+	/// This is why path comparisons are very fast.
 	_FORCE_INLINE_ bool operator==(const StringName &p_name) const {
-		// The real magic of all this mess happens here.
-		// This is why path comparisons are very fast.
 		return _data == p_name._data;
 	}
 	_FORCE_INLINE_ bool operator!=(const StringName &p_name) const {
@@ -191,7 +197,7 @@ public:
 #endif
 };
 
-// Zero-constructing StringName initializes _data to nullptr (and thus empty).
+/// Zero-constructing StringName initializes _data to nullptr (and thus empty).
 template <>
 struct is_zero_constructible<StringName> : std::true_type {};
 
@@ -200,7 +206,7 @@ bool operator!=(const String &p_name, const StringName &p_string_name);
 bool operator==(const char *p_name, const StringName &p_string_name);
 bool operator!=(const char *p_name, const StringName &p_string_name);
 
-/*
+/**
  * The SNAME macro is used to speed up StringName creation, as it allows caching it after the first usage in a very efficient way.
  * It should NOT be used everywhere, but instead in places where high performance is required and the creation of a StringName
  * can be costly. Places where it should be used are:
@@ -211,5 +217,4 @@ bool operator!=(const char *p_name, const StringName &p_string_name);
  *
  * Use in places that can be called hundreds of times per frame (or more) is recommended, but this situation is very rare. If in doubt, do not use.
  */
-
 #define SNAME(m_arg) ([]() -> const StringName & { static StringName sname = StringName(m_arg, true); return sname; })()

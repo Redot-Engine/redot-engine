@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file upnp_miniupnp.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifndef WEB_ENABLED
 
 #include "upnp.h"

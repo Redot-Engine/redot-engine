@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file static_body_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/physics/physics_body_3d.h"
 
 #ifndef NAVIGATION_3D_DISABLED

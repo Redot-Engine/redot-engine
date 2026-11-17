@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_settings_dialog.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_settings_dialog.h"
 
 #include "core/config/project_settings.h"
@@ -697,11 +703,6 @@ void EditorSettingsDialog::_shortcut_button_pressed(Object *p_item, int p_column
 }
 
 void EditorSettingsDialog::_shortcut_cell_double_clicked() {
-	// When a shortcut cell is double clicked:
-	// If the cell has children and is in the bindings column, and if its first child is editable,
-	// then uncollapse the cell, and if the first child is the only child, then edit that child.
-	// If the cell is in the bindings column and can be edited, then edit it.
-	// If the cell is in the name column, then toggle collapse.
 	const ShortcutButton edit_btn_id = EditorSettingsDialog::SHORTCUT_EDIT;
 	const int edit_btn_col = 1;
 	TreeItem *ti = shortcuts->get_selected();
@@ -991,8 +992,8 @@ EditorSettingsDialog::EditorSettingsDialog() {
 }
 
 void EditorSettingsPropertyWrapper::_update_override() {
-	// Don't allow overriding theme properties, because it causes problems. Overriding Project Manager settings makes no sense.
-	// TODO: Find a better way to define exception prefixes (if the list happens to grow).
+	/// Don't allow overriding theme properties, because it causes problems. Overriding Project Manager settings makes no sense.
+	/// @todo Find a better way to define exception prefixes (if the list happens to grow).
 	if (property.begins_with("interface/theme") || property.begins_with("project_manager")) {
 		can_override = false;
 		return;

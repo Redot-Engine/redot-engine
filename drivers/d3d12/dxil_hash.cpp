@@ -30,8 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-// Based on the patched public domain implementation released by Microsoft here:
-// https://github.com/microsoft/hlsl-specs/blob/main/proposals/infra/INF-0004-validator-hashing.md
+/**
+ * @file dxil_hash.cpp
+ *
+ * @brief Based on the patched public domain implementation released by Microsoft here:  https://github.com/microsoft/hlsl-specs/blob/main/proposals/infra/INF-0004-validator-hashing.md
+ */
 
 #include "dxil_hash.h"
 

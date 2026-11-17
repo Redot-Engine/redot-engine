@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file renderer_scene_render_rd.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/renderer_rd/effects/bokeh_dof.h"
 #include "servers/rendering/renderer_rd/effects/copy_effects.h"
@@ -123,9 +129,9 @@ protected:
 		return p_data_format >= RD::DATA_FORMAT_A2R10G10B10_UNORM_PACK32 && p_data_format <= RD::DATA_FORMAT_A2B10G10R10_SINT_PACK32;
 	}
 
-	// needed for a single argument calls (material and uv2)
+	/// Needed for a single argument calls (material and uv2)
 	PagedArrayPool<RenderGeometryInstance *> cull_argument_pool;
-	PagedArray<RenderGeometryInstance *> cull_argument; //need this to exist
+	PagedArray<RenderGeometryInstance *> cull_argument; ///< Need this to exist
 
 	RendererRD::SkyRD sky;
 	RendererRD::GI gi;
@@ -137,8 +143,9 @@ private:
 	RS::ViewportDebugDraw debug_draw = RS::VIEWPORT_DEBUG_DRAW_DISABLED;
 	static RendererSceneRenderRD *singleton;
 
-	/* Shadow atlas */
-	RS::ShadowQuality shadows_quality = RS::SHADOW_QUALITY_MAX; //So it always updates when first set
+	/// @name Shadow Atlas
+	/// @{
+	RS::ShadowQuality shadows_quality = RS::SHADOW_QUALITY_MAX; ///< So it always updates when first set
 	RS::ShadowQuality directional_shadow_quality = RS::SHADOW_QUALITY_MAX;
 	float shadows_quality_radius = 1.0;
 	float directional_shadow_quality_radius = 1.0;
@@ -154,44 +161,52 @@ private:
 	int soft_shadow_samples = 0;
 	RS::DecalFilter decals_filter = RS::DECAL_FILTER_LINEAR_MIPMAPS;
 	RS::LightProjectorFilter light_projectors_filter = RS::LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS;
+	/// @}
 
 	/* RENDER BUFFERS */
 
-	/* GI */
+	/// @name GI
+	/// @{
 	bool screen_space_roughness_limiter = false;
 	float screen_space_roughness_limiter_amount = 0.25;
 	float screen_space_roughness_limiter_limit = 0.18;
+	/// @}
 
-	/* Light data */
+	/// @name Light data
+	/// @{
 
 	uint64_t scene_pass = 0;
 
 	uint32_t max_cluster_elements = 512;
-
-	/* Volumetric Fog */
+	/// @}
+	/// @name Volumetric Fog
+	/// @{
 
 	uint32_t volumetric_fog_size = 128;
 	uint32_t volumetric_fog_depth = 128;
 	bool volumetric_fog_filter_active = true;
-
+	/// @}
 public:
 	static RendererSceneRenderRD *get_singleton() { return singleton; }
 
-	/* LIGHTING */
+	/// @name LIGHTING
+	/// @{
 
 	virtual void setup_added_reflection_probe(const Transform3D &p_transform, const Vector3 &p_half_size) {}
 	virtual void setup_added_light(const RS::LightType p_type, const Transform3D &p_transform, float p_radius, float p_spot_aperture) {}
 	virtual void setup_added_decal(const Transform3D &p_transform, const Vector3 &p_half_size) {}
-
-	/* GI */
-
+	/// @}
+	/// @name GI *
+	/// @{
 	RendererRD::GI *get_gi() { return &gi; }
-
-	/* SKY */
+	/// @}
+	/// @name SKY
+	/// @{
 
 	RendererRD::SkyRD *get_sky() { return &sky; }
-
-	/* SKY API */
+	/// @}
+	/// @name SKY API
+	/// @{
 
 	virtual RID sky_allocate() override;
 	virtual void sky_initialize(RID p_rid) override;
@@ -200,8 +215,9 @@ public:
 	virtual void sky_set_mode(RID p_sky, RS::SkyMode p_mode) override;
 	virtual void sky_set_material(RID p_sky, RID p_material) override;
 	virtual Ref<Image> sky_bake_panorama(RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i &p_size) override;
-
-	/* ENVIRONMENT API */
+	/// @}
+	/// @name ENVIRONMENT API
+	/// @{
 
 	virtual void environment_glow_set_use_bicubic_upscale(bool p_enable) override;
 
@@ -217,12 +233,14 @@ public:
 	_FORCE_INLINE_ bool is_using_physical_light_units() {
 		return use_physical_light_units;
 	}
-
-	/* REFLECTION PROBE */
+	/// @}
+	/// @name REFLECTION PROBE
+	/// @{
 
 	virtual RID reflection_probe_create_framebuffer(RID p_color, RID p_depth);
-
-	/* FOG VOLUMES */
+	/// @}
+	/// @name FOG VOLUMES
+	/// @{
 
 	uint32_t get_volumetric_fog_size() const { return volumetric_fog_size; }
 	uint32_t get_volumetric_fog_depth() const { return volumetric_fog_depth; }
@@ -233,16 +251,18 @@ public:
 	virtual void fog_volume_instance_set_active(RID p_fog_volume_instance, bool p_active) override;
 	virtual RID fog_volume_instance_get_volume(RID p_fog_volume_instance) const override;
 	virtual Vector3 fog_volume_instance_get_position(RID p_fog_volume_instance) const override;
-
-	/* gi light probes */
+	/// @}
+	/// @name GI Light Probes
+	/// @{
 
 	virtual RID voxel_gi_instance_create(RID p_base) override;
 	virtual void voxel_gi_instance_set_transform_to_data(RID p_probe, const Transform3D &p_xform) override;
 	virtual bool voxel_gi_needs_update(RID p_probe) const override;
 	virtual void voxel_gi_update(RID p_probe, bool p_update_light_instances, const Vector<RID> &p_light_instances, const PagedArray<RenderGeometryInstance *> &p_dynamic_objects) override;
 	virtual void voxel_gi_set_quality(RS::VoxelGIQuality p_quality) override { gi.voxel_gi_quality = p_quality; }
-
-	/* render buffers */
+	/// @}
+	/// @name Render Buffers
+	/// @{
 
 	virtual float _render_buffers_get_luminance_multiplier();
 	virtual RD::DataFormat _render_buffers_get_color_format();
@@ -251,6 +271,7 @@ public:
 	virtual void gi_set_use_half_resolution(bool p_enable) override;
 
 	RID render_buffers_get_default_voxel_gi_buffer();
+	/// @}
 
 	virtual void base_uniforms_changed() = 0;
 

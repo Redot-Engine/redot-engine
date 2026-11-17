@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file main_loop.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/input/input_event.h"
 #include "core/object/gdvirtual.gen.inc"
 #include "core/object/ref_counted.h"
@@ -48,8 +54,8 @@ protected:
 	GDVIRTUAL0(_finalize)
 
 public:
+	/// Make sure these are replicated in Node
 	enum {
-		//make sure these are replicated in Node
 		NOTIFICATION_OS_MEMORY_WARNING = 2009,
 		NOTIFICATION_TRANSLATION_CHANGED = 2010,
 		NOTIFICATION_WM_ABOUT = 2011,

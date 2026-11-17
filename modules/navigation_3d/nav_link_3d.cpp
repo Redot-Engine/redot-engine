@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file nav_link_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "nav_link_3d.h"
 
 #include "nav_map_3d.h"
@@ -205,7 +211,7 @@ Ref<NavLinkIteration3D> NavLink3D::get_iteration() {
 
 NavLink3D::NavLink3D() :
 		sync_dirty_request_list_element(this) {
-	type = NavigationUtilities::PathSegmentType::PATH_SEGMENT_TYPE_LINK;
+	type = NavigationEnums3D::PathSegmentType::PATH_SEGMENT_TYPE_LINK;
 	iteration.instantiate();
 }
 

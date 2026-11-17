@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file multiplayer_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/debugger/editor_debugger_plugin.h"
 #include "editor/plugins/editor_plugin.h"
 

@@ -32,13 +32,17 @@
 
 #pragma once
 
-// BVH Tree
-// This is an implementation of a dynamic BVH with templated leaf size.
-// This differs from most dynamic BVH in that it can handle more than 1 object
-// in leaf nodes. This can make it far more efficient in certain circumstances.
-// It also means that the splitting logic etc have to be completely different
-// to a simpler tree.
-// Note that MAX_CHILDREN should be fixed at 2 for now.
+/**
+ * @file bvh_tree.h
+ *
+ * @brief BVH Tree: This is an implementation of a dynamic BVH with templated leaf size.
+ *
+ * @details This differs from most dynamic BVH in that it can handle more than 1 object
+ * in leaf nodes. This can make it far more efficient in certain circumstances.
+ * It also means that the splitting logic etc have to be completely different
+ * to a simpler tree.
+ * @note MAX_CHILDREN should be fixed at 2 for now.
+ */
 
 #include "core/math/aabb.h"
 #include "core/math/bvh_abb.h"
@@ -50,7 +54,7 @@
 
 #define BVHABB_CLASS BVH_ABB<BOUNDS, POINT>
 
-// not sure if this is better yet so making optional
+/// Not sure if this is better yet so making optional
 #define BVH_EXPAND_LEAF_AABBS
 
 // never do these checks in release
@@ -78,18 +82,20 @@
 #define VERBOSE_PRINT(a)
 #endif
 
-// really just a namespace
+/// Really just a namespace
 struct BVHCommon {
-	// these could possibly also be the same constant,
-	// although this may be useful for debugging.
-	// or use zero for invalid and +1 based indices.
+	/// @name These could possibly also be the same constant,
+	/// @details ...although this may be useful for debugging.
+	/// or use zero for invalid and +1 based indices.
+	/// @{
 	static const uint32_t INVALID = (0xffffffff);
 	static const uint32_t INACTIVE = (0xfffffffe);
+	/// @}
 };
 
-// really a handle, can be anything
-// note that zero is a valid reference for the BVH .. this may involve using
-// a plus one based ID for clients that expect 0 to be invalid.
+/// Really a handle, can be anything
+/// @note zero is a valid reference for the BVH .. this may involve using
+/// a plus one based ID for clients that expect 0 to be invalid.
 struct BVHHandle {
 	// conversion operator
 	operator uint32_t() const { return _data; }
@@ -106,7 +112,7 @@ struct BVHHandle {
 	bool operator!=(const BVHHandle &p_h) const { return (*this == p_h) == false; }
 };
 
-// helper class to make iterative versions of recursive functions
+/// Helper class to make iterative versions of recursive functions
 template <typename T>
 class BVH_IterativeInfo {
 public:
@@ -115,7 +121,7 @@ public:
 	int32_t depth = 1;
 	int32_t threshold = ALLOCA_STACK_SIZE - 2;
 	T *stack;
-	//only used in rare occasions when you run out of alloca memory
+	// only used in rare occasions when you run out of alloca memory
 	// because tree is too unbalanced.
 	LocalVector<T> aux_stack;
 	int32_t get_alloca_stacksize() const { return ALLOCA_STACK_SIZE * sizeof(T); }
@@ -276,8 +282,8 @@ private:
 		node_free_node_and_leaf(p_parent_id);
 	}
 
-	// A node can either be a node, or a node AND a leaf combo.
-	// Both must be deleted to prevent a leak.
+	/// A node can either be a node, or a node AND a leaf combo.
+	/// Both must be deleted to prevent a leak.
 	void node_free_node_and_leaf(uint32_t p_node_id) {
 		TNode &node = _nodes[p_node_id];
 		if (node.is_leaf()) {
@@ -387,8 +393,8 @@ private:
 		ref.item_id = BVHCommon::INVALID; // unset
 	}
 
-	// returns true if needs refit of PARENT tree only, the node itself AABB is calculated
-	// within this routine
+	/// @return `true` if needs refit of PARENT tree only, the node itself AABB is calculated
+	/// within this routine
 	bool _node_add_item(uint32_t p_node_id, uint32_t p_ref_id, const BVHABB_CLASS &p_aabb) {
 		ItemRef &ref = _refs[p_ref_id];
 		ref.tnode_id = p_node_id;

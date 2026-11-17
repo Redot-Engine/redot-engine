@@ -32,11 +32,17 @@
 
 #pragma once
 
+/**
+ * @file tts_apple_embedded.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/list.h"
 #include "core/variant/array.h"
-#include "servers/display_server.h"
+#include "servers/display/display_server.h"
 
 #if __has_include(<AVFAudio/AVSpeechSynthesis.h>)
 #import <AVFAudio/AVSpeechSynthesis.h>

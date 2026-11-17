@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file voxelizer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "voxelizer.h"
 
 #include "core/config/project_settings.h"
@@ -333,10 +339,10 @@ Vector<Color> Voxelizer::_get_bake_texture(Ref<Image> p_image, const Color &p_co
 }
 
 Voxelizer::MaterialCache Voxelizer::_get_material_cache(Ref<Material> p_material) {
-	// This way of obtaining materials is inaccurate and also does not support some compressed formats very well.
+	/// @todo This way of obtaining materials is inaccurate and also does not support some compressed formats very well.
 	Ref<BaseMaterial3D> mat = p_material;
 
-	Ref<Material> material = mat; //hack for now
+	Ref<Material> material = mat; ///< @todo Hack for now
 
 	if (material_cache.has(material)) {
 		return material_cache[material];
@@ -533,10 +539,6 @@ Voxelizer::BakeResult Voxelizer::plot_mesh(const Transform3D &p_xform, Ref<Mesh>
 }
 
 void Voxelizer::_sort() {
-	// cells need to be sorted by level and coordinates
-	// it is important that level has more priority (for compute), and that Z has the least,
-	// given it may aid older implementations plot using GPU
-
 	Vector<CellSort> sorted_cells;
 	uint32_t cell_count = bake_cells.size();
 	sorted_cells.resize(cell_count);

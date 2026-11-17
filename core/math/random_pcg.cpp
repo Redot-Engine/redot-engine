@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file random_pcg.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "random_pcg.h"
 
 #include "core/os/os.h"

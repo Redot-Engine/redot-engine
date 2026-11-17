@@ -64,6 +64,28 @@ TEST_CASE("[LocalVector] Push Back.") {
 	CHECK(vector[4] == 4);
 }
 
+TEST_CASE("[LocalVector] Push Back char.") {
+	// Regression test: memnew_placement() on a `char *` used to resolve to the
+	// operator new(size_t, const char *) overload, so elements were constructed in a
+	// freshly allocated block instead of the vector's storage.
+	LocalVector<char> vector;
+	vector.push_back('a');
+	vector.push_back('b');
+	vector.push_back('c');
+	vector.insert(1, 'x');
+
+	CHECK(vector.size() == 4);
+	CHECK(vector[0] == 'a');
+	CHECK(vector[1] == 'x');
+	CHECK(vector[2] == 'b');
+	CHECK(vector[3] == 'c');
+
+	vector.resize_initialized(8);
+	CHECK(vector[3] == 'c');
+	CHECK(vector[4] == 0);
+	CHECK(vector[7] == 0);
+}
+
 TEST_CASE("[LocalVector] Find, has.") {
 	LocalVector<int> vector;
 	vector.push_back(3);

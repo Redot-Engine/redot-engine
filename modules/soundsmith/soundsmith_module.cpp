@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file soundsmith_module.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "soundsmith_module.h"
 
 #include "core/io/file_access.h"
@@ -37,8 +43,8 @@
 
 #include "modules/minimp3/audio_stream_mp3.h"
 #include "scene/resources/audio_stream_wav.h"
+#include "servers/audio/audio_server.h"
 #include "servers/audio/audio_stream.h"
-#include "servers/audio_server.h"
 
 #include <cmath>
 #include <vector>

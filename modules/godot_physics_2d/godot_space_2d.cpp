@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_space_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_space_2d.h"
 
 #include "godot_collision_solver_2d.h"
@@ -128,7 +134,7 @@ bool GodotPhysicsDirectSpaceState2D::intersect_ray(const RayParameters &p_parame
 
 	int amount = space->broadphase->cull_segment(begin, end, space->intersection_query_results, GodotSpace2D::INTERSECTION_QUERY_MAX, space->intersection_query_subindex_results);
 
-	//todo, create another array that references results, compute AABBs and check closest point to ray origin, sort, and stop evaluating results when beyond first collision
+	/// @todo Create another array that references results, compute AABBs and check closest point to ray origin, sort, and stop evaluating results when beyond first collision
 
 	bool collided = false;
 	Vector2 res_point, res_normal;
@@ -536,13 +542,6 @@ int GodotSpace2D::_cull_aabb_for_body(GodotBody2D *p_body, const Rect2 &p_aabb) 
 }
 
 bool GodotSpace2D::test_body_motion(GodotBody2D *p_body, const PhysicsServer2D::MotionParameters &p_parameters, PhysicsServer2D::MotionResult *r_result) {
-	//give me back regular physics engine logic
-	//this is madness
-	//and most people using this function will think
-	//what it does is simpler than using physics
-	//this took about a week to get right..
-	//but is it right? who knows at this point..
-
 	if (r_result) {
 		r_result->collider_id = ObjectID();
 		r_result->collider_shape = 0;
@@ -1011,7 +1010,6 @@ bool GodotSpace2D::test_body_motion(GodotBody2D *p_body, const PhysicsServer2D::
 	return collided;
 }
 
-// Assumes a valid collision pair, this should have been checked beforehand in the BVH or octree.
 void *GodotSpace2D::_broadphase_pair(GodotCollisionObject2D *A, int p_subindex_A, GodotCollisionObject2D *B, int p_subindex_B, void *p_self) {
 	GodotCollisionObject2D::Type type_A = A->get_type();
 	GodotCollisionObject2D::Type type_B = B->get_type();
@@ -1175,6 +1173,15 @@ void GodotSpace2D::set_param(PhysicsServer2D::SpaceParameter p_param, real_t p_v
 		case PhysicsServer2D::SPACE_PARAM_SOLVER_ITERATIONS:
 			solver_iterations = p_value;
 			break;
+		case PhysicsServer2D::SPACE_PARAM_SOLVER_MIN_CONSTRAINTS_FOR_THREADING:
+			solver_min_constraints_for_threading = MAX(0, (int)p_value);
+			break;
+		case PhysicsServer2D::SPACE_PARAM_SOLVER_SETUP_THREADING_MODE:
+			solver_setup_threading_mode = CLAMP((int)p_value, 0, PhysicsServer2D::SOLVER_SETUP_THREADING_PREDICTED_BIASED);
+			break;
+		case PhysicsServer2D::SPACE_PARAM_SOLVER_SETUP_PREDICTION_WINDOW:
+			solver_setup_prediction_window = CLAMP((int)p_value, 1, SOLVER_SETUP_HISTORY_MAX);
+			break;
 	}
 }
 
@@ -1198,6 +1205,12 @@ real_t GodotSpace2D::get_param(PhysicsServer2D::SpaceParameter p_param) const {
 			return constraint_bias;
 		case PhysicsServer2D::SPACE_PARAM_SOLVER_ITERATIONS:
 			return solver_iterations;
+		case PhysicsServer2D::SPACE_PARAM_SOLVER_MIN_CONSTRAINTS_FOR_THREADING:
+			return solver_min_constraints_for_threading;
+		case PhysicsServer2D::SPACE_PARAM_SOLVER_SETUP_THREADING_MODE:
+			return solver_setup_threading_mode;
+		case PhysicsServer2D::SPACE_PARAM_SOLVER_SETUP_PREDICTION_WINDOW:
+			return solver_setup_prediction_window;
 	}
 	return 0;
 }
@@ -1223,6 +1236,9 @@ GodotSpace2D::GodotSpace2D() {
 	body_angular_velocity_sleep_threshold = GLOBAL_GET("physics/2d/sleep_threshold_angular");
 	body_time_to_sleep = GLOBAL_GET("physics/2d/time_before_sleep");
 	solver_iterations = GLOBAL_GET("physics/2d/solver/solver_iterations");
+	solver_min_constraints_for_threading = GLOBAL_GET("physics/2d/solver/min_constraints_for_threading");
+	solver_setup_threading_mode = GLOBAL_GET("physics/2d/solver/setup_threading_mode");
+	solver_setup_prediction_window = CLAMP((int)GLOBAL_GET("physics/2d/solver/setup_prediction_window"), 1, SOLVER_SETUP_HISTORY_MAX);
 	contact_recycle_radius = GLOBAL_GET("physics/2d/solver/contact_recycle_radius");
 	contact_max_separation = GLOBAL_GET("physics/2d/solver/contact_max_separation");
 	contact_max_allowed_penetration = GLOBAL_GET("physics/2d/solver/contact_max_allowed_penetration");
@@ -1232,6 +1248,7 @@ GodotSpace2D::GodotSpace2D() {
 	broadphase = GodotBroadPhase2D::create_func();
 	broadphase->set_pair_callback(_broadphase_pair, this);
 	broadphase->set_unpair_callback(_broadphase_unpair, this);
+	broadphase->set_pairing_expansion(GLOBAL_GET("physics/2d/solver/pairing_expansion"));
 
 	direct_access = memnew(GodotPhysicsDirectSpaceState2D);
 	direct_access->space = this;

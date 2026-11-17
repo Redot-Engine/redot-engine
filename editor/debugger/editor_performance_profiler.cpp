@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_performance_profiler.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_performance_profiler.h"
 
 #include "editor/editor_string_names.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file compressed_texture.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "compressed_texture.h"
 
 #include "scene/resources/bit_map.h"

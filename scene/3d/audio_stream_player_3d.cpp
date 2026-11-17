@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_stream_player_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_stream_player_3d.h"
 #include "audio_stream_player_3d.compat.inc"
 
@@ -45,14 +51,14 @@
 #include "scene/3d/physics/area_3d.h"
 #endif // PHYSICS_3D_DISABLED
 
-// Based on "A Novel Multichannel Panning Method for Standard and Arbitrary Loudspeaker Configurations" by Ramy Sadek and Chris Kyriakakis (2004)
-// Speaker-Placement Correction Amplitude Panning (SPCAP)
+/// Based on "A Novel Multichannel Panning Method for Standard and Arbitrary Loudspeaker Configurations" by Ramy Sadek and Chris Kyriakakis (2004)
+/// Speaker-Placement Correction Amplitude Panning (SPCAP)
 class Spcap {
 private:
 	struct Speaker {
 		Vector3 direction;
-		real_t effective_number_of_speakers = 0; // precalculated
-		mutable real_t squared_gain = 0; // temporary
+		real_t effective_number_of_speakers = 0; ///< Precalculated
+		mutable real_t squared_gain = 0; ///< Temporary
 	};
 
 	Vector<Speaker> speakers;
@@ -96,7 +102,7 @@ public:
 	}
 };
 
-//TODO: hardcoded main speaker directions for 2, 3.1, 5.1 and 7.1 setups - these are simplified and could also be made configurable
+/// @todo Hardcoded main speaker directions for 2, 3.1, 5.1 and 7.1 setups - these are simplified and could also be made configurable
 static const Vector3 speaker_directions[7] = {
 	Vector3(-1.0, 0.0, -1.0).normalized(), // front-left
 	Vector3(1.0, 0.0, -1.0).normalized(), // front-right
@@ -124,7 +130,7 @@ void AudioStreamPlayer3D::_calc_output_vol(const Vector3 &source_dir, real_t tig
 			break;
 	}
 
-	Spcap spcap(speaker_count, speaker_directions); //TODO: should only be created/recreated once the speaker mode / speaker positions changes
+	Spcap spcap(speaker_count, speaker_directions); /// @todo Should only be created/recreated once the speaker mode / speaker positions changes
 	real_t volumes[7];
 	spcap.calculate(source_dir, tightness, speaker_count, volumes);
 
@@ -148,9 +154,6 @@ void AudioStreamPlayer3D::_calc_output_vol(const Vector3 &source_dir, real_t tig
 	}
 }
 
-// Set the volume to cosine of half horizontal the angle from the source to the left/right speaker direction ignoring elevation.
-// Then scale `cosx` so that greatest ratio of the speaker volumes is `1-panning_strength`.
-// See https://github.com/godotengine/godot/issues/103989 for evidence that this is the most standard implementation.
 AudioFrame AudioStreamPlayer3D::_calc_output_vol_stereo(const Vector3 &source_dir, real_t panning_strength) {
 	double flatrad = sqrt(source_dir.x * source_dir.x + source_dir.z * source_dir.z);
 	double g = CLAMP((1.0 - panning_strength) * (1.0 - panning_strength), 0.0, 1.0);
@@ -203,8 +206,8 @@ void AudioStreamPlayer3D::_calc_reverb_vol(Area3D *area, Vector3 listener_area_p
 			}
 
 			if (channel_count >= 4) {
-				// Rear pair
-				// FIXME: Not sure what math should be done here
+				/// Rear pair
+				/// @todo FIXME: Not sure what math should be done here
 				reverb_vol.write[3].left = 1.0 - c;
 				reverb_vol.write[3].right = c;
 			}

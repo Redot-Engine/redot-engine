@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file script_text_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "script_text_editor.h"
 
 #include "core/config/project_settings.h"
@@ -323,19 +329,22 @@ void ScriptTextEditor::_error_clicked(const Variant &p_line) {
 		const int line = meta["line"].operator int64_t();
 		const int column = meta["column"].operator int64_t();
 		if (path.is_empty()) {
-			goto_line_centered(line, column);
+			const String line_text = code_editor->get_text_editor()->get_line(line);
+			const int tab_count = line_text.length() - line_text.lstrip("\t").length();
+			const int indent_size = code_editor->get_text_editor()->get_indent_size();
+			goto_line_centered(line, MAX(0, column - tab_count * (indent_size - 1)));
 		} else {
-			Ref<Resource> scr = ResourceLoader::load(path);
+			Ref<Script> scr = ResourceLoader::load(path);
 			if (scr.is_null()) {
 				EditorNode::get_singleton()->show_warning(TTR("Could not load file at:") + "\n\n" + path, TTR("Error!"));
 			} else {
 				int corrected_column = column;
 
-				const String line_text = code_editor->get_text_editor()->get_line(line);
+				const String line_text = scr->get_source_code().get_slice("\n", line);
 				const int indent_size = code_editor->get_text_editor()->get_indent_size();
 				if (indent_size > 1) {
 					const int tab_count = line_text.length() - line_text.lstrip("\t").length();
-					corrected_column -= tab_count * (indent_size - 1);
+					corrected_column = MAX(0, corrected_column - tab_count * (indent_size - 1));
 				}
 
 				ScriptEditor::get_singleton()->edit(scr, line, corrected_column);
@@ -522,9 +531,10 @@ void ScriptTextEditor::_inline_object_draw(const Dictionary &p_info, const Rect2
 		if (color_alpha_texture.is_null()) {
 			color_alpha_texture = inline_color_picker->get_theme_icon("sample_bg", "ColorPicker");
 		}
-		code_editor->get_text_editor()->draw_texture_rect(color_alpha_texture, col_rect, false);
-		code_editor->get_text_editor()->draw_rect(col_rect, Color(p_info["color"]));
-		code_editor->get_text_editor()->draw_rect(col_rect, Color(1, 1, 1), false, 1);
+		RID text_ci = code_editor->get_text_editor()->get_text_canvas_item();
+		RS::get_singleton()->canvas_item_add_rect(text_ci, p_rect.grow(-3), Color(1, 1, 1));
+		color_alpha_texture->draw_rect(text_ci, col_rect);
+		RS::get_singleton()->canvas_item_add_rect(text_ci, col_rect, Color(p_info["color"]));
 	}
 }
 
@@ -847,12 +857,22 @@ void ScriptTextEditor::_validate_script() {
 		}
 
 		if (errors.size() > 0) {
-			const int line = errors.front()->get().line;
-			const int column = errors.front()->get().column;
-			const String message = errors.front()->get().message.replace("[", "[lb]");
+			const ScriptLanguage::ScriptError &error = errors.front()->get();
+			const int line = error.line;
+			const int column = error.column;
+			String message = error.message.replace("[", "[lb]");
+			const ScriptLanguage::ScriptError::RelatedError &related_error = error.related_error;
+			if (!related_error.path.is_empty()) {
+				const String location = vformat("%s:%d:%d", related_error.path, related_error.line, related_error.column).replace("[", "[lb]");
+				message = message.replace(location, "[url=dependency]" + location + "[/url]");
+			}
 			const String error_text = vformat(TTR("Error at ([hint=Line %d, column %d]%d, %d[/hint]):"), line, column, line, column) + " " + message;
 			code_editor->set_error(error_text);
-			code_editor->set_error_pos(line - 1, column - 1);
+			if (related_error.path.is_empty()) {
+				code_editor->set_error_pos(line - 1, column - 1);
+			} else {
+				code_editor->set_error_pos(MAX(0, related_error.line - 1), MAX(0, related_error.column - 1), related_error.path);
+			}
 		}
 		script_is_valid = false;
 	} else {
@@ -950,11 +970,12 @@ void ScriptTextEditor::_update_errors() {
 	errors_panel->push_table(2);
 	for (const ScriptLanguage::ScriptError &err : errors) {
 		Dictionary click_meta;
-		click_meta["line"] = err.line;
-		click_meta["column"] = err.column;
+		click_meta["path"] = String();
+		click_meta["line"] = MAX(0, err.line - 1);
+		click_meta["column"] = MAX(0, err.column - 1);
 
 		errors_panel->push_cell();
-		errors_panel->push_meta(err.line - 1);
+		errors_panel->push_meta(click_meta);
 		errors_panel->push_color(warnings_panel->get_theme_color(SNAME("error_color"), EditorStringName(Editor)));
 		errors_panel->add_text(vformat(TTR("Line %d:"), err.line));
 		errors_panel->pop(); // Color.
@@ -962,7 +983,16 @@ void ScriptTextEditor::_update_errors() {
 		errors_panel->pop(); // Cell.
 
 		errors_panel->push_cell();
+		if (!err.related_error.path.is_empty()) {
+			click_meta["path"] = err.related_error.path;
+			click_meta["line"] = MAX(0, err.related_error.line - 1);
+			click_meta["column"] = MAX(0, err.related_error.column - 1);
+			errors_panel->push_meta(click_meta);
+		}
 		errors_panel->add_text(err.message);
+		if (!err.related_error.path.is_empty()) {
+			errors_panel->pop(); // Meta goto.
+		}
 		errors_panel->add_newline();
 		errors_panel->pop(); // Cell.
 	}
@@ -971,7 +1001,8 @@ void ScriptTextEditor::_update_errors() {
 	for (const KeyValue<String, List<ScriptLanguage::ScriptError>> &KV : depended_errors) {
 		Dictionary click_meta;
 		click_meta["path"] = KV.key;
-		click_meta["line"] = 1;
+		click_meta["line"] = 0;
+		click_meta["column"] = 0;
 
 		errors_panel->add_newline();
 		errors_panel->add_newline();
@@ -984,8 +1015,8 @@ void ScriptTextEditor::_update_errors() {
 		errors_panel->push_table(2);
 		String filename = KV.key.get_file();
 		for (const ScriptLanguage::ScriptError &err : KV.value) {
-			click_meta["line"] = err.line;
-			click_meta["column"] = err.column;
+			click_meta["line"] = MAX(0, err.line - 1);
+			click_meta["column"] = MAX(0, err.column - 1);
 
 			errors_panel->push_cell();
 			errors_panel->push_meta(click_meta);
@@ -1485,7 +1516,7 @@ void ScriptTextEditor::_show_symbol_tooltip(const String &p_symbol, int p_row, i
 		}
 	}
 
-	// NOTE: See also `ScriptEditor::_get_debug_tooltip()` for documentation tooltips disabled.
+	/// @note See also `ScriptEditor::_get_debug_tooltip()` for documentation tooltips disabled.
 	String debug_value = EditorDebuggerNode::get_singleton()->get_var_value(p_symbol);
 	if (!debug_value.is_empty()) {
 		constexpr int DISPLAY_LIMIT = 1024;
@@ -2189,10 +2220,9 @@ static Node *_find_script_node(Node *p_current_node, const Ref<Script> &script) 
 	return nullptr;
 }
 
+/// This function prepares a string for being "dropped" into the script editor.
+/// The string can be a resource path, node path or property name.
 static String _quote_drop_data(const String &str) {
-	// This function prepares a string for being "dropped" into the script editor.
-	// The string can be a resource path, node path or property name.
-
 	const bool using_single_quotes = EDITOR_GET("text_editor/completion/use_single_quotes");
 
 	String escaped = str.c_escape();
@@ -2670,6 +2700,7 @@ void ScriptTextEditor::_enable_code_editor() {
 
 	editor_box->add_child(code_editor);
 	code_editor->connect("show_errors_panel", callable_mp(this, &ScriptTextEditor::_show_errors_panel));
+	code_editor->connect("error_clicked", callable_mp(this, &ScriptTextEditor::_error_clicked));
 	code_editor->connect("show_warnings_panel", callable_mp(this, &ScriptTextEditor::_show_warnings_panel));
 	code_editor->connect("validate_script", callable_mp(this, &ScriptTextEditor::_validate_script));
 	code_editor->connect("load_theme_settings", callable_mp(this, &ScriptTextEditor::_load_theme_settings));

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file vulkan_hooks.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "drivers/vulkan/godot_vulkan.h"
 
 class VulkanHooks {

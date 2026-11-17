@@ -32,18 +32,24 @@
 
 #pragma once
 
+/**
+ * @file d3d12_godot_nir_bridge.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include <cstdint>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// This one leaves room for potentially extremely copious bindings in a set.
+/// This one leaves room for potentially extremely copious bindings in a set.
 static const uint32_t GODOT_NIR_DESCRIPTOR_SET_MULTIPLIER = 100000000;
-// This one leaves room for potentially big sized arrays.
+/// This one leaves room for potentially big sized arrays.
 static const uint32_t GODOT_NIR_BINDING_MULTIPLIER = 100000;
 
-static const uint64_t GODOT_NIR_SC_SENTINEL_MAGIC = 0x45678900; // This must be as big as to be VBR-ed as a 32 bits number.
+static const uint64_t GODOT_NIR_SC_SENTINEL_MAGIC = 0x45678900; ///< This must be as big as to be VBR-ed as a 32 bits number.
 static const uint64_t GODOT_NIR_SC_SENTINEL_MAGIC_MASK = 0xffffffffffffff00;
 static const uint64_t GODOT_NIR_SC_SENTINEL_ID_MASK = 0x00000000000000ff;
 

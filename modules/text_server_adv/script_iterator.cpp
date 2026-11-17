@@ -30,9 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "script_iterator.h"
+/**
+ * @file script_iterator.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
 
-// This implementation is derived from ICU: icu4c/source/extra/scrptrun/scrptrun.cpp
+#include "script_iterator.h"
 
 bool ScriptIterator::same_script(int32_t p_script_one, int32_t p_script_two) {
 	return p_script_one <= USCRIPT_INHERITED || p_script_two <= USCRIPT_INHERITED || p_script_one == p_script_two;

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_string_names.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/string_name.h"
 
 class EditorStringNames {

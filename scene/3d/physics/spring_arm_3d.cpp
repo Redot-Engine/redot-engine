@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file spring_arm_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "spring_arm_3d.h"
 
 #include "scene/3d/camera_3d.h"

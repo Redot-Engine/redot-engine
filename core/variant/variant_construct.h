@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file variant_construct.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "variant.h"
 
 #include "core/crypto/crypto_core.h"
@@ -86,6 +92,7 @@ struct PtrConstruct<Object *> {
 
 MAKE_PTRCONSTRUCT(Callable);
 MAKE_PTRCONSTRUCT(Signal);
+MAKE_PTRCONSTRUCT(Struct);
 MAKE_PTRCONSTRUCT(Dictionary);
 MAKE_PTRCONSTRUCT(Array);
 MAKE_PTRCONSTRUCT(PackedByteArray);

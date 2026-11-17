@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file naming_utils.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "naming_utils.h"
 
 #include "core/string/ucaps.h"

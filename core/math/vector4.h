@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file vector4.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 #include "core/math/math_defs.h"
 #include "core/typedefs.h"

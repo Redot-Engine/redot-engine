@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file dtls_server_mbedtls.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "dtls_server_mbedtls.h"
 
 #include "packet_peer_mbed_dtls.h"

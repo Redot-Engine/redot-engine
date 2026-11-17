@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file renames_map_3_to_4.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "renames_map_3_to_4.h"
 
 #ifndef DISABLE_DEPRECATED
@@ -636,7 +642,6 @@ const char *RenamesMap3To4::gdscript_function_renames[][2] = {
 	{ nullptr, nullptr },
 };
 
-// gdscript_function_renames clone with CamelCase
 const char *RenamesMap3To4::csharp_function_renames[][2] = {
 	{ "_AboutToShow", "_AboutToPopup" }, // ColorPickerButton
 	{ "_GetConfigurationWarning", "_GetConfigurationWarnings" }, // Node
@@ -1041,11 +1046,11 @@ const char *RenamesMap3To4::csharp_function_renames[][2] = {
 };
 
 const char *RenamesMap3To4::gdscript_properties_renames[][2] = {
-	// NOTE: Commented out renames are disabled because deemed not suitable for
-	// the current way the regex-based converter works.
-	// When uncommenting any of those as suitable for conversion, please move it
-	// to the block with other enabled conversions, ordered alphabetically, and
-	// make sure to add it to the C# rename map too.
+	/// @note Commented out renames are disabled because deemed not suitable for
+	/// the current way the regex-based converter works.
+	/// When uncommenting any of those as suitable for conversion, please move it
+	/// to the block with other enabled conversions, ordered alphabetically, and
+	/// make sure to add it to the C# rename map too.
 
 	// Too common words, users may use these names for variables or in comments.
 	// { "bg", SceneStringName(panel) }, // Theme
@@ -1274,11 +1279,11 @@ const char *RenamesMap3To4::csharp_properties_renames[][2] = {
 };
 
 const char *RenamesMap3To4::gdscript_signals_renames[][2] = {
-	// NOTE: Commented out renames are disabled because deemed not suitable for
-	// the current way the regex-based converter works.
-	// When uncommenting any of those as suitable for conversion, please move it
-	// to the block with other enabled conversions, ordered alphabetically, and
-	// make sure to add it to the C# rename map too.
+	/// @note Commented out renames are disabled because deemed not suitable for
+	/// the current way the regex-based converter works.
+	/// When uncommenting any of those as suitable for conversion, please move it
+	/// to the block with other enabled conversions, ordered alphabetically, and
+	/// make sure to add it to the C# rename map too.
 
 	// Too common words, users may use these names for variables or in comments.
 	// { "hide", "hidden" }, // CanvasItem
@@ -1322,9 +1327,6 @@ const char *RenamesMap3To4::csharp_signals_renames[][2] = {
 };
 
 const char *RenamesMap3To4::project_settings_renames[][2] = {
-	// Project setting paths in scripts include the category, but in project.godot,
-	// the category is the section delimiter, so we need to support the paths without it.
-	// The project.godot remaps are defined in the project_godot_renames, keep them in sync!
 	{ "audio/channel_disable_threshold_db", "audio/buses/channel_disable_threshold_db" },
 	{ "audio/channel_disable_time", "audio/buses/channel_disable_time" },
 	{ "audio/default_bus_layout", "audio/buses/default_bus_layout" },
@@ -1346,7 +1348,7 @@ const char *RenamesMap3To4::project_settings_renames[][2] = {
 	{ "network/limits/debugger_stdout/max_messages_per_frame", "network/limits/debugger/max_queued_messages" },
 	{ "network/limits/debugger_stdout/max_warnings_per_second", "network/limits/debugger/max_warnings_per_second" },
 	{ "network/ssl/certificates", "network/tls/certificate_bundle_override" },
-	{ "physics/2d/thread_model", "physics/2d/run_on_thread" }, // TODO: Not sure.
+	{ "physics/2d/thread_model", "physics/2d/run_on_thread" }, /// @todo Not sure.
 	{ "rendering/environment/default_clear_color", "rendering/environment/defaults/default_clear_color" },
 	{ "rendering/environment/default_environment", "rendering/environment/defaults/default_environment" },
 	{ "rendering/quality/depth_prepass/disable_for_vendors", "rendering/driver/depth_prepass/disable_for_vendors" },
@@ -1369,7 +1371,6 @@ const char *RenamesMap3To4::project_settings_renames[][2] = {
 };
 
 const char *RenamesMap3To4::project_godot_renames[][2] = {
-	// Should be kept in sync with project_settings_renames.
 	{ "channel_disable_threshold_db", "buses/channel_disable_threshold_db" },
 	{ "channel_disable_time", "buses/channel_disable_time" },
 	{ "default_bus_layout", "buses/default_bus_layout" },
@@ -1391,7 +1392,7 @@ const char *RenamesMap3To4::project_godot_renames[][2] = {
 	{ "limits/debugger_stdout/max_messages_per_frame", "limits/debugger/max_queued_messages" },
 	{ "limits/debugger_stdout/max_warnings_per_second", "limits/debugger/max_warnings_per_second" },
 	{ "ssl/certificates", "tls/certificate_bundle_override" },
-	{ "2d/thread_model", "2d/run_on_thread" }, // TODO: Not sure.
+	{ "2d/thread_model", "2d/run_on_thread" }, /// @todo Not sure.
 	{ "environment/default_clear_color", "environment/defaults/default_clear_color" },
 	{ "environment/default_environment", "environment/defaults/default_environment" },
 	{ "quality/depth_prepass/disable_for_vendors", "driver/depth_prepass/disable_for_vendors" },

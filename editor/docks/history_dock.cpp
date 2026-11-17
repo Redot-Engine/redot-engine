@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file history_dock.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "history_dock.h"
 
 #include "core/io/config_file.h"

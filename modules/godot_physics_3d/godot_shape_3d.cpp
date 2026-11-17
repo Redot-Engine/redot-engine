@@ -30,29 +30,33 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_shape_3d.cpp
+ *
+ * @brief GodotHeightMapShape3D is based on Bullet btHeightfieldTerrainShape.
+ *
+ * @details Bullet Continuous Collision Detection and Physics Library
+ * @copyright Copyright (c) 2003-2009 Erwin Coumans  http://bulletphysics.org
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * In no event will the authors be held liable for any damages arising from the use of this software.
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it freely,
+ * subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+ * 2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+ * 3. This notice may not be removed or altered from any source distribution.
+ */
+
 #include "godot_shape_3d.h"
+
+#include "core/math/simd_geometry.h"
 
 #include "core/io/image.h"
 #include "core/math/convex_hull.h"
 #include "core/math/geometry_3d.h"
 #include "core/templates/sort_array.h"
-
-// GodotHeightMapShape3D is based on Bullet btHeightfieldTerrainShape.
-
-/*
-Bullet Continuous Collision Detection and Physics Library
-Copyright (c) 2003-2009 Erwin Coumans  http://bulletphysics.org
-
-This software is provided 'as-is', without any express or implied warranty.
-In no event will the authors be held liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it freely,
-subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-*/
 
 const double edge_support_threshold = 0.99999998;
 const double edge_support_threshold_lower = Math::sqrt(1.0 - edge_support_threshold * edge_support_threshold);
@@ -825,16 +829,7 @@ void GodotConvexPolygonShape3D::project_range(const Vector3 &p_normal, const Tra
 		r_min = p_normal.dot(p_transform.xform(get_support(-n)));
 		r_max = p_normal.dot(p_transform.xform(get_support(n)));
 	} else {
-		for (uint32_t i = 0; i < vertex_count; i++) {
-			real_t d = p_normal.dot(p_transform.xform(vrts[i]));
-
-			if (i == 0 || d > r_max) {
-				r_max = d;
-			}
-			if (i == 0 || d < r_min) {
-				r_min = d;
-			}
-		}
+		SIMDGeometry::project_range(vrts, vertex_count, p_normal, p_transform, r_min, r_max);
 	}
 }
 
@@ -1110,14 +1105,9 @@ void GodotConvexPolygonShape3D::_setup(const Vector<Vector3> &p_vertices) {
 				if (x != 0 || y != 0 || z != 0) {
 					Vector3 dir(x, y, z);
 					dir.normalize();
-					real_t max_support = 0.0;
 					int best_vertex = -1;
-					for (uint32_t i = 0; i < mesh.vertices.size(); i++) {
-						real_t s = dir.dot(mesh.vertices[i]);
-						if (best_vertex == -1 || s > max_support) {
-							best_vertex = i;
-							max_support = s;
-						}
+					if (mesh.vertices.size() > 0) {
+						best_vertex = SIMDGeometry::support_index(mesh.vertices.ptr(), mesh.vertices.size(), dir);
 					}
 					if (!extreme_vertices.has(best_vertex)) {
 						extreme_vertices.push_back(best_vertex);
@@ -1294,19 +1284,8 @@ void GodotConcavePolygonShape3D::project_range(const Vector3 &p_normal, const Tr
 		return;
 	}
 	const Vector3 *vptr = vertices.ptr();
-
-	for (int i = 0; i < count; i++) {
-		real_t d = p_normal.dot(p_transform.xform(vptr[i]));
-
-		if (i == 0 || d > r_max) {
-			r_max = d;
-		}
-		if (i == 0 || d < r_min) {
-			r_min = d;
-		}
-	}
+	SIMDGeometry::project_range(vptr, count, p_normal, p_transform, r_min, r_max);
 }
-
 Vector3 GodotConcavePolygonShape3D::get_support(const Vector3 &p_normal) const {
 	int count = vertices.size();
 	if (count == 0) {
@@ -1314,24 +1293,8 @@ Vector3 GodotConcavePolygonShape3D::get_support(const Vector3 &p_normal) const {
 	}
 
 	const Vector3 *vptr = vertices.ptr();
-
-	Vector3 n = p_normal;
-
-	int vert_support_idx = -1;
-	real_t support_max = 0;
-
-	for (int i = 0; i < count; i++) {
-		real_t d = n.dot(vptr[i]);
-
-		if (i == 0 || d > support_max) {
-			support_max = d;
-			vert_support_idx = i;
-		}
-	}
-
-	return vptr[vert_support_idx];
+	return vptr[SIMDGeometry::support_index(vptr, count, p_normal)];
 }
-
 void GodotConcavePolygonShape3D::_cull_segment(int p_idx, _SegmentCullParams *p_params) const {
 	const BVH *params_bvh = &p_params->bvh[p_idx];
 

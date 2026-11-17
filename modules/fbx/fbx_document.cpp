@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file fbx_document.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "fbx_document.h"
 
 #include "core/config/project_settings.h"
@@ -58,7 +64,7 @@
 #include "editor/file_system/editor_file_system.h"
 #endif
 
-// FIXME: Hardcoded to avoid editor dependency.
+/// @todo FIXME: Hardcoded to avoid editor dependency.
 #define FBX_IMPORT_USE_NAMED_SKIN_BINDS 16
 #define FBX_IMPORT_DISCARD_MESHES_AND_MATERIALS 32
 #define FBX_IMPORT_FORCE_DISABLE_MESH_COMPRESSION 64
@@ -319,10 +325,10 @@ Error FBXDocument::_parse_scenes(Ref<FBXState> p_state) {
 
 	const ufbx_scene *fbx_scene = p_state->scene.get();
 
-	// TODO: Multi-document support, would need test files for structure
+	/// @todo Multi-document support, would need test files for structure
 	p_state->scene_name = "";
 
-	// TODO: Append the root node directly if we use root-based space conversion
+	/// @todo Append the root node directly if we use root-based space conversion
 	for (const ufbx_node *root_node : fbx_scene->root_node->children) {
 		p_state->root_nodes.push_back(int(root_node->typed_id));
 	}
@@ -529,13 +535,13 @@ Error FBXDocument::_parse_meshes(Ref<FBXState> p_state) {
 						num_indices = fbx_mesh_part.num_triangles * 3;
 						break;
 					case Mesh::PRIMITIVE_TRIANGLE_STRIP:
-						// FIXME 2021-09-15 fire
+						/// @todo FIXME 2021-09-15 fire
 						break;
 					case Mesh::PRIMITIVE_LINE_STRIP:
-						// FIXME 2021-09-15 fire
+						/// @todo FIXME 2021-09-15 fire
 						break;
 					default:
-						// FIXME 2021-09-15 fire
+						/// @todo FIXME 2021-09-15 fire
 						break;
 				}
 				if (num_indices == 0) {
@@ -576,13 +582,13 @@ Error FBXDocument::_parse_meshes(Ref<FBXState> p_state) {
 							}
 							break;
 						case Mesh::PRIMITIVE_TRIANGLE_STRIP:
-							// FIXME 2021-09-15 fire
+							/// @todo FIXME 2021-09-15 fire
 							break;
 						case Mesh::PRIMITIVE_LINE_STRIP:
-							// FIXME 2021-09-15 fire
+							/// @todo FIXME 2021-09-15 fire
 							break;
 						default:
-							// FIXME 2021-09-15 fire
+							/// @todo FIXME 2021-09-15 fire
 							break;
 					}
 				}
@@ -596,11 +602,11 @@ Error FBXDocument::_parse_meshes(Ref<FBXState> p_state) {
 				Array array;
 				array.resize(Mesh::ARRAY_MAX);
 
-				// HACK: If we have blend shapes we cannot merge vertices at identical positions
-				// if they have different indices in the file. To avoid this encode the vertex index
-				// into the vertex position for the time being.
-				// Ideally this would be an extra channel in the vertex but as the vertex format is
-				// fixed and we already use user data for extra UV channels this'll do.
+				/// @todo HACK: If we have blend shapes we cannot merge vertices at identical positions
+				/// if they have different indices in the file. To avoid this encode the vertex index
+				/// into the vertex position for the time being.
+				/// Ideally this would be an extra channel in the vertex but as the vertex format is
+				/// fixed and we already use user data for extra UV channels this'll do.
 				if (use_blend_shapes) {
 					Vector<Vector3> vertex_indices;
 					int num_blend_shape_indices = indices.size();
@@ -740,7 +746,7 @@ Error FBXDocument::_parse_meshes(Ref<FBXState> p_state) {
 						// Pad the rest with empty weights
 						for (int32_t i = num_weights; i < num_skin_weights; i++) {
 							int index = vertex_i * num_skin_weights + i;
-							bones.write[index] = 0; // TODO: What should this be padded with?
+							bones.write[index] = 0; /// @todo What should this be padded with?
 							weights.write[index] = 0.0f;
 						}
 					}
@@ -1254,7 +1260,7 @@ Error FBXDocument::_parse_materials(Ref<FBXState> p_state) {
 			}
 			material->set_albedo(albedo_factor.linear_to_srgb());
 
-			// TODO: Does not support rotation, could be inverted?
+			/// @todo Does not support rotation, could be inverted?
 			material->set_uv1_offset(_as_vec3(base_texture->uv_transform.translation));
 			Vector3 scale = _as_vec3(base_texture->uv_transform.scale);
 			material->set_uv1_scale(scale);
@@ -1723,8 +1729,8 @@ void FBXDocument::_generate_skeleton_bone_node(Ref<FBXState> p_state, const GLTF
 			// and attach it to the bone_attachment
 			p_scene_parent = bone_attachment;
 		}
-		// TODO: 20240118 // fire
-		// // Check if any GLTFDocumentExtension classes want to generate a node for us.
+		/// @todo: 20240118 // fire
+		/// // Check if any GLTFDocumentExtension classes want to generate a node for us.
 		// for (Ref<GLTFDocumentExtension> ext : document_extensions) {
 		// 	ERR_CONTINUE(ext.is_null());
 		// 	current_node = ext->generate_scene_node(p_state, fbx_node, p_scene_parent);

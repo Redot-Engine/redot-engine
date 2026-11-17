@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_debugger_server_websocket.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_debugger_server_websocket.h"
 
 #include "../remote_debugger_peer_websocket.h"

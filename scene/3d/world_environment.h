@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file world_environment.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/main/node.h"
 #include "scene/resources/camera_attributes.h"
 #include "scene/resources/compositor.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file sort_effects.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/renderer_rd/shader_rd.h"
 #include "servers/rendering/renderer_rd/shaders/effects/sort.glsl.gen.h"
 

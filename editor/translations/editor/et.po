@@ -8846,3 +8846,6 @@ msgstr "Vale makroargumentide loend."
 
 msgid "Invalid macro argument."
 msgstr "Vale makro argument."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Liiga palju skripte välises redaktoris avamiseks (max 128)."

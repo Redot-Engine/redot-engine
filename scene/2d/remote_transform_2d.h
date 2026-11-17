@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file remote_transform_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/2d/node_2d.h"
 
 class RemoteTransform2D : public Node2D {

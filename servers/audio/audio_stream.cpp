@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_stream.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_stream.h"
 
 #include "core/config/project_settings.h"
@@ -517,8 +523,6 @@ void AudioStreamRandomizer::add_stream(int p_index, Ref<AudioStream> p_stream, f
 	notify_property_list_changed();
 }
 
-// p_index_to is relative to the array prior to the removal of from.
-// Example: [0, 1, 2, 3], move(1, 3) => [0, 2, 1, 3]
 void AudioStreamRandomizer::move_stream(int p_index_from, int p_index_to) {
 	ERR_FAIL_INDEX(p_index_from, audio_stream_pool.size());
 	// p_index_to == audio_stream_pool.size() is valid (move to end).

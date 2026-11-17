@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_resource_picker.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_resource_picker.h"
 
 #include "editor/audio/audio_stream_preview.h"
@@ -631,7 +637,7 @@ String EditorResourcePicker::_get_owner_path() const {
 	if (res && !res->is_built_in()) {
 		return res->get_path();
 	}
-	// TODO: It would be nice to handle deeper Resource nesting.
+	/// @todo It would be nice to handle deeper Resource nesting.
 	return String();
 }
 
@@ -646,7 +652,7 @@ String EditorResourcePicker::_get_resource_type(const Ref<Resource> &p_resource)
 		return res_type;
 	}
 
-	// TODO: Replace with EditorFileSystem when PR #60606 is merged to use cached resource type.
+	/// @todo Replace with EditorFileSystem when PR #60606 is merged to use cached resource type.
 	String script_type = EditorNode::get_editor_data().script_class_get_name(res_script->get_path());
 	if (!script_type.is_empty()) {
 		res_type = script_type;
@@ -748,7 +754,7 @@ bool EditorResourcePicker::_is_drop_valid(const Dictionary &p_drag_data) const {
 
 		if (files.size() == 1) {
 			if (ResourceLoader::exists(files[0])) {
-				// TODO: Extract the typename of the dropped filepath's resource in a more performant way, without fully loading it.
+				/// @todo Extract the typename of the dropped filepath's resource in a more performant way, without fully loading it.
 				res = ResourceLoader::load(files[0]);
 			}
 		}

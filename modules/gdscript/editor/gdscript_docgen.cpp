@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_docgen.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_docgen.h"
 
 #include "../gdscript.h"
@@ -126,6 +132,7 @@ void GDScriptDocGen::_doctype_from_gdtype(const GDType &p_gdtype, String &r_type
 			}
 			r_type = "Object";
 			return;
+		case GDType::TRAIT:
 		case GDType::CLASS:
 			if (p_gdtype.is_meta_type) {
 				r_type = GDScript::get_class_static();
@@ -371,6 +378,10 @@ void GDScriptDocGen::_generate_docs(GDScript *p_script, const GDP::ClassNode *p_
 	for (const GDP::ClassNode::Member &member : p_class->members) {
 		switch (member.type) {
 			case GDP::ClassNode::Member::CLASS: {
+				if (p_class->type == GDP::Node::TRAIT) {
+					// Trait do not have scripts for their inner classes.
+					continue;
+				}
 				const GDP::ClassNode *inner_class = member.m_class;
 				const StringName &class_name = inner_class->identifier->name;
 
@@ -600,7 +611,6 @@ void GDScriptDocGen::generate_docs(GDScript *p_script, const GDP::ClassNode *p_c
 	singletons.clear();
 }
 
-// This method is needed for the editor, since during autocompletion the script is not compiled, only analyzed.
 void GDScriptDocGen::doctype_from_gdtype(const GDType &p_gdtype, String &r_type, String &r_enum, bool p_is_return) {
 	for (const KeyValue<StringName, ProjectSettings::AutoloadInfo> &E : ProjectSettings::get_singleton()->get_autoload_list()) {
 		if (E.value.is_singleton) {

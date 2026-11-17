@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file ip.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "ip.h"
 
 #include "core/os/semaphore.h"

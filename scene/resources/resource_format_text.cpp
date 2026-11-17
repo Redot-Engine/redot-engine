@@ -30,12 +30,21 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_format_text.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_format_text.h"
 
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/missing_resource.h"
 #include "core/object/script_language.h"
+#include "core/variant/struct.h"
+#include "core/variant/struct_info.h"
+#include "core/variant/variant_internal.h"
 #include "scene/property_utils.h"
 
 void ResourceLoaderText::_printerr() {
@@ -166,7 +175,7 @@ Error ResourceLoaderText::_parse_ext_resource(VariantParser::Stream *p_stream, R
 		}
 #ifdef TOOLS_ENABLED
 		if (r_res.is_null()) {
-			// Hack to allow checking original path.
+			/// @todo Hack to allow checking original path.
 			r_res.instantiate();
 			r_res->set_meta("__load_path__", ext_resources[id].path);
 		}
@@ -1680,6 +1689,18 @@ void ResourceFormatSaverTextInstance::_find_resources(const Variant &p_variant, 
 				// See also ResourceFormatSaverBinaryInstance::_find_resources (when p_variant is of type Variant::DICTIONARY)
 				_find_resources(kv.key);
 				_find_resources(kv.value);
+			}
+		} break;
+		case Variant::STRUCT: {
+			const Struct &s = *VariantInternal::get_struct(&p_variant);
+			const Ref<StructInfo> info = s.get_info();
+			if (info.is_valid()) {
+				for (int i = 0; i < info->get_field_count(); i++) {
+					_find_resources(info->_get_field_default_raw(i));
+				}
+			}
+			for (int i = 0; i < s.get_field_count(); i++) {
+				_find_resources(s.get_member(i));
 			}
 		} break;
 		case Variant::PACKED_BYTE_ARRAY: {

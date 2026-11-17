@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_file_system.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_file_system.h"
 
 #include "core/config/project_settings.h"
@@ -53,7 +59,7 @@ EditorFileSystem *EditorFileSystem::singleton = nullptr;
 int EditorFileSystem::nb_files_total = 0;
 EditorFileSystem::ScannedDirectory *EditorFileSystem::first_scan_root_dir = nullptr;
 
-//the name is the version, to keep compatibility with different versions of Godot
+/// The name is the version, to keep compatibility with different versions of Godot
 #define CACHE_FILE_NAME "filesystem_cache10"
 
 int EditorFileSystemDirectory::find_file_index(const String &p_file) const {
@@ -1651,9 +1657,9 @@ void EditorFileSystem::_thread_func_sources(void *_userdata) {
 }
 
 bool EditorFileSystem::_remove_invalid_global_class_names(const HashSet<String> &p_existing_class_names) {
-	List<StringName> global_classes;
+	LocalVector<StringName> global_classes;
 	bool must_save = false;
-	ScriptServer::get_global_class_list(&global_classes);
+	ScriptServer::get_global_class_list(global_classes);
 	for (const StringName &class_name : global_classes) {
 		if (!p_existing_class_names.has(class_name)) {
 			ScriptServer::remove_global_class(class_name);
@@ -1724,8 +1730,9 @@ void EditorFileSystem::_notification(int p_what) {
 		case NOTIFICATION_EXIT_TREE: {
 			Thread &active_thread = thread.is_started() ? thread : thread_sources;
 			if (use_threads && active_thread.is_started()) {
+				const uint64_t TIMEOUT_USEC = 1000;
 				while (scanning) {
-					OS::get_singleton()->delay_usec(1000);
+					OS::get_singleton()->delay_usec(TIMEOUT_USEC);
 				}
 				active_thread.wait_to_finish();
 				WARN_PRINT("Scan thread aborted...");
@@ -1744,10 +1751,11 @@ void EditorFileSystem::_notification(int p_what) {
 
 		case NOTIFICATION_PROCESS: {
 			if (use_threads) {
-				/** This hack exists because of the EditorProgress nature
-				 *  of processing events recursively. This needs to be rewritten
-				 *  at some point entirely, but in the meantime the following
-				 *  hack prevents deadlock on import.
+				/**
+				 * @todo This hack exists because of the EditorProgress nature
+				 * of processing events recursively. This needs to be rewritten
+				 * at some point entirely, but in the meantime the following
+				 * hack prevents deadlock on import.
 				 */
 
 				static bool prevent_recursive_process_hack = false;
@@ -1858,7 +1866,7 @@ void EditorFileSystem::_save_filesystem_cache(EditorFileSystemDirectory *p_dir, 
 }
 
 bool EditorFileSystem::_find_file(const String &p_file, EditorFileSystemDirectory **r_d, int &r_file_pos) const {
-	//todo make faster
+	/// @todo Make faster
 
 	if (!filesystem || scanning) {
 		return false;
@@ -1866,7 +1874,7 @@ bool EditorFileSystem::_find_file(const String &p_file, EditorFileSystemDirector
 
 	String f = ProjectSettings::get_singleton()->localize_path(p_file);
 
-	// Note: Only checks if base directory is case sensitive.
+	/// @note Only checks if base directory is case sensitive.
 	Ref<DirAccess> dir = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 	bool fs_case_sensitive = dir->is_case_sensitive("res://");
 
@@ -2546,6 +2554,18 @@ HashSet<String> EditorFileSystem::get_valid_extensions() const {
 
 void EditorFileSystem::_register_global_class_script(const String &p_search_path, const String &p_target_path, const ScriptClassInfoUpdate &p_script_update) {
 	ScriptServer::remove_global_class_by_path(p_search_path); // First remove, just in case it changed
+	ScriptServer::remove_global_struct_by_path(p_search_path);
+
+	for (int j = 0; j < ScriptServer::get_language_count(); j++) {
+		if (ScriptServer::get_language(j)->handles_global_class_type(p_script_update.type)) {
+			List<StringName> struct_names;
+			ScriptServer::get_language(j)->get_global_struct_names(p_target_path, &struct_names);
+			for (const StringName &struct_name : struct_names) {
+				ScriptServer::add_global_struct(struct_name, ScriptServer::get_language(j)->get_name(), p_target_path);
+			}
+			break;
+		}
+	}
 
 	if (p_script_update.name.is_empty()) {
 		return;
@@ -3576,7 +3596,6 @@ Error EditorFileSystem::copy_file(const String &p_from, const String &p_to) {
 }
 
 Error EditorFileSystem::copy_directory(const String &p_from, const String &p_to) {
-	// Recursively copy directories and build a map of files to copy.
 	HashMap<String, String> files;
 	bool success = _copy_directory(p_from, p_to, &files);
 

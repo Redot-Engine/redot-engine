@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file shader_include.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"

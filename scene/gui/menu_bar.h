@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file menu_bar.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/popup_menu.h"
 
 class MenuBar : public Control {

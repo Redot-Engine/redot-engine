@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file debug_adapter_protocol.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/debugger/debugger_marshalls.h"
 #include "core/io/stream_peer_tcp.h"
 #include "core/io/tcp_server.h"
@@ -56,16 +62,19 @@ struct DAPeer : RefCounted {
 	int seq = 0;
 	uint64_t timestamp = 0;
 
-	// Client specific info
+	/// @name Client specific info
+	/// @{
 	bool linesStartAt1 = false;
 	bool columnsStartAt1 = false;
 	bool supportsVariableType = false;
 	bool supportsInvalidatedEvent = false;
 	bool supportsCustomData = false;
-
-	// Internal client info
+	/// @}
+	/// @name Internal client info
+	/// @{
 	bool attached = false;
 	Dictionary pending_launch;
+	/// @}
 
 	Error handle_data();
 	Error send_data();

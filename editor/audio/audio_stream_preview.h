@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file audio_stream_preview.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/os/thread.h"
 #include "core/templates/safe_refcount.h"
 #include "scene/main/node.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file plist.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "plist.h"
 
 #include "core/crypto/crypto_core.h"
@@ -227,7 +233,6 @@ bool PListNode::push_subnode(const Ref<PListNode> &p_node, const String &p_key) 
 }
 
 size_t PListNode::get_asn1_size(uint8_t p_len_octets) const {
-	// Get size of all data, excluding type and size information.
 	switch (data_type) {
 		case PList::PLNodeType::PL_NODE_TYPE_NIL: {
 			return 0;
@@ -289,7 +294,6 @@ void PListNode::store_asn1_size(PackedByteArray &p_stream, uint8_t p_len_octets)
 }
 
 bool PListNode::store_asn1(PackedByteArray &p_stream, uint8_t p_len_octets) const {
-	// Convert to binary ASN1 stream.
 	bool valid = true;
 	switch (data_type) {
 		case PList::PLNodeType::PL_NODE_TYPE_NIL: {
@@ -376,7 +380,6 @@ bool PListNode::store_asn1(PackedByteArray &p_stream, uint8_t p_len_octets) cons
 }
 
 void PListNode::store_text(String &p_stream, uint8_t p_indent) const {
-	// Convert to text XML stream.
 	switch (data_type) {
 		case PList::PLNodeType::PL_NODE_TYPE_NIL: {
 			// Nothing to store.

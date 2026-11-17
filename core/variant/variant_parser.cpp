@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file variant_parser.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "variant_parser.h"
 
 #include "core/config/project_settings.h"
@@ -38,6 +44,9 @@
 #include "core/io/resource_uid.h"
 #include "core/object/script_language.h"
 #include "core/string/string_buffer.h"
+#include "core/variant/struct.h"
+#include "core/variant/struct_info.h"
+#include "core/variant/variant_internal.h"
 
 char32_t VariantParser::Stream::get_char() {
 	// is within buffer?
@@ -708,6 +717,42 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			value = -Math::INF;
 		} else if (id == "nan") {
 			value = Math::NaN;
+		} else if (id == "Variant") {
+			Error err = get_token(p_stream, token, line, r_err_str);
+			if (err) {
+				return err;
+			}
+			if (token.type != TK_COLON) {
+				r_err_str = "Expected '::' after 'Variant'";
+				return ERR_PARSE_ERROR;
+			}
+
+			err = get_token(p_stream, token, line, r_err_str);
+			if (err) {
+				return err;
+			}
+			if (token.type != TK_COLON) {
+				r_err_str = "Expected '::' after 'Variant'";
+				return ERR_PARSE_ERROR;
+			}
+
+			err = get_token(p_stream, token, line, r_err_str);
+			if (err) {
+				return err;
+			}
+
+			if (token.type != TK_IDENTIFIER) {
+				r_err_str = "Expected identifier after 'Variant::'";
+				return ERR_PARSE_ERROR;
+			}
+
+			String constant = token.value;
+			if (constant == "NIL") {
+				value = Variant();
+			} else {
+				r_err_str = vformat("Unknown Variant constant '%s'", constant);
+				return ERR_PARSE_ERROR;
+			}
 		} else if (id == "Vector2") {
 			Vector<real_t> args;
 			Error err = _parse_construct<real_t>(p_stream, args, line, r_err_str);
@@ -1094,6 +1139,109 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 					at_key = true;
 				}
 			}
+		} else if (id == "Struct") {
+			get_token(p_stream, token, line, r_err_str);
+			if (token.type != TK_PARENTHESIS_OPEN) {
+				r_err_str = "Expected '('";
+				return ERR_PARSE_ERROR;
+			}
+
+			Variant version_v;
+			Variant id_v;
+			Variant fields_v;
+			Variant values_v;
+			Variant *slots[4] = { &version_v, &id_v, &fields_v, &values_v };
+			for (int s = 0; s < 4; s++) {
+				get_token(p_stream, token, line, r_err_str);
+				Error err = parse_value(token, *slots[s], p_stream, line, r_err_str, p_res_parser, p_allow_objects);
+				if (err) {
+					return err;
+				}
+				get_token(p_stream, token, line, r_err_str);
+				const bool last = (s == 3);
+				if (token.type != (last ? TK_PARENTHESIS_CLOSE : TK_COMMA)) {
+					r_err_str = last ? "Expected ')'" : "Expected ','";
+					return ERR_PARSE_ERROR;
+				}
+			}
+
+			if (version_v.get_type() != Variant::INT) {
+				r_err_str = "Struct version must be an integer.";
+				return ERR_PARSE_ERROR;
+			}
+			if (uint32_t(int64_t(version_v)) != StructInfo::SERIALIZATION_VERSION) {
+				r_err_str = "Unsupported struct schema version.";
+				return ERR_PARSE_ERROR;
+			}
+
+			if (id_v.get_type() != Variant::STRING) {
+				r_err_str = "Struct logical id must be a String.";
+				return ERR_PARSE_ERROR;
+			}
+			if (fields_v.get_type() != Variant::ARRAY) {
+				r_err_str = "Struct fields must be an Array.";
+				return ERR_PARSE_ERROR;
+			}
+			if (values_v.get_type() != Variant::ARRAY) {
+				r_err_str = "Struct values must be an Array.";
+				return ERR_PARSE_ERROR;
+			}
+
+			const String sid = id_v;
+			if (sid.is_empty()) {
+				value = Struct();
+				return OK;
+			}
+			const Array fields = fields_v;
+			const Array values = values_v;
+			StructInfoBuilder b;
+			b.set_logical_type_id(StringName(sid));
+			for (int i = 0; i < fields.size(); i++) {
+				if (fields[i].get_type() != Variant::DICTIONARY) {
+					r_err_str = "Struct field descriptor must be a Dictionary.";
+					return ERR_PARSE_ERROR;
+				}
+				const Dictionary fd = fields[i];
+				StructInfo::Field f;
+				f.name = StringName(String(fd.get("name", String())));
+				f.type = StructInfo::type_from_token(String(fd.get("type", "nil")));
+				if (f.type == Variant::VARIANT_MAX) {
+					r_err_str = "Unknown struct field type token.";
+					return ERR_PARSE_ERROR;
+				}
+				f.is_typed = bool(fd.get("typed", false));
+				f.is_nullable = bool(fd.get("nullable", false));
+				if (fd.has("class_name")) {
+					f.class_name = StringName(String(fd["class_name"]));
+				}
+				if (fd.has("struct_type_id")) {
+					f.struct_type_id = StringName(String(fd["struct_type_id"]));
+				}
+				if (!fd.has("default")) {
+					r_err_str = "Struct field is missing its default value.";
+					return ERR_PARSE_ERROR;
+				}
+				f.default_value = fd["default"];
+				b.add_field(f);
+			}
+			Ref<StructInfo> info = b.build();
+			if (info.is_null()) {
+				r_err_str = "Failed to rebuild StructInfo from text.";
+				return ERR_PARSE_ERROR;
+			}
+			Struct st(info);
+			if (values.size() != st.get_field_count()) {
+				r_err_str = "Struct value count does not match its field count.";
+				return ERR_PARSE_ERROR;
+			}
+			for (int i = 0; i < values.size(); i++) {
+				if (!st.try_set_member(i, values[i])) {
+					r_err_str = "Struct value incompatible with its field schema.";
+					return ERR_PARSE_ERROR;
+				}
+			}
+			value = st;
+			return OK;
 		} else if (id == "Resource" || id == "SubResource" || id == "ExtResource") {
 			if (!p_allow_objects) {
 				r_err_str = R"(Object decoding is prevented because "allow_objects" is false)";
@@ -1207,10 +1355,11 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			}
 
 			get_token(p_stream, token, line, r_err_str);
-			if (token.type != TK_IDENTIFIER) {
-				r_err_str = "Expected type identifier for key";
+			if (token.type != TK_IDENTIFIER && token.type != TK_STRING) {
+				r_err_str = "Expected type identifier or string for key";
 				return ERR_PARSE_ERROR;
 			}
+			const bool quoted_key_class_name = token.type == TK_STRING;
 
 			static HashMap<StringName, Variant::Type> builtin_types;
 			if (builtin_types.is_empty()) {
@@ -1224,11 +1373,14 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			StringName key_class_name;
 			Variant key_script;
 			bool got_comma_token = false;
-			if (builtin_types.has(token.value)) {
+			if (quoted_key_class_name) {
+				key_type = Variant::OBJECT;
+				key_class_name = token.value;
+			} else if (builtin_types.has(token.value)) {
 				key_type = builtin_types.get(token.value);
 			} else if (token.value == "Resource" || token.value == "SubResource" || token.value == "ExtResource") {
 				Variant resource;
-				err = parse_value(token, resource, p_stream, line, r_err_str, p_res_parser);
+				err = parse_value(token, resource, p_stream, line, r_err_str, p_res_parser, p_allow_objects);
 				if (err) {
 					if (token.value == "Resource" && err == ERR_PARSE_ERROR && r_err_str == "Expected '('" && token.type == TK_COMMA) {
 						err = OK;
@@ -1250,6 +1402,12 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			} else if (ClassDB::class_exists(token.value)) {
 				key_type = Variant::OBJECT;
 				key_class_name = token.value;
+			} else if (ScriptServer::is_global_class(token.value)) {
+				Ref<Script> trait_script = ResourceLoader::load(ScriptServer::get_global_class_path(token.value));
+				if (trait_script.is_valid() && trait_script->is_trait()) {
+					key_type = Variant::OBJECT;
+					key_class_name = token.value;
+				}
 			}
 
 			if (!got_comma_token) {
@@ -1261,20 +1419,24 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			}
 
 			get_token(p_stream, token, line, r_err_str);
-			if (token.type != TK_IDENTIFIER) {
-				r_err_str = "Expected type identifier for value";
+			if (token.type != TK_IDENTIFIER && token.type != TK_STRING) {
+				r_err_str = "Expected type identifier or string for value";
 				return ERR_PARSE_ERROR;
 			}
+			const bool quoted_value_class_name = token.type == TK_STRING;
 
 			Variant::Type value_type = Variant::NIL;
 			StringName value_class_name;
 			Variant value_script;
 			bool got_bracket_token = false;
-			if (builtin_types.has(token.value)) {
+			if (quoted_value_class_name) {
+				value_type = Variant::OBJECT;
+				value_class_name = token.value;
+			} else if (builtin_types.has(token.value)) {
 				value_type = builtin_types.get(token.value);
 			} else if (token.value == "Resource" || token.value == "SubResource" || token.value == "ExtResource") {
 				Variant resource;
-				err = parse_value(token, resource, p_stream, line, r_err_str, p_res_parser);
+				err = parse_value(token, resource, p_stream, line, r_err_str, p_res_parser, p_allow_objects);
 				if (err) {
 					if (token.value == "Resource" && err == ERR_PARSE_ERROR && r_err_str == "Expected '('" && token.type == TK_BRACKET_CLOSE) {
 						err = OK;
@@ -1296,6 +1458,12 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			} else if (ClassDB::class_exists(token.value)) {
 				value_type = Variant::OBJECT;
 				value_class_name = token.value;
+			} else if (ScriptServer::is_global_class(token.value)) {
+				Ref<Script> trait_script = ResourceLoader::load(ScriptServer::get_global_class_path(token.value));
+				if (trait_script.is_valid() && trait_script->is_trait()) {
+					value_type = Variant::OBJECT;
+					value_class_name = token.value;
+				}
 			}
 
 			if (key_type != Variant::NIL || value_type != Variant::NIL) {
@@ -1323,7 +1491,7 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			}
 
 			Dictionary values;
-			err = _parse_dictionary(values, p_stream, line, r_err_str, p_res_parser);
+			err = _parse_dictionary(values, p_stream, line, r_err_str, p_res_parser, p_allow_objects);
 			if (err) {
 				return err;
 			}
@@ -1347,10 +1515,11 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			}
 
 			get_token(p_stream, token, line, r_err_str);
-			if (token.type != TK_IDENTIFIER) {
-				r_err_str = "Expected type identifier";
+			if (token.type != TK_IDENTIFIER && token.type != TK_STRING) {
+				r_err_str = "Expected type identifier or string";
 				return ERR_PARSE_ERROR;
 			}
+			const bool quoted_class_name = token.type == TK_STRING;
 
 			static HashMap<String, Variant::Type> builtin_types;
 			if (builtin_types.is_empty()) {
@@ -1361,7 +1530,9 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 
 			Array array = Array();
 			bool got_bracket_token = false;
-			if (builtin_types.has(token.value)) {
+			if (quoted_class_name) {
+				array.set_typed(Variant::OBJECT, token.value, Variant());
+			} else if (builtin_types.has(token.value)) {
 				array.set_typed(builtin_types.get(token.value), StringName(), Variant());
 			} else if (token.value == "Resource" || token.value == "SubResource" || token.value == "ExtResource") {
 				if (!p_allow_objects) {
@@ -1388,6 +1559,11 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 				}
 			} else if (ClassDB::class_exists(token.value)) {
 				array.set_typed(Variant::OBJECT, token.value, Variant());
+			} else if (ScriptServer::is_global_class(token.value)) {
+				Ref<Script> script = ResourceLoader::load(ScriptServer::get_global_class_path(token.value));
+				if (script.is_valid() && script->is_trait()) {
+					array.set_typed(Variant::OBJECT, token.value, Variant());
+				}
 			}
 
 			if (!got_bracket_token) {
@@ -1995,8 +2171,8 @@ Error VariantParser::parse(Stream *p_stream, Variant &r_ret, String &r_err_str, 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
-// These two functions serialize floats or doubles using num_scientific to ensure
-// it can be read back in the same way (except collapsing -0 to 0, and NaN values).
+/// @name These two functions serialize floats or doubles using num_scientific to ensure it can be read back in the same way (except collapsing -0 to 0, and NaN values).
+/// @{
 static String rtos_fix(float p_value, bool p_compat) {
 	if (p_value == 0.0f) {
 		return "0"; // Avoid negative zero (-0) being written, which may annoy git, svn, etc. for changes when they don't exist.
@@ -2020,6 +2196,7 @@ static String rtos_fix(double p_value, bool p_compat) {
 	}
 	return String::num_scientific(p_value);
 }
+/// @}
 
 static String encode_resource_reference(const String &path) {
 	ResourceUID::ID uid = ResourceLoader::get_resource_uid(path);
@@ -2048,7 +2225,7 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 		case Variant::FLOAT: {
 			const double value = p_variant.operator double();
 			String s;
-			// Hack to avoid garbage digits when the underlying float is 32-bit.
+			/// @todo Hack to avoid garbage digits when the underlying float is 32-bit.
 			if ((double)(float)value == value) {
 				s = rtos_fix((float)value, p_compat);
 			} else {
@@ -2298,7 +2475,8 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 						p_store_string_func(p_store_string_ud, key_class_name);
 					}
 				} else if (key_class_name != StringName()) {
-					p_store_string_func(p_store_string_ud, key_class_name);
+					String type_name = key_class_name;
+					p_store_string_func(p_store_string_ud, type_name.is_valid_identifier() ? type_name : "\"" + type_name.c_escape() + "\"");
 				} else if (key_builtin_type == Variant::NIL) {
 					p_store_string_func(p_store_string_ud, "Variant");
 				} else {
@@ -2327,7 +2505,8 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 						p_store_string_func(p_store_string_ud, value_class_name);
 					}
 				} else if (value_class_name != StringName()) {
-					p_store_string_func(p_store_string_ud, value_class_name);
+					String type_name = value_class_name;
+					p_store_string_func(p_store_string_ud, type_name.is_valid_identifier() ? type_name : "\"" + type_name.c_escape() + "\"");
 				} else if (value_builtin_type == Variant::NIL) {
 					p_store_string_func(p_store_string_ud, "Variant");
 				} else {
@@ -2373,6 +2552,45 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 			}
 		} break;
 
+		case Variant::STRUCT: {
+			const Struct &s = *VariantInternal::get_struct(&p_variant);
+			const Ref<StructInfo> info = s.get_info();
+			p_store_string_func(p_store_string_ud, "Struct(" + itos(StructInfo::SERIALIZATION_VERSION) + ", ");
+			if (info.is_null()) {
+				p_store_string_func(p_store_string_ud, R"("", [], []))");
+				break;
+			}
+
+			write(String(info->get_logical_type_id()), p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count, p_compat, p_full_objects);
+			p_store_string_func(p_store_string_ud, ", ");
+
+			Array fields;
+			for (int i = 0; i < info->get_field_count(); i++) {
+				Dictionary fd;
+				fd["name"] = String(info->get_field_name(i));
+				fd["type"] = String(StructInfo::type_to_token(info->get_field_type(i)));
+				fd["typed"] = info->is_field_typed(i);
+				fd["nullable"] = info->is_field_nullable(i);
+				if (info->get_field_class_name(i) != StringName()) {
+					fd["class_name"] = String(info->get_field_class_name(i));
+				}
+				if (info->get_field_struct_type_id(i) != StringName()) {
+					fd["struct_type_id"] = String(info->get_field_struct_type_id(i));
+				}
+				fd["default"] = Struct::_make_serializable(info->_get_field_default_raw(i));
+				fields.push_back(fd);
+			}
+			write(fields, p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count, p_compat, p_full_objects);
+			p_store_string_func(p_store_string_ud, ", ");
+
+			Array values;
+			for (int i = 0; i < s.get_field_count(); i++) {
+				values.push_back(s.get_member_serializable(i));
+			}
+			write(values, p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count, p_compat, p_full_objects);
+			p_store_string_func(p_store_string_ud, ")");
+		} break;
+
 		case Variant::ARRAY: {
 			Array array = p_variant;
 
@@ -2404,7 +2622,8 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 						p_store_string_func(p_store_string_ud, class_name);
 					}
 				} else if (class_name != StringName()) {
-					p_store_string_func(p_store_string_ud, class_name);
+					String type_name = class_name;
+					p_store_string_func(p_store_string_ud, type_name.is_valid_identifier() ? type_name : "\"" + type_name.c_escape() + "\"");
 				} else {
 					p_store_string_func(p_store_string_ud, Variant::get_type_name(builtin_type));
 				}

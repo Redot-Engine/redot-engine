@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file vector2.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "vector2.h"
 
 #include "core/math/vector2i.h"
@@ -40,7 +46,9 @@ real_t Vector2::angle() const {
 }
 
 Vector2 Vector2::from_angle(real_t p_angle) {
-	return Vector2(Math::cos(p_angle), Math::sin(p_angle));
+	real_t sc_sin, sc_cos;
+	Math::sin_cos(p_angle, sc_sin, sc_cos);
+	return Vector2(sc_cos, sc_sin);
 }
 
 real_t Vector2::length() const {
@@ -68,7 +76,7 @@ Vector2 Vector2::normalized() const {
 
 bool Vector2::is_normalized() const {
 	// use length_squared() instead of length() to avoid sqrt(), makes it more stringent.
-	return Math::is_equal_approx(length_squared(), 1, (real_t)UNIT_EPSILON);
+	return Math::is_equal_approx(length_squared(), static_cast<real_t>(1.f), static_cast<real_t>(UNIT_EPSILON));
 }
 
 real_t Vector2::distance_to(const Vector2 &p_vector2) const {
@@ -112,8 +120,8 @@ Vector2 Vector2::round() const {
 }
 
 Vector2 Vector2::rotated(real_t p_by) const {
-	real_t sine = Math::sin(p_by);
-	real_t cosi = Math::cos(p_by);
+	real_t sine, cosi;
+	Math::sin_cos(p_by, sine, cosi);
 	return Vector2(
 			x * cosi - y * sine,
 			x * sine + y * cosi);
@@ -173,7 +181,6 @@ Vector2 Vector2::move_toward(const Vector2 &p_to, real_t p_delta) const {
 	return len <= p_delta || len < (real_t)CMP_EPSILON ? p_to : v + vd / len * p_delta;
 }
 
-// slide returns the component of the vector along the given plane, specified by its normal vector.
 Vector2 Vector2::slide(const Vector2 &p_normal) const {
 #ifdef MATH_CHECKS
 	ERR_FAIL_COND_V_MSG(!p_normal.is_normalized(), Vector2(), "The normal Vector2 " + p_normal.operator String() + "must be normalized.");

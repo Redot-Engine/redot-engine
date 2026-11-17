@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file voxel_gi.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/visual_instance_3d.h"
 
 class CameraAttributes;

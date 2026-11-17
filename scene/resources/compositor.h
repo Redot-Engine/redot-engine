@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file compositor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 #include "core/object/gdvirtual.gen.inc"
 #include "servers/rendering/storage/render_data.h"
@@ -60,6 +66,7 @@ private:
 	bool access_resolved_depth = false;
 	bool needs_motion_vectors = false;
 	bool needs_normal_roughness = false;
+	bool needs_albedo = false;
 	bool needs_separate_specular = false;
 
 protected:
@@ -91,6 +98,9 @@ public:
 	void set_needs_normal_roughness(bool p_enabled);
 	bool get_needs_normal_roughness() const;
 
+	void set_needs_albedo(bool p_enabled);
+	bool get_needs_albedo() const;
+
 	void set_needs_separate_specular(bool p_enabled);
 	bool get_needs_separate_specular() const;
 
@@ -108,7 +118,7 @@ class Compositor : public Resource {
 private:
 	RID compositor;
 
-	// Compositor effects
+	/// Compositor effects
 	LocalVector<Ref<CompositorEffect>> effects;
 
 protected:

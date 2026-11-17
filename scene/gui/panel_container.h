@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file panel_container.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/container.h"
 
 class PanelContainer : public Container {

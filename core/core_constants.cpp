@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file core_constants.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core_constants.h"
 
 #include "core/input/input_event.h"
@@ -91,7 +97,7 @@ static HashMap<StringName, Vector<_CoreConstant>> _global_enums;
 		_global_enums[enum_name].push_back((_global_constants.ptr())[_global_constants.size() - 1]); \
 	}
 
-// This just binds enum classes as if they were regular enum constants.
+/// This just binds enum classes as if they were regular enum constants.
 #define BIND_CORE_ENUM_CLASS_CONSTANT(m_enum, m_prefix, m_member)                                                  \
 	{                                                                                                              \
 		StringName enum_name = __constant_get_enum_name(m_enum::m_member, #m_prefix "_" #m_member);                \
@@ -182,7 +188,7 @@ static HashMap<StringName, Vector<_CoreConstant>> _global_enums;
 		_global_enums[enum_name].push_back((_global_constants.ptr())[_global_constants.size() - 1]); \
 	}
 
-// This just binds enum classes as if they were regular enum constants.
+/// This just binds enum classes as if they were regular enum constants.
 #define BIND_CORE_ENUM_CLASS_CONSTANT(m_enum, m_prefix, m_member)                                                  \
 	{                                                                                                              \
 		StringName enum_name = __constant_get_enum_name(m_enum::m_member, #m_prefix "_" #m_member);                \
@@ -770,6 +776,7 @@ void register_global_constants() {
 	BIND_CORE_ENUM_CONSTANT_CUSTOM("TYPE_PACKED_VECTOR3_ARRAY", Variant::PACKED_VECTOR3_ARRAY);
 	BIND_CORE_ENUM_CONSTANT_CUSTOM("TYPE_PACKED_COLOR_ARRAY", Variant::PACKED_COLOR_ARRAY);
 	BIND_CORE_ENUM_CONSTANT_CUSTOM("TYPE_PACKED_VECTOR4_ARRAY", Variant::PACKED_VECTOR4_ARRAY);
+	BIND_CORE_ENUM_CONSTANT_CUSTOM("TYPE_STRUCT", Variant::STRUCT);
 	BIND_CORE_ENUM_CONSTANT_CUSTOM("TYPE_MAX", Variant::VARIANT_MAX);
 
 	//comparison

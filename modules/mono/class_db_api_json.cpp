@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file class_db_api_json.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "class_db_api_json.h"
 
 #ifdef DEBUG_ENABLED
@@ -42,13 +48,11 @@
 void class_db_api_to_json(const String &p_output_file, ClassDB::APIType p_api) {
 	Dictionary classes_dict;
 
-	List<StringName> class_list;
-	ClassDB::get_class_list(&class_list);
-	// Must be alphabetically sorted for hash to compute.
-	class_list.sort_custom<StringName::AlphCompare>();
+	LocalVector<StringName> class_list;
+	ClassDB::get_class_list(class_list);
 
-	for (const StringName &E : class_list) {
-		ClassDB::ClassInfo *t = ClassDB::classes.getptr(E);
+	for (const StringName &class_name : class_list) {
+		ClassDB::ClassInfo *t = ClassDB::classes.getptr(class_name);
 		ERR_FAIL_NULL(t);
 		if (t->api != p_api || !t->exposed) {
 			continue;

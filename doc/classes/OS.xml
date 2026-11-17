@@ -458,6 +458,15 @@
 				[b]Note:[/b] This method is only implemented on Windows, macOS, Linux and iOS. On Android and Web, [method get_processor_name] returns an empty string.
 			</description>
 		</method>
+		<method name="get_real_path" qualifiers="const">
+			<return type="String" />
+			<param index="0" name="path" type="String" />
+			<description>
+				Normalizes a given path, removing consecutive double-slash path separators, converts relative path logic to absolute, and resolves all symbolic links.
+				[b]Note:[/b] On Windows, if a path passed to the function contains backwards slashes for any path separators, those are replaced with forward slashes.
+				[b]Note:[/b] If the function failed for any reason, max path byte limit exceeded, the original input string with forward slash separators is returned.
+			</description>
+		</method>
 		<method name="get_restart_on_exit_arguments" qualifiers="const">
 			<return type="PackedStringArray" />
 			<description>

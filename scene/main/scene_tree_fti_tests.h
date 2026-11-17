@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file scene_tree_fti_tests.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include <stdint.h>
 
 class Node3D;

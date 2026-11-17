@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file file_access_memory.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "file_access_memory.h"
 
 #include "core/config/project_settings.h"

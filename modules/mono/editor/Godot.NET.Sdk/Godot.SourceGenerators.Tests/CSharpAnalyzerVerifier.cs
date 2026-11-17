@@ -15,13 +15,13 @@ namespace Godot.SourceGenerators.Tests;
 public static class CSharpAnalyzerVerifier<TAnalyzer>
     where TAnalyzer : DiagnosticAnalyzer, new()
 {
-    public const LanguageVersion LangVersion = LanguageVersion.CSharp11;
+    public const LanguageVersion LangVersion = LanguageVersion.CSharp14;
 
     public class Test : CSharpAnalyzerTest<TAnalyzer, XUnitVerifier>
     {
         public Test()
         {
-            ReferenceAssemblies = Constants.Net80;
+            ReferenceAssemblies = Constants.Net100;
 
             SolutionTransforms.Add((Solution solution, ProjectId projectId) =>
             {

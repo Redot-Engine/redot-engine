@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="Mode7ScanlineOverride" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+		A resource that holds per-scanline transform data for Mode 7 perspective rendering.
+	</brief_description>
+	<description>
+		A [Resource] used by [Mode7Sprite2D] to store one entry in the per-scanline "scanline table" that drives Mode 7-style perspective and rotation effects.
+
+		The Super Nintendo was able to apply a different transformation to each scanline (output row), enabling perspective projection effects like the distant ground plane in racing games. This class exposes that capability through intuitive properties: a 2x2 affine matrix (rotation, scale, skew), a pivot point, and optional color modulation.
+
+		[b]Interpolation modes[/b] determine how adjacent entries in the override array are blended:
+		- [b]None:[/b] Nearest-neighbor snap — each row uses exactly this entry's transform with no blending between rows. Best for scripted or fully manual transformations where every scanline is set individually.
+		- [b]Lerp:[/b] Linear interpolation between adjacent entries in the override array. The shader smoothly blends transforms, pivots, and modulate colors across all intervening scanlines. Add any number of overrides to create gradual transitions.
+		- [b]Projection:[/b] Perspective projection via per-scanline inverse-depth interpolation. Uses the first entry (index 0) as the top/horizon anchor and the last entry as the bottom/close anchor. Designed specifically for use with exactly 2 overrides — one at the horizon line and one closer to the camera.
+
+		The transforms are stored canonically as a [Transform2D], but you can also read/write decomposed rotation, scale, and skew properties for convenience. Values below [code]0.00001[/code] are clamped internally to prevent division-by-zero artifacts during inverse-depth interpolation.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="modulate" type="Color" setter="set_modulate" getter="get_modulate" default="Color(1, 1, 1, 1)">
+			Per-scanline color tint and alpha/intensity. The shader lerps this between adjacent overrides (just like the transform), enabling gradual fade-to-black into the distance for depth, bloom glow effects, or any per-band color correction. Fully supports RGBA — set alpha to blend the sprite transparently at specific scanline ranges.
+		</member>
+		<member name="pivot" type="Vector2" setter="set_pivot" getter="get_pivot" default="Vector2(0.5, 0.5)">
+			The vanishing point in normalized [lb]0..1[rb] texture UV space around which the transform is applied. Defaults to center ([code](0.5, 0.5)[/code]). Set closer to an edge to make that edge appear nearer or farther in perspective mode.
+		</member>
+		<member name="rotation" type="float" setter="set_rotation" getter="get_rotation" default="0.0">
+			Rotation angle in degrees, decomposed from [member transform]. Provides a more intuitive interface than editing matrix columns directly for simple rotational adjustments.
+		</member>
+		<member name="scale" type="Vector2" setter="set_scale" getter="get_scale" default="Vector2(1, 1)">
+			Scale factor applied along the X and Y axes, decomposed from [member transform]. Values below 0.00001. are clamped internally to prevent division-by-zero artifacts during inverse-depth (Projection) interpolation. Adjust scale to zoom in or out on the Mode 7 plane — smaller values bring the horizon closer.
+		</member>
+		<member name="skew" type="float" setter="set_skew" getter="get_skew" default="0.0">
+			Skew angle in degrees, decomposed from [member transform]. Tilts the coordinate grid into a shear transformation. Useful for simulating uneven terrain or angled surfaces.
+		</member>
+		<member name="transform" type="Transform2D" setter="set_transform" getter="get_transform" default="Transform2D(1, 0, 0, 1, 0, 0)">
+			The canonical transformation matrix stored as two column vectors plus a translation offset: [code](col0_x, col1_x, off_x), (col0_y, col1_y, off_y)[/code].
+			[b]Column 0 and Column 1[/b] form the 2x2 affine matrix controlling rotation and scale. Adjust these to rotate or stretch the background plane.
+			[b]Skew[/b] — changing the off-diagonal elements tilts the coordinate grid into a shear.
+			[b]Translation offset (x0, y0)[/b] shifts where the Mode 7 plane appears on screen, analogous to moving the camera position.
+		</member>
+	</members>
+</class>

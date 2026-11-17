@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdscript_cache.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript.h"
 
 #include "core/object/ref_counted.h"
@@ -50,7 +56,9 @@ public:
 		EMPTY,
 		PARSED,
 		INHERITANCE_SOLVED,
+		USES_SOLVED,
 		INTERFACE_SOLVED,
+		BODY_SOLVED,
 		FULLY_SOLVED,
 	};
 
@@ -81,7 +89,7 @@ public:
 };
 
 class GDScriptCache {
-	// String key is full path.
+	/// String key is full path.
 	HashMap<String, GDScriptParserRef *> parser_map;
 	HashMap<String, Vector<ObjectID>> abandoned_parser_map;
 	HashMap<String, Ref<GDScript>> shallow_gdscript_cache;

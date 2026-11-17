@@ -32,9 +32,15 @@
 
 #pragma once
 
+/**
+ * @file external_texture.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/texture.h"
 
-// External textures as defined by OES_EGL_image_external (GLES) or VK_ANDROID_external_memory_android_hardware_buffer (Vulkan).
+/// External textures as defined by OES_EGL_image_external (GLES) or VK_ANDROID_external_memory_android_hardware_buffer (Vulkan).
 class ExternalTexture : public Texture2D {
 	GDCLASS(ExternalTexture, Texture2D);
 

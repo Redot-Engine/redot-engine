@@ -1,9 +1,11 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Godot.NativeInterop;
 
+using Vec3 = System.Numerics.Vector3;
 #nullable enable
 
 namespace Godot
@@ -345,6 +347,32 @@ namespace Godot
                 (float)Mathf.Clamp(B, minimum.B, maximum.B),
                 (float)Mathf.Clamp(A, minimum.A, maximum.A)
             );
+        }
+
+        /// <summary>
+        /// Modifies the color by applying an intensity level to its RGB components.
+        /// The intensity is applied as a power-of-two multiplier to the RGB values,
+        /// clamping the resulting values within the range of 0.0 to 1.0.
+        /// </summary>
+        /// <param name="intensity">
+        /// The intensity level to apply. A value of zero makes no changes,
+        /// while positive values increase brightness and negative values decrease it.
+        /// </param>
+        /// <returns>
+        /// A new color with the modified RGB intensity.
+        /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe Color ApplyIntensity(float intensity)
+        {
+            Color result = this;
+            if (Mathf.IsZeroApprox(intensity))
+                return result;
+
+            float multiplier = MathF.Pow(2f, intensity);
+            // Use SIMD to apply the multiplier to the raw memory containing the RGB components and clamp the result.
+            Vec3* rgb = (Vec3*)Unsafe.AsPointer(ref result);
+            *rgb = Vec3.Clamp(*rgb * multiplier, Vec3.Zero, Vec3.One);
+            return result;
         }
 
         /// <summary>

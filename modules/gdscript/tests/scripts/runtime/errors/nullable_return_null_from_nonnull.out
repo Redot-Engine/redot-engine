@@ -1,0 +1,5 @@
+GDTEST_RUNTIME_ERROR
+~~ WARNING at line 2: (UNSAFE_NULLABLE_ACCESS) The value of type "int?" may be null; using it without a null check may fail at runtime.
+5
+>> SCRIPT ERROR at runtime/errors/nullable_return_null_from_nonnull.gd:2 on bad(): Trying to return value of type "Nil" from a function whose return type is "int".
+0

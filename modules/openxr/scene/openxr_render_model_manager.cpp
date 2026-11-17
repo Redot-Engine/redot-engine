@@ -30,13 +30,19 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_render_model_manager.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_render_model_manager.h"
 
 #include "../extensions/openxr_render_model_extension.h"
 #include "../openxr_api.h"
 #include "core/config/project_settings.h"
 #include "scene/3d/xr/xr_nodes.h"
-#include "servers/xr_server.h"
+#include "servers/xr/xr_server.h"
 
 void OpenXRRenderModelManager::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_tracker"), &OpenXRRenderModelManager::get_tracker);

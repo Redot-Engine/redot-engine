@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_query_collectors.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../jolt_project_settings.h"
 #include "jolt_space_3d.h"
 

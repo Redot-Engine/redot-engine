@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file sprite_frames.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image_frames.h"
 #include "core/io/resource_loader.h"
 #include "scene/resources/texture.h"

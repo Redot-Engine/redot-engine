@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file doc_tools.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/doc_data.h"
 #include "core/templates/rb_set.h"
 

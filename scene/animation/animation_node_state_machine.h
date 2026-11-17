@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file animation_node_state_machine.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/expression.h"
 #include "scene/animation/animation_tree.h"
 

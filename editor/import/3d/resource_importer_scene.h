@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file resource_importer_scene.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 #include "core/io/resource_importer.h"
 #include "core/variant/dictionary.h"
@@ -71,7 +77,7 @@ public:
 		IMPORT_FAIL_ON_MISSING_DEPENDENCIES = 4,
 		IMPORT_GENERATE_TANGENT_ARRAYS = 8,
 		IMPORT_USE_NAMED_SKIN_BINDS = 16,
-		IMPORT_DISCARD_MESHES_AND_MATERIALS = 32, //used for optimizing animation import
+		IMPORT_DISCARD_MESHES_AND_MATERIALS = 32, ///< Used for optimizing animation import
 		IMPORT_FORCE_DISABLE_MESH_COMPRESSION = 64,
 	};
 
@@ -283,7 +289,7 @@ public:
 	virtual void get_import_options(const String &p_path, List<ImportOption> *r_options, int p_preset = 0) const override;
 	virtual bool get_option_visibility(const String &p_path, const String &p_option, const HashMap<StringName, Variant> &p_options) const override;
 	virtual void handle_compatibility_options(HashMap<StringName, Variant> &p_import_params) const override;
-	// Import scenes *after* everything else (such as textures).
+	/// Import scenes *after* everything else (such as textures).
 	virtual int get_import_order() const override { return ResourceImporter::IMPORT_ORDER_SCENE; }
 
 	void _pre_fix_global(Node *p_scene, const HashMap<StringName, Variant> &p_options) const;
@@ -407,13 +413,13 @@ Vector<Ref<Shape3D>> ResourceImporterScene::get_collision_shapes(const Ref<Impor
 
 			const real_t precision = real_t(precision_level - 1) / 9.0;
 
-			decomposition_settings->set_max_concavity(Math::lerp(real_t(1.0), real_t(0.001), precision));
-			decomposition_settings->set_min_volume_per_convex_hull(Math::lerp(real_t(0.01), real_t(0.0001), precision));
-			decomposition_settings->set_resolution(Math::lerp(10'000, 100'000, precision));
-			decomposition_settings->set_max_num_vertices_per_convex_hull(Math::lerp(32, 64, precision));
-			decomposition_settings->set_plane_downsampling(Math::lerp(3, 16, precision));
-			decomposition_settings->set_convex_hull_downsampling(Math::lerp(3, 16, precision));
-			decomposition_settings->set_max_convex_hulls(Math::lerp(1, 32, precision));
+			decomposition_settings->set_max_concavity(Math::lerp<float>(real_t(1.0), real_t(0.001), precision));
+			decomposition_settings->set_min_volume_per_convex_hull(Math::lerp<float>(real_t(0.01), real_t(0.0001), precision));
+			decomposition_settings->set_resolution(Math::lerp<float>(10'000, 100'000, precision));
+			decomposition_settings->set_max_num_vertices_per_convex_hull(Math::lerp<float>(32, 64, precision));
+			decomposition_settings->set_plane_downsampling(Math::lerp<float>(3, 16, precision));
+			decomposition_settings->set_convex_hull_downsampling(Math::lerp<float>(3, 16, precision));
+			decomposition_settings->set_max_convex_hulls(Math::lerp<float>(1, 32, precision));
 		}
 
 		return p_mesh->convex_decompose(decomposition_settings);

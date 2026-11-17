@@ -32,10 +32,18 @@
 
 #pragma once
 
+/**
+ * @file path_3d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/path_3d.h"
+#include "scene/gui/separator.h"
+#include "scene/resources/style_box_line.h"
 
 class HBoxContainer;
 class MenuButton;
@@ -44,7 +52,7 @@ class ConfirmationDialog;
 class Path3DGizmo : public EditorNode3DGizmo {
 	GDCLASS(Path3DGizmo, EditorNode3DGizmo);
 
-	// Map handle id to control point id and handle type.
+	/// Map handle id to control point id and handle type.
 	enum HandleType {
 		HANDLE_TYPE_IN,
 		HANDLE_TYPE_OUT,
@@ -52,8 +60,8 @@ class Path3DGizmo : public EditorNode3DGizmo {
 	};
 
 	struct HandleInfo {
-		int point_idx; // Index of control point.
-		HandleType type; // Type of this handle.
+		int point_idx; ///< Index of control point.
+		HandleType type; ///< Type of this handle.
 	};
 
 	Path3D *path = nullptr;
@@ -61,13 +69,17 @@ class Path3DGizmo : public EditorNode3DGizmo {
 	mutable Vector3 original;
 	mutable float orig_in_length;
 	mutable float orig_out_length;
-	mutable float disk_size = 0.8;
 
-	// Index that should have swapped control points for achieving an outwards curve.
+	/// Index that should have swapped control points for achieving an outwards curve.
 	int swapped_control_points_idx = -1;
 	bool control_points_overlapped = false;
 
-	// Cache information of secondary handles.
+	/// Control point currently snapped to a collider while dragging, or -1.
+	int snapped_point_idx = -1;
+
+	Vector3 drag_grab_offset;
+
+	/// Cache information of secondary handles.
 	Vector<HandleInfo> _secondary_handles_info;
 
 	void _update_transform_gizmo();
@@ -75,21 +87,22 @@ class Path3DGizmo : public EditorNode3DGizmo {
 public:
 	virtual String get_handle_name(int p_id, bool p_secondary) const override;
 	virtual Variant get_handle_value(int p_id, bool p_secondary) const override;
+	int get_snapped_point() const { return snapped_point_idx; }
+	void set_snapped_point(int p_idx);
 	virtual void set_handle(int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) override;
 	virtual void commit_handle(int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel = false) override;
 
 	virtual void redraw() override;
-	Path3DGizmo(Path3D *p_path = nullptr, float p_disk_size = 0.8);
+	Path3DGizmo(Path3D *p_path = nullptr);
 };
 
 class Path3DGizmoPlugin : public EditorNode3DGizmoPlugin {
 	GDCLASS(Path3DGizmoPlugin, EditorNode3DGizmoPlugin);
 
-	float disk_size = 0.8;
-
-	// Locking basis is meant to ensure a predictable behavior during translation of the curve points in "local space transform mode".
-	// Without the locking, the gizmo/point, in "local space transform mode", wouldn't follow a straight path and would curve and twitch in an unpredictable way.
+	/// Locking basis is meant to ensure a predictable behavior during translation of the curve points in "local space transform mode".
+	/// Without the locking, the gizmo/point, in "local space transform mode", wouldn't follow a straight path and would curve and twitch in an unpredictable way.
 	HashMap<int, Basis> transformation_locked_basis;
+	HashMap<int, Vector3> transformation_locked_origins;
 
 protected:
 	Ref<EditorNode3DGizmo> create_gizmo(Node3D *p_spatial) override;
@@ -107,7 +120,7 @@ public:
 	virtual void commit_subgizmos(const EditorNode3DGizmo *p_gizmo, const Vector<int> &p_ids, const Vector<Transform3D> &p_restore, bool p_cancel = false) override;
 
 	int get_priority() const override;
-	Path3DGizmoPlugin(float p_disk_size);
+	Path3DGizmoPlugin();
 };
 
 class Path3DEditorPlugin : public EditorPlugin {
@@ -127,13 +140,29 @@ class Path3DEditorPlugin : public EditorPlugin {
 	Button *curve_edit_tilt = nullptr;
 	Button *curve_del = nullptr;
 	Button *curve_closed = nullptr;
+
+	StyleBoxLine *separator_line_style = nullptr;
+	VSeparator *axis_separator_left = nullptr;
+
+	Button *axis_lock_x = nullptr;
+	Button *axis_lock_y = nullptr;
+	Button *axis_lock_z = nullptr;
+
+	VSeparator *axis_separator_right = nullptr;
+
 	Button *curve_clear_points = nullptr;
+	Button *curve_smooth = nullptr;
+
+	VSeparator *separator_clear_points = nullptr;
+
+	Button *curve_reset_handles = nullptr;
+
+	VSeparator *separator_options_menu = nullptr;
+
 	MenuButton *handle_menu = nullptr;
 
 	Button *create_curve_button = nullptr;
 	ConfirmationDialog *clear_points_dialog = nullptr;
-
-	float disk_size = 0.8;
 
 	enum Mode {
 		MODE_CREATE,
@@ -155,19 +184,29 @@ class Path3DEditorPlugin : public EditorPlugin {
 	bool handle_clicked = false;
 	bool mirror_handle_angle = true;
 	bool mirror_handle_length = true;
+	bool snap_to_collider = true;
 
 	void _create_curve();
 	void _confirm_clear_points();
+	void _apply_axis_locks(const Vector3 &p_reference_global, Vector3 &r_global_point) const;
+	void _update_axis_lock_icons();
 	void _clear_points();
 	void _clear_curve_points();
 	void _restore_curve_points(const PackedVector3Array &p_points);
 
+	void _smooth_all_points();
+	void _reset_all_points_handles();
+	void _delete_selected_points();
+	void _subgizmo_selection_change();
+
 	enum HandleOption {
 		HANDLE_OPTION_ANGLE,
-		HANDLE_OPTION_LENGTH
+		HANDLE_OPTION_LENGTH,
+		HANDLE_OPTION_SNAP_COLLIDER,
 	};
 
 protected:
+	virtual void _notification(int p_what);
 	static void _bind_methods();
 
 public:
@@ -177,7 +216,6 @@ public:
 	virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(Camera3D *p_camera, const Ref<InputEvent> &p_event) override;
 
 	virtual String get_plugin_name() const override { return "Path3D"; }
-	bool has_main_screen() const override { return false; }
 	virtual void edit(Object *p_object) override;
 	virtual bool handles(Object *p_object) const override;
 	virtual void make_visible(bool p_visible) override;
@@ -188,4 +226,20 @@ public:
 	void set_handle_clicked(bool clicked) { handle_clicked = clicked; }
 
 	Path3DEditorPlugin();
+
+private:
+	struct EditData {
+		Vector3 click_ray_dir;
+		Vector3 click_ray_pos;
+		Vector3 origin;
+		Point2 mouse_pos;
+		bool show_rotation_line = false;
+		Ref<Path3DGizmo> gizmo;
+		int gizmo_handle = 0;
+		bool gizmo_handle_secondary = false;
+		Camera3D *gizmo_camera;
+		bool waiting_point_physics = false;
+		bool waiting_handle_physics = false;
+		bool in_physics_frame = false;
+	} _edit;
 };

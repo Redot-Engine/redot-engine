@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file webrtc_peer_connection.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "webrtc_data_channel.h"
 
 class WebRTCPeerConnection : public RefCounted {

@@ -522,11 +522,11 @@ TEST_CASE("[List] Swap front and back (values check)") {
 	List<Variant>::Element *n_color = list.push_back(color);
 
 	CHECK(list.front()->get() == "Redot");
-	CHECK(list.back()->get() == Color(0, 0, 1));
+	CHECK(list.back()->get() == color);
 
 	list.swap(n_str, n_color);
 
-	CHECK(list.front()->get() == Color(0, 0, 1));
+	CHECK(list.front()->get() == color);
 	CHECK(list.back()->get() == "Redot");
 }
 

@@ -32,15 +32,18 @@
 
 #pragma once
 
+/**
+ * @file paged_array.h
+ *
+ * @brief PagedArray is used mainly for filling a very large array from multiple threads efficiently and without causing major fragmentation
+ * PageArrayPool manages central page allocation in a thread safe matter
+ */
+
 #include "core/os/memory.h"
 #include "core/os/spin_lock.h"
 #include "core/typedefs.h"
 
 #include <type_traits>
-
-// PagedArray is used mainly for filling a very large array from multiple threads efficiently and without causing major fragmentation
-
-// PageArrayPool manages central page allocation in a thread safe matter
 
 template <typename T>
 class PagedArrayPool {
@@ -121,7 +124,7 @@ public:
 		page_size = nearest_power_of_2_templated(p_page_size);
 	}
 
-	PagedArrayPool(uint32_t p_page_size = 4096) { // power of 2 recommended because of alignment with OS page sizes. Even if element is bigger, its still a multiple and get rounded amount of pages
+	PagedArrayPool(uint32_t p_page_size = 4096) { ///< power of 2 recommended because of alignment with OS page sizes. Even if element is bigger, its still a multiple and get rounded amount of pages
 		configure(p_page_size);
 	}
 
@@ -131,10 +134,9 @@ public:
 	}
 };
 
-// PageArray is a local array that is optimized to grow in place, then be cleared often.
-// It does so by allocating pages from a PagedArrayPool.
-// It is safe to use multiple PagedArrays from different threads, sharing a single PagedArrayPool
-
+/// PageArray is a local array that is optimized to grow in place, then be cleared often.
+/// It does so by allocating pages from a PagedArrayPool.
+/// It is safe to use multiple PagedArrays from different threads, sharing a single PagedArrayPool
 template <typename T>
 class PagedArray {
 	PagedArrayPool<T> *page_pool = nullptr;
@@ -268,10 +270,9 @@ public:
 		}
 	}
 
-	// This takes the pages from a source array and merges them to this one
-	// resulting order is undefined, but content is merged very efficiently,
-	// making it ideal to fill content on several threads to later join it.
-
+	/// This takes the pages from a source array and merges them to this one
+	/// resulting order is undefined, but content is merged very efficiently,
+	/// making it ideal to fill content on several threads to later join it.
 	void merge_unordered(PagedArray<T> &p_array) {
 		ERR_FAIL_COND(page_pool != p_array.page_pool);
 

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file websocket_peer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/crypto/crypto.h"
 #include "core/io/packet_peer.h"
 

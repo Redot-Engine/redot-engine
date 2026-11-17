@@ -32,10 +32,16 @@
 
 #pragma once
 
+/**
+ * @file audio_stream_polyphonic.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/local_vector.h"
 #include "scene/scene_string_names.h"
+#include "servers/audio/audio_server.h"
 #include "servers/audio/audio_stream.h"
-#include "servers/audio_server.h"
 
 class AudioStreamPolyphonic : public AudioStream {
 	GDCLASS(AudioStreamPolyphonic, AudioStream)
@@ -106,7 +112,7 @@ public:
 	virtual void stop() override;
 	virtual bool is_playing() const override;
 
-	virtual int get_loop_count() const override; //times it looped
+	virtual int get_loop_count() const override; ///< Number of times it looped
 
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;

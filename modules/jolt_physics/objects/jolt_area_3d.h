@@ -32,9 +32,15 @@
 
 #pragma once
 
+/**
+ * @file jolt_area_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "jolt_shaped_object_3d.h"
 
-#include "servers/physics_server_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 
 class JoltBody3D;
 class JoltSoftBody3D;

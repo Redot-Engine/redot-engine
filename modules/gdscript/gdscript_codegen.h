@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdscript_codegen.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_function.h"
 #include "gdscript_utility_functions.h"
 
@@ -125,7 +131,7 @@ public:
 	virtual void write_store_named_global(const Address &p_dst, const StringName &p_global) = 0;
 	virtual void write_cast(const Address &p_target, const Address &p_source, const GDScriptDataType &p_type) = 0;
 	virtual void write_call(const Address &p_target, const Address &p_base, const StringName &p_function_name, const Vector<Address> &p_arguments) = 0;
-	virtual void write_super_call(const Address &p_target, const StringName &p_function_name, const Vector<Address> &p_arguments) = 0;
+	virtual void write_super_call(const Address &p_target, const StringName &p_function_name, const Vector<Address> &p_arguments, bool p_is_trait_super) = 0;
 	virtual void write_call_async(const Address &p_target, const Address &p_base, const StringName &p_function_name, const Vector<Address> &p_arguments) = 0;
 	virtual void write_call_utility(const Address &p_target, const StringName &p_function, const Vector<Address> &p_arguments) = 0;
 	virtual void write_call_gdscript_utility(const Address &p_target, const StringName &p_function, const Vector<Address> &p_arguments) = 0;
@@ -144,6 +150,7 @@ public:
 	virtual void write_construct_typed_array(const Address &p_target, const GDScriptDataType &p_element_type, const Vector<Address> &p_arguments) = 0;
 	virtual void write_construct_dictionary(const Address &p_target, const Vector<Address> &p_arguments) = 0;
 	virtual void write_construct_typed_dictionary(const Address &p_target, const GDScriptDataType &p_key_type, const GDScriptDataType &p_value_type, const Vector<Address> &p_arguments) = 0;
+	virtual void write_construct_struct(const Address &p_target, const Address &p_template) = 0;
 	virtual void write_await(const Address &p_target, const Address &p_operand) = 0;
 	virtual void write_if(const Address &p_condition) = 0;
 	virtual void write_else() = 0;
@@ -155,7 +162,7 @@ public:
 	virtual void write_for_range_assignment(const Address &p_from, const Address &p_to, const Address &p_step) = 0;
 	virtual void write_for(const Address &p_variable, bool p_use_conversion, bool p_is_range) = 0;
 	virtual void write_endfor(bool p_is_range) = 0;
-	virtual void start_while_condition() = 0; // Used to allow a jump to the expression evaluation.
+	virtual void start_while_condition() = 0; ///< Used to allow a jump to the expression evaluation.
 	virtual void write_while(const Address &p_condition) = 0;
 	virtual void write_endwhile() = 0;
 	virtual void write_break() = 0;

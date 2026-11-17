@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file animation_blend_space_1d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/animation/animation_tree.h"
 
 class AnimationNodeBlendSpace1D : public AnimationRootNode {

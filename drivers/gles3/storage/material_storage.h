@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file material_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "core/templates/rid_owner.h"
@@ -118,7 +124,7 @@ struct Material {
 	RID self;
 	MaterialData *data = nullptr;
 	Shader *shader = nullptr;
-	//shortcut to shader data and type
+	/// Shortcut to shader data and type
 	RS::ShaderMode shader_mode = RS::SHADER_MAX;
 	uint32_t shader_id = 0;
 	bool uniform_dirty = false;
@@ -137,7 +143,7 @@ struct Material {
 /* CanvasItem Materials */
 
 struct CanvasShaderData : public ShaderData {
-	enum BlendMode { // Used internally.
+	enum BlendMode { /// Used internally.
 		BLEND_MODE_MIX,
 		BLEND_MODE_ADD,
 		BLEND_MODE_SUB,
@@ -197,9 +203,8 @@ MaterialData *_create_canvas_material_func(ShaderData *p_shader);
 /* Sky Materials */
 
 struct SkyShaderData : public ShaderData {
-	// All these members are (re)initialized in `set_code`.
-	// Make sure to add the init to `set_code` whenever adding new members.
-
+	/// @name All these members are (re)initialized in `set_code`. Make sure to add the init to `set_code` whenever adding new members.
+	/// @{
 	bool valid;
 	RID version;
 
@@ -220,6 +225,8 @@ struct SkyShaderData : public ShaderData {
 	virtual bool is_animated() const;
 	virtual bool casts_shadows() const;
 	virtual RS::ShaderNativeSourceCode get_native_source_code() const;
+	/// @}
+
 	SkyShaderData();
 	virtual ~SkyShaderData();
 };
@@ -242,7 +249,7 @@ MaterialData *_create_sky_material_func(ShaderData *p_shader);
 /* Scene Materials */
 
 struct SceneShaderData : public ShaderData {
-	enum BlendMode { // Used internally.
+	enum BlendMode { /// Used internally.
 		BLEND_MODE_MIX,
 		BLEND_MODE_ADD,
 		BLEND_MODE_SUB,
@@ -271,7 +278,7 @@ struct SceneShaderData : public ShaderData {
 		STENCIL_COMPARE_NOT_EQUAL,
 		STENCIL_COMPARE_GREATER_OR_EQUAL,
 		STENCIL_COMPARE_ALWAYS,
-		STENCIL_COMPARE_MAX // not an actual operator, just the amount of operators
+		STENCIL_COMPARE_MAX ///< Not an actual operator, just the amount of operators
 	};
 
 	enum StencilFlags {
@@ -286,8 +293,8 @@ struct SceneShaderData : public ShaderData {
 		ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE_AND_TO_ONE
 	};
 
-	// All these members are (re)initialized in `set_code`.
-	// Make sure to add the init to `set_code` whenever adding new members.
+	/// @name All these members are (re)initialized in `set_code`. Make sure to add the init to `set_code` whenever adding new members.
+	/// @{
 
 	bool valid;
 	RID version;
@@ -353,6 +360,7 @@ struct SceneShaderData : public ShaderData {
 	virtual bool is_animated() const;
 	virtual bool casts_shadows() const;
 	virtual RS::ShaderNativeSourceCode get_native_source_code() const;
+	/// @}
 
 	SceneShaderData();
 	virtual ~SceneShaderData();
@@ -382,8 +390,8 @@ enum {
 };
 
 struct ParticlesShaderData : public ShaderData {
-	// All these members are (re)initialized in `set_code`.
-	// Make sure to add the init to `set_code` whenever adding new members.
+	/// @name All these members are (re)initialized in `set_code`. Make sure to add the init to `set_code` whenever adding new members.
+	/// @{
 
 	bool valid;
 	RID version;
@@ -405,6 +413,7 @@ struct ParticlesShaderData : public ShaderData {
 	virtual bool is_animated() const;
 	virtual bool casts_shadows() const;
 	virtual RS::ShaderNativeSourceCode get_native_source_code() const;
+	/// @}
 
 	ParticlesShaderData() {}
 	virtual ~ParticlesShaderData();
@@ -425,19 +434,19 @@ struct ParticleProcessMaterialData : public MaterialData {
 
 MaterialData *_create_particles_material_func(ShaderData *p_shader);
 
-/* Global shader uniform structs */
+/** Global shader uniform structs */
 struct GlobalShaderUniforms {
 	enum {
 		BUFFER_DIRTY_REGION_SIZE = 1024
 	};
 	struct Variable {
-		HashSet<RID> texture_materials; // materials using this
+		HashSet<RID> texture_materials; ///< Materials using this
 
 		RS::GlobalShaderParameterType type;
 		Variant value;
 		Variant override;
-		int32_t buffer_index; //for vectors
-		int32_t buffer_elements; //for vectors
+		int32_t buffer_index; ///< For vectors
+		int32_t buffer_elements; ///< For vectors
 	};
 
 	HashMap<StringName, Variable> variables;

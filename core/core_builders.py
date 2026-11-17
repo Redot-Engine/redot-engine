@@ -1,5 +1,6 @@
 """Functions used to generate source files during build time"""
 
+import sys
 from collections import OrderedDict
 from io import TextIOWrapper
 
@@ -95,94 +96,6 @@ inline constexpr unsigned char _certs_compressed[] = {{
 	{methods.format_buffer(buffer, 1)}
 }};
 """)
-
-
-def make_redot_authors_header(target, source, env):
-    SECTIONS = {
-        "Project Founders": "REDOT_AUTHORS_FOUNDERS",
-        "Lead Developer": "REDOT_AUTHORS_LEAD_DEVELOPERS",
-        "Project Manager": "REDOT_AUTHORS_PROJECT_MANAGERS",
-        "Developers": "REDOT_AUTHORS_DEVELOPERS",
-    }
-    buffer = methods.get_buffer(str(source[0]))
-    reading = False
-
-    with methods.generated_wrapper(str(target[0])) as file:
-
-        def close_section():
-            file.write("\tnullptr,\n};\n\n")
-
-        for line in buffer.decode().splitlines():
-            if line.startswith("    ") and reading:
-                file.write(f'\t"{methods.to_escaped_cstring(line).strip()}",\n')
-            elif line.startswith("## "):
-                if reading:
-                    close_section()
-                    reading = False
-                section = SECTIONS[line[3:].strip()]
-                if section:
-                    file.write(f"inline constexpr const char *{section}[] = {{\n")
-                    reading = True
-
-        if reading:
-            close_section()
-
-
-def make_authors_header(target, source, env):
-    SECTIONS = {
-        "Project Founders": "AUTHORS_FOUNDERS",
-        "Lead Developer": "AUTHORS_LEAD_DEVELOPERS",
-        "Project Manager": "AUTHORS_PROJECT_MANAGERS",
-        "Developers": "AUTHORS_DEVELOPERS",
-    }
-    buffer = methods.get_buffer(str(source[0]))
-    reading = False
-
-    with methods.generated_wrapper(str(target[0])) as file:
-
-        def close_section():
-            file.write("\tnullptr,\n};\n\n")
-
-        for line in buffer.decode().splitlines():
-            if line.startswith("    ") and reading:
-                file.write(f'\t"{methods.to_escaped_cstring(line).strip()}",\n')
-            elif line.startswith("## "):
-                if reading:
-                    close_section()
-                    reading = False
-                section = SECTIONS[line[3:].strip()]
-                if section:
-                    file.write(f"inline constexpr const char *{section}[] = {{\n")
-                    reading = True
-
-        if reading:
-            close_section()
-
-
-def make_donors_header(target, source, env):
-    SECTIONS = {"Donors": "DONORS_LIST"}
-    buffer = methods.get_buffer(str(source[0]))
-    reading = False
-
-    with methods.generated_wrapper(str(target[0])) as file:
-
-        def close_section():
-            file.write("\tnullptr,\n};\n\n")
-
-        for line in buffer.decode().splitlines():
-            if line.startswith("    ") and reading:
-                file.write(f'\t"{methods.to_escaped_cstring(line).strip()}",\n')
-            elif line.startswith("## "):
-                if reading:
-                    close_section()
-                    reading = False
-                section = SECTIONS.get(line[3:].strip())
-                if section:
-                    file.write(f"inline constexpr const char *{section}[] = {{\n")
-                    reading = True
-
-        if reading:
-            close_section()
 
 
 def make_license_header(target, source, env):
@@ -316,3 +229,73 @@ struct ComponentCopyright {{
                     to_raw += [line]
             file.write(f"{methods.to_raw_cstring(to_raw)},\n\n")
         file.write("};\n\n")
+
+
+def _make_list_header(target, source, sections):
+    """!Parses a Markdown file with '## Section' headers and indented list
+    items into a C header of `nullptr`-terminated string arrays.
+
+    target/source: SCons target/source lists, as passed by env.Run().
+    sections: dict mapping each expected Markdown section title (str) to
+        the C array name (str) to emit for it. Unrecognized '## ' headings
+        are reported and skipped rather than silently ignored or crashing.
+    """
+    buffer = methods.get_buffer(str(source[0]))
+    reading = False
+
+    with methods.generated_wrapper(str(target[0])) as file:
+
+        def close_section():
+            file.write("\tnullptr,\n};\n\n")
+
+        for line in buffer.decode().splitlines():
+            if reading and line[:1] in (" ", "\t") and line.strip():
+                file.write(f'\t"{methods.to_escaped_cstring(line.strip())}",\n')
+            elif line.startswith("## "):
+                if reading:
+                    close_section()
+                    reading = False
+                title = line[3:].strip()
+                section = sections.get(title)
+                if section:
+                    file.write(f"inline constexpr const char *{section}[] = {{\n")
+                    reading = True
+                else:
+                    print(
+                        f'WARNING: "{source[0]}" has unrecognized section "{title}", '
+                        "no entries will be generated for it.",
+                        file=sys.stderr,
+                    )
+
+        if reading:
+            close_section()
+
+
+def make_redot_authors_header(target, source, env):
+    _make_list_header(
+        target,
+        source,
+        {
+            "Project Founders": "REDOT_AUTHORS_FOUNDERS",
+            "Lead Developer": "REDOT_AUTHORS_LEAD_DEVELOPERS",
+            "Project Manager": "REDOT_AUTHORS_PROJECT_MANAGERS",
+            "Developers": "REDOT_AUTHORS_DEVELOPERS",
+        },
+    )
+
+
+def make_authors_header(target, source, env):
+    _make_list_header(
+        target,
+        source,
+        {
+            "Project Founders": "AUTHORS_FOUNDERS",
+            "Lead Developer": "AUTHORS_LEAD_DEVELOPERS",
+            "Project Manager": "AUTHORS_PROJECT_MANAGERS",
+            "Developers": "AUTHORS_DEVELOPERS",
+        },
+    )
+
+
+def make_donors_header(target, source, env):
+    _make_list_header(target, source, {"Donors": "DONORS_LIST"})

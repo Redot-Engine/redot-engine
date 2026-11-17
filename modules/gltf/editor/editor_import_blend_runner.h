@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_import_blend_runner.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/http_client.h"
 #include "core/os/os.h"
 #include "scene/main/node.h"

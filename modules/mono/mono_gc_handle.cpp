@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mono_gc_handle.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "mono_gc_handle.h"
 
 #include "mono_gd/gd_mono.h"

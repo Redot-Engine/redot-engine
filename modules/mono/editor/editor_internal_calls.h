@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_internal_calls.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/typedefs.h"
 
 namespace godotsharp {

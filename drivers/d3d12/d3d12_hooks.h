@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file d3d12_hooks.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rendering_device_driver_d3d12.h"
 
 class D3D12Hooks {

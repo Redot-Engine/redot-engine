@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file translation_loader_po.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "translation_loader_po.h"
 
 #include "core/io/file_access.h"

@@ -32,13 +32,16 @@
 
 #pragma once
 
+/**
+ * @file webxr_interface.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/xr/xr_controller_tracker.h"
 #include "servers/xr/xr_interface.h"
 
-/**
-	The WebXR interface is a VR/AR interface that can be used on the web.
-*/
-
+/// The WebXR interface is a VR/AR interface that can be used on the web.
 class WebXRInterface : public XRInterface {
 	GDCLASS(WebXRInterface, XRInterface);
 

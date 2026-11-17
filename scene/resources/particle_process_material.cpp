@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file particle_process_material.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "particle_process_material.h"
 
 #include "core/version.h"
@@ -926,7 +932,7 @@ void ParticleProcessMaterial::_update_shader() {
 
 	code += "void process() {\n";
 	code += "	uint base_number = NUMBER;\n";
-	// TODO: Add optional determinism here.
+	/// @todo Add optional determinism here.
 	code += "	//if (repeatable) {\n";
 	code += "	//	base_number = INDEX;\n";
 	code += "	//}\n";

@@ -5632,3 +5632,6 @@ msgid ""
 msgstr ""
 "As palabras clave do sombreador non se poden usar como nomes de parámetros.\n"
 "Escolle outro nome."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Demasiados scripts para abrir no editor externo (máximo 128)."

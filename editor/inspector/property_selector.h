@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file property_selector.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/dialogs.h"
 
 class EditorHelpBit;

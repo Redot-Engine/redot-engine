@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file movie_writer_ogv.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "movie_writer_ogv.h"
 
 #include "core/config/project_settings.h"
@@ -309,10 +315,6 @@ Error MovieWriterOGV::write_begin(const Size2i &p_movie_size, uint32_t p_fps, co
 	return OK;
 }
 
-// The order of the operations has been chosen so we're one frame behind writing to the stream so we can put the eos
-// mark in the last frame.
-// Flushing streams to the file every X frames is done to improve audio/video page interleaving thus avoiding large runs
-// of video or audio pages.
 Error MovieWriterOGV::write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data) {
 	ERR_FAIL_COND_V(f.is_null() || td == nullptr, ERR_UNCONFIGURED);
 
@@ -352,9 +354,6 @@ void MovieWriterOGV::restore_page(ogg_page *page) {
 	page->body_len = backup_page.body_len;
 }
 
-// The added complexity here is because we have to ensure pages are written in ascending timestamp order.
-// libOgg doesn't allow checking the next page granulepos without requesting the page, and once requested it can't be
-// returned, thus, we need to save it so that it doesn't get erased by the next `ogg_stream_packetin` call.
 void MovieWriterOGV::write_to_file(bool p_finish) {
 	if (audio_flag) {
 		restore_page(&audio_page);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file csharp_script.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "csharp_script.h"
 
 #include "godotsharp_dirs.h"
@@ -57,7 +63,7 @@
 #include "core/os/mutex.h"
 #include "core/os/os.h"
 #include "core/os/thread.h"
-#include "servers/text_server.h"
+#include "servers/text/text_server.h"
 
 #ifdef TOOLS_ENABLED
 #include "core/os/keyboard.h"
@@ -74,7 +80,9 @@ const Vector<String> ignored_types = {};
 
 #ifdef TOOLS_ENABLED
 static bool _create_project_solution_if_needed() {
-	CRASH_COND(CSharpLanguage::get_singleton()->get_godotsharp_editor() == nullptr);
+	if (!CSharpLanguage::get_singleton()->get_godotsharp_editor()) {
+		return false; // GodotSharpEditor doesn't exist when running without the editor.
+	}
 	return CSharpLanguage::get_singleton()->get_godotsharp_editor()->call("CreateProjectSolutionIfNeeded");
 }
 #endif
@@ -448,6 +456,9 @@ bool CSharpLanguage::handles_global_class_type(const String &p_type) const {
 
 String CSharpLanguage::get_global_class_name(const String &p_path, String *r_base_type, String *r_icon_path, bool *r_is_abstract, bool *r_is_tool) const {
 	String class_name;
+	if (!GDMonoCache::godot_api_cache_updated) {
+		return class_name;
+	}
 	GDMonoCache::managed_callbacks.ScriptManagerBridge_GetGlobalClassName(&p_path, r_base_type, r_icon_path, r_is_abstract, r_is_tool, &class_name);
 	return class_name;
 }
@@ -461,7 +472,7 @@ int CSharpLanguage::debug_get_stack_level_count() const {
 		return 1;
 	}
 
-	// TODO: StackTrace
+	/// @todo StackTrace
 	return 1;
 }
 
@@ -470,7 +481,7 @@ int CSharpLanguage::debug_get_stack_level_line(int p_level) const {
 		return _debug_parse_err_line;
 	}
 
-	// TODO: StackTrace
+	/// @todo StackTrace
 	return 1;
 }
 
@@ -479,7 +490,7 @@ String CSharpLanguage::debug_get_stack_level_function(int p_level) const {
 		return String();
 	}
 
-	// TODO: StackTrace
+	/// @todo StackTrace
 	return String();
 }
 
@@ -488,7 +499,7 @@ String CSharpLanguage::debug_get_stack_level_source(int p_level) const {
 		return _debug_parse_err_file;
 	}
 
-	// TODO: StackTrace
+	/// @todo StackTrace
 	return String();
 }
 
@@ -1025,7 +1036,7 @@ void CSharpLanguage::reload_assemblies(bool p_soft_reload) {
 	}
 
 #ifdef TOOLS_ENABLED
-	// FIXME: Hack to refresh editor in order to display new properties and signals. See if there is a better alternative.
+	/// @todo FIXME: Hack to refresh editor in order to display new properties and signals. See if there is a better alternative.
 	if (Engine::get_singleton()->is_editor_hint()) {
 		InspectorDock::get_inspector_singleton()->update_tree();
 		NodeDock::get_singleton()->update_lists();
@@ -1253,9 +1264,6 @@ void CSharpLanguage::_instance_binding_free_callback(void *, void *, void *p_bin
 }
 
 GDExtensionBool CSharpLanguage::_instance_binding_reference_callback(void *p_token, void *p_binding, GDExtensionBool p_reference) {
-	// Instance bindings callbacks can only be called if the C# language is available.
-	// Failing this assert usually means that we didn't clear the instance binding in some Object
-	// and the C# language has already been finalized.
 	DEV_ASSERT(CSharpLanguage::get_singleton() != nullptr);
 
 	CRASH_COND(!p_binding);
@@ -1440,8 +1448,6 @@ void CSharpLanguage::tie_user_managed_to_unmanaged(GCHandleIntPtr p_gchandle_int
 }
 
 void CSharpLanguage::tie_managed_to_unmanaged_with_pre_setup(GCHandleIntPtr p_gchandle_intptr, Object *p_unmanaged) {
-	// This method should not fail
-
 	CRASH_COND(!p_unmanaged);
 
 	CSharpInstance *instance = CAST_CSHARP_INSTANCE(p_unmanaged->get_script_instance());
@@ -1808,7 +1814,7 @@ void CSharpInstance::mono_object_disposed_baseref(GCHandleIntPtr p_gchandle_to_f
 			// If the native instance is still alive and Dispose() was called
 			// (instead of the finalizer), then we remove the script instance.
 			r_remove_script_instance = true;
-			// TODO: Last usage of 'is_finalizing_scripts_domain'. It should be replaced with a check to determine if the load context is being unloaded.
+			/// @todo Last usage of 'is_finalizing_scripts_domain'. It should be replaced with a check to determine if the load context is being unloaded.
 		} else if (!GDMono::get_singleton()->is_finalizing_scripts_domain()) {
 			// If the native instance is still alive and this is called from the finalizer,
 			// then it was referenced from another thread before the finalizer could
@@ -1828,7 +1834,7 @@ void CSharpInstance::connect_event_signals() {
 		for (const CSharpScript::EventSignalInfo &signal : top->event_signals) {
 			String signal_name = signal.name;
 
-			// TODO: Use pooling for ManagedCallable instances.
+			/// @todo Use pooling for ManagedCallable instances.
 			EventSignalCallable *event_signal_callable = memnew(EventSignalCallable(owner, signal_name));
 
 			Callable callable(event_signal_callable);
@@ -2226,13 +2232,6 @@ void CSharpScript::_bind_methods() {
 }
 
 void CSharpScript::reload_registered_script(Ref<CSharpScript> p_script) {
-	// IMPORTANT:
-	// This method must be called only after the CSharpScript and its associated type
-	// have been added to the script bridge map in the ScriptManagerBridge C# class.
-	// Other than that, it's the same as `CSharpScript::reload`.
-
-	// This method should not fail, only assertions allowed.
-
 	// Unlike `reload`, we print an error rather than silently returning,
 	// as we can assert this won't be called a second time until invalidated.
 	ERR_FAIL_COND(!p_script->reload_invalidated);
@@ -2254,11 +2253,10 @@ void CSharpScript::reload_registered_script(Ref<CSharpScript> p_script) {
 #endif
 }
 
-// Extract information about the script using the mono class.
 void CSharpScript::update_script_class_info(Ref<CSharpScript> p_script) {
 	TypeInfo type_info;
 
-	// TODO: Use GDExtension godot_dictionary
+	/// @todo Use GDExtension godot_dictionary
 	Array methods_array;
 	methods_array.~Array();
 	Dictionary rpc_functions_dict;
@@ -2355,9 +2353,13 @@ bool CSharpScript::can_instantiate() const {
 	bool extra_cond = true;
 #endif
 
-	// FIXME Need to think this through better.
-	// For tool scripts, this will never fire if the class is not found. That's because we
-	// don't know if it's a tool script if we can't find the class to access the attributes.
+	if (!GDMonoCache::godot_api_cache_updated) {
+		return false; // .NET failed to initialize, the load error already explains why.
+	}
+
+	/// @todo FIXME Need to think this through better.
+	/// For tool scripts, this will never fire if the class is not found. That's because we
+	/// don't know if it's a tool script if we can't find the class to access the attributes.
 	if (extra_cond && !valid) {
 		ERR_FAIL_V_MSG(false, "Cannot instantiate C# script because the associated class could not be found. Script: '" + get_path() + "'. Make sure the script exists and contains a class definition with a name that matches the filename of the script exactly (it's case-sensitive).");
 	}
@@ -2418,7 +2420,7 @@ CSharpInstance *CSharpScript::_create_instance(const Variant **p_args, int p_arg
 
 	/* STEP 3, PARTY */
 
-	//@TODO make thread safe
+	/// @todo Make thread safe
 	return instance;
 }
 
@@ -2605,11 +2607,14 @@ Error CSharpScript::reload(bool p_keep_state) {
 		return OK;
 	}
 
+	String script_path = get_path();
+
+	ERR_FAIL_COND_V_MSG(!GDMonoCache::godot_api_cache_updated, ERR_UNAVAILABLE,
+			"Cannot load C# script '" + script_path + "' because .NET failed to initialize.");
+
 	// In the case of C#, reload doesn't really do any script reloading.
 	// That's done separately via domain reloading.
 	reload_invalidated = false;
-
-	String script_path = get_path();
 
 	valid = GDMonoCache::managed_callbacks.ScriptManagerBridge_AddScriptBridge(this, &script_path);
 
@@ -2760,7 +2765,7 @@ void CSharpScript::get_script_property_list(List<PropertyInfo> *r_list) const {
 }
 
 int CSharpScript::get_member_line(const StringName &p_member) const {
-	// TODO omnisharp
+	/// @todo omnisharp
 	return -1;
 }
 
@@ -2831,7 +2836,7 @@ Ref<Resource> ResourceFormatLoaderCSharpScript::load(const String &p_path, const
 		*r_error = ERR_FILE_CANT_OPEN;
 	}
 
-	// TODO ignore anything inside bin/ and obj/ in tools builds?
+	/// @todo Ignore anything inside bin/ and obj/ in tools builds?
 
 	String real_path = p_path;
 	if (p_path.begins_with("csharp://")) {

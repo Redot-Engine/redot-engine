@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tab_bar.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "tab_bar.h"
 
 #include "scene/gui/box_container.h"

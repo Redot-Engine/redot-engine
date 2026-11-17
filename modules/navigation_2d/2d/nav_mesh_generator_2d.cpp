@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file nav_mesh_generator_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef CLIPPER2_ENABLED
 
 #include "nav_mesh_generator_2d.h"

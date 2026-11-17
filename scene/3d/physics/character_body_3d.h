@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file character_body_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/physics/kinematic_collision_3d.h"
 #include "scene/3d/physics/physics_body_3d.h"
 

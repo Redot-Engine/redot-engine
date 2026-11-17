@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file script_language.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "script_language.h"
 
 #include "core/config/project_settings.h"
@@ -37,6 +43,7 @@
 #include "core/debugger/engine_debugger.h"
 #include "core/debugger/script_debugger.h"
 #include "core/io/resource_loader.h"
+#include "core/templates/sort_array.h"
 
 ScriptLanguage *ScriptServer::_languages[MAX_LANGUAGES];
 int ScriptServer::_language_count = 0;
@@ -48,7 +55,7 @@ bool ScriptServer::scripting_enabled = true;
 bool ScriptServer::reload_scripts_on_save = false;
 ScriptEditRequestFunction ScriptServer::edit_request_func = nullptr;
 
-// These need to be the last static variables in this file, since we're exploiting the reverse-order destruction of static variables.
+/// These need to be the last static variables in this file, since we're exploiting the reverse-order destruction of static variables.
 static bool is_program_exiting = false;
 struct ProgramExitGuard {
 	~ProgramExitGuard() {
@@ -65,6 +72,11 @@ void Script::_notification(int p_what) {
 			}
 		} break;
 	}
+}
+
+StringName Script::get_qualified_class_name() const {
+	const StringName global_name = get_global_name();
+	return global_name != StringName() ? global_name : StringName(get_path());
 }
 
 Variant Script::_get_property_default_value(const StringName &p_property) {
@@ -275,6 +287,7 @@ Error ScriptServer::unregister_language(const ScriptLanguage *p_language) {
 void ScriptServer::init_languages() {
 	{ // Load global classes.
 		global_classes_clear();
+		global_structs_clear();
 #ifndef DISABLE_DEPRECATED
 		if (ProjectSettings::get_singleton()->has_setting("_global_script_classes")) {
 			Array script_classes = GLOBAL_GET("_global_script_classes");
@@ -297,6 +310,15 @@ void ScriptServer::init_languages() {
 				continue;
 			}
 			add_global_class(c["class"], c["base"], c["language"], c["path"], c["is_abstract"], c["is_tool"]);
+		}
+
+		Array script_structs = ProjectSettings::get_singleton()->get_global_struct_list();
+		for (const Variant &script_struct : script_structs) {
+			Dictionary c = script_struct;
+			if (!c.has("struct") || !c.has("language") || !c.has("path")) {
+				continue;
+			}
+			add_global_struct(c["struct"], c["language"], c["path"]);
 		}
 	}
 
@@ -345,6 +367,7 @@ void ScriptServer::finish_languages() {
 	}
 
 	global_classes_clear();
+	global_structs_clear();
 }
 
 bool ScriptServer::are_languages_initialized() {
@@ -399,10 +422,75 @@ void ScriptServer::thread_exit() {
 HashMap<StringName, ScriptServer::GlobalScriptClass> ScriptServer::global_classes;
 HashMap<StringName, Vector<StringName>> ScriptServer::inheriters_cache;
 bool ScriptServer::inheriters_cache_dirty = true;
+HashMap<StringName, ScriptServer::GlobalScriptStruct> ScriptServer::global_structs;
 
 void ScriptServer::global_classes_clear() {
 	global_classes.clear();
 	inheriters_cache.clear();
+}
+
+void ScriptServer::global_structs_clear() {
+	global_structs.clear();
+}
+
+void ScriptServer::add_global_struct(const StringName &p_struct, const StringName &p_language, const String &p_path) {
+	GlobalScriptStruct *existing = global_structs.getptr(p_struct);
+	if (existing != nullptr) {
+		existing->language = p_language;
+		existing->path = p_path;
+		return;
+	}
+	GlobalScriptStruct g;
+	g.language = p_language;
+	g.path = p_path;
+	global_structs[p_struct] = g;
+}
+
+void ScriptServer::remove_global_struct_by_path(const String &p_path) {
+	List<StringName> to_remove;
+	for (const KeyValue<StringName, GlobalScriptStruct> &kv : global_structs) {
+		if (kv.value.path == p_path) {
+			to_remove.push_back(kv.key);
+		}
+	}
+	for (const StringName &name : to_remove) {
+		global_structs.erase(name);
+	}
+}
+
+bool ScriptServer::is_global_struct(const StringName &p_struct) {
+	return global_structs.has(p_struct);
+}
+
+StringName ScriptServer::get_global_struct_language(const StringName &p_struct) {
+	const GlobalScriptStruct *g = global_structs.getptr(p_struct);
+	return g ? g->language : StringName();
+}
+
+String ScriptServer::get_global_struct_path(const StringName &p_struct) {
+	const GlobalScriptStruct *g = global_structs.getptr(p_struct);
+	return g ? g->path : String();
+}
+
+void ScriptServer::get_global_struct_list(List<StringName> *r_global_structs) {
+	for (const KeyValue<StringName, GlobalScriptStruct> &kv : global_structs) {
+		r_global_structs->push_back(kv.key);
+	}
+}
+
+void ScriptServer::save_global_structs() {
+	List<StringName> gs;
+	get_global_struct_list(&gs);
+	Array gsarr;
+	for (const StringName &E : gs) {
+		const GlobalScriptStruct &global_struct = global_structs[E];
+		Dictionary d;
+		d["struct"] = E;
+		d["language"] = global_struct.language;
+		d["path"] = global_struct.path;
+		gsarr.push_back(d);
+	}
+	ProjectSettings::get_singleton()->store_global_struct_list(gsarr);
 }
 
 void ScriptServer::add_global_class(const StringName &p_class, const StringName &p_base, const StringName &p_language, const String &p_path, bool p_is_abstract, bool p_is_tool) {
@@ -509,15 +597,18 @@ bool ScriptServer::is_global_class_tool(const String &p_class) {
 	return global_classes[p_class].is_tool;
 }
 
-void ScriptServer::get_global_class_list(List<StringName> *r_global_classes) {
-	List<StringName> classes;
-	for (const KeyValue<StringName, GlobalScriptClass> &E : global_classes) {
-		classes.push_back(E.key);
+// This function only sorts items added by this function.
+// If `r_global_classes` is not empty before calling and a global sort is needed, caller must handle that separately.
+void ScriptServer::get_global_class_list(LocalVector<StringName> &r_global_classes) {
+	if (global_classes.is_empty()) {
+		return;
 	}
-	classes.sort_custom<StringName::AlphCompare>();
-	for (const StringName &E : classes) {
-		r_global_classes->push_back(E);
+	r_global_classes.reserve(r_global_classes.size() + global_classes.size());
+	for (const KeyValue<StringName, GlobalScriptClass> &global_class : global_classes) {
+		r_global_classes.push_back(global_class.key);
 	}
+	SortArray<StringName, StringName::AlphCompare> sorter;
+	sorter.sort(&r_global_classes[r_global_classes.size() - global_classes.size()], global_classes.size());
 }
 
 void ScriptServer::save_global_classes() {
@@ -532,22 +623,25 @@ void ScriptServer::save_global_classes() {
 		class_icons[d["name"]] = d["icon"];
 	}
 
-	List<StringName> gc;
-	get_global_class_list(&gc);
+	LocalVector<StringName> gc;
+	get_global_class_list(gc);
 	Array gcarr;
-	for (const StringName &E : gc) {
-		const GlobalScriptClass &global_class = global_classes[E];
+	for (const StringName &class_name : gc) {
+		const GlobalScriptClass &global_class = global_classes[class_name];
 		Dictionary d;
-		d["class"] = E;
+		d["class"] = class_name;
 		d["language"] = global_class.language;
 		d["path"] = global_class.path;
 		d["base"] = global_class.base;
-		d["icon"] = class_icons.get(E, "");
+		d["icon"] = class_icons.get(class_name, "");
 		d["is_abstract"] = global_class.is_abstract;
 		d["is_tool"] = global_class.is_tool;
 		gcarr.push_back(d);
 	}
 	ProjectSettings::get_singleton()->store_global_class_list(gcarr);
+
+	// Keep the global struct cache in sync with the class cache.
+	save_global_structs();
 }
 
 Vector<Ref<ScriptBacktrace>> ScriptServer::capture_script_backtraces(bool p_include_variables) {
@@ -612,9 +706,6 @@ void ScriptLanguage::frame() {
 }
 
 TypedArray<int> ScriptLanguage::CodeCompletionOption::get_option_characteristics(const String &p_base) {
-	// Return characteristics of the match found by order of importance.
-	// Matches will be ranked by a lexicographical order on the vector returned by this function.
-	// The lower values indicate better matches and that they should go before in the order of appearance.
 	if (last_matches == matches) {
 		return charac;
 	}
@@ -649,7 +740,6 @@ void ScriptLanguage::CodeCompletionOption::clear_characteristics() {
 }
 
 TypedArray<int> ScriptLanguage::CodeCompletionOption::get_option_cached_characteristics() const {
-	// Only returns the cached value and warns if it was not updated since the last change of matches.
 	if (last_matches != matches) {
 		WARN_PRINT("Characteristics are not up to date.");
 	}
@@ -801,7 +891,14 @@ void PlaceHolderScriptInstance::update(const List<PropertyInfo> &p_properties, c
 		StringName n = E.name;
 		new_values.insert(n);
 
-		if (!values.has(n) || (E.type != Variant::NIL && values[n].get_type() != E.type)) {
+		bool compatible = values.has(n);
+		if (compatible && E.type != Variant::NIL) {
+			compatible = values[n].get_type() == E.type;
+		}
+		if (compatible) {
+			compatible = script->_placeholder_value_is_valid(n, values[n]);
+		}
+		if (!compatible) {
 			if (p_values.has(n)) {
 				values[n] = p_values[n];
 			}

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file scene_replication_config.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 #include "core/variant/typed_array.h"
 
@@ -47,11 +53,17 @@ public:
 		REPLICATION_MODE_ON_CHANGE,
 	};
 
+	enum ReplicationPrecision {
+		PRECISION_FULL,
+		PRECISION_HALF,
+	};
+
 private:
 	struct ReplicationProperty {
 		NodePath name;
 		bool spawn = true;
 		ReplicationMode mode = REPLICATION_MODE_ALWAYS;
+		ReplicationPrecision precision = PRECISION_FULL;
 
 		bool operator==(const ReplicationProperty &p_to) {
 			return name == p_to.name;
@@ -68,7 +80,14 @@ private:
 	List<NodePath> spawn_props;
 	List<NodePath> sync_props;
 	List<NodePath> watch_props;
+	Vector<int> spawn_precisions;
+	Vector<int> sync_precisions;
+	Vector<int> watch_precisions;
 	bool dirty = false;
+	bool reduced_precision = false;
+	bool spawn_reduced_precision = false;
+	bool sync_reduced_precision = false;
+	bool watch_reduced_precision = false;
 
 	void _update();
 
@@ -80,7 +99,7 @@ protected:
 	void _get_property_list(List<PropertyInfo> *p_list) const;
 
 public:
-	virtual void reset_state() override; // Required since we use variable amount of properties.
+	virtual void reset_state() override; ///< Required since we use variable amount of properties.
 
 	TypedArray<NodePath> get_properties() const;
 
@@ -101,11 +120,24 @@ public:
 	ReplicationMode property_get_replication_mode(const NodePath &p_path);
 	void property_set_replication_mode(const NodePath &p_path, ReplicationMode p_mode);
 
+	ReplicationPrecision property_get_precision(const NodePath &p_path);
+	void property_set_precision(const NodePath &p_path, ReplicationPrecision p_precision);
+
+	bool has_reduced_precision();
+	bool is_spawn_reduced_precision();
+	bool is_sync_reduced_precision();
+	bool is_watch_reduced_precision();
+
 	const List<NodePath> &get_spawn_properties();
 	const List<NodePath> &get_sync_properties();
 	const List<NodePath> &get_watch_properties();
+
+	const Vector<int> &get_spawn_precisions();
+	const Vector<int> &get_sync_precisions();
+	const Vector<int> &get_watch_precisions();
 
 	SceneReplicationConfig() {}
 };
 
 VARIANT_ENUM_CAST(SceneReplicationConfig::ReplicationMode);
+VARIANT_ENUM_CAST(SceneReplicationConfig::ReplicationPrecision);

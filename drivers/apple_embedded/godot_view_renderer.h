@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_view_renderer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #import <UIKit/UIKit.h>
 
 @protocol GDTViewRendererProtocol <NSObject>

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file path_2d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "scene/2d/path_2d.h"
 #include "scene/gui/box_container.h"
@@ -98,8 +104,8 @@ class Path2DEditor : public HBoxContainer {
 	Vector2 edge_point;
 	Vector2 original_mouse_pos;
 
-	// Number of control points in range of the last click.
-	// 0, 1, or 2.
+	/// Number of control points in range of the last click.
+	/// 0, 1, or 2.
 	int control_points_in_range = 0;
 
 	void _mode_selected(int p_mode);
@@ -150,7 +156,6 @@ public:
 	virtual void forward_canvas_draw_over_viewport(Control *p_overlay) override { path2d_editor->forward_canvas_draw_over_viewport(p_overlay); }
 
 	virtual String get_plugin_name() const override { return "Path2D"; }
-	bool has_main_screen() const override { return false; }
 	virtual void edit(Object *p_object) override;
 	virtual bool handles(Object *p_object) const override;
 	virtual void make_visible(bool p_visible) override;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file graph_edit.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "graph_edit.h"
 #include "graph_edit.compat.inc"
 
@@ -3181,9 +3187,9 @@ GraphEdit::GraphEdit() {
 	// Allow dezooming 8 times from the default zoom level.
 	// At low zoom levels, text is unreadable due to its small size and poor filtering,
 	// but this is still useful for previewing and navigation.
-	zoom_min = (1 / Math::pow(zoom_step, 8));
+	zoom_min = (1 / Math::pow(zoom_step, 8.f));
 	// Allow zooming 4 times from the default zoom level.
-	zoom_max = (1 * Math::pow(zoom_step, 4));
+	zoom_max = (1 * Math::pow(zoom_step, 4.f));
 
 	panner.instantiate();
 	panner->set_callbacks(callable_mp(this, &GraphEdit::_pan_callback), callable_mp(this, &GraphEdit::_zoom_callback));

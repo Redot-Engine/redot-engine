@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file error_macros.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "error_macros.h"
 
 #include "core/io/logger.h"
@@ -136,9 +142,6 @@ void _err_print_error(const char *p_function, const char *p_file, int p_line, co
 	is_printing_error = false;
 }
 
-// For printing errors when we may crash at any point, so we must flush ASAP a lot of lines
-// but we don't want to make it noisy by printing lots of file & line info (because it's already
-// been printing by a preceding _err_print_error).
 void _err_print_error_asap(const String &p_error, ErrorHandlerType p_type) {
 	const char *err_details = p_error.utf8().get_data();
 

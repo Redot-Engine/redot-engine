@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file panel.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/control.h"
 
 class Panel : public Control {

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file visible_on_screen_notifier_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/2d/node_2d.h"
 
 class Viewport;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file script_language_extension.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "script_language_extension.h"
 
 void ScriptExtension::_bind_methods() {

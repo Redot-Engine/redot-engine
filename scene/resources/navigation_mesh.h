@@ -32,9 +32,15 @@
 
 #pragma once
 
+/**
+ * @file navigation_mesh.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/os/rw_lock.h"
 #include "scene/resources/mesh.h"
-#include "servers/navigation/navigation_globals.h"
+#include "servers/navigation_3d/navigation_constants_3d.h"
 
 class NavigationMesh : public Resource {
 	GDCLASS(NavigationMesh, Resource);

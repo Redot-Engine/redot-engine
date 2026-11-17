@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file atlas_texture.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "atlas_texture.h"
 
 int AtlasTexture::get_width() const {
@@ -76,11 +82,11 @@ void AtlasTexture::set_atlas(const Ref<Texture2D> &p_atlas) {
 		return;
 	}
 	// Support recursive AtlasTextures.
-	if (Ref<AtlasTexture>(atlas).is_valid()) {
+	if (atlas.is_valid()) {
 		atlas->disconnect_changed(callable_mp((Resource *)this, &AtlasTexture::emit_changed));
 	}
 	atlas = p_atlas;
-	if (Ref<AtlasTexture>(atlas).is_valid()) {
+	if (atlas.is_valid()) {
 		atlas->connect_changed(callable_mp((Resource *)this, &AtlasTexture::emit_changed));
 	}
 

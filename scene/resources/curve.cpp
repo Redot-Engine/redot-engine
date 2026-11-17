@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file curve.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "curve.h"
 
 #include "core/math/math_funcs.h"
@@ -59,8 +65,6 @@ void Curve::set_point_count(int p_count) {
 }
 
 int Curve::_add_point(Vector2 p_position, real_t p_left_tangent, real_t p_right_tangent, TangentMode p_left_mode, TangentMode p_right_mode, bool p_mark_dirty) {
-	// Add a point and preserve order.
-
 	// Points must remain within the given value and domain ranges.
 	p_position.x = CLAMP(p_position.x, _min_domain, _max_domain);
 	p_position.y = CLAMP(p_position.y, _min_value, _max_value);
@@ -72,7 +76,7 @@ int Curve::_add_point(Vector2 p_position, real_t p_left_tangent, real_t p_right_
 		ret = 0;
 
 	} else if (_points.size() == 1) {
-		// TODO Is the `else` able to handle this block already?
+		// @todo Is the `else` able to handle this block already?
 
 		real_t diff = p_position.x - _points[0].position.x;
 
@@ -115,7 +119,7 @@ int Curve::add_point(Vector2 p_position, real_t p_left_tangent, real_t p_right_t
 	return ret;
 }
 
-// TODO: Needed to make the curve editor function properly until https://github.com/godotengine/godot/issues/76985 is fixed.
+/// @todo Needed to make the curve editor function properly until https://github.com/godotengine/godot/issues/76985 is fixed.
 int Curve::add_point_no_update(Vector2 p_position, real_t p_left_tangent, real_t p_right_tangent, TangentMode p_left_mode, TangentMode p_right_mode) {
 	int ret = _add_point(p_position, p_left_tangent, p_right_tangent, p_left_mode, p_right_mode);
 
@@ -1532,6 +1536,48 @@ Vector3 Curve3D::get_point_out(int p_index) const {
 	return points[p_index].out;
 }
 
+void Curve3D::reset_point_handles(int p_index) {
+	ERR_FAIL_UNSIGNED_INDEX((uint32_t)p_index, points.size());
+	points[p_index].in = Vector3();
+	points[p_index].out = Vector3();
+	mark_dirty();
+}
+
+void Curve3D::reset_all_points_handles() {
+	for (uint32_t i = 0; i < points.size(); i++) {
+		points[i].in = Vector3();
+		points[i].out = Vector3();
+	}
+	mark_dirty();
+}
+
+void Curve3D::smooth_all_points() {
+	const uint32_t pc = points.size();
+	if (pc < 3) {
+		return; // Nothing to interpolate with.
+	}
+	for (uint32_t i = 0; i < pc; i++) {
+		// For closed curves wrap around; for open curves clamp the neighbors.
+		uint32_t prev = i - 1;
+		uint32_t next = i + 1;
+		if (closed) {
+			prev = (i + pc - 1) % pc;
+			next = (i + 1) % pc;
+		} else {
+			prev = MAX(i, 1u) - 1;
+			next = MIN(pc - 1, next);
+		}
+		if (prev == next) {
+			continue;
+		}
+		// Catmull-Rom style mirrored handles, matching the 2D behavior.
+		const Vector3 tangent = (points[next].position - points[prev].position) * 0.25;
+		points[i].in = -tangent;
+		points[i].out = tangent;
+	}
+	mark_dirty();
+}
+
 void Curve3D::_remove_point(int p_index) {
 	ERR_FAIL_UNSIGNED_INDEX((uint32_t)p_index, points.size());
 	points.remove_at(p_index);
@@ -1938,8 +1984,6 @@ real_t Curve3D::_sample_baked_tilt(Interval p_interval) const {
 	return Math::lerp(r[idx], r[idx + 1], frac);
 }
 
-// Internal method for getting posture at a baked point. Assuming caller
-// make all safety checks.
 Basis Curve3D::_compose_posture(int p_index) const {
 	Vector3 forward = baked_forward_vector_cache[p_index];
 
@@ -2127,6 +2171,14 @@ PackedVector3Array Curve3D::get_baked_up_vectors() const {
 	}
 
 	return baked_up_vector_cache;
+}
+
+Vector<real_t> Curve3D::get_baked_dist_cache() const {
+	if (baked_cache_dirty) {
+		_bake();
+	}
+
+	return baked_dist_cache;
 }
 
 Vector3 Curve3D::get_closest_point(const Vector3 &p_to_point) const {
@@ -2478,6 +2530,11 @@ void Curve3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_point_in", "idx"), &Curve3D::get_point_in);
 	ClassDB::bind_method(D_METHOD("set_point_out", "idx", "position"), &Curve3D::set_point_out);
 	ClassDB::bind_method(D_METHOD("get_point_out", "idx"), &Curve3D::get_point_out);
+
+	ClassDB::bind_method(D_METHOD("reset_point_handles", "idx"), &Curve3D::reset_point_handles);
+	ClassDB::bind_method(D_METHOD("reset_all_points_handles"), &Curve3D::reset_all_points_handles);
+	ClassDB::bind_method(D_METHOD("smooth_all_points"), &Curve3D::smooth_all_points);
+
 	ClassDB::bind_method(D_METHOD("remove_point", "idx"), &Curve3D::remove_point);
 	ClassDB::bind_method(D_METHOD("clear_points"), &Curve3D::clear_points);
 	ClassDB::bind_method(D_METHOD("sample", "idx", "t"), &Curve3D::sample);

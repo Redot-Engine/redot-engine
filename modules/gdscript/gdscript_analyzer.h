@@ -32,11 +32,18 @@
 
 #pragma once
 
+/**
+ * @file gdscript_analyzer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_cache.h"
 #include "gdscript_parser.h"
 
 #include "core/object/object.h"
 #include "core/object/ref_counted.h"
+#include "core/templates/local_vector.h"
 
 class GDScriptAnalyzer {
 	GDScriptParser *parser = nullptr;
@@ -57,13 +64,43 @@ class GDScriptAnalyzer {
 	GDScriptParser::LambdaNode *current_lambda = nullptr;
 	List<GDScriptParser::LambdaNode *> pending_body_resolution_lambdas;
 	HashMap<const GDScriptParser::ClassNode *, Ref<GDScriptParserRef>> external_class_parser_cache;
+	HashSet<const GDScriptParser::UsesNode *> reported_cyclic_uses;
 	bool static_context = false;
 
-	// Tests for detecting invalid overloading of script members
+#ifdef TOOLS_ENABLED
+	// Traits and structs are still experimental. Emit each warning once during analysis if their usage is detected.
+	bool experimental_traits_warned = false; // @todo: remove experimental tag in 27.1-rc.1
+	bool experimental_struct_warned = false;
+#endif
+
+	struct NarrowTarget {
+		const GDScriptParser::AssignableNode *base = nullptr;
+		const GDScriptParser::AssignableNode *source = nullptr;
+
+		bool is_valid() const { return source != nullptr; }
+		bool operator==(const NarrowTarget &p_other) const { return base == p_other.base && source == p_other.source; }
+	};
+
+	LocalVector<NarrowTarget> narrowed_non_null;
+	HashSet<const GDScriptParser::AssignableNode *> member_narrow_sources;
+	HashMap<const GDScriptParser::ExpressionNode *, uint64_t> member_read_generations;
+	uint64_t member_state_generation = 0;
+	bool is_narrowed_non_null(const NarrowTarget &p_target) const;
+	bool is_member_narrow_target(const NarrowTarget &p_target) const;
+	void invalidate_narrowing(const NarrowTarget &p_target);
+	void invalidate_member_narrowing();
+	void invalidate_loop_narrowing(const GDScriptParser::Node *p_node);
+	NarrowTarget identifier_narrow_source(const GDScriptParser::ExpressionNode *p_expression);
+	void apply_non_null_narrowing(GDScriptParser::ExpressionNode *p_expression);
+	void collect_non_null_narrowing(const GDScriptParser::ExpressionNode *p_condition, bool p_when_true, LocalVector<NarrowTarget> &r_targets);
+
+	/// @name Tests for detecting invalid overloading of script members
+	/// @{
 	static _FORCE_INLINE_ bool has_member_name_conflict_in_script_class(const StringName &p_name, const GDScriptParser::ClassNode *p_current_class_node, const GDScriptParser::Node *p_member);
 	static _FORCE_INLINE_ bool has_member_name_conflict_in_native_type(const StringName &p_name, const StringName &p_native_type_string);
 	Error check_native_member_name_conflict(const StringName &p_member_name, const GDScriptParser::Node *p_member_node, const StringName &p_native_type_string);
 	Error check_class_member_name_conflict(const GDScriptParser::ClassNode *p_class_node, const StringName &p_member_name, const GDScriptParser::Node *p_member_node);
+	/// @}
 
 	void get_class_node_current_scope_classes(GDScriptParser::ClassNode *p_node, List<GDScriptParser::ClassNode *> *p_list, GDScriptParser::Node *p_source);
 
@@ -80,12 +117,20 @@ class GDScriptAnalyzer {
 	void resolve_class_interface(GDScriptParser::ClassNode *p_class, bool p_recursive);
 	void resolve_class_body(GDScriptParser::ClassNode *p_class, const GDScriptParser::Node *p_source = nullptr);
 	void resolve_class_body(GDScriptParser::ClassNode *p_class, bool p_recursive);
+	void resolve_class_uses(GDScriptParser::ClassNode *p_class, const GDScriptParser::Node *p_source = nullptr);
+	void resolve_class_uses(GDScriptParser::ClassNode *p_class, bool p_recursive);
+	// Prints a warning the first time a trait is discovered unless the warning is suppressed
+	void _warn_experimental_trait(const GDScriptParser::Node *p_source);
+	// Prints a warning the first time a struct is discovered unless the warning is suppressed.
+	void _warn_experimental_struct(const GDScriptParser::Node *p_source);
 	void resolve_function_signature(GDScriptParser::FunctionNode *p_function, const GDScriptParser::Node *p_source = nullptr, bool p_is_lambda = false);
 	void resolve_function_body(GDScriptParser::FunctionNode *p_function, bool p_is_lambda = false);
 	void resolve_node(GDScriptParser::Node *p_node, bool p_is_root = true);
 	void resolve_suite(GDScriptParser::SuiteNode *p_suite);
 	void resolve_assignable(GDScriptParser::AssignableNode *p_assignable, const char *p_kind);
 	void resolve_variable(GDScriptParser::VariableNode *p_variable, bool p_is_local);
+	void resolve_struct(GDScriptParser::StructNode *p_struct);
+	bool struct_field_from_datatype(const GDScriptParser::DataType &p_type, StructInfo::Field &r_field);
 	void resolve_constant(GDScriptParser::ConstantNode *p_constant, bool p_is_local);
 	void resolve_parameter(GDScriptParser::ParameterNode *p_parameter);
 	void resolve_if(GDScriptParser::IfNode *p_if);
@@ -97,7 +142,8 @@ class GDScriptAnalyzer {
 	void resolve_match_pattern(GDScriptParser::PatternNode *p_match_pattern, GDScriptParser::ExpressionNode *p_match_test);
 	void resolve_return(GDScriptParser::ReturnNode *p_return);
 
-	// Reduction functions.
+	/// @name Reduction functions.
+	/// @{
 	void reduce_expression(GDScriptParser::ExpressionNode *p_expression, bool p_is_root = false);
 	void reduce_array(GDScriptParser::ArrayNode *p_array);
 	void reduce_assignment(GDScriptParser::AssignmentNode *p_assignment);
@@ -117,6 +163,7 @@ class GDScriptAnalyzer {
 	void reduce_ternary_op(GDScriptParser::TernaryOpNode *p_ternary_op, bool p_is_root = false);
 	void reduce_type_test(GDScriptParser::TypeTestNode *p_type_test);
 	void reduce_unary_op(GDScriptParser::UnaryOpNode *p_unary_op);
+	/// @}
 
 	Variant make_expression_reduced_value(GDScriptParser::ExpressionNode *p_expression, bool &is_reduced);
 	Variant make_array_reduced_value(GDScriptParser::ArrayNode *p_array, bool &is_reduced);
@@ -124,7 +171,8 @@ class GDScriptAnalyzer {
 	Variant make_subscript_reduced_value(GDScriptParser::SubscriptNode *p_subscript, bool &is_reduced);
 	Variant make_call_reduced_value(GDScriptParser::CallNode *p_call, bool &is_reduced);
 
-	// Helpers.
+	/// @name Helpers
+	/// @{
 	Array make_array_from_element_datatype(const GDScriptParser::DataType &p_element_datatype, const GDScriptParser::Node *p_source_node = nullptr);
 	Dictionary make_dictionary_from_element_datatype(const GDScriptParser::DataType &p_key_element_datatype, const GDScriptParser::DataType &p_value_element_datatype, const GDScriptParser::Node *p_source_node = nullptr);
 	GDScriptParser::DataType type_from_variant(const Variant &p_value, const GDScriptParser::Node *p_source);
@@ -137,32 +185,56 @@ class GDScriptAnalyzer {
 	GDScriptParser::DataType get_operation_type(Variant::Operator p_operation, const GDScriptParser::DataType &p_a, const GDScriptParser::DataType &p_b, bool &r_valid, const GDScriptParser::Node *p_source);
 	GDScriptParser::DataType get_operation_type(Variant::Operator p_operation, const GDScriptParser::DataType &p_a, bool &r_valid, const GDScriptParser::Node *p_source);
 	void update_const_expression_builtin_type(GDScriptParser::ExpressionNode *p_expression, const GDScriptParser::DataType &p_type, const char *p_usage, bool p_is_cast = false);
+	/// When an array literal is stored (or passed as function argument) to a typed context, we then assume the array is typed.
+	/// This function determines which type is that (if any).
 	void update_array_literal_element_type(GDScriptParser::ArrayNode *p_array, const GDScriptParser::DataType &p_element_type);
+	/// When a dictionary literal is stored (or passed as function argument) to a typed context, we then assume the dictionary is typed.
+	/// This function determines which type is that (if any).
 	void update_dictionary_literal_element_type(GDScriptParser::DictionaryNode *p_dictionary, const GDScriptParser::DataType &p_key_element_type, const GDScriptParser::DataType &p_value_element_type);
 	bool is_type_compatible(const GDScriptParser::DataType &p_target, const GDScriptParser::DataType &p_source, bool p_allow_implicit_conversion = false, const GDScriptParser::Node *p_source_node = nullptr);
-	void push_error(const String &p_message, const GDScriptParser::Node *p_origin = nullptr);
+	GDScriptParser::DataType get_type_constraint_for_overlap(const GDScriptParser::DataType &p_type);
+	bool can_types_overlap(const GDScriptParser::DataType &p_left, const GDScriptParser::DataType &p_right);
+	void push_error(const String &p_message, const GDScriptParser::Node *p_origin = nullptr, const ScriptLanguage::ScriptError::RelatedError &p_related_error = {});
+	void push_dependency_error(const String &p_message, const Ref<GDScriptParserRef> &p_dependency, const GDScriptParser::Node *p_origin);
 	void mark_node_unsafe(const GDScriptParser::Node *p_node);
 	void downgrade_node_type_source(GDScriptParser::Node *p_node);
 	void mark_lambda_use_self();
 	void resolve_pending_lambda_bodies();
 	bool class_exists(const StringName &p_class) const;
 	void reduce_identifier_from_base_set_class(GDScriptParser::IdentifierNode *p_identifier, GDScriptParser::DataType p_identifier_datatype);
+	/// Delicate piece of code that intentionally doesn't use the GDScript cache or `get_depended_parser_for`.
+	/// Search dependencies for the parser that owns `p_class` and make a cache entry for it.
+	/// Required for how we store pointers to classes owned by other parser trees and need to call `resolve_class_member` and such on the same parser tree.
+	/// Since https://github.com/godotengine/godot/pull/94871 there can technically be multiple parsers for the same script in the same parser tree.
+	/// Even if unlikely, getting the wrong parser could lead to strange undefined behavior without errors.
 	Ref<GDScriptParserRef> ensure_cached_external_parser_for_class(const GDScriptParser::ClassNode *p_class, const GDScriptParser::ClassNode *p_from_class, const char *p_context, const GDScriptParser::Node *p_source);
+	/// Retains external parsers for a struct field's type, including nested structs and container elements.
+	void ensure_cached_external_parsers_for_struct_field(const GDScriptParser::DataType &p_type, const GDScriptParser::ClassNode *p_from_class, const GDScriptParser::Node *p_source);
 	Ref<GDScriptParserRef> find_cached_external_parser_for_class(const GDScriptParser::ClassNode *p_class, const Ref<GDScriptParserRef> &p_dependant_parser);
 	Ref<GDScriptParserRef> find_cached_external_parser_for_class(const GDScriptParser::ClassNode *p_class, GDScriptParser *p_dependant_parser);
 	Ref<GDScript> get_depended_shallow_script(const String &p_path, Error &r_error);
+	/// @}
 #ifdef DEBUG_ENABLED
 	void is_shadowing(GDScriptParser::IdentifierNode *p_identifier, const String &p_context, const bool p_in_local_scope);
+#endif
+
+	// Resolving Traits Helpers.
+	void override_member_function(GDScriptParser::FunctionNode *p_target_function, const GDScriptParser::FunctionNode *p_source_function, const String &p_trait_name);
+	void extend_class(GDScriptParser::ClassNode *p_class, const GDScriptParser::ClassNode *p_trait, const GDScriptParser::Node *p_trait_name_node, const String &p_trait_name);
+#ifdef TOOLS_ENABLED
+	void copy_over_member_doc_data(GDScriptParser::MemberDocData &p_target_doc_data, const GDScriptParser::MemberDocData &p_source_doc_data);
 #endif
 
 public:
 	Error resolve_inheritance();
 	Error resolve_interface();
+	Error resolve_uses();
 	Error resolve_body();
 	Error resolve_dependencies();
 	Error analyze();
 
 	Variant make_variable_default_value(GDScriptParser::VariableNode *p_variable);
+	Variant make_struct_schema_default(GDScriptParser::StructNode *p_struct);
 
 	static bool check_type_compatibility(const GDScriptParser::DataType &p_target, const GDScriptParser::DataType &p_source, bool p_allow_implicit_conversion = false, const GDScriptParser::Node *p_source_node = nullptr);
 	static GDScriptParser::DataType type_from_metatype(const GDScriptParser::DataType &p_meta_type);

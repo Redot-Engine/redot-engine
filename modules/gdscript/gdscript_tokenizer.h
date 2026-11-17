@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdscript_tokenizer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/hash_map.h"
 #include "core/templates/list.h"
 #include "core/templates/vector.h"
@@ -47,7 +53,7 @@ public:
 	};
 
 	struct Token {
-		// If this enum changes, please increment the TOKENIZER_VERSION in gdscript_tokenizer_buffer.h
+		/// If this enum changes, please increment the TOKENIZER_VERSION in gdscript_tokenizer_buffer.h
 		enum Type {
 			EMPTY,
 			// Basic
@@ -114,21 +120,25 @@ public:
 			BREAKPOINT,
 			CLASS,
 			CLASS_NAME,
-			TK_CONST, // Conflict with WinAPI.
+			TK_CONST, ///< Conflict with WinAPI.
 			ENUM,
 			EXTENDS,
 			FUNC,
-			TK_IN, // Conflict with WinAPI.
+			TK_IN, ///< Conflict with WinAPI.
 			IS,
 			NAMESPACE,
 			PRELOAD,
 			SELF,
 			SIGNAL,
 			STATIC,
+			STRUCT,
+			STRUCT_NAME,
 			SUPER,
 			TRAIT,
+			TRAIT_NAME,
+			USES,
 			VAR,
-			TK_VOID, // Conflict with WinAPI.
+			TK_VOID, ///< Conflict with WinAPI.
 			YIELD,
 			// Punctuation
 			BRACKET_OPEN,
@@ -161,7 +171,7 @@ public:
 			QUESTION_MARK,
 			// Special
 			ERROR,
-			TK_EOF, // "EOF" is reserved
+			TK_EOF, ///< "EOF" is reserved
 			TK_MAX
 		};
 
@@ -176,6 +186,7 @@ public:
 		String get_debug_name() const;
 		bool can_precede_bin_op() const;
 		bool is_identifier() const;
+		bool is_keyword() const;
 		bool is_node_name() const;
 		StringName get_identifier() const { return literal; }
 
@@ -189,8 +200,8 @@ public:
 #ifdef TOOLS_ENABLED
 	struct CommentData {
 		String comment;
-		// true: Comment starts at beginning of line or after indentation.
-		// false: Inline comment (starts after some code).
+		/// `true`: Comment starts at beginning of line or after indentation.
+		/// `false`: Inline comment (starts after some code).
 		bool new_line = false;
 		CommentData() {}
 		CommentData(const String &p_comment, bool p_new_line) {
@@ -204,7 +215,7 @@ public:
 	static String get_token_name(Token::Type p_token_type);
 
 #ifdef TOOLS_ENABLED
-	// This is a temporary solution, as Tokens are not able to store their position, only lines and columns.
+	/// @todo This is a temporary solution, as Tokens are not able to store their position, only lines and columns.
 	virtual int get_current_position() const { return 0; }
 	virtual String get_source_code() const { return ""; }
 #endif // TOOLS_ENABLED
@@ -214,8 +225,8 @@ public:
 	virtual void set_cursor_position(int p_line, int p_column) = 0;
 	virtual void set_multiline_mode(bool p_state) = 0;
 	virtual bool is_past_cursor() const = 0;
-	virtual void push_expression_indented_block() = 0; // For lambdas, or blocks inside expressions.
-	virtual void pop_expression_indented_block() = 0; // For lambdas, or blocks inside expressions.
+	virtual void push_expression_indented_block() = 0; ///< For lambdas, or blocks inside expressions.
+	virtual void pop_expression_indented_block() = 0; ///< For lambdas, or blocks inside expressions.
 	virtual bool is_text() = 0;
 
 	virtual Token scan() = 0;
@@ -231,12 +242,12 @@ class GDScriptTokenizerText : public GDScriptTokenizer {
 	int cursor_line = -1, cursor_column = -1;
 	int tab_size = 4;
 
-	// Keep track of multichar tokens.
+	/// Keep track of multichar tokens.
 	const char32_t *_start = nullptr;
 	int start_line = 0, start_column = 0;
 
 	// Info cache.
-	bool line_continuation = false; // Whether this line is a continuation of the previous, like when using '\'.
+	bool line_continuation = false; ///< Whether this line is a continuation of the previous, like when using '\'.
 	bool multiline_mode = false;
 	List<Token> error_stack;
 	bool pending_newline = false;
@@ -244,7 +255,7 @@ class GDScriptTokenizerText : public GDScriptTokenizer {
 	Token last_newline;
 	int pending_indents = 0;
 	List<int> indent_stack;
-	List<List<int>> indent_stack_stack; // For lambdas, which require manipulating the indentation point.
+	List<List<int>> indent_stack_stack; ///< For lambdas, which require manipulating the indentation point.
 	List<char32_t> paren_stack;
 	char32_t indent_char = '\0';
 	int position = 0;
@@ -304,8 +315,8 @@ public:
 	virtual void set_cursor_position(int p_line, int p_column) override;
 	virtual void set_multiline_mode(bool p_state) override;
 	virtual bool is_past_cursor() const override;
-	virtual void push_expression_indented_block() override; // For lambdas, or blocks inside expressions.
-	virtual void pop_expression_indented_block() override; // For lambdas, or blocks inside expressions.
+	virtual void push_expression_indented_block() override; ///< For lambdas, or blocks inside expressions.
+	virtual void pop_expression_indented_block() override; ///< For lambdas, or blocks inside expressions.
 	virtual bool is_text() override { return true; }
 
 #ifdef TOOLS_ENABLED

@@ -1,0 +1,5 @@
+GDTEST_ANALYZER_ERROR
+>> ERROR at line 15: Invalid cast. Cannot convert from "Node" to "RefCountedOnly".
+>> ERROR at line 16: Expression is of type "Node" so it can't be of type "RefCountedOnly".
+>> ERROR at line 19: Cannot assign a value of type Unconstrained to variable "ref_counted" with specified type RefCounted.
+>> ERROR at line 20: Cannot assign a value of type Unconstrained to variable "node" with specified type Node.

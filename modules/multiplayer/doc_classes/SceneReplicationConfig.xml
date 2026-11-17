@@ -37,6 +37,13 @@
 				Finds the index of the given [param path].
 			</description>
 		</method>
+		<method name="property_get_precision">
+			<return type="int" enum="SceneReplicationConfig.ReplicationPrecision" />
+			<param index="0" name="path" type="NodePath" />
+			<description>
+				Returns the wire precision used for the property identified by the given [param path]. See [enum ReplicationPrecision].
+			</description>
+		</method>
 		<method name="property_get_replication_mode">
 			<return type="int" enum="SceneReplicationConfig.ReplicationMode" />
 			<param index="0" name="path" type="NodePath" />
@@ -63,6 +70,14 @@
 			<param index="0" name="path" type="NodePath" />
 			<description>
 				Returns [code]true[/code] if the property identified by the given [param path] is configured to be reliably synchronized when changes are detected on process.
+			</description>
+		</method>
+		<method name="property_set_precision">
+			<return type="void" />
+			<param index="0" name="path" type="NodePath" />
+			<param index="1" name="precision" type="int" enum="SceneReplicationConfig.ReplicationPrecision" />
+			<description>
+				Sets the wire precision used for the property identified by the given [param path]. See [enum ReplicationPrecision]. Both peers must use the same configuration.
 			</description>
 		</method>
 		<method name="property_set_replication_mode">
@@ -114,6 +129,12 @@
 		</constant>
 		<constant name="REPLICATION_MODE_ON_CHANGE" value="2" enum="ReplicationMode">
 			Replicate the given property on process by sending updates using reliable transfer mode when its value changes.
+		</constant>
+		<constant name="PRECISION_FULL" value="0" enum="ReplicationPrecision">
+			Replicate the given property at full precision using the standard variant encoding. This is the default.
+		</constant>
+		<constant name="PRECISION_HALF" value="1" enum="ReplicationPrecision">
+			Replicate the given property using half-precision (16-bit) floats to save bandwidth. Applies to [float], [Vector2], [Vector3], [Vector4], [Quaternion] and [Color]; other types fall back to full precision. Reduces range and precision, so it is best suited to values that tolerate small errors (positions on modest maps, velocities, rotations, colors). Both peers must use the same configuration.
 		</constant>
 	</constants>
 </class>

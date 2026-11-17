@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file video_stream_player.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/control.h"
 #include "scene/resources/video_stream.h"
 #include "servers/audio/audio_rb_resampler.h"
@@ -42,7 +48,7 @@ class VideoStreamPlayer : public Control {
 	struct Output {
 		AudioFrame vol;
 		int bus_index = 0;
-		Viewport *viewport = nullptr; //pointer only used for reference to previous mix
+		Viewport *viewport = nullptr; ///< Pointer only used for reference to previous mix
 	};
 	Ref<VideoStreamPlayback> playback;
 	Ref<VideoStream> stream;
@@ -75,7 +81,9 @@ class VideoStreamPlayer : public Control {
 
 	StringName bus;
 
+	/// Called from audio thread
 	void _mix_audio();
+	/// Called from main thread (e.g. VideoStreamPlaybackTheora::update).
 	static int _audio_mix_callback(void *p_udata, const float *p_data, int p_frames);
 	static void _mix_audios(void *p_self);
 

@@ -32,33 +32,30 @@
 
 #pragma once
 
-/*
-Adapted to Godot from the Bullet library.
-*/
+/**
+ * @file godot_slider_joint_3d.h
+ *
+ * @brief Adapted to Godot from the Bullet library.
+ *
+ * @details Bullet Continuous Collision Detection and Physics Library
+ * @copyright Copyright (c) 2003-2006 Erwin Coumans  http://continuousphysics.com/Bullet/
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * In no event will the authors be held liable for any damages arising from the use of this software.
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it freely,
+ * subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+ * 2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+ * 3. This notice may not be removed or altered from any source distribution.
+ *
+ * Added by Roman Ponomarev (rponom@gmail.com)
+ * April 04, 2008
+ */
 
 #include "../godot_joint_3d.h"
 #include "godot_jacobian_entry_3d.h"
-
-/*
-Bullet Continuous Collision Detection and Physics Library
-Copyright (c) 2003-2006 Erwin Coumans  http://continuousphysics.com/Bullet/
-
-This software is provided 'as-is', without any express or implied warranty.
-In no event will the authors be held liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it freely,
-subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-*/
-
-/*
-Added by Roman Ponomarev (rponom@gmail.com)
-April 04, 2008
-
-*/
 
 #define SLIDER_CONSTRAINT_DEF_SOFTNESS (real_t(1.0))
 #define SLIDER_CONSTRAINT_DEF_DAMPING (real_t(1.0))
@@ -80,18 +77,18 @@ protected:
 	Transform3D m_frameInA;
 	Transform3D m_frameInB;
 
-	// linear limits
+	/// linear limits
 	real_t m_lowerLinLimit = 1.0;
 	real_t m_upperLinLimit = -1.0;
-	// angular limits
+	/// angular limits
 	real_t m_lowerAngLimit = 0.0;
 	real_t m_upperAngLimit = 0.0;
-	// softness, restitution and damping for different cases
-	// DirLin - moving inside linear limits
-	// LimLin - hitting linear limit
-	// DirAng - moving inside angular limits
-	// LimAng - hitting angular limit
-	// OrthoLin, OrthoAng - against constraint axis
+	/// softness, restitution and damping for different cases
+	/// DirLin - moving inside linear limits
+	/// LimLin - hitting linear limit
+	/// DirAng - moving inside angular limits
+	/// LimAng - hitting angular limit
+	/// OrthoLin, OrthoAng - against constraint axis
 	real_t m_softnessDirLin = SLIDER_CONSTRAINT_DEF_SOFTNESS;
 	real_t m_restitutionDirLin = SLIDER_CONSTRAINT_DEF_RESTITUTION;
 	real_t m_dampingDirLin = 0.0;
@@ -111,7 +108,7 @@ protected:
 	real_t m_restitutionOrthoAng = SLIDER_CONSTRAINT_DEF_RESTITUTION;
 	real_t m_dampingOrthoAng = SLIDER_CONSTRAINT_DEF_DAMPING;
 
-	// for interlal use
+	/// for internal use
 	bool m_solveLinLim = false;
 	bool m_solveAngLim = false;
 
@@ -222,18 +219,24 @@ public:
 	real_t getMaxAngMotorForce() { return m_maxAngMotorForce; }
 	real_t getLinearPos() { return m_linPos; }
 
-	// access for ODE solver
+	/// @name Access for ODE solver
+	/// @{
 	bool getSolveLinLimit() { return m_solveLinLim; }
 	real_t getLinDepth() { return m_depth[0]; }
 	bool getSolveAngLimit() { return m_solveAngLim; }
 	real_t getAngDepth() { return m_angDepth; }
-	// shared code used by ODE solver
+	/// @}
+	/// @name Shared code used by ODE solver
+	/// @{
 	void calculateTransforms();
 	void testLinLimits();
 	void testAngLimits();
-	// access for PE Solver
+	/// @}
+	/// @name Access for PE Solver
+	/// @{
 	Vector3 getAncorInA();
 	Vector3 getAncorInB();
+	/// @}
 
 	void set_param(PhysicsServer3D::SliderJointParam p_param, real_t p_value);
 	real_t get_param(PhysicsServer3D::SliderJointParam p_param) const;

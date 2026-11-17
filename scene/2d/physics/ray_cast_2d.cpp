@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file ray_cast_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "ray_cast_2d.h"
 
 #include "scene/2d/physics/collision_object_2d.h"

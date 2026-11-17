@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file status_indicator.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "status_indicator.h"
 
 #include "scene/gui/popup_menu.h"

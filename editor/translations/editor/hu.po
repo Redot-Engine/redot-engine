@@ -4653,3 +4653,6 @@ msgstr "Érvénytelen makró argumentum."
 
 msgid "Invalid macro argument count."
 msgstr "Érvénytelen makró argumentum mennyiség."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Túl sok szkript a külső szerkesztőben való megnyitáshoz (max. 128)."

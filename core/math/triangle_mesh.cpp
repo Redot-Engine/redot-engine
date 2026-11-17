@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file triangle_mesh.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "triangle_mesh.h"
 
 #include "core/templates/sort_array.h"
@@ -109,14 +115,14 @@ void TriangleMesh::get_indices(Vector<int> *r_triangles_indices) const {
 void TriangleMesh::create(const Vector<Vector3> &p_faces, const Vector<int32_t> &p_surface_indices) {
 	valid = false;
 
-	ERR_FAIL_COND(p_surface_indices.size() && p_surface_indices.size() != p_faces.size());
+	ERR_FAIL_COND(p_surface_indices.size() && p_surface_indices.size() != p_faces.size() / 3);
 
 	int fc = p_faces.size();
 	ERR_FAIL_COND(!fc || ((fc % 3) != 0));
 	fc /= 3;
 	triangles.resize(fc);
 
-	bvh.resize(fc * 3); //will never be larger than this (todo make better)
+	bvh.resize(fc * 3); ///< (@todo Make better) Will never be larger than this
 	BVH *bw = bvh.ptrw();
 
 	{

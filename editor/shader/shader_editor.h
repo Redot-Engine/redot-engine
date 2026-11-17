@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file shader_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/control.h"
 #include "scene/resources/shader.h"
 

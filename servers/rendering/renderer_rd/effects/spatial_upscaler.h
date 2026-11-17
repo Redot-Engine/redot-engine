@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file spatial_upscaler.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/ref_counted.h"
 
 class RenderSceneBuffersRD;

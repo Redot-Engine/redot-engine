@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file script_debugger.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "script_debugger.h"
 
 #include "core/debugger/engine_debugger.h"
@@ -94,7 +100,7 @@ void ScriptDebugger::debug(ScriptLanguage *p_lang, bool p_can_continue, bool p_i
 }
 
 void ScriptDebugger::send_error(const String &p_func, const String &p_file, int p_line, const String &p_err, const String &p_descr, bool p_editor_notify, ErrorHandlerType p_type, const Vector<StackInfo> &p_stack_info) {
-	// Store stack info, this is ugly, but allows us to separate EngineDebugger and ScriptDebugger. There might be a better way.
+	/// @todo Store stack info, this is ugly, but allows us to separate EngineDebugger and ScriptDebugger. There might be a better way.
 	error_stack_info.append_array(p_stack_info);
 	EngineDebugger::get_singleton()->send_error(p_func, p_file, p_line, p_err, p_descr, p_editor_notify, p_type);
 	error_stack_info.clear(); // Clear because this is thread local

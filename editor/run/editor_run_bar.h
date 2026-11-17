@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_run_bar.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/export/editor_export.h"
 #include "editor/run/editor_run.h"
 #include "scene/gui/margin_container.h"

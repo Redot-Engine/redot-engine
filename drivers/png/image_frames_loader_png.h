@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file image_frames_loader_png.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image_frames_loader.h"
 
 class ImageFramesLoaderPNG : public ImageFramesFormatLoader {

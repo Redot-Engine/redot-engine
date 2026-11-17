@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file groove_joint_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/2d/physics/joints/joint_2d.h"
 
 class PhysicsBody2D;

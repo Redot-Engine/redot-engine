@@ -32,7 +32,14 @@
 
 #pragma once
 
+/**
+ * @file quaternion.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/math_funcs.h"
+#include "core/math/simd.h"
 #include "core/math/vector3.h"
 #include "core/string/ustring.h"
 
@@ -70,6 +77,11 @@ struct [[nodiscard]] Quaternion {
 	real_t angle_to(const Quaternion &p_to) const;
 
 	Vector3 get_euler(EulerOrder p_order = EulerOrder::YXZ) const;
+
+	/// Euler constructor expects a vector containing the Euler angles in the format
+	/// (ax, ay, az), where ax is the angle of rotation around x axis,
+	/// and similar for other axes.
+	/// This implementation uses YXZ convention (Z is the first rotation).
 	static Quaternion from_euler(const Vector3 &p_euler);
 
 	Quaternion slerp(const Quaternion &p_to, real_t p_weight) const;
@@ -97,9 +109,19 @@ struct [[nodiscard]] Quaternion {
 #ifdef MATH_CHECKS
 		ERR_FAIL_COND_V_MSG(!is_normalized(), p_v, "The quaternion " + operator String() + " must be normalized.");
 #endif
+#ifdef GODOT_SIMD_REAL_F32X4
+		using namespace simd;
+		f32x4 u = load3(components);
+		f32x4 v = load3(&p_v.x);
+		f32x4 uv = cross3(u, v);
+		Vector3 res;
+		store3(&res.x, v + ((uv * splat4(w)) + cross3(u, uv)) * splat4(2.0f));
+		return res;
+#else
 		Vector3 u(x, y, z);
 		Vector3 uv = u.cross(p_v);
 		return p_v + ((uv * w) + u.cross(uv)) * ((real_t)2);
+#endif
 	}
 
 	_FORCE_INLINE_ Vector3 xform_inv(const Vector3 &p_v) const {

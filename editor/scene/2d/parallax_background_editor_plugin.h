@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file parallax_background_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 
 class HBoxContainer;
@@ -57,7 +63,6 @@ protected:
 
 public:
 	virtual String get_plugin_name() const override { return "ParallaxBackground"; }
-	bool has_main_screen() const override { return false; }
 	virtual void edit(Object *p_object) override;
 	virtual bool handles(Object *p_object) const override;
 	virtual void make_visible(bool p_visible) override;

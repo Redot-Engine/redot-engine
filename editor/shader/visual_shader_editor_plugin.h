@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file visual_shader_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/inspector/editor_properties.h"
 #include "editor/plugins/editor_plugin.h"
 #include "editor/plugins/editor_resource_conversion_plugin.h"
@@ -133,7 +139,7 @@ private:
 
 	Color vector_expanded_color[4];
 
-	// Visual shader specific theme for using MSDF fonts (on GraphNodes) which reduce aliasing at higher zoom levels.
+	/// Visual shader-specific theme for using MSDF fonts (on GraphNodes) which reduce aliasing at higher zoom levels.
 	Ref<Theme> vs_msdf_fonts_theme;
 
 protected:
@@ -159,6 +165,7 @@ public:
 	void connect_nodes(VisualShader::Type p_type, int p_from_node, int p_from_port, int p_to_node, int p_to_port);
 	void disconnect_nodes(VisualShader::Type p_type, int p_from_node, int p_from_port, int p_to_node, int p_to_port);
 	void show_port_preview(VisualShader::Type p_type, int p_node_id, int p_port_id, bool p_is_valid);
+	/// Only updates the linked frames of the given node, not the node itself (in case it's a frame node).
 	void update_frames(VisualShader::Type p_type, int p_node);
 	void set_node_position(VisualShader::Type p_type, int p_id, const Vector2 &p_position);
 	void refresh_node_ports(VisualShader::Type p_type, int p_node);
@@ -200,7 +207,7 @@ class VisualShaderEditor : public ShaderEditor {
 	GDCLASS(VisualShaderEditor, ShaderEditor);
 	friend class VisualShaderGraphPlugin;
 
-	Ref<ConfigFile> vs_editor_cache; // Keeps the graph offsets and zoom levels for each VisualShader that has been edited.
+	Ref<ConfigFile> vs_editor_cache; ///< Keeps the graph offsets and zoom levels for each VisualShader that has been edited.
 
 	PopupPanel *property_editor_popup = nullptr;
 	EditorProperty *property_editor = nullptr;
@@ -301,7 +308,7 @@ class VisualShaderEditor : public ShaderEditor {
 	};
 
 	int mode = MODE_FLAGS_SPATIAL_CANVASITEM;
-	VisualShader::Type current_type = VisualShader::Type::TYPE_VERTEX; // The type of the currently edited VisualShader.
+	VisualShader::Type current_type = VisualShader::Type::TYPE_VERTEX; ///< The type of the currently edited VisualShader.
 
 	enum TypeFlags {
 		TYPE_FLAGS_VERTEX = 1,
@@ -337,19 +344,19 @@ class VisualShaderEditor : public ShaderEditor {
 
 	enum NodeMenuOptions {
 		ADD,
-		SEPARATOR, // ignore
+		SEPARATOR, ///< ignore
 		CUT,
 		COPY,
 		PASTE,
-		DELETE_, // Conflict with WinAPI.
+		DELETE_, ///< Conflict with WinAPI.
 		DUPLICATE,
 		CLEAR_COPY_BUFFER,
-		SEPARATOR2, // ignore
+		SEPARATOR2, ///< ignore
 		FLOAT_CONSTANTS,
 		CONVERT_CONSTANTS_TO_PARAMETERS,
 		CONVERT_PARAMETERS_TO_CONSTANTS,
 		UNLINK_FROM_PARENT_FRAME,
-		SEPARATOR3, // ignore
+		SEPARATOR3, ///< ignore
 		SET_FRAME_TITLE,
 		ENABLE_FRAME_COLOR,
 		SET_FRAME_COLOR,
@@ -460,7 +467,7 @@ class VisualShaderEditor : public ShaderEditor {
 
 	void _toggle_files_pressed();
 
-	Vector<int> nodes_link_to_frame_buffer; // Contains the nodes that are requested to be linked to a frame. This is used to perform one Undo/Redo operation for dragging nodes.
+	Vector<int> nodes_link_to_frame_buffer; ///< Contains the nodes that are requested to be linked to a frame. This is used to perform one Undo/Redo operation for dragging nodes.
 	int frame_node_id_to_link_to = -1;
 
 	struct DragOp {
@@ -510,6 +517,7 @@ class VisualShaderEditor : public ShaderEditor {
 	int selected_float_constant = -1;
 
 	void _convert_constants_to_parameters(bool p_vice_versa);
+	/// Called from context menu.
 	void _detach_nodes_from_frame_request();
 	void _detach_nodes_from_frame(int p_type, const List<int> &p_nodes);
 	void _replace_node(VisualShader::Type p_type_id, int p_node_id, const StringName &p_from, const StringName &p_to);
@@ -593,6 +601,7 @@ class VisualShaderEditor : public ShaderEditor {
 	void _expression_focus_out(Object *p_code_edit, int p_node);
 
 	void _set_node_size(int p_type, int p_node, const Size2 &p_size);
+	/// Called once after the node was resized.
 	void _node_resized(const Vector2 &p_new_size, int p_type, int p_node);
 
 	void _preview_select_port(int p_node, int p_port);
@@ -724,7 +733,7 @@ class VisualShaderNodePortPreview : public Control {
 	int node = 0;
 	int port = 0;
 	bool is_valid = false;
-	void _shader_changed(); //must regen
+	void _shader_changed(); ///< Must regen
 protected:
 	void _notification(int p_what);
 

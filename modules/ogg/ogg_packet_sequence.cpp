@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file ogg_packet_sequence.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "ogg_packet_sequence.h"
 
 #include "core/variant/typed_array.h"
@@ -167,7 +173,7 @@ bool OggPacketSequencePlayback::next_ogg_packet(ogg_packet **p_packet) const {
 }
 
 uint32_t OggPacketSequencePlayback::seek_page_internal(int64_t granule, uint32_t after_page_inclusive, uint32_t before_page_inclusive) {
-	// FIXME: This function needs better corner case handling.
+	/// @todo FIXME: This function needs better corner case handling.
 	if (before_page_inclusive == after_page_inclusive) {
 		return before_page_inclusive;
 	}

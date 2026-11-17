@@ -33,7 +33,7 @@
 #pragma once
 
 #include "core/input/input.h"
-#include "servers/display_server.h"
+#include "servers/display/display_server.h"
 
 #define FontVariation __FontVariation
 

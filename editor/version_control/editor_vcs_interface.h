@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_vcs_interface.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/gdvirtual.gen.inc"
 #include "core/string/ustring.h"
 #include "core/variant/typed_array.h"
@@ -104,7 +110,8 @@ protected:
 	Commit _convert_commit(const Dictionary &p_commit);
 	StatusFile _convert_status_file(const Dictionary &p_status_file);
 
-	// Proxy endpoints for extensions to implement
+	/// @name Proxy endpoints for extensions to implement
+	/// @{
 	GDVIRTUAL1R_REQUIRED(bool, _initialize, String);
 	GDVIRTUAL5_REQUIRED(_set_credentials, String, String, String, String, String);
 	GDVIRTUAL0R_REQUIRED(TypedArray<Dictionary>, _get_modified_files_data);
@@ -128,6 +135,7 @@ protected:
 	GDVIRTUAL2_REQUIRED(_push, String, bool);
 	GDVIRTUAL1_REQUIRED(_fetch, String);
 	GDVIRTUAL2R_REQUIRED(TypedArray<Dictionary>, _get_line_diff, String, String);
+	/// @}
 
 public:
 	static EditorVCSInterface *get_singleton();
@@ -139,7 +147,8 @@ public:
 	};
 	static void create_vcs_metadata_files(VCSMetadata p_vcs_metadata_type, String &p_dir);
 
-	// Proxies to the editor for use
+	/// @name Proxies to the editor for use
+	/// @{
 	bool initialize(const String &p_project_path);
 	void set_credentials(const String &p_username, const String &p_password, const String &p_ssh_public_key_path, const String &p_ssh_private_key_path, const String &p_ssh_passphrase);
 	List<StatusFile> get_modified_files_data();
@@ -163,8 +172,9 @@ public:
 	void push(const String &p_remote, bool p_force);
 	void fetch(const String &p_remote);
 	List<DiffHunk> get_line_diff(const String &p_file_path, const String &p_text);
-
-	// Helper functions to create and convert Dictionary into data structures
+	/// @}
+	/// @name Helper functions to create and convert Dictionary into data structures
+	/// @{
 	Dictionary create_diff_line(int p_new_line_no, int p_old_line_no, const String &p_content, const String &p_status);
 	Dictionary create_diff_hunk(int p_old_start, int p_new_start, int p_old_lines, int p_new_lines);
 	Dictionary create_diff_file(const String &p_new_file, const String &p_old_file);
@@ -172,6 +182,7 @@ public:
 	Dictionary create_status_file(const String &p_file_path, ChangeType p_change, TreeArea p_area);
 	Dictionary add_line_diffs_into_diff_hunk(Dictionary p_diff_hunk, TypedArray<Dictionary> p_line_diffs);
 	Dictionary add_diff_hunks_into_diff_file(Dictionary p_diff_file, TypedArray<Dictionary> p_diff_hunks);
+	/// @}
 
 	void popup_error(const String &p_msg);
 };

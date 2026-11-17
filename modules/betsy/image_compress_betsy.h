@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file image_compress_betsy.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 #include "core/object/worker_thread_pool.h"
 #include "core/os/thread.h"
@@ -102,17 +108,21 @@ class BetsyCompressor : public Object {
 		RID pipeline;
 	};
 
-	// Resources shared by all compression formats.
+	/// @name Resources shared by all compression formats.
+	/// @{
 	RenderingDevice *compress_rd = nullptr;
 	RenderingContextDriver *compress_rcd = nullptr;
 	BetsyShader cached_shaders[BETSY_SHADER_MAX];
 	RID src_sampler;
+	/// @}
 
-	// Format-specific resources.
+	/// Format-specific resources.
 	RID dxt1_encoding_table_buffer;
 
 	void _init();
 	void _assign_mt_ids(WorkerThreadPool::TaskID p_pump_task_id);
+	/// Yield thread to WTP so other tasks can be done on it.
+	/// Automatically regains control as soon a task is pushed to the command queue.
 	void _thread_loop();
 	void _thread_exit();
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file light_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "light_3d.h"
 
 #include "core/config/project_settings.h"
@@ -228,9 +234,9 @@ void Light3D::owner_changed_notify() {
 	_update_visibility();
 }
 
-// Temperature expressed in Kelvins. Valid range 1000 - 15000
-// First converts to CIE 1960 then to sRGB
-// As explained in the Filament documentation: https://google.github.io/filament/Filament.md.html#lighting/directlighting/lightsparameterization
+/// Temperature expressed in Kelvins. Valid range 1000 - 15000
+/// First converts to CIE 1960 then to sRGB
+/// As explained in the Filament documentation: https://google.github.io/filament/Filament.md.html#lighting/directlighting/lightsparameterization
 Color _color_from_temperature(float p_temperature) {
 	float T2 = p_temperature * p_temperature;
 	float u = (0.860117757f + 1.54118254e-4f * p_temperature + 1.28641212e-7f * T2) /

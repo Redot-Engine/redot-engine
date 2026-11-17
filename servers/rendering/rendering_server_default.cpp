@@ -30,14 +30,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_server_default.cpp
+ *
+ * Careful, these may run in different threads than the rendering server
+ */
+
 #include "rendering_server_default.h"
 
 #include "core/os/os.h"
 #include "renderer_canvas_cull.h"
 #include "renderer_scene_cull.h"
 #include "rendering_server_globals.h"
-
-// careful, these may run in different threads than the rendering server
 
 int RenderingServerDefault::changes = 0;
 

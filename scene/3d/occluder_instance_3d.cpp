@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file occluder_instance_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "occluder_instance_3d.h"
 
 #include "core/config/project_settings.h"

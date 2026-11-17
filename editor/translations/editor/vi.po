@@ -7960,3 +7960,6 @@ msgid ""
 msgstr ""
 "Tổng kích thước của %s cho shader của thiết bị này đã vượt quá (%d %d). "
 "Shader có thể hoạt động không chính xác."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Quá nhiều tập lệnh để mở trong trình chỉnh sửa bên ngoài (tối đa 128)."

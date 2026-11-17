@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file renderer_scene_cull.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/dynamic_bvh.h"
 #include "core/math/transform_interpolator.h"
 #include "core/templates/bin_sorted_array.h"
@@ -65,12 +71,14 @@ public:
 
 	static RendererSceneCull *singleton;
 
-	/* EVENT QUEUING */
+	/// @name EVENT QUEUING
+	/// @{
 
 	void tick();
 	void pre_draw(bool p_will_draw);
-
-	/* CAMERA API */
+	/// @}
+	/// @name CAMERA API
+	/// @{
 
 	struct Camera {
 		enum Type {
@@ -118,18 +126,21 @@ public:
 	virtual void camera_set_compositor(RID p_camera, RID p_compositor);
 	virtual void camera_set_use_vertical_aspect(RID p_camera, bool p_enable);
 	virtual bool is_camera(RID p_camera) const;
-
-	/* OCCLUDER API */
+	/// @}
+	/// @name OCCLUDER API
+	/// @{
 
 	virtual RID occluder_allocate();
 	virtual void occluder_initialize(RID p_occluder);
 	virtual void occluder_set_mesh(RID p_occluder, const PackedVector3Array &p_vertices, const PackedInt32Array &p_indices);
-
-	/* VISIBILITY NOTIFIER API */
+	/// @}
+	/// @name VISIBILITY NOTIFIER API
+	/// @{
 
 	RendererSceneOcclusionCull *dummy_occlusion_culling = nullptr;
-
-	/* SCENARIO API */
+	/// @}
+	/// @name SCENARIO API
+	/// @{
 
 	struct Instance;
 
@@ -162,6 +173,36 @@ public:
 		const Plane *planes_ptr;
 		const PlaneSign *plane_signs_ptr;
 		uint32_t plane_count;
+#ifdef GODOT_SIMD_REAL_F32X4
+		// Planes in groups of 4, each group stored as nx[4] ny[4] nz[4] d[4]. Padding planes have a
+		// zero normal and an infinite distance so they can never cull.
+		Vector<float> planes_soa;
+		const float *planes_soa_ptr = nullptr;
+		uint32_t plane_group_count = 0;
+
+		void _build_soa() {
+			plane_group_count = (plane_count + 3) / 4;
+			planes_soa.resize(plane_group_count * 16);
+			float *soa = planes_soa.ptrw();
+			for (uint32_t g = 0; g < plane_group_count; g++) {
+				for (uint32_t l = 0; l < 4; l++) {
+					uint32_t i = g * 4 + l;
+					if (i < plane_count) {
+						soa[g * 16 + l] = planes_ptr[i].normal.x;
+						soa[g * 16 + 4 + l] = planes_ptr[i].normal.y;
+						soa[g * 16 + 8 + l] = planes_ptr[i].normal.z;
+						soa[g * 16 + 12 + l] = planes_ptr[i].d;
+					} else {
+						soa[g * 16 + l] = 0.0f;
+						soa[g * 16 + 4 + l] = 0.0f;
+						soa[g * 16 + 8 + l] = 0.0f;
+						soa[g * 16 + 12 + l] = INFINITY;
+					}
+				}
+			}
+			planes_soa_ptr = planes_soa.ptr();
+		}
+#endif
 
 		_ALWAYS_INLINE_ Frustum() {}
 		_ALWAYS_INLINE_ Frustum(const Frustum &p_frustum) {
@@ -171,6 +212,11 @@ public:
 			planes_ptr = planes.ptr();
 			plane_signs_ptr = plane_signs.ptr();
 			plane_count = p_frustum.plane_count;
+#ifdef GODOT_SIMD_REAL_F32X4
+			planes_soa = p_frustum.planes_soa;
+			planes_soa_ptr = planes_soa.ptr();
+			plane_group_count = p_frustum.plane_group_count;
+#endif
 		}
 		_ALWAYS_INLINE_ void operator=(const Frustum &p_frustum) {
 			planes = p_frustum.planes;
@@ -179,6 +225,11 @@ public:
 			planes_ptr = planes.ptr();
 			plane_signs_ptr = plane_signs.ptr();
 			plane_count = p_frustum.plane_count;
+#ifdef GODOT_SIMD_REAL_F32X4
+			planes_soa = p_frustum.planes_soa;
+			planes_soa_ptr = planes_soa.ptr();
+			plane_group_count = p_frustum.plane_group_count;
+#endif
 		}
 		_ALWAYS_INLINE_ Frustum(const Vector<Plane> &p_planes) {
 			planes = p_planes;
@@ -190,6 +241,9 @@ public:
 			}
 
 			plane_signs_ptr = plane_signs.ptr();
+#ifdef GODOT_SIMD_REAL_F32X4
+			_build_soa();
+#endif
 		}
 	};
 
@@ -213,6 +267,35 @@ public:
 			// This is not a full SAT check and the possibility of false positives exist,
 			// but the tradeoff vs performance is still very good.
 
+#ifdef GODOT_SIMD_REAL_F32X4
+			{
+				// Four planes per step; the corner is picked per lane like PlaneSign does
+				// (min bound for a positive normal component, max otherwise).
+				using namespace simd;
+				const f32x4 zero = zero4();
+				const f32x4 min_x = splat4(bounds[0]);
+				const f32x4 min_y = splat4(bounds[1]);
+				const f32x4 min_z = splat4(bounds[2]);
+				const f32x4 max_x = splat4(bounds[3]);
+				const f32x4 max_y = splat4(bounds[4]);
+				const f32x4 max_z = splat4(bounds[5]);
+				const float *soa = p_frustum.planes_soa_ptr;
+				for (uint32_t g = 0; g < p_frustum.plane_group_count; g++, soa += 16) {
+					f32x4 nx = load4(soa);
+					f32x4 ny = load4(soa + 4);
+					f32x4 nz = load4(soa + 8);
+					f32x4 d = load4(soa + 12);
+					f32x4 vx = select(cmp_gt(nx, zero), min_x, max_x);
+					f32x4 vy = select(cmp_gt(ny, zero), min_y, max_y);
+					f32x4 vz = select(cmp_gt(nz, zero), min_z, max_z);
+					f32x4 dist = ((nx * vx + ny * vy) + nz * vz) - d;
+					if (any_lane(cmp_ge(dist, zero))) {
+						return false;
+					}
+				}
+				return true;
+			}
+#endif
 			for (uint32_t i = 0; i < p_frustum.plane_count; i++) {
 				Vector3 min(
 						bounds[p_frustum.plane_signs_ptr[i].signs[0]],
@@ -255,8 +338,8 @@ public:
 	struct InstanceVisibilityNotifierData;
 
 	struct InstanceData {
-		// Store instance pointer as well as common instance processing information,
-		// to make processing more cache friendly.
+		/// Store instance pointer as well as common instance processing information,
+		/// to make processing more cache friendly.
 		enum Flags : uint32_t {
 			FLAG_BASE_TYPE_MASK = 0xFF,
 			FLAG_CAST_SHADOWS = (1 << 8),
@@ -271,7 +354,7 @@ public:
 			FLAG_USES_MESH_INSTANCE = (1 << 17),
 			FLAG_REFLECTION_PROBE_DIRTY = (1 << 18),
 			FLAG_IGNORE_OCCLUSION_CULLING = (1 << 19),
-			FLAG_VISIBILITY_DEPENDENCY_NEEDS_CHECK = (3 << 20), // 2 bits, overlaps with the other vis. dependency flags
+			FLAG_VISIBILITY_DEPENDENCY_NEEDS_CHECK = (3 << 20), ///< 2 bits, overlaps with the other vis. dependency flags
 			FLAG_VISIBILITY_DEPENDENCY_HIDDEN_CLOSE_RANGE = (1 << 20),
 			FLAG_VISIBILITY_DEPENDENCY_HIDDEN = (1 << 21),
 			FLAG_VISIBILITY_DEPENDENCY_FADE_CHILDREN = (1 << 22),
@@ -280,7 +363,7 @@ public:
 		};
 
 		uint32_t flags = 0;
-		uint32_t layer_mask = 0; //for fast layer-mask discard
+		uint32_t layer_mask = 0; ///< For fast layer-mask discard
 		RID base_rid;
 		union {
 			uint64_t instance_data_rid;
@@ -291,11 +374,11 @@ public:
 		int32_t parent_array_index = -1;
 		int32_t visibility_index = -1;
 
-		// Each time occlusion culling determines an instance is visible,
-		// set this to occlusion_frame plus some delay.
-		// Once the timeout is reached, allow the instance to be occlusion culled.
-		// This creates a delay for occlusion culling, which prevents flickering
-		// when jittering the raster occlusion projection.
+		/// Each time occlusion culling determines an instance is visible,
+		/// set this to occlusion_frame plus some delay.
+		/// Once the timeout is reached, allow the instance to be occlusion culled.
+		/// This creates a delay for occlusion culling, which prevents flickering
+		/// when jittering the raster occlusion projection.
 		uint64_t occlusion_timeout = 0;
 	};
 
@@ -327,8 +410,8 @@ public:
 
 	struct Scenario {
 		enum IndexerType {
-			INDEXER_GEOMETRY, //for geometry
-			INDEXER_VOLUMES, //for everything else
+			INDEXER_GEOMETRY, ///< For geometry
+			INDEXER_VOLUMES, ///< For everything else
 			INDEXER_MAX
 		};
 
@@ -382,8 +465,9 @@ public:
 	virtual RID scenario_get_environment(RID p_scenario);
 	virtual void scenario_add_viewport_visibility_mask(RID p_scenario, RID p_viewport);
 	virtual void scenario_remove_viewport_visibility_mask(RID p_scenario, RID p_viewport);
-
-	/* INSTANCING API */
+	/// @}
+	/// @name INSTANCING API
+	/// @{
 
 	struct InstancePair {
 		Instance *a = nullptr;
@@ -408,7 +492,7 @@ public:
 		RID material_override;
 		RID material_overlay;
 
-		RID mesh_instance; //only used for meshes and when skeleton/blendshapes exist
+		RID mesh_instance; ///< Only used for meshes and when skeleton/blendshapes exist
 
 		Transform3D transform;
 		bool teleported = false;
@@ -427,15 +511,15 @@ public:
 		bool mirror : 1;
 		bool receive_shadows : 1;
 		bool visible : 1;
-		bool baked_light : 1; // This flag is only to know if it actually did use baked light.
-		bool dynamic_gi : 1; // Same as above for dynamic objects.
+		bool baked_light : 1; //?< This flag is only to know if it actually did use baked light.
+		bool dynamic_gi : 1; //?< Same as above for dynamic objects.
 		bool redraw_if_visible : 1;
 
 		Instance *lightmap = nullptr;
 		Rect2 lightmap_uv_scale;
 		int lightmap_slice_index;
 		uint32_t lightmap_cull_index;
-		Vector<Color> lightmap_sh; //spherical harmonic
+		Vector<Color> lightmap_sh; ///< Spherical harmonic
 
 		AABB aabb;
 		AABB transformed_aabb;
@@ -446,7 +530,7 @@ public:
 		//
 
 		RID self;
-		//scenario stuff
+		// scenario stuff
 		DynamicBVH::ID indexer_id;
 		int32_t array_index = -1;
 		int32_t visibility_index = -1;
@@ -462,13 +546,13 @@ public:
 		Scenario *scenario = nullptr;
 		SelfList<Instance> scenario_item;
 
-		//aabb stuff
+		// aabb stuff
 		bool update_aabb;
 		bool update_dependencies;
 
 		SelfList<Instance> update_item;
 
-		AABB *custom_aabb = nullptr; // <Zylann> would using aabb directly with a bool be better?
+		AABB *custom_aabb = nullptr; ///< <Zylann> would using aabb directly with a bool be better?
 		float extra_margin;
 		ObjectID object_id;
 
@@ -476,11 +560,11 @@ public:
 		float sorting_offset = 0.0;
 		bool use_aabb_center = true;
 
-		Vector<Color> lightmap_target_sh; //target is used for incrementally changing the SH over time, this avoids pops in some corner cases and when going interior <-> exterior
+		Vector<Color> lightmap_target_sh; ///< target is used for incrementally changing the SH over time, this avoids pops in some corner cases and when going interior <-> exterior
 
 		uint64_t last_frame_pass;
 
-		uint64_t version; // changes to this, and changes to base increase version
+		uint64_t version; ///< changes to this, and changes to base increase version
 
 		InstanceBaseData *base_data = nullptr;
 
@@ -693,7 +777,7 @@ public:
 	struct InstanceLightData : public InstanceBaseData {
 		RID instance;
 		uint64_t last_version;
-		List<Instance *>::Element *D; // directional light in scenario
+		List<Instance *>::Element *D; ///< Directional light in scenario
 
 		bool uses_projector = false;
 		bool uses_softshadow = false;
@@ -707,9 +791,9 @@ public:
 		uint32_t cull_mask = 0xFFFFFFFF;
 
 	private:
-		// Instead of a single dirty flag, we maintain a count
-		// so that we can detect lights that are being made dirty
-		// each frame, and switch on tighter caster culling.
+		/// Instead of a single dirty flag, we maintain a count
+		/// so that we can detect lights that are being made dirty
+		/// each frame, and switch on tighter caster culling.
 		int32_t shadow_dirty_count;
 
 		uint32_t light_update_frame_id;
@@ -812,6 +896,7 @@ public:
 		InstanceLightmapData() {
 		}
 	};
+	/// }
 
 	mutable uint64_t pair_pass = 1;
 
@@ -820,7 +905,7 @@ public:
 		PagedAllocator<InstancePair> *pair_allocator = nullptr;
 		SelfList<InstancePair>::List pairs_found;
 		DynamicBVH *bvh = nullptr;
-		DynamicBVH *bvh2 = nullptr; //some may need to cull in two
+		DynamicBVH *bvh2 = nullptr; ///< Some may need to cull in two
 		uint32_t pair_mask;
 		uint64_t pair_pass;
 
@@ -1014,7 +1099,7 @@ public:
 
 	mutable RID_Owner<Instance, true> instance_owner{ 65536, 4194304 };
 
-	uint32_t geometry_instance_pair_mask = 0; // used in traditional forward, unnecessary on clustered
+	uint32_t geometry_instance_pair_mask = 0; ///< Used in traditional forward, unnecessary on clustered
 
 	LocalVector<Vector2> camera_jitter_array;
 	RenderingLightCuller *light_culler = nullptr;
@@ -1048,10 +1133,12 @@ public:
 	bool _update_instance_visibility_depth(Instance *p_instance);
 	void _update_instance_visibility_dependencies(Instance *p_instance) const;
 
-	// don't use these in a game!
+	/// @warning Don't use these in a game!
+	/// @{
 	virtual Vector<ObjectID> instances_cull_aabb(const AABB &p_aabb, RID p_scenario = RID()) const;
 	virtual Vector<ObjectID> instances_cull_ray(const Vector3 &p_from, const Vector3 &p_to, RID p_scenario = RID()) const;
 	virtual Vector<ObjectID> instances_cull_convex(const Vector<Plane> &p_convex, RID p_scenario = RID()) const;
+	/// @}
 
 	virtual void instance_geometry_set_flag(RID p_instance, RS::InstanceFlags p_flags, bool p_enabled);
 	virtual void instance_geometry_set_cast_shadows_setting(RID p_instance, RS::ShadowCastingSetting p_shadow_casting_setting);
@@ -1100,7 +1187,7 @@ public:
 				real_t range_begin;
 				Vector2 uv_scale;
 
-			} cascades[RendererSceneRender::MAX_DIRECTIONAL_LIGHT_CASCADES]; //max 4 cascades
+			} cascades[RendererSceneRender::MAX_DIRECTIONAL_LIGHT_CASCADES]; ///< Max 4 cascades
 			uint32_t cascade_count;
 
 		} shadows[RendererSceneRender::MAX_DIRECTIONAL_LIGHTS];
@@ -1108,9 +1195,9 @@ public:
 		uint32_t shadow_count;
 
 		struct SDFGI {
-			//have arrays here because SDFGI functions expects this, plus regions can have areas
-			AABB region_aabb[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE]; //max 3 regions per cascade
-			uint32_t region_cascade[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE]; //max 3 regions per cascade
+			// Have arrays here because SDFGI functions expects this, plus regions can have areas
+			AABB region_aabb[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE]; ///< Max 3 regions per cascade
+			uint32_t region_cascade[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE]; ///< Max 3 regions per cascade
 			uint32_t region_count = 0;
 
 			uint32_t cascade_light_index[SDFGI_MAX_CASCADES];
@@ -1168,7 +1255,8 @@ public:
 
 	//pass to scene render
 
-	/* ENVIRONMENT API */
+	/// @name ENVIRONMENT API
+	/// @{
 
 #ifdef PASSBASE
 #undef PASSBASE
@@ -1177,8 +1265,9 @@ public:
 #define PASSBASE scene_render
 
 	PASS1(voxel_gi_set_quality, RS::VoxelGIQuality)
-
-	/* SKY API */
+	/// @}
+	/// @name SKY API
+	/// @{
 
 	PASS0R(RID, sky_allocate)
 	PASS1(sky_initialize, RID)
@@ -1187,8 +1276,9 @@ public:
 	PASS2(sky_set_mode, RID, RS::SkyMode)
 	PASS2(sky_set_material, RID, RID)
 	PASS4R(Ref<Image>, sky_bake_panorama, RID, float, bool, const Size2i &)
-
-	// Compositor effect
+	/// @}
+	/// @name Compositor Effect
+	/// @{
 
 	PASS0R(RID, compositor_effect_allocate)
 	PASS1(compositor_effect_initialize, RID)
@@ -1198,8 +1288,9 @@ public:
 	PASS2(compositor_effect_set_enabled, RID, bool)
 	PASS3(compositor_effect_set_callback, RID, RS::CompositorEffectCallbackType, const Callable &)
 	PASS3(compositor_effect_set_flag, RID, RS::CompositorEffectFlags, bool)
-
-	// Compositor
+	/// @}
+	/// @name Compositor
+	/// @{
 
 	PASS0R(RID, compositor_allocate)
 	PASS1(compositor_initialize, RID)
@@ -1207,15 +1298,17 @@ public:
 	PASS1RC(bool, is_compositor, RID)
 
 	PASS2(compositor_set_compositor_effects, RID, const TypedArray<RID> &)
-
-	// Environment
+	/// @}
+	/// @name Environment
+	/// @{
 
 	PASS0R(RID, environment_allocate)
 	PASS1(environment_initialize, RID)
 
 	PASS1RC(bool, is_environment, RID)
-
-	// Background
+	/// @}
+	/// @name Background
+	/// @{
 	PASS2(environment_set_background, RID, RS::EnvironmentBG)
 	PASS2(environment_set_sky, RID, RID)
 	PASS2(environment_set_sky_custom_fov, RID, float)
@@ -1239,14 +1332,16 @@ public:
 	PASS1RC(float, environment_get_ambient_light_energy, RID)
 	PASS1RC(float, environment_get_ambient_sky_contribution, RID)
 	PASS1RC(RS::EnvironmentReflectionSource, environment_get_reflection_source, RID)
-
-	// Tonemap
+	/// @}
+	/// @name Tonemap
+	/// @{
 	PASS4(environment_set_tonemap, RID, RS::EnvironmentToneMapper, float, float)
 	PASS1RC(RS::EnvironmentToneMapper, environment_get_tone_mapper, RID)
 	PASS1RC(float, environment_get_exposure, RID)
 	PASS1RC(float, environment_get_white, RID)
-
-	// Fog
+	/// @}
+	/// @name Fog
+	/// @{
 	PASS11(environment_set_fog, RID, bool, const Color &, float, float, float, float, float, float, float, RS::EnvironmentFogMode)
 
 	PASS1RC(bool, environment_get_fog_enabled, RID)
@@ -1262,14 +1357,16 @@ public:
 
 	PASS2(environment_set_volumetric_fog_volume_size, int, int)
 	PASS1(environment_set_volumetric_fog_filter_active, bool)
-
-	// Depth Fog
+	/// @}
+	/// @name Depth Fog
+	/// @{
 	PASS4(environment_set_fog_depth, RID, float, float, float)
 	PASS1RC(float, environment_get_fog_depth_curve, RID)
 	PASS1RC(float, environment_get_fog_depth_begin, RID)
 	PASS1RC(float, environment_get_fog_depth_end, RID)
-
-	// Volumentric Fog
+	/// @}
+	/// @name Volumentric Fog
+	/// @{
 	PASS14(environment_set_volumetric_fog, RID, bool, float, const Color &, const Color &, float, float, float, float, float, bool, float, float, float)
 
 	PASS1RC(bool, environment_get_volumetric_fog_enabled, RID)
@@ -1285,8 +1382,9 @@ public:
 	PASS1RC(bool, environment_get_volumetric_fog_temporal_reprojection, RID)
 	PASS1RC(float, environment_get_volumetric_fog_temporal_reprojection_amount, RID)
 	PASS1RC(float, environment_get_volumetric_fog_ambient_inject, RID)
-
-	// Glow
+	/// @}
+	/// @name Glow
+	/// @{
 	PASS13(environment_set_glow, RID, bool, Vector<float>, float, float, float, float, RS::EnvironmentGlowBlendMode, float, float, float, float, RID)
 
 	PASS1RC(bool, environment_get_glow_enabled, RID)
@@ -1303,8 +1401,9 @@ public:
 	PASS1RC(RID, environment_get_glow_map, RID)
 
 	PASS1(environment_glow_set_use_bicubic_upscale, bool)
-
-	// SSR
+	/// @}
+	/// @name SSR
+	/// @{
 	PASS6(environment_set_ssr, RID, bool, int, float, float, float)
 
 	PASS1RC(bool, environment_get_ssr_enabled, RID)
@@ -1314,8 +1413,9 @@ public:
 	PASS1RC(float, environment_get_ssr_depth_tolerance, RID)
 
 	PASS1(environment_set_ssr_roughness_quality, RS::EnvironmentSSRRoughnessQuality)
-
-	// SSAO
+	/// @}
+	/// @name SSAO
+	/// @{
 	PASS10(environment_set_ssao, RID, bool, float, float, float, float, float, float, float, float)
 
 	PASS1RC(bool, environment_get_ssao_enabled, RID)
@@ -1329,8 +1429,9 @@ public:
 	PASS1RC(float, environment_get_ssao_ao_channel_affect, RID)
 
 	PASS6(environment_set_ssao_quality, RS::EnvironmentSSAOQuality, bool, float, int, float, float)
-
-	// SSIL
+	/// @}
+	/// @name SSIL
+	/// @{
 	PASS6(environment_set_ssil, RID, bool, float, float, float, float)
 
 	PASS1RC(bool, environment_get_ssil_enabled, RID)
@@ -1340,8 +1441,9 @@ public:
 	PASS1RC(float, environment_get_ssil_normal_rejection, RID)
 
 	PASS6(environment_set_ssil_quality, RS::EnvironmentSSILQuality, bool, float, int, float, float)
-
-	// SDFGI
+	/// @}
+	/// @name SDFGI
+	/// @{
 
 	PASS11(environment_set_sdfgi, RID, bool, int, float, RS::EnvironmentSDFGIYScale, bool, float, bool, float, float, float)
 
@@ -1359,8 +1461,9 @@ public:
 	PASS1(environment_set_sdfgi_ray_count, RS::EnvironmentSDFGIRayCount)
 	PASS1(environment_set_sdfgi_frames_to_converge, RS::EnvironmentSDFGIFramesToConverge)
 	PASS1(environment_set_sdfgi_frames_to_update_light, RS::EnvironmentSDFGIFramesToUpdateLight)
-
-	// Adjustment
+	/// @}
+	/// @name Adjustment
+	/// @{
 	PASS7(environment_set_adjustment, RID, bool, float, float, float, bool, RID)
 
 	PASS1RC(bool, environment_get_adjustments_enabled, RID)
@@ -1380,13 +1483,15 @@ public:
 	PASS1(directional_soft_shadow_filter_set_quality, RS::ShadowQuality)
 
 	PASS2(sdfgi_set_debug_probe_select, const Vector3 &, const Vector3 &)
-
-	/* Render Buffers */
+	/// @}
+	/// @name Render Buffers
+	/// @{
 
 	PASS0R(Ref<RenderSceneBuffers>, render_buffers_create)
 	PASS1(gi_set_use_half_resolution, bool)
-
-	/* Misc */
+	/// @}
+	/// @name Misc
+	/// @{
 	PASS1(set_debug_draw_mode, RS::ViewportDebugDraw)
 
 	PASS1(decals_set_filter, RS::DecalFilter)
@@ -1400,8 +1505,9 @@ public:
 	void set_scene_render(RendererSceneRender *p_scene_render);
 
 	virtual void update_visibility_notifiers();
-
-	/* INTERPOLATION */
+	/// @}
+	/// @name INTERPOLATION
+	/// @{
 
 	void update_interpolation_tick(bool p_process = true);
 	void update_interpolation_frame(bool p_process = true);
@@ -1410,6 +1516,7 @@ public:
 	struct InterpolationData {
 		bool interpolation_enabled = false;
 	} _interpolation_data;
+	/// @}
 
 	RendererSceneCull();
 	virtual ~RendererSceneCull();

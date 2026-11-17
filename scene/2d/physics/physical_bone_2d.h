@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file physical_bone_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/2d/physics/rigid_body_2d.h"
 #include "scene/2d/skeleton_2d.h"
 

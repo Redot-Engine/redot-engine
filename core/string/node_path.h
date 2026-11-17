@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file node_path.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/string_name.h"
 #include "core/string/ustring.h"
 
@@ -98,6 +104,6 @@ public:
 	~NodePath();
 };
 
-// Zero-constructing NodePath initializes data to nullptr (and thus empty).
+/// Zero-constructing NodePath initializes data to nullptr (and thus empty).
 template <>
 struct is_zero_constructible<NodePath> : std::true_type {};

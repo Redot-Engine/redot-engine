@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file ip_address.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "ip_address.h"
 /*
 IPAddress::operator Variant() const {

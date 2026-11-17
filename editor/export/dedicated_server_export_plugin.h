@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file dedicated_server_export_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/export/editor_export_plugin.h"
 
 class DedicatedServerExportPlugin : public EditorExportPlugin {

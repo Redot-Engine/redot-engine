@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file dynamic_bvh.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "dynamic_bvh.h"
 
 void DynamicBVH::_delete_node(Node *p_node) {
@@ -139,9 +145,6 @@ void DynamicBVH::_fetch_leaves(Node *p_root, LocalVector<Node *> &r_leaves, int 
 	}
 }
 
-// Partitions leaves such that leaves[0, n) are on the
-// left of axis, and leaves[n, count) are on the right
-// of axis. returns N.
 int DynamicBVH::_split(Node **leaves, int p_count, const Vector3 &p_org, const Vector3 &p_axis) {
 	int begin = 0;
 	int end = p_count;

@@ -32,16 +32,23 @@
 
 #pragma once
 
+/**
+ * @file nav_mesh_queries_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../nav_utils_3d.h"
 
 #include "core/templates/a_hash_map.h"
 
-#include "servers/navigation/navigation_globals.h"
-#include "servers/navigation/navigation_path_query_parameters_3d.h"
-#include "servers/navigation/navigation_path_query_result_3d.h"
-#include "servers/navigation/navigation_utilities.h"
+#include "servers/nav_heap.h"
+#include "servers/navigation_3d/navigation_constants_3d.h"
+#include "servers/navigation_3d/navigation_path_query_parameters_3d.h"
+#include "servers/navigation_3d/navigation_path_query_result_3d.h"
 
-using namespace NavigationUtilities;
+using namespace NavigationDefaults3D;
+using namespace NavigationEnums3D;
 
 class NavMap3D;
 struct NavMapIteration3D;
@@ -65,7 +72,8 @@ public:
 			CALLBACK_FAILED,
 		};
 
-		// Parameters.
+		/// @name Parameters
+		/// @{
 		Vector3 start_position;
 		Vector3 target_position;
 		uint32_t navigation_layers;
@@ -74,6 +82,7 @@ public:
 		PathPostProcessing path_postprocessing = PathPostProcessing::PATH_POSTPROCESSING_CORRIDORFUNNEL;
 		bool simplify_path = false;
 		real_t simplify_epsilon = 0.0;
+		/// @}
 
 		bool exclude_regions = false;
 		bool include_regions = false;
@@ -85,24 +94,28 @@ public:
 		int path_search_max_polygons = NavigationDefaults3D::path_search_max_polygons;
 		float path_search_max_distance = 0.0;
 
-		// Path building.
+		/// @name Path Building
+		/// @{
 		Vector3 begin_position;
 		Vector3 end_position;
 		const Nav3D::Polygon *begin_polygon = nullptr;
 		const Nav3D::Polygon *end_polygon = nullptr;
 		uint32_t least_cost_id = 0;
-
-		// Map.
+		/// @}
+		/// @name Map
+		/// @{
 		Vector3 map_up;
 		NavMap3D *map = nullptr;
 		PathQuerySlot *path_query_slot = nullptr;
-
-		// Path points.
+		/// @}
+		/// @name Path Points
+		/// @{
 		LocalVector<Vector3> path_points;
 		LocalVector<int32_t> path_meta_point_types;
 		LocalVector<RID> path_meta_point_rids;
 		LocalVector<int64_t> path_meta_point_owners;
 		float path_length = 0.0;
+		/// @}
 
 		Ref<NavigationPathQueryParameters3D> query_parameters;
 		Ref<NavigationPathQueryResult3D> query_result;

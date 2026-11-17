@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file a_star_grid_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "a_star_grid_2d.h"
 #include "a_star_grid_2d.compat.inc"
 
@@ -555,7 +561,7 @@ bool AStarGrid2D::_solve(Point *p_begin_point, Point *p_end_point, bool p_allow_
 			real_t weight_scale = 1.0;
 
 			if (jumping_enabled) {
-				// TODO: Make it works with weight_scale.
+				/// @todo Make it work with weight_scale.
 				e = _jump(p, e);
 				if (!e || e->closed_pass == pass) {
 					continue;

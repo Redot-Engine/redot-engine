@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file SDL_build_config_private.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #define SDL_build_config_h_
 
 #include <SDL3/SDL_platform_defines.h>

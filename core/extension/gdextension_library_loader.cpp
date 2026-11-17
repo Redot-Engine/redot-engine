@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdextension_library_loader.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdextension_library_loader.h"
 
 #include "core/config/project_settings.h"

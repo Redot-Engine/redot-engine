@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tween.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "tween.h"
 
 #include "scene/animation/easing_equations.h"

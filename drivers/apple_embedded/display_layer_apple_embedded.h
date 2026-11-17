@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file display_layer_apple_embedded.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #import <QuartzCore/CAMetalLayer.h>
 
 @protocol GDTDisplayLayer <NSObject>

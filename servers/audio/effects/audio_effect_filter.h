@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file audio_effect_filter.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/audio/audio_effect.h"
 #include "servers/audio/audio_filter_sw.h"
 

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file local_vector.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 #include "core/os/memory.h"
 #include "core/string/print_string.h"
@@ -41,8 +47,8 @@
 #include <initializer_list>
 #include <type_traits>
 
-// If tight, it grows strictly as much as needed.
-// Otherwise, it grows exponentially (the default and what you want in most cases).
+/// If tight, it grows strictly as much as needed.
+/// Otherwise, it grows exponentially (the default and what you want in most cases).
 template <typename T, typename U = uint32_t, bool force_trivial = false, bool tight = false>
 class LocalVector {
 	static_assert(!force_trivial, "force_trivial is no longer supported. Use resize_uninitialized instead.");
@@ -80,7 +86,7 @@ public:
 	_FORCE_INLINE_ Span<T> span() const { return Span(data, count); }
 	_FORCE_INLINE_ operator Span<T>() const { return span(); }
 
-	// Must take a copy instead of a reference (see GH-31736).
+	/// Must take a copy instead of a reference (see GH-31736).
 	_FORCE_INLINE_ void push_back(T p_elem) {
 		if (unlikely(count == capacity)) {
 			reserve(count + 1);
@@ -412,6 +418,6 @@ public:
 template <typename T, typename U = uint32_t>
 using TightLocalVector = LocalVector<T, U, false, true>;
 
-// Zero-constructing LocalVector initializes count, capacity and data to 0 and thus empty.
+/// Zero-constructing LocalVector initializes count, capacity and data to 0 and thus empty.
 template <typename T, typename U, bool force_trivial, bool tight>
 struct is_zero_constructible<LocalVector<T, U, force_trivial, tight>> : std::true_type {};

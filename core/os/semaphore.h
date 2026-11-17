@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file semaphore.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/typedefs.h"
 
 #ifdef THREADS_ENABLED
@@ -55,7 +61,7 @@ class Semaphore {
 private:
 	mutable THREADING_NAMESPACE::mutex mutex;
 	mutable THREADING_NAMESPACE::condition_variable condition;
-	mutable uint32_t count = 0; // Initialized as locked.
+	mutable uint32_t count = 0; ///< Initialized as locked.
 #ifdef DEBUG_ENABLED
 	mutable uint32_t awaiters = 0;
 #endif

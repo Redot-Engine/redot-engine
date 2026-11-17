@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file theme_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "editor/scene/gui/theme_editor_preview.h"
 #include "scene/gui/dialogs.h"
@@ -325,7 +331,7 @@ public:
 	ThemeTypeDialog();
 };
 
-// Custom `Label` needed to use `EditorHelpBit` to display theme item documentation.
+/// Custom `Label` needed to use `EditorHelpBit` to display theme item documentation.
 class ThemeItemLabel : public Label {
 	virtual Control *make_custom_tooltip(const String &p_text) const;
 };
@@ -490,7 +496,6 @@ class ThemeEditorPlugin : public EditorPlugin {
 
 public:
 	virtual String get_plugin_name() const override { return "Theme"; }
-	bool has_main_screen() const override { return false; }
 	virtual void edit(Object *p_object) override;
 	virtual bool handles(Object *p_object) const override;
 	virtual void make_visible(bool p_visible) override;

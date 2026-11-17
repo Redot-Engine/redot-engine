@@ -1,0 +1,13 @@
+GDTEST_OK
+~~ WARNING at line 18: (UNSAFE_NULLABLE_ACCESS) The value of type "float?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 24: (UNSAFE_NULLABLE_ACCESS) The value of type "float?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 30: (UNSAFE_NULLABLE_ACCESS) The value of type "float?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 35: (UNSAFE_NULLABLE_ACCESS) The value of type "float?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 40: (UNSAFE_NULLABLE_ACCESS) The value of type "float?" may be null; using it without a null check may fail at runtime.
+2.0
+3.0
+2.0
+2.0
+0.0
+2.0
+5.0

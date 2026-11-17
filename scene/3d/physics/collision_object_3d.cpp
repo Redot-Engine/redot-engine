@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file collision_object_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "collision_object_3d.h"
 
 #include "scene/resources/3d/shape_3d.h"

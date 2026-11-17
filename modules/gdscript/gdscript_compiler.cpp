@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_compiler.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_compiler.h"
 
 #include "gdscript.h"
@@ -39,6 +45,8 @@
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
+#include "core/variant/struct.h"
+#include "core/variant/struct_info.h"
 
 #include "scene/scene_string_names.h"
 
@@ -95,6 +103,7 @@ GDScriptDataType GDScriptCompiler::_gdtype_from_datatype(const GDScriptParser::D
 
 	GDScriptDataType result;
 	result.has_type = true;
+	result.is_nullable = p_datatype.is_nullable;
 
 	switch (p_datatype.kind) {
 		case GDScriptParser::DataType::VARIANT: {
@@ -141,6 +150,12 @@ GDScriptDataType GDScriptCompiler::_gdtype_from_datatype(const GDScriptParser::D
 			result.script_type = result.script_type_ref.ptr();
 			result.native_type = p_datatype.native_type;
 		} break;
+		case GDScriptParser::DataType::TRAIT: {
+			result.kind = GDScriptDataType::GDTRAIT;
+			result.trait_type = p_datatype.class_type->fqcn;
+			result.builtin_type = Variant::OBJECT;
+			result.native_type = result.trait_type;
+		} break;
 		case GDScriptParser::DataType::CLASS: {
 			if (p_handle_metatype && p_datatype.is_meta_type) {
 				result.kind = GDScriptDataType::NATIVE;
@@ -175,8 +190,8 @@ GDScriptDataType GDScriptCompiler::_gdtype_from_datatype(const GDScriptParser::D
 				_set_error(vformat(R"(Could not find class "%s" in "%s".)", p_datatype.class_type->fqcn, p_datatype.script_path), nullptr);
 				return GDScriptDataType();
 			} else {
-				// Only hold a strong reference if the owner of the element qualified with this type is not local, to avoid cyclic references (leaks).
-				// TODO: Might lead to use after free if script_type is a subclass and is used after its parent is freed.
+				/// Only hold a strong reference if the owner of the element qualified with this type is not local, to avoid cyclic references (leaks).
+				/// @todo Might lead to use after free if script_type is a subclass and is used after its parent is freed.
 				if (!is_local_class) {
 					result.script_type_ref = script;
 				}
@@ -325,7 +340,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 								const GDScriptParser::ClassNode::Member &member = base_class->get_member(identifier);
 								if (member.type == GDScriptParser::ClassNode::Member::FUNCTION || member.type == GDScriptParser::ClassNode::Member::SIGNAL) {
 									// Get like it was a property.
-									GDScriptCodeGenerator::Address temp = codegen.add_temporary(); // TODO: Get type here.
+									GDScriptCodeGenerator::Address temp = codegen.add_temporary(); /// @todo Get type here.
 
 									GDScriptCodeGenerator::Address base(GDScriptCodeGenerator::Address::SELF);
 									if (member.type == GDScriptParser::ClassNode::Member::FUNCTION && member.function->is_static) {
@@ -351,7 +366,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 
 						if (nc && (identifier == CoreStringName(free_) || ClassDB::has_signal(nc->get_name(), identifier) || ClassDB::has_method(nc->get_name(), identifier))) {
 							// Get like it was a property.
-							GDScriptCodeGenerator::Address temp = codegen.add_temporary(); // TODO: Get type here.
+							GDScriptCodeGenerator::Address temp = codegen.add_temporary(); /// @todo Get type here.
 							GDScriptCodeGenerator::Address self(GDScriptCodeGenerator::Address::SELF);
 
 							gen->write_get_named(temp, identifier, self);
@@ -360,6 +375,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 					}
 				} break;
 				case GDScriptParser::IdentifierNode::MEMBER_CONSTANT:
+				case GDScriptParser::IdentifierNode::MEMBER_TRAIT:
 				case GDScriptParser::IdentifierNode::MEMBER_CLASS: {
 					// Try class constants.
 					GDScript *owner = codegen.script;
@@ -369,7 +385,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 
 						while (scr) {
 							if (scr->constants.has(identifier)) {
-								return codegen.add_constant(scr->constants[identifier]); // TODO: Get type here.
+								return codegen.add_constant(scr->constants[identifier]); /// @todo Get type here.
 							}
 							if (scr->native.is_valid()) {
 								nc = scr->native.ptr();
@@ -471,7 +487,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 
 #ifdef TOOLS_ENABLED
 					if (GDScriptLanguage::get_singleton()->get_named_globals_map().has(identifier)) {
-						GDScriptCodeGenerator::Address global = codegen.add_temporary(); // TODO: Get type.
+						GDScriptCodeGenerator::Address global = codegen.add_temporary(); /// @todo Get type.
 						gen->write_store_named_global(global, identifier);
 						return global;
 					}
@@ -622,7 +638,29 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 				arguments.push_back(arg);
 			}
 
-			if (!call->is_super && call->callee->type == GDScriptParser::Node::IDENTIFIER && GDScriptParser::get_builtin_type(call->function_name) < Variant::VARIANT_MAX) {
+			const GDScriptParser::StructNode *struct_construct = nullptr;
+			if (!call->is_super && call->function_name == SNAME("new") && call->callee->type == GDScriptParser::Node::SUBSCRIPT) {
+				const GDScriptParser::SubscriptNode *sub = static_cast<const GDScriptParser::SubscriptNode *>(call->callee);
+				const GDScriptParser::DataType base_dt = sub->base->get_datatype();
+				if (base_dt.is_meta_type && base_dt.kind == GDScriptParser::DataType::BUILTIN && base_dt.builtin_type == Variant::STRUCT && base_dt.struct_type != nullptr) {
+					if (!base_dt.struct_type->struct_info.is_valid()) {
+						_set_error("Compiler bug (please report): struct schema was not resolved for constructor.", call);
+						r_error = ERR_COMPILATION_FAILED;
+						return GDScriptCodeGenerator::Address();
+					}
+					struct_construct = base_dt.struct_type;
+				}
+			}
+
+			if (struct_construct != nullptr) {
+				if (result.mode != GDScriptCodeGenerator::Address::NIL) {
+					GDScriptCodeGenerator::Address template_addr = codegen.add_constant(Variant(Struct(struct_construct->struct_info)));
+					gen->write_construct_struct(result, template_addr);
+					for (int i = 0; i < arguments.size(); i++) {
+						gen->write_set(result, codegen.add_constant(i), arguments[i]);
+					}
+				}
+			} else if (!call->is_super && call->callee->type == GDScriptParser::Node::IDENTIFIER && GDScriptParser::get_builtin_type(call->function_name) < Variant::VARIANT_MAX) {
 				gen->write_construct(result, GDScriptParser::get_builtin_type(call->function_name), arguments);
 			} else if (!call->is_super && call->callee->type == GDScriptParser::Node::IDENTIFIER && Variant::has_utility_function(call->function_name)) {
 				// Variant utility function.
@@ -636,7 +674,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 
 				if (call->is_super) {
 					// Super call.
-					gen->write_super_call(result, call->function_name, arguments);
+					gen->write_super_call(result, call->function_name, arguments, call->is_trait_super);
 				} else {
 					if (callee->type == GDScriptParser::Node::IDENTIFIER) {
 						// Self function call.
@@ -694,13 +732,16 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 								}
 								if (is_awaited) {
 									gen->write_call_async(result, base, call->function_name, arguments);
-								} else if (base.type.has_type && base.type.kind != GDScriptDataType::BUILTIN) {
-									// Native method, use faster path.
+								} else if (base.type.has_type &&
+										(base.type.kind == GDScriptDataType::NATIVE || base.type.kind == GDScriptDataType::SCRIPT || base.type.kind == GDScriptDataType::GDSCRIPT)) {
+									// Native method, use faster path when the receiver has a concrete native base type.
 									StringName class_name;
 									if (base.type.kind == GDScriptDataType::NATIVE) {
 										class_name = base.type.native_type;
-									} else {
-										class_name = base.type.native_type == StringName() ? base.type.script_type->get_instance_base_type() : base.type.native_type;
+									} else if (base.type.native_type != StringName()) {
+										class_name = base.type.native_type;
+									} else if (base.type.script_type != nullptr) {
+										class_name = base.type.script_type->get_instance_base_type();
 									}
 									if (ClassDB::class_exists(class_name) && ClassDB::has_method(class_name, call->function_name)) {
 										MethodBind *method = ClassDB::get_method(class_name, call->function_name);
@@ -714,7 +755,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 									} else {
 										gen->write_call(result, base, call->function_name, arguments);
 									}
-								} else if (base.type.has_type && base.type.kind == GDScriptDataType::BUILTIN) {
+								} else if (base.type.has_type && !base.type.is_nullable && base.type.kind == GDScriptDataType::BUILTIN) {
 									gen->write_call_builtin_type(result, base, base.type.builtin_type, call->function_name, arguments);
 								} else {
 									gen->write_call(result, base, call->function_name, arguments);
@@ -1882,7 +1923,6 @@ List<GDScriptCodeGenerator::Address> GDScriptCompiler::_add_block_locals(CodeGen
 	return addresses;
 }
 
-// Avoid keeping in the stack long-lived references to objects, which may prevent `RefCounted` objects from being freed.
 void GDScriptCompiler::_clear_block_locals(CodeGen &codegen, const List<GDScriptCodeGenerator::Address> &p_locals) {
 	for (const GDScriptCodeGenerator::Address &local : p_locals) {
 		if (local.type.can_contain_object()) {
@@ -1921,8 +1961,8 @@ Error GDScriptCompiler::_parse_block(CodeGen &codegen, const GDScriptParser::Sui
 					return err;
 				}
 
-				// Assign to local.
-				// TODO: This can be improved by passing the target to parse_expression().
+				/// Assign to local.
+				/// @todo This can be improved by passing the target to parse_expression().
 				gen->write_assign(value, value_expr);
 
 				if (value_expr.mode == GDScriptCodeGenerator::Address::TEMPORARY) {
@@ -2110,7 +2150,7 @@ Error GDScriptCompiler::_parse_block(CodeGen &codegen, const GDScriptParser::Sui
 				// Loop variables must be cleared even when `break`/`continue` is used.
 				List<GDScriptCodeGenerator::Address> loop_locals = _add_block_locals(codegen, for_n->loop);
 
-				//_clear_block_locals(codegen, loop_locals); // Inside loop, before block - for `continue`. // TODO
+				//_clear_block_locals(codegen, loop_locals); // Inside loop, before block - for `continue`. /// @todo
 
 				err = _parse_block(codegen, for_n->loop, false); // Don't add locals again.
 				if (err) {
@@ -2144,7 +2184,7 @@ Error GDScriptCompiler::_parse_block(CodeGen &codegen, const GDScriptParser::Sui
 				// Loop variables must be cleared even when `break`/`continue` is used.
 				List<GDScriptCodeGenerator::Address> loop_locals = _add_block_locals(codegen, while_n->loop);
 
-				//_clear_block_locals(codegen, loop_locals); // Inside loop, before block - for `continue`. // TODO
+				//_clear_block_locals(codegen, loop_locals); // Inside loop, before block - for `continue`. /// @todo
 
 				err = _parse_block(codegen, while_n->loop, false); // Don't add locals again.
 				if (err) {
@@ -2291,7 +2331,7 @@ Error GDScriptCompiler::_parse_block(CodeGen &codegen, const GDScriptParser::Sui
 	return OK;
 }
 
-GDScriptFunction *GDScriptCompiler::_parse_function(Error &r_error, GDScript *p_script, const GDScriptParser::ClassNode *p_class, const GDScriptParser::FunctionNode *p_func, bool p_for_ready, bool p_for_lambda) {
+GDScriptFunction *GDScriptCompiler::_parse_function(Error &r_error, GDScript *p_script, const GDScriptParser::ClassNode *p_class, const GDScriptParser::FunctionNode *p_func, bool p_for_ready, bool p_for_lambda, bool p_for_trait_super) {
 	r_error = OK;
 	CodeGen codegen;
 	codegen.generator = memnew(GDScriptByteCodeGenerator);
@@ -2385,7 +2425,7 @@ GDScriptFunction *GDScriptCompiler::_parse_function(Error &r_error, GDScript *p_
 			}
 
 			GDScriptDataType field_type = _gdtype_from_datatype(field->get_datatype(), codegen.script);
-			if (field_type.has_type) {
+			if (field_type.has_type && !field_type.is_nullable) {
 				codegen.generator->write_newline(field->start_line);
 
 				GDScriptCodeGenerator::Address dst_address(GDScriptCodeGenerator::Address::MEMBER, codegen.script->member_indices[field->identifier->name].index, field_type);
@@ -2508,8 +2548,12 @@ GDScriptFunction *GDScriptCompiler::_parse_function(Error &r_error, GDScript *p_
 	}
 
 	GDScriptFunction *gd_function = codegen.generator->write_end();
+	if (p_func && !p_func->source_path.is_empty()) {
+		// Errors and the stack point into the trait's script, where its lines are.
+		gd_function->source = p_func->source_path;
+	}
 
-	if (is_initializer) {
+	if (is_initializer && !p_for_trait_super) {
 		p_script->initializer = gd_function;
 	} else if (is_implicit_initializer) {
 		p_script->implicit_initializer = gd_function;
@@ -2536,7 +2580,7 @@ GDScriptFunction *GDScriptCompiler::_parse_function(Error &r_error, GDScript *p_
 
 	gd_function->method_info = method_info;
 
-	if (!is_implicit_initializer && !is_implicit_ready && !p_for_lambda) {
+	if (!is_implicit_initializer && !is_implicit_ready && !p_for_lambda && !p_for_trait_super) {
 		p_script->member_functions[func_name] = gd_function;
 	}
 
@@ -2695,10 +2739,6 @@ Error GDScriptCompiler::_parse_setter_getter(GDScript *p_script, const GDScriptP
 	return err;
 }
 
-// Prepares given script, and inner class scripts, for compilation. It populates class members and
-// initializes method RPC info for its base classes first, then for itself, then for inner classes.
-// WARNING: This function cannot initiate compilation of other classes, or it will result in
-// cyclic dependency issues.
 Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptParser::ClassNode *p_class, bool p_keep_state) {
 	if (parsed_classes.has(p_script)) {
 		return OK;
@@ -2734,20 +2774,20 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 	}
 	p_script->member_functions.clear();
 	for (const KeyValue<StringName, GDScriptFunction *> &E : member_functions) {
-		memdelete(E.value);
+		functions_to_delete.push_back(E.value);
 	}
 	member_functions.clear();
 
 	p_script->static_variables.clear();
 
 	if (p_script->implicit_initializer) {
-		memdelete(p_script->implicit_initializer);
+		functions_to_delete.push_back(p_script->implicit_initializer);
 	}
 	if (p_script->implicit_ready) {
-		memdelete(p_script->implicit_ready);
+		functions_to_delete.push_back(p_script->implicit_ready);
 	}
 	if (p_script->static_initializer) {
-		memdelete(p_script->static_initializer);
+		functions_to_delete.push_back(p_script->static_initializer);
 	}
 
 	p_script->member_functions.clear();
@@ -2999,16 +3039,32 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 }
 
 Error GDScriptCompiler::_compile_class(GDScript *p_script, const GDScriptParser::ClassNode *p_class, bool p_keep_state) {
+	if (p_class->type == GDScriptParser::Node::TRAIT) {
+		// No need to compile traits.
+		return OK;
+	}
+
 	// Compile member functions, getters, and setters.
 	for (int i = 0; i < p_class->members.size(); i++) {
 		const GDScriptParser::ClassNode::Member &member = p_class->members[i];
 		if (member.type == member.FUNCTION) {
 			const GDScriptParser::FunctionNode *function = member.function;
 			Error err = OK;
-			_parse_function(err, p_script, p_class, function);
+			GDScriptFunction *trait_super_function = nullptr;
+			if (function->trait_super_function != nullptr) {
+				trait_super_function = _parse_function(err, p_script, p_class, function->trait_super_function, false, false, true);
+				if (err) {
+					return err;
+				}
+			}
+			GDScriptFunction *compiled_function = _parse_function(err, p_script, p_class, function);
 			if (err) {
+				if (trait_super_function != nullptr) {
+					memdelete(trait_super_function);
+				}
 				return err;
 			}
+			compiled_function->_trait_super_function = trait_super_function;
 		} else if (member.type == member.VARIABLE) {
 			const GDScriptParser::VariableNode *variable = member.variable;
 			if (variable->property == GDScriptParser::VariableNode::PROP_INLINE) {
@@ -3147,6 +3203,7 @@ void GDScriptCompiler::make_scripts(GDScript *p_script, const GDScriptParser::Cl
 	p_script->local_name = p_class->identifier ? p_class->identifier->name : StringName();
 	p_script->global_name = p_class->get_global_name();
 	p_script->simplified_icon_path = p_class->simplified_icon_path;
+	p_script->traits_fqtn = p_class->traits_fqtn;
 
 	HashMap<StringName, Ref<GDScript>> old_subclasses;
 
@@ -3213,9 +3270,12 @@ GDScriptCompiler::FunctionLambdaInfo GDScriptCompiler::_get_function_replacement
 
 Vector<GDScriptCompiler::FunctionLambdaInfo> GDScriptCompiler::_get_function_lambda_replacement_info(GDScriptFunction *p_func, int p_depth, GDScriptFunction *p_parent_func) {
 	Vector<FunctionLambdaInfo> result;
-	// Only scrape the lambdas inside p_func.
+	// Scrape nested functions owned by p_func.
 	for (int i = 0; i < p_func->lambdas.size(); ++i) {
 		result.push_back(_get_function_replacement_info(p_func->lambdas[i], i, p_depth + 1, p_func));
+	}
+	if (p_func->_trait_super_function != nullptr) {
+		result.push_back(_get_function_replacement_info(p_func->_trait_super_function, p_func->lambdas.size(), p_depth + 1, p_func));
 	}
 	return result;
 }
@@ -3309,6 +3369,12 @@ void GDScriptCompiler::_get_function_ptr_replacements(HashMap<GDScriptFunction *
 	}
 }
 
+GDScriptCompiler::~GDScriptCompiler() {
+	for (GDScriptFunction *function : functions_to_delete) {
+		memdelete(function);
+	}
+}
+
 Error GDScriptCompiler::compile(const GDScriptParser *p_parser, GDScript *p_script, bool p_keep_state) {
 	err_line = -1;
 	err_column = -1;
@@ -3323,6 +3389,12 @@ Error GDScriptCompiler::compile(const GDScriptParser *p_parser, GDScript *p_scri
 
 	// Create scripts for subclasses beforehand so they can be referenced
 	make_scripts(p_script, root, p_keep_state);
+	p_script->file_trait = parser->is_file_trait();
+
+	if (parser->is_file_trait()) {
+		// No need to compile traits.
+		return GDScriptCache::finish_compiling(main_script->path);
+	}
 
 	main_script->_owner = nullptr;
 	Error err = _prepare_compilation(main_script, parser->get_tree(), p_keep_state);

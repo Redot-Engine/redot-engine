@@ -30,6 +30,33 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_collision_solver_3d_sat.cpp
+ *
+ * @brief Cylinder SAT analytic methods and face-circle contact points for cylinder-trimesh and cylinder-box collision are based on ODE colliders.
+ *
+ * @details Cylinder-trimesh and Cylinder-box colliders by Alen Ladavac
+ *   Ported to ODE by Nguyen Binh
+ *
+ * Open Dynamics Engine, @copyright Copyright (C) 2001-2003 Russell L. Smith.
+ * All rights reserved.  Email: russ@q12.org   Web: www.q12.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of EITHER:
+ *   (1) The GNU Lesser General Public License as published by the Free
+ *       Software Foundation; either version 2.1 of the License, or (at
+ *       your option) any later version. The text of the GNU Lesser
+ *       General Public License is included with this library in the
+ *       file LICENSE.TXT.
+ *   (2) The BSD-style license that is included with this library in
+ *       the file LICENSE-BSD.TXT.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the files
+ * LICENSE.TXT and LICENSE-BSD.TXT for more details.
+ */
+
 #include "godot_collision_solver_3d_sat.h"
 
 #include "gjk_epa.h"
@@ -39,35 +66,6 @@
 #define fallback_collision_solver gjk_epa_calculate_penetration
 
 #define _BACKFACE_NORMAL_THRESHOLD -0.0002
-
-// Cylinder SAT analytic methods and face-circle contact points for cylinder-trimesh and cylinder-box collision are based on ODE colliders.
-
-/*
- *	Cylinder-trimesh and Cylinder-box colliders by Alen Ladavac
- *   Ported to ODE by Nguyen Binh
- */
-
-/*************************************************************************
- *                                                                       *
- * Open Dynamics Engine, Copyright (C) 2001-2003 Russell L. Smith.       *
- * All rights reserved.  Email: russ@q12.org   Web: www.q12.org          *
- *                                                                       *
- * This library is free software; you can redistribute it and/or         *
- * modify it under the terms of EITHER:                                  *
- *   (1) The GNU Lesser General Public License as published by the Free  *
- *       Software Foundation; either version 2.1 of the License, or (at  *
- *       your option) any later version. The text of the GNU Lesser      *
- *       General Public License is included with this library in the     *
- *       file LICENSE.TXT.                                               *
- *   (2) The BSD-style license that is included with this library in     *
- *       the file LICENSE-BSD.TXT.                                       *
- *                                                                       *
- * This library is distributed in the hope that it will be useful,       *
- * but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the files    *
- * LICENSE.TXT and LICENSE-BSD.TXT for more details.                     *
- *                                                                       *
- *************************************************************************/
 
 struct _CollectorCallback {
 	GodotCollisionSolver3D::CallbackResult callback = nullptr;
@@ -387,8 +385,10 @@ static void _generate_contacts_face_circle(const Vector3 *p_points_A, int p_poin
 
 	for (int i = 0; i < circle_segments; ++i) {
 		Vector3 point_pos = circle_B_pos;
-		point_pos += circle_B_line_1 * Math::cos(i * angle_delta);
-		point_pos += circle_B_line_2 * Math::sin(i * angle_delta);
+		real_t sc_sin, sc_cos;
+		Math::sin_cos(i * angle_delta, sc_sin, sc_cos);
+		point_pos += circle_B_line_1 * sc_cos;
+		point_pos += circle_B_line_2 * sc_sin;
 		circle_points[i] = point_pos;
 	}
 
@@ -513,8 +513,10 @@ static void _generate_contacts_circle_circle(const Vector3 *p_points_A, int p_po
 			// Circle A inside circle B.
 			for (int i = 0; i < 3; ++i) {
 				Vector3 circle_A_point = circle_A_pos;
-				circle_A_point += circle_A_line_1 * Math::cos(2.0 * Math::PI * i / 3.0);
-				circle_A_point += circle_A_line_2 * Math::sin(2.0 * Math::PI * i / 3.0);
+				double sc_sin, sc_cos;
+				Math::sin_cos(2.0 * Math::PI * i / 3.0, sc_sin, sc_cos);
+				circle_A_point += circle_A_line_1 * sc_cos;
+				circle_A_point += circle_A_line_2 * sc_sin;
 
 				contact_points[num_points] = circle_A_point;
 				++num_points;
@@ -523,8 +525,10 @@ static void _generate_contacts_circle_circle(const Vector3 *p_points_A, int p_po
 			// Circle B inside circle A.
 			for (int i = 0; i < 3; ++i) {
 				Vector3 circle_B_point = circle_B_pos;
-				circle_B_point += circle_B_line_1 * Math::cos(2.0 * Math::PI * i / 3.0);
-				circle_B_point += circle_B_line_2 * Math::sin(2.0 * Math::PI * i / 3.0);
+				double sc_sin, sc_cos;
+				Math::sin_cos(2.0 * Math::PI * i / 3.0, sc_sin, sc_cos);
+				circle_B_point += circle_B_line_1 * sc_cos;
+				circle_B_point += circle_B_line_2 * sc_sin;
 
 				Vector3 circle_A_point = circle_B_point - norm_proj;
 
@@ -771,7 +775,7 @@ public:
 
 typedef void (*CollisionFunc)(const GodotShape3D *, const Transform3D &, const GodotShape3D *, const Transform3D &, _CollectorCallback *p_callback, real_t, real_t);
 
-// Perform analytic sphere-sphere collision and report results to collector
+/// Perform analytic sphere-sphere collision and report results to collector
 template <bool withMargin>
 static void analytic_sphere_collision(const Vector3 &p_origin_a, real_t p_radius_a, const Vector3 &p_origin_b, real_t p_radius_b, _CollectorCallback *p_collector, real_t p_margin_a, real_t p_margin_b) {
 	// Expand the spheres by the margins if enabled

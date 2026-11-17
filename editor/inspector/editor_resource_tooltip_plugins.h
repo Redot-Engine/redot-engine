@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_resource_tooltip_plugins.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/gdvirtual.gen.inc"
 #include "core/object/ref_counted.h"
 #include "scene/gui/control.h"

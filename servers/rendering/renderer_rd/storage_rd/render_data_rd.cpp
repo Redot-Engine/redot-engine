@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file render_data_rd.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "render_data_rd.h"
 
 Ref<RenderSceneBuffers> RenderDataRD::get_render_scene_buffers() const {

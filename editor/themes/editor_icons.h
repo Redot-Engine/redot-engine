@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_icons.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/theme.h"
 
 void editor_configure_icons(bool p_dark_theme);

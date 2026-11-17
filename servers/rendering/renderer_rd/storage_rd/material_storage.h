@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file material_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "texture_storage.h"
 
 #include "core/math/projection.h"
@@ -101,7 +107,7 @@ public:
 		virtual bool update_parameters(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty) = 0;
 		virtual ~MaterialData();
 
-		//to be used internally by update_parameters, in the most common configuration of material parameters
+		/// To be used internally by update_parameters, in the most common configuration of material parameters
 		bool update_parameters_uniform_set(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty, const HashMap<StringName, ShaderLanguage::ShaderNode::Uniform> &p_uniforms, const uint32_t *p_uniform_offsets, const Vector<ShaderCompiler::GeneratedCode::Texture> &p_texture_uniforms, const HashMap<StringName, HashMap<int, RID>> &p_default_texture_params, uint32_t p_ubo_size, RID &r_uniform_set, RID p_shader, uint32_t p_shader_uniform_set, bool p_use_linear_color, bool p_3d_material);
 		void free_parameters_uniform_set(RID p_uniform_set);
 
@@ -114,9 +120,9 @@ public:
 		uint64_t global_textures_pass = 0;
 		HashMap<StringName, uint64_t> used_global_textures;
 
-		//internally by update_parameters_uniform_set
-		Vector<uint8_t> ubo_data[2]; // 0: linear buffer; 1: sRGB buffer.
-		RID uniform_buffer[2]; // 0: linear buffer; 1: sRGB buffer.
+		// Internally by update_parameters_uniform_set
+		Vector<uint8_t> ubo_data[2]; ///< 0: linear buffer; 1: sRGB buffer.
+		RID uniform_buffer[2]; ///< 0: linear buffer; 1: sRGB buffer.
 		Vector<RID> texture_cache;
 	};
 
@@ -139,29 +145,32 @@ public:
 private:
 	static MaterialStorage *singleton;
 
-	/* Samplers */
+	/// @name Samplers
+	/// @{
 
 	Samplers default_samplers;
-
-	/* Buffers */
+	/// @}
+	/// @name Buffers
+	/// @{
 
 	RID quad_index_buffer;
 	RID quad_index_array;
-
-	/* GLOBAL SHADER UNIFORM API */
+	/// @}
+	/// @name GLOBAL SHADER UNIFORM API
+	/// @{
 
 	struct GlobalShaderUniforms {
 		enum {
 			BUFFER_DIRTY_REGION_SIZE = 1024
 		};
 		struct Variable {
-			HashSet<RID> texture_materials; // materials using this
+			HashSet<RID> texture_materials; ///< Materials using this
 
 			RS::GlobalShaderParameterType type;
 			Variant value;
 			Variant override;
-			int32_t buffer_index; //for vectors
-			int32_t buffer_elements; //for vectors
+			int32_t buffer_index; ///< For vectors
+			int32_t buffer_elements; ///< For vectors
 		};
 
 		HashMap<StringName, Variable> variables;
@@ -211,8 +220,9 @@ private:
 	int32_t _global_shader_uniform_allocate(uint32_t p_elements);
 	void _global_shader_uniform_store_in_buffer(int32_t p_index, RS::GlobalShaderParameterType p_type, const Variant &p_value);
 	void _global_shader_uniform_mark_buffer_dirty(int32_t p_index, int32_t p_elements);
-
-	/* SHADER API */
+	/// @}
+	/// @name SHADER API
+	/// @{
 
 	struct Material;
 
@@ -233,8 +243,9 @@ private:
 	HashSet<RID> embedded_set;
 	Mutex embedded_set_mutex;
 	Shader *get_shader(RID p_rid) { return shader_owner.get_or_null(p_rid); }
-
-	/* MATERIAL API */
+	/// @}
+	/// @name MATERIAL API
+	/// @{
 
 	typedef MaterialData *(*MaterialDataRequestFunction)(ShaderData *);
 
@@ -266,7 +277,7 @@ private:
 	Mutex material_update_list_mutex;
 
 	static void _material_uniform_set_erased(void *p_material);
-
+	/// @}
 public:
 	static MaterialStorage *get_singleton();
 
@@ -275,7 +286,8 @@ public:
 
 	bool free(RID p_rid);
 
-	/* Helpers */
+	/// @name Helpers
+	/// @{
 
 	static _FORCE_INLINE_ void store_transform(const Transform3D &p_mtx, float *p_array) {
 		p_array[0] = p_mtx.basis.rows[0][0];
@@ -354,6 +366,7 @@ public:
 			p_array[i] = p_kernel[i];
 		}
 	}
+	/// @}
 
 	// http://andrewthall.org/papers/df64_qf128.pdf
 #ifdef REAL_T_IS_DOUBLE
@@ -367,7 +380,8 @@ public:
 	}
 #endif
 
-	/* Samplers */
+	/// @NAME Samplers
+	/// @{
 
 	Samplers samplers_rd_allocate(float p_mipmap_bias = 0.0f, RS::ViewportAnisotropicFiltering anisotropic_filtering_level = RS::ViewportAnisotropicFiltering::VIEWPORT_ANISOTROPY_4X) const;
 	void samplers_rd_free(Samplers &p_samplers) const;
@@ -379,12 +393,14 @@ public:
 	_FORCE_INLINE_ const Samplers &samplers_rd_get_default() const {
 		return default_samplers;
 	}
-
-	/* Buffers */
+	/// @}
+	/// @name Buffers
+	/// @{
 
 	RID get_quad_index_array() { return quad_index_array; }
-
-	/* GLOBAL SHADER UNIFORM API */
+	/// @}
+	/// @name GLOBAL SHADER UNIFORM API
+	/// @{
 
 	void _update_global_shader_uniforms();
 
@@ -406,8 +422,9 @@ public:
 	virtual void global_shader_parameters_instance_update(RID p_instance, int p_index, const Variant &p_value, int p_flags_count = 0) override;
 
 	RID global_shader_uniforms_get_storage_buffer() const;
-
-	/* SHADER API */
+	/// @}
+	/// @name SHADER API
+	/// @{
 
 	bool owns_shader(RID p_rid) { return shader_owner.owns(p_rid); }
 
@@ -430,8 +447,9 @@ public:
 	virtual void shader_embedded_set_lock() override;
 	virtual const HashSet<RID> &shader_embedded_set_get() const override;
 	virtual void shader_embedded_set_unlock() override;
-
-	/* MATERIAL API */
+	/// @}
+	/// @name MATERIAL API
+	/// @{
 
 	bool owns_material(RID p_rid) { return material_owner.owns(p_rid); }
 
@@ -475,6 +493,7 @@ public:
 			return material->data;
 		}
 	}
+	/// @}
 };
 
 } // namespace RendererRD

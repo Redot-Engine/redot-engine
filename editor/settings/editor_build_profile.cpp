@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_build_profile.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_build_profile.h"
 
 #include "core/config/project_settings.h"
@@ -55,7 +61,7 @@ const char *EditorBuildProfile::build_option_identifiers[BUILD_OPTION_MAX] = {
 	"module_openxr_enabled",
 	"wayland",
 	"x11",
-	"rendering_device", // FIXME: There's no scons option to disable rendering device.
+	"rendering_device", /// @todo FIXME: There's no scons option to disable rendering device.
 	"forward_plus_renderer",
 	"forward_mobile_renderer",
 	"vulkan",
@@ -133,7 +139,7 @@ const bool EditorBuildProfile::build_option_disable_values[BUILD_OPTION_MAX] = {
 	false, // MSDFGEN
 };
 
-// Options that require some resource explicitly asking for them when detecting from the project.
+/// Options that require some resource explicitly asking for them when detecting from the project.
 const bool EditorBuildProfile::build_option_explicit_use[BUILD_OPTION_MAX] = {
 	false, // 3D
 	false, // NAVIGATION_2D
@@ -190,7 +196,7 @@ const EditorBuildProfile::BuildOptionCategory EditorBuildProfile::build_option_c
 	BUILD_OPTION_CATEGORY_TEXT_SERVER, // MSDFGEN
 };
 
-// Can't assign HashMaps to a HashMap at declaration, so do it in the class' constructor.
+/// Can't assign HashMaps to a HashMap at declaration, so do it in the class' constructor.
 HashMap<EditorBuildProfile::BuildOption, HashMap<String, LocalVector<Variant>>> EditorBuildProfile::build_option_settings = {};
 
 /* clang-format off */
@@ -303,8 +309,6 @@ const HashMap<EditorBuildProfile::BuildOption, LocalVector<String>> EditorBuildP
 			"RayCast3D",
 			"SoftBody3D",
 			"SpringArm3D",
-			"SpringBoneCollision3D",
-			"SpringBoneSimulator3D",
 			"VehicleWheel3D",
 	} },
 	{ BUILD_OPTION_TEXT_SERVER_ADVANCED, {
@@ -946,20 +950,20 @@ void EditorBuildProfileManager::_detect_from_project() {
 
 	edited->clear_disabled_classes();
 
-	List<StringName> all_classes;
-	ClassDB::get_class_list(&all_classes);
+	LocalVector<StringName> all_classes;
+	ClassDB::get_class_list(all_classes);
 
-	for (const StringName &E : all_classes) {
-		if (String(E).begins_with("Editor") || ClassDB::get_api_type(E) != ClassDB::API_CORE || all_used_classes.has(E)) {
+	for (const StringName &class_name : all_classes) {
+		if (String(class_name).begins_with("Editor") || ClassDB::get_api_type(class_name) != ClassDB::API_CORE || all_used_classes.has(class_name)) {
 			// This class is valid or editor-only, do nothing.
 			continue;
 		}
 
-		StringName p = ClassDB::get_parent_class(E);
+		StringName p = ClassDB::get_parent_class(class_name);
 		if (!p || all_used_classes.has(p)) {
 			// If no parent, or if the parent is enabled, then add to disabled classes.
 			// This way we avoid disabling redundant classes.
-			edited->set_disable_class(E, true);
+			edited->set_disable_class(class_name, true);
 		}
 	}
 

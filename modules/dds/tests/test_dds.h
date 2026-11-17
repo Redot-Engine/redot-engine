@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file test_dds.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../image_saver_dds.h"
 
 #include "core/config/project_settings.h"

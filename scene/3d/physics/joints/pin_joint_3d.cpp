@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file pin_joint_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "pin_joint_3d.h"
 
 void PinJoint3D::_bind_methods() {

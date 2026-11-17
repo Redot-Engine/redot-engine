@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file texture_storage.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "texture_storage.h"
 
 #include "../effects/copy_effects.h"
@@ -1096,8 +1102,6 @@ void TextureStorage::texture_proxy_initialize(RID p_texture, RID p_base) {
 	tex->proxies.push_back(p_texture);
 }
 
-// Note: We make some big assumptions about format and usage. If developers need more control,
-// they should use RD::texture_create_from_extension() instead.
 RID TextureStorage::texture_create_from_native_handle(RS::TextureType p_type, Image::Format p_format, uint64_t p_native_handle, int p_width, int p_height, int p_depth, int p_layers, RS::TextureLayeredType p_layered_type) {
 	RD::TextureType type;
 	switch (p_type) {
@@ -1406,7 +1410,8 @@ void TextureStorage::texture_proxy_update(RID p_texture, RID p_proxy_to) {
 	}
 }
 
-//these two APIs can be used together or in combination with the others.
+// These two APIs can be used together or in combination with the others.
+
 void TextureStorage::texture_2d_placeholder_initialize(RID p_texture) {
 	texture_2d_initialize(p_texture, texture_2d_placeholder);
 }
@@ -1675,7 +1680,7 @@ Size2 TextureStorage::texture_size_with_proxy(RID p_proxy) {
 void TextureStorage::texture_rd_initialize(RID p_texture, const RID &p_rd_texture, const RS::TextureLayeredType p_layer_type) {
 	ERR_FAIL_COND(!RD::get_singleton()->texture_is_valid(p_rd_texture));
 
-	// TODO : investigate if we can support this, will need to be able to obtain the order and obtain the slice info
+	/// @todo Investigate if we can support this, will need to be able to obtain the order and obtain the slice info
 	ERR_FAIL_COND_MSG(RD::get_singleton()->texture_is_shared(p_rd_texture), "Please create the texture object using the original texture");
 
 	RD::TextureFormat tf = RD::get_singleton()->texture_get_format(p_rd_texture);
@@ -1737,7 +1742,7 @@ void TextureStorage::texture_rd_initialize(RID p_texture, const RID &p_rd_textur
 		texture.rd_texture_srgb = RD::get_singleton()->texture_create_shared(rd_view, p_rd_texture);
 	}
 
-	// TODO figure out what to do with slices
+	/// @todo Figure out what to do with slices
 
 	texture.width_2d = texture.width;
 	texture.height_2d = texture.height;
@@ -1921,7 +1926,7 @@ Ref<Image> TextureStorage::_validate_texture_format(const Ref<Image> &p_image, T
 		} break;
 		case Image::FORMAT_RGBE9995: {
 			r_format.format = RD::DATA_FORMAT_E5B9G9R9_UFLOAT_PACK32;
-			// TODO: Need to make a function in Image to swap bits for this.
+			/// @todo Need to make a function in Image to swap bits for this.
 			r_format.swizzle_r = RD::TEXTURE_SWIZZLE_IDENTITY;
 			r_format.swizzle_g = RD::TEXTURE_SWIZZLE_IDENTITY;
 			r_format.swizzle_b = RD::TEXTURE_SWIZZLE_IDENTITY;
@@ -2424,7 +2429,7 @@ void TextureStorage::_texture_format_from_rd(RD::DataFormat p_rd_format, Texture
 		case RD::DATA_FORMAT_E5B9G9R9_UFLOAT_PACK32: {
 			r_format.image_format = Image::FORMAT_RGBE9995;
 			r_format.rd_format = RD::DATA_FORMAT_E5B9G9R9_UFLOAT_PACK32;
-			// TODO: Need to make a function in Image to swap bits for this.
+			/// @todo Need to make a function in Image to swap bits for this.
 			r_format.swizzle_r = RD::TEXTURE_SWIZZLE_IDENTITY;
 			r_format.swizzle_g = RD::TEXTURE_SWIZZLE_IDENTITY;
 			r_format.swizzle_b = RD::TEXTURE_SWIZZLE_IDENTITY;
@@ -3366,9 +3371,19 @@ void TextureStorage::_update_render_target(RenderTarget *rt) {
 		}
 	}
 
-	// TODO see if we can lazy create this once we actually use it as we may not need to create this if we have an overridden color buffer...
+	/// @todo See if we can lazy create this once we actually use it as we may not need to create this if we have an overridden color buffer...
 	rt->color = RD::get_singleton()->texture_create(rd_color_attachment_format, rd_view);
 	ERR_FAIL_COND(rt->color.is_null());
+
+	// Vulkan (and Metal) textures are uninitialized on creation, unlike OpenGL which
+	// zero-initializes. RD's own lazy pending-clear mechanism (Texture::pending_clear /
+	// _texture_check_pending_clear) is only armed when the driver trait
+	// API_TRAIT_TEXTURE_OUTPUTS_REQUIRE_CLEARS is true, which D3D12 sets but Vulkan and
+	// Metal do not, so it never fires for this texture on those backends. Without an
+	// explicit clear here, a consumer (e.g. Sprite3D) can sample this texture before
+	// any draw ever writes to it (e.g. SubViewport with VIEWPORT_UPDATE_WHEN_VISIBLE,
+	// whose was_used starts false), reading uninitialized VRAM garbage for one frame.
+	RD::get_singleton()->texture_clear(rt->color, Color(0, 0, 0, 0), 0, 1, 0, rd_color_attachment_format.array_layers);
 
 	if (rt->msaa != RS::VIEWPORT_MSAA_DISABLED) {
 		// Use the texture format of the color attachment for the multisample color attachment.
@@ -3385,10 +3400,11 @@ void TextureStorage::_update_render_target(RenderTarget *rt) {
 		rd_color_multisample_format.is_resolve_buffer = false;
 		rt->color_multisample = RD::get_singleton()->texture_create(rd_color_multisample_format, rd_view_multisample);
 		ERR_FAIL_COND(rt->color_multisample.is_null());
+
+		RD::get_singleton()->texture_clear(rt->color_multisample, Color(0, 0, 0, 0), 0, 1, 0, rd_color_multisample_format.array_layers);
 	}
 
 	{ //update texture
-
 		Texture *tex = get_texture(rt->texture);
 
 		//free existing textures
@@ -4133,7 +4149,7 @@ void TextureStorage::render_target_copy_to_back_buffer(RID p_render_target, cons
 		}
 	}
 
-	// TODO figure out stereo support here
+	/// @todo Figure out stereo support here
 
 	if (RendererSceneRenderRD::get_singleton()->_render_buffers_can_be_storage()) {
 		copy_effects->copy_to_rect(rt->color, rt->backbuffer_mipmap0, region, false, false, false, !rt->use_hdr, true);
@@ -4317,9 +4333,9 @@ RD::DataFormat TextureStorage::render_target_get_color_format(bool p_use_hdr, bo
 
 uint32_t TextureStorage::render_target_get_color_usage_bits(bool p_msaa) {
 	if (p_msaa) {
-		return RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+		return RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 	} else {
-		// FIXME: Storage bit should only be requested when FSR is required.
-		return RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT | RD::TEXTURE_USAGE_STORAGE_BIT;
+		/// @todo FIXME: Storage bit should only be requested when FSR is required.
+		return RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT | RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 	}
 }

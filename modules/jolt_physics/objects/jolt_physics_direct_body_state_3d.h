@@ -32,7 +32,13 @@
 
 #pragma once
 
-#include "servers/physics_server_3d.h"
+/**
+ * @file jolt_physics_direct_body_state_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
+#include "servers/physics_3d/physics_server_3d.h"
 
 class JoltBody3D;
 

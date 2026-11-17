@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_scene_exporter_gltf_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_scene_exporter_gltf_plugin.h"
 
 #include "editor_scene_exporter_gltf_settings.h"
@@ -43,10 +49,6 @@
 
 String SceneExporterGLTFPlugin::get_plugin_name() const {
 	return "ConvertGLTF2";
-}
-
-bool SceneExporterGLTFPlugin::has_main_screen() const {
-	return false;
 }
 
 SceneExporterGLTFPlugin::SceneExporterGLTFPlugin() {

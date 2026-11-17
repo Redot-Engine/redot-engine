@@ -1,4 +1,4 @@
-# Redot Engine LTS
+# Redot Engine
 
 <p align="center">
   <a href="https://redotengine.org/">
@@ -10,7 +10,7 @@
 
 ## 2D and 3D cross-platform game engine
 
-**[Redot Engine LTS](https://redotengine.org) is a feature-packed, cross-platform
+**[Redot Engine](https://redotengine.org) is a feature-packed, cross-platform
 game engine to create 2D and 3D games from a unified interface.** It provides a
 comprehensive set of common tools, so that
 users can focus on making games without having to reinvent the wheel. Games can
@@ -45,12 +45,12 @@ codebase of both through a more genuinely community-driven model than Godot.
 
 ### Binary downloads
 
-Official binaries for the Redot editor and the export templates will be found
-[on the Redot website](https://redotengine.org/download) once it's set up and on the [GitHub page](https://github.com/Redot-Engine/redot-engine) until then.
+Official binaries for the Redot editor and the export templates can be found
+[on the Redot website](https://redotengine.org/download) and on the [GitHub page](https://github.com/Redot-Engine/redot-engine).
 
 ### Compiling from source
 
-[See the official docs](https://docs.redotengine.org/contributing/development/compiling/)
+[See the official docs](https://docs.redotengine.org/en/Contributing/Development/compiling/getting_source)
 for compilation instructions for every supported platform.
 
 #### Using Nix (recommended)

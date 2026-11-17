@@ -33,14 +33,13 @@
 #pragma once
 
 /**
- * @class Vector
- * Vector container. Simple copy-on-write container.
+ * @file vector.h
  *
- * LocalVector is an alternative available for internal use when COW is not
- * required.
+ * [Add any documentation that applies to the entire file here!]
  */
 
 #include "core/error/error_macros.h"
+#include "core/math/simd.h"
 #include "core/templates/cowdata.h"
 #include "core/templates/sort_array.h"
 
@@ -59,6 +58,13 @@ public:
 	}
 };
 
+/**
+ * @class Vector
+ * Vector container. Simple copy-on-write container.
+ *
+ * LocalVector is an alternative available for internal use when COW is not
+ * required.
+ */
 template <typename T>
 class Vector {
 	friend class VectorWriteProxy<T>;
@@ -71,7 +77,7 @@ private:
 	CowData<T> _cowdata;
 
 public:
-	// Must take a copy instead of a reference (see GH-31736).
+	/// Must take a copy instead of a reference (see GH-31736).
 	bool push_back(T p_elem);
 	_FORCE_INLINE_ bool append(const T &p_elem) { return push_back(p_elem); } //alias
 	void fill(T p_elem);
@@ -122,7 +128,7 @@ public:
 	}
 
 	_FORCE_INLINE_ const T &operator[](Size p_index) const { return _cowdata.get(p_index); }
-	// Must take a copy instead of a reference (see GH-31736).
+	/// Must take a copy instead of a reference (see GH-31736).
 	Error insert(Size p_pos, T p_val) { return _cowdata.insert(p_pos, p_val); }
 	Size find(const T &p_val, Size p_from = 0) const {
 		if (p_from < 0) {
@@ -144,7 +150,7 @@ public:
 	}
 	Size count(const T &p_val) const { return span().count(p_val); }
 
-	// Must take a copy instead of a reference (see GH-31736).
+	/// Must take a copy instead of a reference (see GH-31736).
 	void append_array(Vector<T> p_other);
 
 	_FORCE_INLINE_ bool has(const T &p_val) const { return find(p_val) != -1; }
@@ -237,6 +243,28 @@ public:
 		if (s != p_arr.size()) {
 			return false;
 		}
+		if constexpr (std::is_integral_v<T>) {
+			// Integer equality is bitwise.
+			return s == 0 || memcmp(ptr(), p_arr.ptr(), s * sizeof(T)) == 0;
+		}
+#ifdef GODOT_SIMD_F32X4
+		if constexpr (std::is_same_v<T, float>) {
+			const float *a = ptr();
+			const float *b = p_arr.ptr();
+			Size i = 0;
+			for (; i + 4 <= s; i += 4) {
+				if (!simd::all_lanes(simd::cmp_eq(simd::load4(a + i), simd::load4(b + i)))) {
+					return false;
+				}
+			}
+			for (; i < s; i++) {
+				if (a[i] != b[i]) {
+					return false;
+				}
+			}
+			return true;
+		}
+#endif
 		for (Size i = 0; i < s; i++) {
 			if (operator[](i) != p_arr[i]) {
 				return false;
@@ -246,16 +274,7 @@ public:
 	}
 
 	bool operator!=(const Vector<T> &p_arr) const {
-		Size s = size();
-		if (s != p_arr.size()) {
-			return true;
-		}
-		for (Size i = 0; i < s; i++) {
-			if (operator[](i) != p_arr[i]) {
-				return true;
-			}
-		}
-		return false;
+		return !(*this == p_arr);
 	}
 
 	struct Iterator {

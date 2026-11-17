@@ -30,13 +30,19 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_importer_dynamic_font.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_importer_dynamic_font.h"
 
 #include "core/io/file_access.h"
 #include "core/io/resource_saver.h"
 #include "editor/import/dynamic_font_import_settings.h"
 #include "scene/resources/font.h"
-#include "servers/text_server.h"
+#include "servers/text/text_server.h"
 
 String ResourceImporterDynamicFont::get_importer_name() const {
 	return "font_data_dynamic";

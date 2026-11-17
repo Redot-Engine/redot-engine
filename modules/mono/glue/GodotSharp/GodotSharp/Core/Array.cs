@@ -88,7 +88,8 @@ namespace Godot.Collections
         /// <returns>A new Godot Array.</returns>
         public Array(Span<StringName> array)
         {
-            if (array == null)
+            // Only a null-backed span is rejected; a span over an empty array is valid.
+            if (array == Span<StringName>.Empty)
                 throw new ArgumentNullException(nameof(array));
 
             NativeValue = (godot_array.movable)NativeFuncs.godotsharp_array_new();
@@ -111,7 +112,8 @@ namespace Godot.Collections
         /// <returns>A new Godot Array.</returns>
         public Array(Span<NodePath> array)
         {
-            if (array == null)
+            // Only a null-backed span is rejected; a span over an empty array is valid.
+            if (array == Span<NodePath>.Empty)
                 throw new ArgumentNullException(nameof(array));
 
             NativeValue = (godot_array.movable)NativeFuncs.godotsharp_array_new();
@@ -134,7 +136,8 @@ namespace Godot.Collections
         /// <returns>A new Godot Array.</returns>
         public Array(Span<Rid> array)
         {
-            if (array == null)
+            // Only a null-backed span is rejected; a span over an empty array is valid.
+            if (array == Span<Rid>.Empty)
                 throw new ArgumentNullException(nameof(array));
 
             NativeValue = (godot_array.movable)NativeFuncs.godotsharp_array_new();
@@ -161,7 +164,8 @@ namespace Godot.Collections
         /// <returns>A new Godot Array.</returns>
         public Array(ReadOnlySpan<GodotObject> array)
         {
-            if (array == null)
+            // Only a null-backed span is rejected; a span over an empty array is valid.
+            if (array == ReadOnlySpan<GodotObject>.Empty)
                 throw new ArgumentNullException(nameof(array));
 
             NativeValue = (godot_array.movable)NativeFuncs.godotsharp_array_new();
