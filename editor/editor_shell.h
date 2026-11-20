@@ -120,9 +120,8 @@ public:
 	/// double-free them during SceneTree teardown; kicks the deferred
 	/// first filesystem scan (`_begin_first_scan`) once the shell is
 	/// processing; and routes window close requests into the quit flow.
-	/// Concrete shells may override and must call `EditorShell::_notification()`
-	/// first to keep this behavior.
-	virtual void _notification(int p_what);
+	/// The object notification dispatcher also calls the concrete shell's handler.
+	void _notification(int p_what);
 
 	/// The menu options dispatched by a shell through `trigger_menu_option`
 	/// and the pending file-dialog option (`set_current_menu_option`).

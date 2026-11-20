@@ -477,8 +477,6 @@ bool EditorNode::_is_project_data_missing() {
 }
 
 void EditorNode::_notification(int p_what) {
-	EditorShell::_notification(p_what);
-
 	switch (p_what) {
 		case NOTIFICATION_TRANSLATION_CHANGED: {
 			_update_title();
@@ -593,8 +591,6 @@ void EditorNode::_notification(int p_what) {
 			EditorHelp::save_script_doc_cache();
 			get_editor_data().save_editor_external_data();
 			EditorCore::get_singleton()->log->deinit(); // Do not get messages anymore.
-			get_editor_data().clear_edited_scenes();
-			get_editor_data().save_editor_external_data();
 			get_editor_data().clear_edited_scenes();
 			get_viewport()->disconnect("size_changed", callable_mp(this, &EditorNode::_viewport_resized));
 		} break;
@@ -2064,6 +2060,7 @@ EditorNode::EditorNode() {
 	// Register this shell with the core; this also wires the shell's
 	// back-pointers to the core, scene manager, and plugin manager.
 	EditorCore::get_singleton()->set_shell(this);
+	ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &EditorNode::_update_from_settings));
 
 	// Detecting headless mode, that means the editor is running in command line.
 	if (!DisplayServer::get_singleton()->window_can_draw()) {
@@ -2092,38 +2089,6 @@ EditorNode::EditorNode() {
 
 		Input::get_singleton()->set_agile_input_event_flushing(agile_input_event_flushing);
 		Input::get_singleton()->set_use_accumulated_input(use_accumulated_input);
-	}
-
-	{
-		int display_scale = EDITOR_GET("interface/editor/display_scale");
-
-		switch (display_scale) {
-			case 0:
-				// Try applying a suitable display scale automatically.
-				EditorScale::set_scale(EditorSettings::get_auto_display_scale());
-				break;
-			case 1:
-				EditorScale::set_scale(0.75);
-				break;
-			case 2:
-				EditorScale::set_scale(1.0);
-				break;
-			case 3:
-				EditorScale::set_scale(1.25);
-				break;
-			case 4:
-				EditorScale::set_scale(1.5);
-				break;
-			case 5:
-				EditorScale::set_scale(1.75);
-				break;
-			case 6:
-				EditorScale::set_scale(2.0);
-				break;
-			default:
-				EditorScale::set_scale(EDITOR_GET("interface/editor/custom_display_scale"));
-				break;
-		}
 	}
 
 	// Define a minimum window size to prevent UI elements from overlapping or being cut off.

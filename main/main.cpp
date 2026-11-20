@@ -5122,8 +5122,8 @@ bool Main::iteration() {
 #endif
 
 #ifdef TOOLS_ENABLED
-	if (exit && quit_after_timeout && EditorCore::get_singleton()->get_shell()) {
-		EditorCore::get_singleton()->get_editor_plugin_manager()->unload_editor_addons();
+	if (exit && quit_after_timeout && EditorPluginManager::get_singleton()) {
+		EditorPluginManager::get_singleton()->unload_editor_addons();
 	}
 #endif
 

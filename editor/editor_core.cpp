@@ -46,6 +46,7 @@
 #include "editor/version_control/version_control_editor_plugin.h"
 
 #include "core/config/project_settings.h"
+#include "core/extension/gdextension_manager.h"
 #include "core/input/input.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
@@ -82,6 +83,7 @@
 #include "editor/settings/editor_settings_dialog.h"
 #include "editor/settings/project_settings_editor.h"
 #include "editor/shader/editor_native_shader_source_visualizer.h"
+#include "editor/themes/editor_scale.h"
 #include "editor/themes/editor_theme_manager.h"
 #include "scene/gui/color_picker.h"
 #include "scene/gui/file_dialog.h"
@@ -144,6 +146,38 @@ void EditorCore::_initialize_engine() {
 
 	if (!EditorSettings::get_singleton()) {
 		EditorSettings::create();
+	}
+
+	{
+		int display_scale = EDITOR_GET("interface/editor/display_scale");
+
+		switch (display_scale) {
+			case 0:
+				// Try applying a suitable display scale automatically.
+				EditorScale::set_scale(EditorSettings::get_auto_display_scale());
+				break;
+			case 1:
+				EditorScale::set_scale(0.75);
+				break;
+			case 2:
+				EditorScale::set_scale(1.0);
+				break;
+			case 3:
+				EditorScale::set_scale(1.25);
+				break;
+			case 4:
+				EditorScale::set_scale(1.5);
+				break;
+			case 5:
+				EditorScale::set_scale(1.75);
+				break;
+			case 6:
+				EditorScale::set_scale(2.0);
+				break;
+			default:
+				EditorScale::set_scale(EDITOR_GET("interface/editor/custom_display_scale"));
+				break;
+		}
 	}
 
 	// Exporters might need the theme.
@@ -394,6 +428,7 @@ void EditorCore::_unregister_global_callbacks() {
 void EditorCore::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_READY: {
+			GDExtensionManager::get_singleton()->connect("extensions_reloaded", callable_mp(this, &EditorCore::_gdextensions_reloaded));
 			started_timestamp = Time::get_singleton()->get_unix_time_from_system();
 		} break;
 	}

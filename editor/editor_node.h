@@ -432,7 +432,7 @@ protected:
 	friend class FileSystemDock;
 
 	static void _bind_methods();
-	void _notification(int p_what) override;
+	void _notification(int p_what);
 
 public:
 	static EditorNode *get_singleton() { return singleton; } ///< @return The global `EditorNode` singleton (the one running editor instance).
