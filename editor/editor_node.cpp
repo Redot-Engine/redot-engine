@@ -2258,7 +2258,7 @@ EditorNode::EditorNode() {
 
 #ifdef ANDROID_ENABLED
 	base_vbox = memnew(VBoxContainer);
-	base_vbox->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT, Control::PRESET_MODE_MINSIZE, EditorCore::get_singleton()->get_editor_theme()->get_constant(SNAME("window_border_margin"),
+	base_vbox->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT, Control::PRESET_MODE_MINSIZE, EditorCore::get_singleton()->get_editor_theme()->get_constant(SNAME("window_border_margin"), EditorStringName(Editor)));
 
 	title_bar = memnew(EditorTitleBar);
 	base_vbox->add_child(title_bar);
@@ -2784,7 +2784,7 @@ EditorNode::EditorNode() {
 
 	update_spinner = memnew(MenuButton);
 	right_menu_hb->add_child(update_spinner);
-    update_spinner->set_button_icon(EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Progress1"), EditorStringName(EditorIcons)));
+	update_spinner->set_button_icon(EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Progress1"), EditorStringName(EditorIcons)));
 	update_spinner->get_popup()->connect(SceneStringName(id_pressed), callable_mp((EditorShell *)this, &EditorShell::_menu_option));
 	update_spinner->set_accessibility_name(TTRC("Update Mode"));
 	PopupMenu *p = update_spinner->get_popup();
