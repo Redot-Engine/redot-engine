@@ -738,7 +738,8 @@ elif methods.using_clang(env) or methods.using_emcc(env):
 env.AppendUnique(CCFLAGS=["$OPTIMIZELEVEL"])
 if env.msvc:
     if env["debug_symbols"]:
-        env.AppendUnique(CCFLAGS=["/Zi", "/FS"])
+        # Cached objects must not depend on an uncached compiler PDB.
+        env.AppendUnique(CCFLAGS=["/Z7"] if env["cache_path"] or os.environ.get("SCONS_CACHE") else ["/Zi", "/FS"])
         env.AppendUnique(LINKFLAGS=["/DEBUG:FULL"])
     else:
         env.AppendUnique(LINKFLAGS=["/DEBUG:NONE"])
