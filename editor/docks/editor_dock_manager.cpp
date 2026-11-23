@@ -979,6 +979,8 @@ void EditorDockManager::add_dock(EditorDock *p_dock, bool p_open) {
 	ERR_FAIL_COND_MSG(all_docks.has(p_dock), vformat("Cannot add dock '%s', already added.", p_dock->get_display_title()));
 
 	p_dock->dock_slot_index = p_dock->default_slot;
+	p_dock->previous_at_bottom = false;
+	p_dock->previous_tab_index = -1;
 	all_docks.push_back(p_dock);
 	p_dock->connect("tab_style_changed", callable_mp(this, &EditorDockManager::_update_tab_style).bind(p_dock));
 	p_dock->connect("renamed", callable_mp(this, &EditorDockManager::_update_tab_style).bind(p_dock));
