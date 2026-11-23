@@ -113,12 +113,12 @@ void ReplicationEditor::_pick_node_selected(NodePath p_path) {
 
 void ReplicationEditor::_pick_new_property() {
 	if (current == nullptr) {
-		EditorNode::get_singleton()->show_warning(TTR("Select a replicator node in order to pick a property to add to it."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Select a replicator node in order to pick a property to add to it."));
 		return;
 	}
 	Node *root = current->get_node(current->get_root_path());
 	if (!root) {
-		EditorNode::get_singleton()->show_warning(TTR("Not possible to add a new property to synchronize without a root."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Not possible to add a new property to synchronize without a root."));
 		return;
 	}
 	pick_node->popup_scenetree_dialog(nullptr, current);
@@ -130,7 +130,7 @@ void ReplicationEditor::_add_sync_property(String p_path) {
 	config = current->get_replication_config();
 
 	if (config.is_valid() && config->has_property(p_path)) {
-		EditorNode::get_singleton()->show_warning(TTR("Property is already being synchronized."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Property is already being synchronized."));
 		return;
 	}
 
@@ -324,12 +324,12 @@ bool ReplicationEditor::_can_drop_data_fw(const Point2 &p_point, const Variant &
 
 void ReplicationEditor::_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) {
 	if (current == nullptr) {
-		EditorNode::get_singleton()->show_warning(TTR("Select a replicator node in order to pick a property to add to it."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Select a replicator node in order to pick a property to add to it."));
 		return;
 	}
 	Node *root = current->get_node(current->get_root_path());
 	if (!root) {
-		EditorNode::get_singleton()->show_warning(TTR("Not possible to add a new property to synchronize without a root."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Not possible to add a new property to synchronize without a root."));
 		return;
 	}
 
@@ -365,7 +365,7 @@ void ReplicationEditor::_notification(int p_what) {
 			[[fallthrough]];
 		}
 		case NOTIFICATION_ENTER_TREE: {
-			add_theme_style_override(SceneStringName(panel), EditorNode::get_singleton()->get_editor_theme()->get_stylebox(SceneStringName(panel), SNAME("Panel")));
+			add_theme_style_override(SceneStringName(panel), EditorCore::get_singleton()->get_editor_theme()->get_stylebox(SceneStringName(panel), SNAME("Panel")));
 			add_pick_button->set_button_icon(get_theme_icon(SNAME("Add"), EditorStringName(EditorIcons)));
 			pin->set_button_icon(get_theme_icon(SNAME("Pin"), EditorStringName(EditorIcons)));
 		} break;
@@ -374,17 +374,17 @@ void ReplicationEditor::_notification(int p_what) {
 
 void ReplicationEditor::_add_pressed() {
 	if (!current) {
-		EditorNode::get_singleton()->show_warning(TTR("Please select a MultiplayerSynchronizer first."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Please select a MultiplayerSynchronizer first."));
 		return;
 	}
 	if (current->get_root_path().is_empty()) {
-		EditorNode::get_singleton()->show_warning(TTR("The MultiplayerSynchronizer needs a root path."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("The MultiplayerSynchronizer needs a root path."));
 		return;
 	}
 	String np_text = np_line_edit->get_text();
 
 	if (np_text.is_empty()) {
-		EditorNode::get_singleton()->show_warning(TTR("Property/path must not be empty."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Property/path must not be empty."));
 		return;
 	}
 
@@ -396,7 +396,7 @@ void ReplicationEditor::_add_pressed() {
 	}
 	NodePath path = NodePath(np_text);
 	if (path.is_empty()) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("Invalid property path: '%s'"), np_text));
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Invalid property path: '%s'"), np_text));
 		return;
 	}
 
@@ -431,7 +431,7 @@ void ReplicationEditor::_tree_item_edited() {
 		int old_value = config->property_get_replication_mode(prop);
 		// We have a hard limit of 64 watchable properties per synchronizer.
 		if (value == SceneReplicationConfig::REPLICATION_MODE_ON_CHANGE && config->get_watch_properties().size() >= 64) {
-			EditorNode::get_singleton()->show_warning(TTR("Each MultiplayerSynchronizer can have no more than 64 watched properties."));
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("Each MultiplayerSynchronizer can have no more than 64 watched properties."));
 			ti->set_range(column, old_value);
 			return;
 		}

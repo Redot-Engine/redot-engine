@@ -390,7 +390,7 @@ void ShaderGlobalsEditor::_variable_added() {
 	String var = variable_name->get_text().strip_edges();
 
 	if (RenderingServer::get_singleton()->global_shader_parameter_get(var).get_type() != Variant::NIL) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("Global shader parameter '%s' already exists."), var));
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Global shader parameter '%s' already exists."), var));
 		return;
 	}
 
@@ -398,7 +398,7 @@ void ShaderGlobalsEditor::_variable_added() {
 	ShaderLanguage::get_keyword_list(&keywords);
 
 	if (keywords.find(var) != nullptr || var == "script") {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("Name '%s' is a reserved shader language keyword."), var));
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Name '%s' is a reserved shader language keyword."), var));
 		return;
 	}
 

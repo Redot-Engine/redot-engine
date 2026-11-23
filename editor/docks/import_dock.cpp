@@ -40,6 +40,7 @@
 
 #include "core/config/project_settings.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/inspector/editor_resource_preview.h"
@@ -602,7 +603,7 @@ void ImportDock::_reimport_and_cleanup() {
 	}
 
 	// After changing resource type we need to make sure that all old instances are unloaded or replaced.
-	EditorNode::get_singleton()->push_item(nullptr);
+	EditorSceneManager::get_singleton()->push_item(nullptr);
 	EditorUndoRedoManager::get_singleton()->clear_history();
 
 	List<Ref<Resource>> external_resources;
@@ -621,10 +622,10 @@ void ImportDock::_reimport_and_cleanup() {
 		}
 	}
 
-	EditorNode::get_singleton()->replace_resources_in_scenes(old_resources_to_replace, new_resources_to_replace);
+	EditorCore::get_singleton()->replace_resources_in_scenes(old_resources_to_replace, new_resources_to_replace);
 
 	for (Ref<Resource> res : external_resources) {
-		EditorNode::get_singleton()->replace_resources_in_object(res.ptr(), old_resources_to_replace, new_resources_to_replace);
+		EditorCore::get_singleton()->replace_resources_in_object(res.ptr(), old_resources_to_replace, new_resources_to_replace);
 	}
 
 	need_cleanup.clear();
@@ -759,7 +760,7 @@ ImportDock::ImportDock() {
 
 	imported = memnew(Label);
 	imported->set_focus_mode(FOCUS_ACCESSIBILITY);
-	imported->add_theme_style_override(CoreStringName(normal), EditorNode::get_singleton()->get_editor_theme()->get_stylebox(CoreStringName(normal), SNAME("LineEdit")));
+	imported->add_theme_style_override(CoreStringName(normal), EditorCore::get_singleton()->get_editor_theme()->get_stylebox(CoreStringName(normal), SNAME("LineEdit")));
 	imported->set_clip_text(true);
 	content->add_child(imported);
 	HBoxContainer *hb = memnew(HBoxContainer);

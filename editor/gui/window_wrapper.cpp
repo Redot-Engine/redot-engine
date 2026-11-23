@@ -365,7 +365,7 @@ void WindowWrapper::set_override_close_request(bool p_enabled) {
 }
 
 WindowWrapper::WindowWrapper() {
-	if (!EditorNode::get_singleton()->is_multi_window_enabled()) {
+	if (!EditorCore::get_singleton()->is_multi_window_enabled()) {
 		return;
 	}
 
@@ -501,9 +501,9 @@ ScreenSelect::ScreenSelect() {
 	set_focus_mode(FOCUS_NONE);
 	set_action_mode(ACTION_MODE_BUTTON_PRESS);
 
-	if (!EditorNode::get_singleton()->is_multi_window_enabled()) {
+	if (!EditorCore::get_singleton()->is_multi_window_enabled()) {
 		set_disabled(true);
-		set_tooltip_text(EditorNode::get_singleton()->get_multiwindow_support_tooltip_text());
+		set_tooltip_text(EditorCore::get_singleton()->get_multiwindow_support_tooltip_text());
 	} else {
 		set_tooltip_text(TTR("Make this panel floating.") + "\n" + TTR("Right-click to open the screen selector."));
 	}

@@ -576,8 +576,8 @@ void VisualShaderGraphPlugin::update_theme() {
 	vector_expanded_color[2] = editor->get_theme_color(SNAME("axis_z_color"), EditorStringName(Editor)); // blue
 	vector_expanded_color[3] = editor->get_theme_color(SNAME("axis_w_color"), EditorStringName(Editor)); // alpha
 
-	Ref<Font> label_font = EditorNode::get_singleton()->get_editor_theme()->get_font("main_msdf", EditorStringName(EditorFonts));
-	Ref<Font> label_bold_font = EditorNode::get_singleton()->get_editor_theme()->get_font("main_bold_msdf", EditorStringName(EditorFonts));
+	Ref<Font> label_font = EditorCore::get_singleton()->get_editor_theme()->get_font("main_msdf", EditorStringName(EditorFonts));
+	Ref<Font> label_bold_font = EditorCore::get_singleton()->get_editor_theme()->get_font("main_bold_msdf", EditorStringName(EditorFonts));
 	vs_msdf_fonts_theme->set_font(SceneStringName(font), "Label", label_font);
 	vs_msdf_fonts_theme->set_font(SceneStringName(font), "GraphNodeTitleLabel", label_bold_font);
 	if (!EditorThemeManager::is_dark_theme()) {
@@ -1152,7 +1152,7 @@ void VisualShaderGraphPlugin::add_node(VisualShader::Type p_type, int p_id, bool
 					name_box->connect(SceneStringName(focus_exited), callable_mp(editor, &VisualShaderEditor::_port_name_focus_out).bind(name_box, p_id, j, false), CONNECT_DEFERRED);
 
 					Button *remove_btn = memnew(Button);
-					remove_btn->set_button_icon(EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Remove"), EditorStringName(EditorIcons)));
+					remove_btn->set_button_icon(EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Remove"), EditorStringName(EditorIcons)));
 					remove_btn->set_tooltip_text(TTR("Remove") + " " + name_left);
 					remove_btn->connect(SceneStringName(pressed), callable_mp(editor, &VisualShaderEditor::_remove_input_port).bind(p_id, j), CONNECT_DEFERRED);
 					hb->add_child(remove_btn);
@@ -1182,7 +1182,7 @@ void VisualShaderGraphPlugin::add_node(VisualShader::Type p_type, int p_id, bool
 			if (valid_right) {
 				if (is_group) {
 					Button *remove_btn = memnew(Button);
-					remove_btn->set_button_icon(EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Remove"), EditorStringName(EditorIcons)));
+					remove_btn->set_button_icon(EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Remove"), EditorStringName(EditorIcons)));
 					remove_btn->set_tooltip_text(TTR("Remove") + " " + name_left);
 					remove_btn->connect(SceneStringName(pressed), callable_mp(editor, &VisualShaderEditor::_remove_output_port).bind(p_id, i), CONNECT_DEFERRED);
 					hb->add_child(remove_btn);
@@ -2045,8 +2045,8 @@ void VisualShaderEditor::_preview_tools_menu_option(int p_idx) {
 	ShaderMaterial *src_mat = nullptr;
 
 	if (p_idx == COPY_PARAMS_FROM_MATERIAL || p_idx == PASTE_PARAMS_TO_MATERIAL) {
-		for (int i = EditorNode::get_singleton()->get_editor_selection_history()->get_path_size() - 1; i >= 0; i--) {
-			Object *object = ObjectDB::get_instance(EditorNode::get_singleton()->get_editor_selection_history()->get_path_object(i));
+		for (int i = EditorCore::get_singleton()->get_editor_selection_history()->get_path_size() - 1; i >= 0; i--) {
+			Object *object = ObjectDB::get_instance(EditorCore::get_singleton()->get_editor_selection_history()->get_path_object(i));
 			ShaderMaterial *src_mat2;
 			if (!object) {
 				continue;
@@ -5965,28 +5965,28 @@ void VisualShaderEditor::_update_varying_tree() {
 
 			switch (varying->type) {
 				case VisualShader::VARYING_TYPE_FLOAT:
-					item->set_icon(0, EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("float"), EditorStringName(EditorIcons)));
+					item->set_icon(0, EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("float"), EditorStringName(EditorIcons)));
 					break;
 				case VisualShader::VARYING_TYPE_INT:
-					item->set_icon(0, EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("int"), EditorStringName(EditorIcons)));
+					item->set_icon(0, EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("int"), EditorStringName(EditorIcons)));
 					break;
 				case VisualShader::VARYING_TYPE_UINT:
-					item->set_icon(0, EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("uint"), EditorStringName(EditorIcons)));
+					item->set_icon(0, EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("uint"), EditorStringName(EditorIcons)));
 					break;
 				case VisualShader::VARYING_TYPE_VECTOR_2D:
-					item->set_icon(0, EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector2"), EditorStringName(EditorIcons)));
+					item->set_icon(0, EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector2"), EditorStringName(EditorIcons)));
 					break;
 				case VisualShader::VARYING_TYPE_VECTOR_3D:
-					item->set_icon(0, EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector3"), EditorStringName(EditorIcons)));
+					item->set_icon(0, EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector3"), EditorStringName(EditorIcons)));
 					break;
 				case VisualShader::VARYING_TYPE_VECTOR_4D:
-					item->set_icon(0, EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector4"), EditorStringName(EditorIcons)));
+					item->set_icon(0, EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector4"), EditorStringName(EditorIcons)));
 					break;
 				case VisualShader::VARYING_TYPE_BOOLEAN:
-					item->set_icon(0, EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("bool"), EditorStringName(EditorIcons)));
+					item->set_icon(0, EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("bool"), EditorStringName(EditorIcons)));
 					break;
 				case VisualShader::VARYING_TYPE_TRANSFORM:
-					item->set_icon(0, EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Transform3D"), EditorStringName(EditorIcons)));
+					item->set_icon(0, EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Transform3D"), EditorStringName(EditorIcons)));
 					break;
 				default:
 					break;
@@ -6501,7 +6501,7 @@ VisualShaderEditor::VisualShaderEditor() {
 	vs_editor_cache->load(EditorPaths::get_singleton()->get_project_settings_dir().path_join("vs_editor_cache.cfg"));
 
 	ShaderLanguage::get_keyword_list(&keyword_list);
-	EditorNode::get_singleton()->connect("resource_saved", callable_mp(this, &VisualShaderEditor::_resource_saved));
+	EditorCore::get_singleton()->connect("resource_saved", callable_mp(this, &VisualShaderEditor::_resource_saved));
 	FileSystemDock::get_singleton()->get_script_create_dialog()->connect("script_created", callable_mp(this, &VisualShaderEditor::_script_created));
 	FileSystemDock::get_singleton()->connect("resource_removed", callable_mp(this, &VisualShaderEditor::_resource_removed));
 
@@ -7803,15 +7803,15 @@ public:
 		input = p_input;
 
 		Ref<Texture2D> type_icon[] = {
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("float"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("int"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("uint"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector2"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector3"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector4"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("bool"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Transform3D"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("ImageTexture"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("float"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("int"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("uint"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector2"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector3"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector4"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("bool"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Transform3D"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("ImageTexture"), EditorStringName(EditorIcons)),
 		};
 
 		add_item(TTR("[None]"));
@@ -7858,14 +7858,14 @@ public:
 		varying = p_varying;
 
 		Ref<Texture2D> type_icon[] = {
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("float"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("int"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("uint"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector2"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector3"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector4"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("bool"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Transform3D"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("float"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("int"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("uint"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector2"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector3"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector4"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("bool"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Transform3D"), EditorStringName(EditorIcons)),
 		};
 
 		bool is_getter = Ref<VisualShaderNodeVaryingGetter>(p_varying.ptr()).is_valid();
@@ -7942,16 +7942,16 @@ public:
 		parameter_ref = p_parameter_ref;
 
 		Ref<Texture2D> type_icon[] = {
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("float"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("int"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("uint"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("bool"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector2"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector3"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector4"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Transform3D"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Color"), EditorStringName(EditorIcons)),
-			EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("ImageTexture"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("float"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("int"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("uint"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("bool"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector2"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector3"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Vector4"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Transform3D"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Color"), EditorStringName(EditorIcons)),
+			EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("ImageTexture"), EditorStringName(EditorIcons)),
 		};
 
 		add_item(TTR("[None]"));
@@ -8215,7 +8215,7 @@ void EditorPropertyVisualShaderMode::_option_selected(int p_which) {
 		return;
 	}
 
-	ShaderEditorPlugin *shader_editor = Object::cast_to<ShaderEditorPlugin>(EditorNode::get_editor_data().get_editor_by_name("Shader"));
+	ShaderEditorPlugin *shader_editor = Object::cast_to<ShaderEditorPlugin>(EditorCore::get_singleton()->get_editor_data().get_editor_by_name("Shader"));
 	if (!shader_editor) {
 		return;
 	}

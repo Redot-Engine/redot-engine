@@ -977,7 +977,7 @@ static void _find_annotation_arguments(const GDScriptParser::AnnotationNode *p_a
 		}
 	} else if (p_annotation->name == SNAME("@export_tool_button")) {
 		if (p_argument == 1) {
-			const Ref<Theme> theme = EditorNode::get_singleton()->get_editor_theme();
+			const Ref<Theme> theme = EditorCore::get_singleton()->get_editor_theme();
 			if (theme.is_valid()) {
 				List<StringName> icon_list;
 				theme->get_icon_list(EditorStringName(EditorIcons), &icon_list);

@@ -280,7 +280,7 @@ MultiMeshEditor::MultiMeshEditor() {
 	Node3DEditor::get_singleton()->add_control_to_menu_panel(options);
 
 	options->set_text("MultiMesh");
-	options->set_button_icon(EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("MultiMeshInstance3D"), EditorStringName(EditorIcons)));
+	options->set_button_icon(EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("MultiMeshInstance3D"), EditorStringName(EditorIcons)));
 	options->set_flat(false);
 	options->set_theme_type_variation("FlatMenuButton");
 
@@ -402,7 +402,7 @@ void MultiMeshEditorPlugin::make_visible(bool p_visible) {
 
 MultiMeshEditorPlugin::MultiMeshEditorPlugin() {
 	multimesh_editor = memnew(MultiMeshEditor);
-	EditorNode::get_singleton()->get_gui_base()->add_child(multimesh_editor);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(multimesh_editor);
 
 	multimesh_editor->options->hide();
 }

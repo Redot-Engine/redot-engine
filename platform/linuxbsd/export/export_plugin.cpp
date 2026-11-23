@@ -481,7 +481,7 @@ Error EditorExportPlatformLinuxBSD::run(const Ref<EditorExportPreset> &p_preset,
 	if (!da->dir_exists(dest)) {
 		Error err = da->make_dir_recursive(dest);
 		if (err != OK) {
-			EditorNode::get_singleton()->show_warning(TTR("Could not create temp directory:") + "\n" + dest);
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("Could not create temp directory:") + "\n" + dest);
 			return err;
 		}
 	}
@@ -615,7 +615,7 @@ Error EditorExportPlatformLinuxBSD::run(const Ref<EditorExportPreset> &p_preset,
 }
 
 EditorExportPlatformLinuxBSD::EditorExportPlatformLinuxBSD() {
-	if (EditorNode::get_singleton()) {
+	if (EditorCore *core = EditorCore::get_singleton(); core && core->get_shell()) {
 		Ref<Image> img = memnew(Image);
 		const bool upsample = !Math::is_equal_approx(Math::round(EDSCALE), EDSCALE);
 
@@ -625,7 +625,7 @@ EditorExportPlatformLinuxBSD::EditorExportPlatformLinuxBSD() {
 		ImageLoaderSVG::create_image_from_string(img, _linuxbsd_run_icon_svg, EDSCALE, upsample, false);
 		run_icon = ImageTexture::create_from_image(img);
 
-		Ref<Theme> theme = EditorNode::get_singleton()->get_editor_theme();
+		Ref<Theme> theme = core->get_editor_theme();
 		if (theme.is_valid()) {
 			stop_icon = theme->get_icon(SNAME("Stop"), EditorStringName(EditorIcons));
 		} else {

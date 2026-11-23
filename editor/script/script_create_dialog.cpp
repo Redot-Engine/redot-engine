@@ -99,7 +99,7 @@ static Vector<String> _get_hierarchy(const String &p_class_name) {
 		if (ScriptServer::is_global_class(class_name)) {
 			hierarchy.push_back(class_name);
 
-			Ref<Script> script = EditorNode::get_editor_data().script_class_load_script(class_name);
+			Ref<Script> script = EditorCore::get_singleton()->get_editor_data().script_class_load_script(class_name);
 			ERR_BREAK(script.is_null());
 			class_name = _get_parent_class_of_script(script->get_path());
 			continue;
@@ -139,7 +139,7 @@ void ScriptCreateDialog::_notification(int p_what) {
 		case NOTIFICATION_THEME_CHANGED: {
 			const int icon_size = get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
 
-			EditorData &ed = EditorNode::get_editor_data();
+			EditorData &ed = EditorCore::get_singleton()->get_editor_data();
 
 			for (int i = 0; i < ScriptServer::get_language_count(); i++) {
 				// Check if the extension has an icon first.
@@ -195,7 +195,7 @@ String ScriptCreateDialog::_adjust_file_path(const String &p_base_path) const {
 
 	String base_dir = p_base_path.get_base_dir();
 	String file_name = p_base_path.get_file().get_basename();
-	file_name = EditorNode::adjust_script_name_casing(file_name, language->preferred_file_name_casing());
+	file_name = EditorCore::adjust_script_name_casing(file_name, language->preferred_file_name_casing());
 	String extension = language->get_extension();
 	return base_dir.path_join(file_name + "." + extension);
 }
@@ -235,7 +235,7 @@ bool ScriptCreateDialog::_validate_parent(const String &p_string) {
 		}
 	}
 
-	return EditorNode::get_editor_data().is_type_recognized(p_string);
+	return EditorCore::get_singleton()->get_editor_data().is_type_recognized(p_string);
 }
 
 String ScriptCreateDialog::_validate_path(const String &p_path, bool p_file_must_exist, bool *r_path_valid) {
@@ -378,7 +378,7 @@ void ScriptCreateDialog::_create_new() {
 	String parent_class = parent_name->get_text();
 	if (!parent_name->get_text().is_quoted() && !ClassDB::class_exists(parent_class) && !ScriptServer::is_global_class(parent_class)) {
 		// If base is a custom type, replace with script path instead.
-		const EditorData::CustomType *type = EditorNode::get_editor_data().get_custom_type_by_name(parent_class);
+		const EditorData::CustomType *type = EditorCore::get_singleton()->get_editor_data().get_custom_type_by_name(parent_class);
 		ERR_FAIL_NULL(type);
 		parent_class = "\"" + type->script->get_path() + "\"";
 	}

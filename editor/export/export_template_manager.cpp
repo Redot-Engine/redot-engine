@@ -253,10 +253,10 @@ void ExportTemplateManager::_download_template_completed(int p_status, int p_cod
 					Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 					Error err = da->remove(path);
 					if (err != OK) {
-						EditorNode::get_singleton()->add_io_error(TTR("Cannot remove temporary file:") + "\n" + path + "\n");
+						EditorCore::get_singleton()->get_shell()->add_io_error(TTR("Cannot remove temporary file:") + "\n" + path + "\n");
 					}
 				} else {
-					EditorNode::get_singleton()->add_io_error(vformat(TTR("Templates installation failed.\nThe problematic templates archives can be found at '%s'."), path));
+					EditorCore::get_singleton()->get_shell()->add_io_error(vformat(TTR("Templates installation failed.\nThe problematic templates archives can be found at '%s'."), path));
 				}
 			}
 		} break;
@@ -289,7 +289,7 @@ void ExportTemplateManager::_refresh_mirrors() {
 
 void ExportTemplateManager::_refresh_mirrors_completed(int p_status, int p_code, const PackedStringArray &headers, const PackedByteArray &p_data) {
 	if (p_status != HTTPRequest::RESULT_SUCCESS || p_code != 200) {
-		EditorNode::get_singleton()->show_warning(TTR("Error getting the list of mirrors."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Error getting the list of mirrors."));
 		is_refreshing_mirrors = false;
 		if (is_downloading_templates) {
 			_cancel_template_download();
@@ -302,7 +302,7 @@ void ExportTemplateManager::_refresh_mirrors_completed(int p_status, int p_code,
 	JSON json;
 	Error err = json.parse(response_json);
 	if (err != OK) {
-		EditorNode::get_singleton()->show_warning(TTR("Error parsing JSON with the list of mirrors. Please report this issue!"));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Error parsing JSON with the list of mirrors. Please report this issue!"));
 		is_refreshing_mirrors = false;
 		if (is_downloading_templates) {
 			_cancel_template_download();
@@ -330,7 +330,7 @@ void ExportTemplateManager::_refresh_mirrors_completed(int p_status, int p_code,
 		}
 	}
 	if (!mirrors_available) {
-		EditorNode::get_singleton()->show_warning(TTR("No download links found for this version. Direct download is only available for official releases."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("No download links found for this version. Direct download is only available for official releases."));
 		if (is_downloading_templates) {
 			_cancel_template_download();
 		}
@@ -440,7 +440,7 @@ bool ExportTemplateManager::_install_file_selected(const String &p_file, bool p_
 
 	unzFile pkg = unzOpen2(p_file.utf8().get_data(), &io);
 	if (!pkg) {
-		EditorNode::get_singleton()->show_warning(TTR("Can't open the export templates file."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Can't open the export templates file."));
 		return false;
 	}
 	int ret = unzGoToFirstFile(pkg);
@@ -482,7 +482,7 @@ bool ExportTemplateManager::_install_file_selected(const String &p_file, bool p_
 			// Version number should be of the form major.minor[.patch].status[.module_config]
 			// so it can in theory have 3 or more slices.
 			if (data_str.get_slice_count(".") < 3) {
-				EditorNode::get_singleton()->show_warning(vformat(TTR("Invalid version.txt format inside the export templates file: %s."), data_str));
+				EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Invalid version.txt format inside the export templates file: %s."), data_str));
 				unzClose(pkg);
 				return false;
 			}
@@ -499,7 +499,7 @@ bool ExportTemplateManager::_install_file_selected(const String &p_file, bool p_
 	}
 
 	if (version.is_empty()) {
-		EditorNode::get_singleton()->show_warning(TTR("No version.txt found inside the export templates file."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("No version.txt found inside the export templates file."));
 		unzClose(pkg);
 		return false;
 	}
@@ -508,7 +508,7 @@ bool ExportTemplateManager::_install_file_selected(const String &p_file, bool p_
 	String template_path = EditorPaths::get_singleton()->get_export_templates_dir().path_join(version);
 	Error err = d->make_dir_recursive(template_path);
 	if (err != OK) {
-		EditorNode::get_singleton()->show_warning(TTR("Error creating path for extracting templates:") + "\n" + template_path);
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Error creating path for extracting templates:") + "\n" + template_path);
 		unzClose(pkg);
 		return false;
 	}
@@ -649,7 +649,7 @@ void ExportTemplateManager::_mirror_options_button_cbk(int p_id) {
 		case VISIT_WEB_MIRROR: {
 			String mirror_url = _get_selected_mirror();
 			if (mirror_url.is_empty()) {
-				EditorNode::get_singleton()->show_warning(TTR("There are no mirrors available."));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("There are no mirrors available."));
 				return;
 			}
 
@@ -659,7 +659,7 @@ void ExportTemplateManager::_mirror_options_button_cbk(int p_id) {
 		case COPY_MIRROR_URL: {
 			String mirror_url = _get_selected_mirror();
 			if (mirror_url.is_empty()) {
-				EditorNode::get_singleton()->show_warning(TTR("There are no mirrors available."));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("There are no mirrors available."));
 				return;
 			}
 

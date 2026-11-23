@@ -1033,7 +1033,7 @@ void GridMapEditor::edit(GridMap *p_gridmap) {
 	_update_selection_transform();
 	_update_paste_indicator();
 
-	spatial_editor = Object::cast_to<Node3DEditorPlugin>(EditorNode::get_singleton()->get_editor_main_screen()->get_selected_plugin());
+	spatial_editor = Object::cast_to<Node3DEditorPlugin>(EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->get_selected_plugin());
 
 	if (!node) {
 		set_process(false);
@@ -1769,11 +1769,11 @@ void GridMapEditorPlugin::_notification(int p_what) {
 			grid_map_editor->set_custom_minimum_size(Size2(0, 200) * EDSCALE);
 			grid_map_editor->hide();
 
-			panel_button = EditorNode::get_bottom_panel()->add_item(TTRC("GridMap"), grid_map_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_grid_map_bottom_panel", TTRC("Toggle GridMap Bottom Panel")));
+			panel_button = EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(TTRC("GridMap"), grid_map_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_grid_map_bottom_panel", TTRC("Toggle GridMap Bottom Panel")));
 			panel_button->hide();
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
-			EditorNode::get_bottom_panel()->remove_item(grid_map_editor);
+			EditorCore::get_singleton()->get_shell()->get_bottom_panel()->remove_item(grid_map_editor);
 			memdelete_notnull(grid_map_editor);
 			grid_map_editor = nullptr;
 			panel_button = nullptr;
@@ -1810,13 +1810,13 @@ void GridMapEditorPlugin::make_visible(bool p_visible) {
 		}
 		grid_map_editor->_on_tool_mode_changed();
 		panel_button->show();
-		EditorNode::get_bottom_panel()->make_item_visible(grid_map_editor);
+		EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(grid_map_editor);
 		grid_map_editor->set_process(true);
 	} else {
 		grid_map_editor->_show_viewports_transform_gizmo(true);
 		panel_button->hide();
 		if (grid_map_editor->is_visible_in_tree()) {
-			EditorNode::get_bottom_panel()->hide_bottom_panel();
+			EditorCore::get_singleton()->get_shell()->get_bottom_panel()->hide_bottom_panel();
 		}
 		grid_map_editor->set_process(false);
 	}

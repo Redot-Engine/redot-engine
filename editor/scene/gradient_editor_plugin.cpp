@@ -591,7 +591,7 @@ GradientEdit::GradientEdit() {
 	picker->connect("color_changed", callable_mp(this, &GradientEdit::_color_changed));
 
 	popup = memnew(PopupPanel);
-	popup->connect("about_to_popup", callable_mp(EditorNode::get_singleton(), &EditorNode::setup_color_picker).bind(picker));
+	popup->connect("about_to_popup", callable_mp(EditorCore::get_singleton(), &EditorCore::setup_color_picker).bind(picker));
 
 	add_child(popup, false, INTERNAL_MODE_FRONT);
 	popup->add_child(picker);

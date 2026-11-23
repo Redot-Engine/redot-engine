@@ -42,7 +42,7 @@
 #include "editor/editor_node.h"
 
 void EditorTranslationPreviewMenu::_prepare() {
-	const String current_preview_locale = EditorNode::get_singleton()->get_preview_locale();
+	const String current_preview_locale = EditorCore::get_singleton()->get_preview_locale();
 
 	clear();
 	reset_size();
@@ -72,7 +72,7 @@ void EditorTranslationPreviewMenu::_pressed(int p_index) {
 	for (int i = 0; i < get_item_count(); i++) {
 		set_item_checked(i, i == p_index);
 	}
-	EditorNode::get_singleton()->set_preview_locale(get_item_metadata(p_index));
+	EditorCore::get_singleton()->set_preview_locale(get_item_metadata(p_index));
 }
 
 void EditorTranslationPreviewMenu::_notification(int p_what) {

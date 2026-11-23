@@ -42,6 +42,7 @@
 #include "core/math/geometry_2d.h"
 #include "core/os/keyboard.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/gui/editor_file_dialog.h"
@@ -78,7 +79,7 @@ void AnimationNodeBlendSpace2DEditor::edit(const Ref<AnimationNode> &p_node) {
 	read_only = false;
 
 	if (blend_space.is_valid()) {
-		read_only = EditorNode::get_singleton()->is_resource_read_only(blend_space);
+		read_only = EditorCore::get_singleton()->is_resource_read_only(blend_space);
 
 		blend_space->connect("triangles_updated", callable_mp(this, &AnimationNodeBlendSpace2DEditor::_blend_space_changed));
 		_update_space();
@@ -184,7 +185,7 @@ void AnimationNodeBlendSpace2DEditor::_blend_space_gui_input(const Ref<InputEven
 			if (points[i].distance_to(mb->get_position()) < 10 * EDSCALE) {
 				selected_point = i;
 				Ref<AnimationNode> node = blend_space->get_blend_point_node(i);
-				EditorNode::get_singleton()->push_item(node.ptr(), "", true);
+				EditorSceneManager::get_singleton()->push_item(node.ptr(), "", true);
 				dragging_selected_attempt = true;
 				drag_from = mb->get_position();
 				_update_tool_erase();
@@ -229,7 +230,7 @@ void AnimationNodeBlendSpace2DEditor::_blend_space_gui_input(const Ref<InputEven
 					//add triangle!
 					if (blend_space->has_triangle(making_triangle[0], making_triangle[1], making_triangle[2])) {
 						making_triangle.clear();
-						EditorNode::get_singleton()->show_warning(TTR("Triangle already exists."));
+						EditorCore::get_singleton()->get_shell()->show_warning(TTR("Triangle already exists."));
 						return;
 					}
 
@@ -325,7 +326,7 @@ void AnimationNodeBlendSpace2DEditor::_file_opened(const String &p_file) {
 	if (file_loaded.is_valid()) {
 		_add_menu_type(MENU_LOAD_FILE_CONFIRM);
 	} else {
-		EditorNode::get_singleton()->show_warning(TTR("This type of node can't be used. Only animation nodes are allowed."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("This type of node can't be used. Only animation nodes are allowed."));
 	}
 }
 
@@ -357,7 +358,7 @@ void AnimationNodeBlendSpace2DEditor::_add_menu_type(int p_index) {
 	}
 
 	if (node.is_null()) {
-		EditorNode::get_singleton()->show_warning(TTR("This type of node can't be used. Only root nodes are allowed."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("This type of node can't be used. Only root nodes are allowed."));
 		return;
 	}
 

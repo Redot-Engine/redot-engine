@@ -378,7 +378,7 @@ void RenameDialog::_update_substitute() {
 void RenameDialog::_post_popup() {
 	ConfirmationDialog::_post_popup();
 
-	EditorSelection *editor_selection = EditorNode::get_singleton()->get_editor_selection();
+	EditorSelection *editor_selection = EditorCore::get_singleton()->get_editor_selection();
 	preview_node = nullptr;
 
 	Array selected_node_list = editor_selection->get_selected_nodes();
@@ -410,11 +410,11 @@ void RenameDialog::_update_preview(const String &new_text) {
 
 		if (new_name == preview_node->get_name()) {
 			// New name is identical to the old one. Don't color it as much to avoid distracting the user.
-			const Color accent_color = EditorNode::get_singleton()->get_editor_theme()->get_color(SNAME("accent_color"), EditorStringName(Editor));
-			const Color text_color = EditorNode::get_singleton()->get_editor_theme()->get_color(SNAME("default_color"), SNAME("RichTextLabel"));
+			const Color accent_color = EditorCore::get_singleton()->get_editor_theme()->get_color(SNAME("accent_color"), EditorStringName(Editor));
+			const Color text_color = EditorCore::get_singleton()->get_editor_theme()->get_color(SNAME("default_color"), SNAME("RichTextLabel"));
 			lbl_preview->add_theme_color_override(SceneStringName(font_color), accent_color.lerp(text_color, 0.5));
 		} else {
-			lbl_preview->add_theme_color_override(SceneStringName(font_color), EditorNode::get_singleton()->get_editor_theme()->get_color(SNAME("success_color"), EditorStringName(Editor)));
+			lbl_preview->add_theme_color_override(SceneStringName(font_color), EditorCore::get_singleton()->get_editor_theme()->get_color(SNAME("success_color"), EditorStringName(Editor)));
 		}
 	}
 
@@ -458,11 +458,11 @@ String RenameDialog::_substitute(const String &subject, const Node *node, int co
 		result = result.replace("${TYPE}", node->get_class());
 	}
 
-	int current = EditorNode::get_editor_data().get_edited_scene();
+	int current = EditorCore::get_singleton()->get_editor_data().get_edited_scene();
 	// Always request the scene title with the extension stripped.
 	// Otherwise, the result could vary depending on whether a scene with the same name
 	// (but different extension) is currently open.
-	result = result.replace("${SCENE}", EditorNode::get_editor_data().get_scene_title(current, true));
+	result = result.replace("${SCENE}", EditorCore::get_singleton()->get_editor_data().get_scene_title(current, true));
 
 	Node *root_node = SceneTree::get_singleton()->get_edited_scene_root();
 	if (root_node) {
@@ -500,7 +500,7 @@ void RenameDialog::_error_handler(void *p_self, const char *p_func, const char *
 
 	self->has_errors = true;
 	self->lbl_preview_title->set_text(TTR("Regular Expression Error:"));
-	self->lbl_preview->add_theme_color_override(SceneStringName(font_color), EditorNode::get_singleton()->get_editor_theme()->get_color(SNAME("error_color"), EditorStringName(Editor)));
+	self->lbl_preview->add_theme_color_override(SceneStringName(font_color), EditorCore::get_singleton()->get_editor_theme()->get_color(SNAME("error_color"), EditorStringName(Editor)));
 	self->lbl_preview->set_text(vformat(TTR("At character %s"), err_str));
 }
 
@@ -590,7 +590,7 @@ void RenameDialog::rename() {
 	// Editor selection is not ordered via scene tree. Instead iterate
 	// over scene tree until all selected nodes are found in order.
 
-	EditorSelection *editor_selection = EditorNode::get_singleton()->get_editor_selection();
+	EditorSelection *editor_selection = EditorCore::get_singleton()->get_editor_selection();
 	Array selected_node_list = editor_selection->get_selected_nodes();
 	Node *root_node = SceneTree::get_singleton()->get_edited_scene_root();
 

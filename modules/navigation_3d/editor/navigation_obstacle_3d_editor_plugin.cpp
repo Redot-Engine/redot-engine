@@ -256,12 +256,12 @@ void NavigationObstacle3DEditorPlugin::_notification(int p_what) {
 			_update_theme();
 			button_edit->set_pressed(true);
 			get_tree()->connect("node_removed", callable_mp(this, &NavigationObstacle3DEditorPlugin::_node_removed));
-			EditorNode::get_singleton()->get_gui_base()->connect(SceneStringName(theme_changed), callable_mp(this, &NavigationObstacle3DEditorPlugin::_update_theme));
+			EditorCore::get_singleton()->get_shell()->get_gui_base()->connect(SceneStringName(theme_changed), callable_mp(this, &NavigationObstacle3DEditorPlugin::_update_theme));
 		} break;
 
 		case NOTIFICATION_EXIT_TREE: {
 			get_tree()->disconnect("node_removed", callable_mp(this, &NavigationObstacle3DEditorPlugin::_node_removed));
-			EditorNode::get_singleton()->get_gui_base()->disconnect(SceneStringName(theme_changed), callable_mp(this, &NavigationObstacle3DEditorPlugin::_update_theme));
+			EditorCore::get_singleton()->get_shell()->get_gui_base()->disconnect(SceneStringName(theme_changed), callable_mp(this, &NavigationObstacle3DEditorPlugin::_update_theme));
 		} break;
 	}
 }
@@ -812,7 +812,7 @@ NavigationObstacle3DEditorPlugin::NavigationObstacle3DEditorPlugin() {
 	handle_material->set_flag(StandardMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
 	handle_material->set_flag(StandardMaterial3D::FLAG_SRGB_VERTEX_COLOR, true);
 	handle_material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-	Ref<Texture2D> handle = EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Editor3DHandle"), EditorStringName(EditorIcons));
+	Ref<Texture2D> handle = EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Editor3DHandle"), EditorStringName(EditorIcons));
 	handle_material->set_point_size(handle->get_width());
 	handle_material->set_texture(StandardMaterial3D::TEXTURE_ALBEDO, handle);
 	handle_material->set_flag(StandardMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);

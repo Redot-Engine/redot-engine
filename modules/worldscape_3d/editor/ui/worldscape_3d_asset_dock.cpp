@@ -972,7 +972,7 @@ void WorldScape3DAssetDock::remove_dock(const bool force) {
 			break;
 		case State::BOTTOM:
 			_plugin->remove_control_from_bottom_panel(this);
-			EditorNode::get_bottom_panel()->make_item_visible(EditorNode::get_log());
+			EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(EditorCore::get_singleton()->get_log());
 			_state = State::HIDDEN;
 			break;
 		case State::WINDOWED: {

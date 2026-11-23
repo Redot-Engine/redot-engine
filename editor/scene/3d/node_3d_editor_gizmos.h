@@ -153,6 +153,8 @@ public:
 	~EditorNode3DGizmo();
 };
 
+class Node3DEditor;
+
 class EditorNode3DGizmoPlugin : public Resource {
 	GDCLASS(EditorNode3DGizmoPlugin, Resource);
 
@@ -160,6 +162,8 @@ public:
 	static const int VISIBLE = 0;
 	static const int HIDDEN = 1;
 	static const int ON_TOP = 2;
+
+	Node3DEditor *node_3d_editor = nullptr; ///< Set by Node3DEditor when the plugin is added.
 
 protected:
 	int current_state;

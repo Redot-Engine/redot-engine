@@ -1037,7 +1037,7 @@ void TextureRegionEditor::_edit_region() {
 
 	// occurs when get_texture_filter_in_tree reaches the scene root
 	if (filter == CanvasItem::TEXTURE_FILTER_PARENT_NODE) {
-		SubViewport *root = EditorNode::get_singleton()->get_scene_root();
+		SubViewport *root = EditorCore::get_singleton()->get_shell()->get_scene_root();
 
 		if (root != nullptr) {
 			Viewport::DefaultCanvasItemTextureFilter filter_default = root->get_default_canvas_item_texture_filter();
@@ -1117,12 +1117,12 @@ void TextureRegionEditor::shortcut_input(const Ref<InputEvent> &p_event) {
 		bool handled = false;
 
 		if (ED_IS_SHORTCUT("ui_undo", p_event)) {
-			EditorNode::get_singleton()->undo();
+			EditorSceneManager::get_singleton()->undo();
 			handled = true;
 		}
 
 		if (ED_IS_SHORTCUT("ui_redo", p_event)) {
-			EditorNode::get_singleton()->redo();
+			EditorSceneManager::get_singleton()->redo();
 			handled = true;
 		}
 
@@ -1312,7 +1312,7 @@ bool EditorInspectorPluginTextureRegion::parse_property(Object *p_object, const 
 
 EditorInspectorPluginTextureRegion::EditorInspectorPluginTextureRegion() {
 	texture_region_editor = memnew(TextureRegionEditor);
-	EditorNode::get_singleton()->get_gui_base()->add_child(texture_region_editor);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(texture_region_editor);
 }
 
 TextureRegionEditorPlugin::TextureRegionEditorPlugin() {

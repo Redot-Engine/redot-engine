@@ -150,7 +150,7 @@ void GPUParticlesCollisionSDF3DEditorPlugin::_sdf_save_path_and_bake(const Strin
 	if (col_sdf) {
 		Ref<Image> bake_img = col_sdf->bake();
 		if (bake_img.is_null()) {
-			EditorNode::get_singleton()->show_warning(TTR("No faces detected during GPUParticlesCollisionSDF3D bake.\nCheck whether there are visible meshes matching the bake mask within its extents."));
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("No faces detected during GPUParticlesCollisionSDF3D bake.\nCheck whether there are visible meshes matching the bake mask within its extents."));
 			return;
 		}
 
@@ -189,7 +189,7 @@ GPUParticlesCollisionSDF3DEditorPlugin::GPUParticlesCollisionSDF3DEditorPlugin()
 	bake_hb->hide();
 	bake = memnew(Button);
 	bake->set_theme_type_variation(SceneStringName(FlatButton));
-	bake->set_button_icon(EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Bake"), EditorStringName(EditorIcons)));
+	bake->set_button_icon(EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Bake"), EditorStringName(EditorIcons)));
 	bake->set_text(TTR("Bake SDF"));
 	bake->connect(SceneStringName(pressed), callable_mp(this, &GPUParticlesCollisionSDF3DEditorPlugin::_bake));
 	bake_hb->add_child(bake);

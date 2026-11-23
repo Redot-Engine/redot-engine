@@ -43,7 +43,7 @@
 #include "scene/3d/audio_listener_3d.h"
 
 AudioListener3DGizmoPlugin::AudioListener3DGizmoPlugin() {
-	create_icon_material("audio_listener_3d_icon", EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("GizmoAudioListener3D"), EditorStringName(EditorIcons)));
+	create_icon_material("audio_listener_3d_icon", EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("GizmoAudioListener3D"), EditorStringName(EditorIcons)));
 }
 
 bool AudioListener3DGizmoPlugin::has_gizmo(Node3D *p_spatial) {

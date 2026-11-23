@@ -40,6 +40,7 @@
 
 #include "core/object/class_db.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_feature_profile.h"
@@ -95,7 +96,7 @@ void CreateDialog::_fill_type_list() {
 	ClassDB::get_class_list(complete_type_list);
 	ScriptServer::get_global_class_list(complete_type_list);
 
-	EditorData &ed = EditorNode::get_editor_data();
+	EditorData &ed = EditorCore::get_singleton()->get_editor_data();
 	HashMap<String, DocData::ClassDoc> &class_docs_list = EditorHelp::get_doc_data()->class_list;
 
 	for (const StringName &type : complete_type_list) {
@@ -146,7 +147,7 @@ bool CreateDialog::_is_type_preferred(const String &p_type) const {
 		return ClassDB::is_parent_class(p_type, preferred_search_result_type);
 	}
 
-	return EditorNode::get_editor_data().script_class_is_parent(p_type, preferred_search_result_type);
+	return EditorCore::get_singleton()->get_editor_data().script_class_is_parent(p_type, preferred_search_result_type);
 }
 
 void CreateDialog::_script_button_clicked(TreeItem *p_item, int p_column, int p_button_id, MouseButton p_mouse_button_index) {
@@ -161,7 +162,7 @@ void CreateDialog::_script_button_clicked(TreeItem *p_item, int p_column, int p_
 	String scr_path = ScriptServer::get_global_class_path(p_item->get_text(0));
 	Ref<Script> scr = ResourceLoader::load(scr_path, "Script");
 	ERR_FAIL_COND_MSG(scr.is_null(), vformat("Could not load the script from resource path: %s", scr_path));
-	EditorNode::get_singleton()->push_item_no_inspector(scr.ptr());
+	EditorSceneManager::get_singleton()->push_item_no_inspector(scr.ptr());
 
 	hide();
 	_cleanup();
@@ -209,7 +210,7 @@ bool CreateDialog::_should_hide_type(const StringName &p_type) const {
 		if (!ScriptServer::is_global_class(p_type)) {
 			return true;
 		}
-		if (!EditorNode::get_editor_data().script_class_is_parent(p_type, base_type)) {
+		if (!EditorCore::get_singleton()->get_editor_data().script_class_is_parent(p_type, base_type)) {
 			return true; // Wrong inheritance.
 		}
 
@@ -228,7 +229,7 @@ bool CreateDialog::_should_hide_type(const StringName &p_type) const {
 			while (i > -1) {
 				const String plugin_path = script_path.substr(0, i).path_join("plugin.cfg");
 				if (FileAccess::exists(plugin_path)) {
-					return !EditorNode::get_singleton()->is_addon_plugin_enabled(plugin_path);
+					return !EditorPluginManager::get_singleton()->is_addon_plugin_enabled(plugin_path);
 				}
 				i = script_path.find_char('/', i + 1);
 			}
@@ -413,7 +414,7 @@ void CreateDialog::_configure_search_option_item(TreeItem *r_item, const StringN
 
 	r_item->set_meta(SNAME("__instantiable"), instantiable);
 
-	r_item->set_icon(0, EditorNode::get_singleton()->get_class_icon(p_type));
+	r_item->set_icon(0, EditorCore::get_singleton()->get_class_icon(p_type));
 	if (!instantiable) {
 		r_item->set_custom_color(0, search_options->get_theme_color(SNAME("font_disabled_color"), EditorStringName(Editor)));
 	}
@@ -445,7 +446,7 @@ void CreateDialog::_configure_search_option_item(TreeItem *r_item, const StringN
 	r_item->set_tooltip_text(0, description);
 
 	if (p_type_category == TypeCategory::OTHER_TYPE && !script_type) {
-		Ref<Texture2D> icon = EditorNode::get_editor_data().get_custom_types()[custom_type_parents[p_type]][custom_type_indices[p_type]].icon;
+		Ref<Texture2D> icon = EditorCore::get_singleton()->get_editor_data().get_custom_types()[custom_type_parents[p_type]][custom_type_indices[p_type]].icon;
 		if (icon.is_valid()) {
 			r_item->set_icon(0, icon);
 		}
@@ -649,18 +650,18 @@ Variant CreateDialog::instantiate_selected() {
 	Variant obj;
 	if (is_custom_type) {
 		if (ScriptServer::is_global_class(type_name)) {
-			obj = EditorNode::get_editor_data().script_class_instance(type_name);
+			obj = EditorCore::get_singleton()->get_editor_data().script_class_instance(type_name);
 			Node *n = Object::cast_to<Node>(obj);
 			if (n) {
 				n->set_name(type_name);
 			}
 		} else {
-			obj = EditorNode::get_editor_data().instantiate_custom_type(selected->get_text(0), type_name);
+			obj = EditorCore::get_singleton()->get_editor_data().instantiate_custom_type(selected->get_text(0), type_name);
 		}
 	} else {
 		obj = ClassDB::instantiate(type_name);
 	}
-	EditorNode::get_editor_data().instantiate_object_properties(obj);
+	EditorCore::get_singleton()->get_editor_data().instantiate_object_properties(obj);
 
 	return obj;
 }
@@ -806,7 +807,7 @@ void CreateDialog::_save_and_update_favorite_list() {
 		Ref<FileAccess> f = FileAccess::open(EditorPaths::get_singleton()->get_project_settings_dir().path_join("favorites." + base_type), FileAccess::WRITE);
 		if (f.is_valid()) {
 			for (const String &name : favorite_list) {
-				if (!EditorNode::get_editor_data().is_type_recognized(name)) {
+				if (!EditorCore::get_singleton()->get_editor_data().is_type_recognized(name)) {
 					continue;
 				}
 				f->store_line(name);
@@ -817,7 +818,7 @@ void CreateDialog::_save_and_update_favorite_list() {
 
 				TreeItem *ti = favorites->create_item(root);
 				ti->set_text(0, name);
-				ti->set_icon(0, EditorNode::get_singleton()->get_class_icon(name));
+				ti->set_icon(0, EditorCore::get_singleton()->get_class_icon(name));
 			}
 		}
 	}
@@ -832,8 +833,8 @@ void CreateDialog::_load_favorites_and_history() {
 		while (!f->eof_reached()) {
 			String name = f->get_line().strip_edges();
 
-			if (EditorNode::get_editor_data().is_type_recognized(name) && !_is_class_disabled_by_feature_profile(name)) {
-				recent->add_item(name, EditorNode::get_singleton()->get_class_icon(name));
+			if (EditorCore::get_singleton()->get_editor_data().is_type_recognized(name) && !_is_class_disabled_by_feature_profile(name)) {
+				recent->add_item(name, EditorCore::get_singleton()->get_class_icon(name));
 			}
 		}
 	}

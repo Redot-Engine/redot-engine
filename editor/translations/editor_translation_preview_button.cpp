@@ -42,7 +42,7 @@
 #include "editor/editor_node.h"
 
 void EditorTranslationPreviewButton::_update() {
-	const String &locale = EditorNode::get_singleton()->get_preview_locale();
+	const String &locale = EditorCore::get_singleton()->get_preview_locale();
 
 	if (locale.is_empty()) {
 		hide();
@@ -55,7 +55,7 @@ void EditorTranslationPreviewButton::_update() {
 }
 
 void EditorTranslationPreviewButton::pressed() {
-	EditorNode::get_singleton()->set_preview_locale(String());
+	EditorCore::get_singleton()->set_preview_locale(String());
 }
 
 void EditorTranslationPreviewButton::_notification(int p_what) {
@@ -69,7 +69,7 @@ void EditorTranslationPreviewButton::_notification(int p_what) {
 		} break;
 
 		case NOTIFICATION_READY: {
-			EditorNode::get_singleton()->connect("preview_locale_changed", callable_mp(this, &EditorTranslationPreviewButton::_update));
+			EditorCore::get_singleton()->connect("preview_locale_changed", callable_mp(this, &EditorTranslationPreviewButton::_update));
 		} break;
 	}
 }

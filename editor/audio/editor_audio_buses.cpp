@@ -44,6 +44,7 @@
 #include "core/os/keyboard.h"
 #include "editor/docks/filesystem_dock.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/gui/editor_bottom_panel.h"
@@ -127,7 +128,7 @@ void EditorAudioBus::_notification(int p_what) {
 
 			for (int i = 0; i < effect_options->get_item_count(); i++) {
 				String class_name = effect_options->get_item_metadata(i);
-				Ref<Texture> icon = EditorNode::get_singleton()->get_class_icon(class_name);
+				Ref<Texture> icon = EditorCore::get_singleton()->get_class_icon(class_name);
 				effect_options->set_item_icon(i, icon);
 			}
 		} break;
@@ -523,7 +524,7 @@ void EditorAudioBus::_effect_selected() {
 		int index = effect->get_metadata(0);
 		Ref<AudioEffect> effect2 = AudioServer::get_singleton()->get_bus_effect(get_index(), index);
 		if (effect2.is_valid()) {
-			EditorNode::get_singleton()->push_item(effect2.ptr());
+			EditorSceneManager::get_singleton()->push_item(effect2.ptr());
 		}
 	}
 
@@ -1109,7 +1110,7 @@ void EditorAudioBuses::_rebuild_buses() {
 
 EditorAudioBuses *EditorAudioBuses::register_editor() {
 	EditorAudioBuses *audio_buses = memnew(EditorAudioBuses);
-	EditorNode::get_bottom_panel()->add_item(TTRC("Audio"), audio_buses, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_audio_bottom_panel", TTRC("Toggle Audio Bottom Panel"), KeyModifierMask::ALT | Key::A));
+	EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(TTRC("Audio"), audio_buses, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_audio_bottom_panel", TTRC("Toggle Audio Bottom Panel"), KeyModifierMask::ALT | Key::A));
 	return audio_buses;
 }
 
@@ -1179,7 +1180,7 @@ void EditorAudioBuses::_delete_bus(Object *p_which) {
 	EditorAudioBus *bus = Object::cast_to<EditorAudioBus>(p_which);
 	int index = bus->get_index();
 	if (index == 0) {
-		EditorNode::get_singleton()->show_warning(TTR("Master bus can't be deleted!"));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Master bus can't be deleted!"));
 		return;
 	}
 
@@ -1303,7 +1304,7 @@ void EditorAudioBuses::_file_dialog_callback(const String &p_string) {
 
 		Error err = ResourceSaver::save(AudioServer::get_singleton()->generate_bus_layout(), p_string);
 		if (err != OK) {
-			EditorNode::get_singleton()->show_warning(vformat(TTR("Error saving file: %s"), p_string));
+			EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Error saving file: %s"), p_string));
 			return;
 		}
 	}
@@ -1391,18 +1392,18 @@ EditorAudioBuses::EditorAudioBuses() {
 }
 
 void EditorAudioBuses::open_layout(const String &p_path) {
-	EditorNode::get_bottom_panel()->make_item_visible(this);
+	EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(this);
 
 	const String path = ResourceUID::ensure_path(p_path);
 
 	if (!ResourceLoader::exists(path)) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR(R"(Can't open audio bus layout: "%s" doesn't exist.)"), path));
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR(R"(Can't open audio bus layout: "%s" doesn't exist.)"), path));
 		return;
 	}
 
 	Ref<AudioBusLayout> state = ResourceLoader::load(path, "", ResourceFormatLoader::CACHE_MODE_IGNORE);
 	if (state.is_null()) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR(R"(Can't open audio bus layout: "%s" is not a valid audio bus layout.)"), path));
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR(R"(Can't open audio bus layout: "%s" is not a valid audio bus layout.)"), path));
 		return;
 	}
 

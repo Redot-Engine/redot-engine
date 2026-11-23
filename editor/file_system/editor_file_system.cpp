@@ -50,6 +50,7 @@
 #include "editor/editor_node.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/inspector/editor_resource_preview.h"
+#include "editor/plugins/editor_plugin_manager.h"
 #include "editor/script/script_editor_plugin.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/settings/project_settings_editor.h"
@@ -331,7 +332,7 @@ void EditorFileSystem::_first_scan_filesystem() {
 
 	// If a global class is found or removed, we sync global_script_class_cache.cfg with the ScriptServer
 	if (!existing_class_names.is_empty() || save_scripts) {
-		EditorNode::get_editor_data().script_class_save_global_classes();
+		EditorCore::get_singleton()->get_editor_data().script_class_save_global_classes();
 	}
 
 	// Processing extensions to add new extensions or remove invalid ones.
@@ -348,7 +349,7 @@ void EditorFileSystem::_first_scan_filesystem() {
 	ProjectSettingsEditor::get_singleton()->init_autoloads();
 
 	ep.step(TTR("Initializing plugins..."), 4, true);
-	EditorNode::get_singleton()->init_plugins();
+	EditorPluginManager::get_singleton()->init_plugins();
 
 	ep.step(TTR("Starting file scan..."), 5, true);
 }
@@ -1016,11 +1017,11 @@ bool EditorFileSystem::_update_scan_actions() {
 	if (_scan_extensions()) {
 		//needs editor restart
 		//extensions also may provide filetypes to be imported, so they must run before importing
-		if (EditorNode::immediate_confirmation_dialog(TTR("Some extensions need the editor to restart to take effect."), first_scan ? TTR("Restart") : TTR("Save & Restart"), TTR("Continue"))) {
+		if (EditorCore::get_singleton()->get_shell()->immediate_confirmation_dialog(TTR("Some extensions need the editor to restart to take effect."), first_scan ? TTR("Restart") : TTR("Save & Restart"), TTR("Continue"))) {
 			if (!first_scan) {
-				EditorNode::get_singleton()->save_all_scenes();
+				EditorSceneManager::get_singleton()->save_all_open_scenes();
 			}
-			EditorNode::get_singleton()->restart_editor();
+			EditorCore::get_singleton()->get_shell()->restart_editor();
 			//do not import
 			return true;
 		}
@@ -2097,7 +2098,7 @@ EditorFileSystem::ScriptClassInfo EditorFileSystem::_get_global_script_class(con
 void EditorFileSystem::_update_file_icon_path(EditorFileSystemDirectory::FileInfo *file_info) {
 	String icon_path;
 	if (file_info->resource_script_class != StringName()) {
-		icon_path = EditorNode::get_editor_data().script_class_get_icon_path(file_info->resource_script_class);
+		icon_path = EditorCore::get_singleton()->get_editor_data().script_class_get_icon_path(file_info->resource_script_class);
 	} else if (file_info->class_info.icon_path.is_empty() && !file_info->deps.is_empty()) {
 		const String &script_dep = file_info->deps[0]; // Assuming the first dependency is a script.
 		const String &script_path = script_dep.contains("::") ? script_dep.get_slice("::", 2) : script_dep;
@@ -2119,7 +2120,7 @@ void EditorFileSystem::_update_file_icon_path(EditorFileSystemDirectory::FileInf
 	}
 
 	if (icon_path.is_empty() && !file_info->type.is_empty()) {
-		Ref<Texture2D> icon = EditorNode::get_singleton()->get_class_icon(file_info->type);
+		Ref<Texture2D> icon = EditorCore::get_singleton()->get_class_icon(file_info->type);
 		if (icon.is_valid()) {
 			icon_path = icon->get_path();
 		}
@@ -2176,7 +2177,7 @@ void EditorFileSystem::_update_script_classes() {
 		update_script_paths.clear();
 	}
 
-	EditorNode::get_editor_data().script_class_save_global_classes();
+	EditorCore::get_singleton()->get_editor_data().script_class_save_global_classes();
 
 	emit_signal("script_classes_updated");
 
@@ -2296,7 +2297,7 @@ void EditorFileSystem::_process_update_pending() {
 	_update_script_classes();
 	// Parse documentation second, as it requires the class names to be loaded
 	// because _update_script_documentation loads the scripts completely.
-	if (!EditorNode::is_cmdline_mode()) {
+	if (!EditorCore::get_singleton()->get_shell()->is_cmdline_mode()) {
 		_update_script_documentation();
 		_update_pending_scene_groups();
 	}
@@ -2583,8 +2584,8 @@ void EditorFileSystem::_register_global_class_script(const String &p_search_path
 	}
 
 	ScriptServer::add_global_class(p_script_update.name, p_script_update.extends, lang, p_target_path, p_script_update.is_abstract, p_script_update.is_tool);
-	EditorNode::get_editor_data().script_class_set_icon_path(p_script_update.name, p_script_update.icon_path);
-	EditorNode::get_editor_data().script_class_set_name(p_target_path, p_script_update.name);
+	EditorCore::get_singleton()->get_editor_data().script_class_set_icon_path(p_script_update.name, p_script_update.icon_path);
+	EditorCore::get_singleton()->get_editor_data().script_class_set_name(p_target_path, p_script_update.name);
 }
 
 void EditorFileSystem::register_global_class_script(const String &p_search_path, const String &p_target_path) {
@@ -2614,7 +2615,7 @@ Error EditorFileSystem::_reimport_group(const String &p_group_file, const Vector
 		ERR_CONTINUE(file_importer_name.is_empty());
 
 		if (!importer_name.is_empty() && importer_name != file_importer_name) {
-			EditorNode::get_singleton()->show_warning(vformat(TTR("There are multiple importers for different types pointing to file %s, import aborted"), p_group_file));
+			EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("There are multiple importers for different types pointing to file %s, import aborted"), p_group_file));
 			ERR_FAIL_V(ERR_FILE_CORRUPT);
 		}
 
@@ -3160,7 +3161,7 @@ Error EditorFileSystem::_copy_file(const String &p_from, const String &p_to) {
 
 			if (edited) {
 				// Save cached resources to prevent changes from being lost and to prevent discrepancies.
-				EditorNode::get_singleton()->save_resource(res);
+				EditorCore::get_singleton()->save_resource(res);
 			}
 		}
 		if (err == OK && res.is_valid()) {

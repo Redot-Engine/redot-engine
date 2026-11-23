@@ -62,7 +62,7 @@ void OpenXREditorPlugin::make_visible(bool p_visible) {
 
 OpenXREditorPlugin::OpenXREditorPlugin() {
 	action_map_editor = memnew(OpenXRActionMapEditor);
-	EditorNode::get_bottom_panel()->add_item(TTRC("OpenXR Action Map"), action_map_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_openxr_action_map_bottom_panel", TTRC("Toggle OpenXR Action Map Bottom Panel")));
+	EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(TTRC("OpenXR Action Map"), action_map_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_openxr_action_map_bottom_panel", TTRC("Toggle OpenXR Action Map Bottom Panel")));
 
 	binding_modifier_inspector_plugin = Ref<EditorInspectorPluginBindingModifier>(memnew(EditorInspectorPluginBindingModifier));
 	EditorInspector::add_inspector_plugin(binding_modifier_inspector_plugin);

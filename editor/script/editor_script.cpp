@@ -40,19 +40,18 @@
 
 #include "editor/editor_interface.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/scene/editor_scene_tabs.h"
 #include "scene/main/node.h"
 #include "scene/resources/packed_scene.h"
 
 void EditorScript::add_root_node(Node *p_node) {
-	if (!EditorNode::get_singleton()) {
-		EditorNode::add_io_error("EditorScript::add_root_node: " + TTR("Write your logic in the _run() method."));
-		return;
-	}
+	EditorCore *core = EditorCore::get_singleton();
+	ERR_FAIL_COND_MSG(!core || !core->get_shell(), TTR("Write your logic in the _run() method."));
 
-	if (EditorNode::get_singleton()->get_edited_scene()) {
-		EditorNode::add_io_error("EditorScript::add_root_node: " + TTR("The current scene already has a root node."));
+	if (EditorSceneManager::get_singleton()->get_edited_scene()) {
+		core->get_shell()->add_io_error("EditorScript::add_root_node: " + TTR("The current scene already has a root node."));
 		return;
 	}
 
@@ -67,18 +66,16 @@ void EditorScript::add_root_node(Node *p_node) {
 		}
 	}
 
-	EditorNode::get_singleton()->set_edited_scene(p_node);
-	EditorUndoRedoManager::get_singleton()->set_history_as_unsaved(EditorNode::get_editor_data().get_current_edited_scene_history_id());
+	EditorSceneManager::get_singleton()->set_edited_scene(p_node);
+	EditorUndoRedoManager::get_singleton()->set_history_as_unsaved(core->get_editor_data().get_current_edited_scene_history_id());
 	EditorSceneTabs::get_singleton()->update_scene_tabs();
 }
 
 Node *EditorScript::get_scene() const {
-	if (!EditorNode::get_singleton()) {
-		EditorNode::add_io_error("EditorScript::get_scene: " + TTR("Write your logic in the _run() method."));
-		return nullptr;
-	}
+	EditorCore *core = EditorCore::get_singleton();
+	ERR_FAIL_COND_V_MSG(!core || !core->get_shell(), nullptr, TTR("Write your logic in the _run() method."));
 
-	return EditorNode::get_singleton()->get_edited_scene();
+	return EditorSceneManager::get_singleton()->get_edited_scene();
 }
 
 EditorInterface *EditorScript::get_editor_interface() const {

@@ -42,6 +42,7 @@
 #include "core/core_constants.h"
 #include "editor/docks/filesystem_dock.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/gui/editor_file_dialog.h"
@@ -208,13 +209,13 @@ void EditorAutoloadSettings::_autoload_edited() {
 		String error;
 		if (!_autoload_name_is_valid(name, &error)) {
 			ti->set_text(0, old_name);
-			EditorNode::get_singleton()->show_warning(error);
+			EditorCore::get_singleton()->get_shell()->show_warning(error);
 			return;
 		}
 
 		if (ProjectSettings::get_singleton()->has_setting("autoload/" + name)) {
 			ti->set_text(0, old_name);
-			EditorNode::get_singleton()->show_warning(vformat(TTR("Autoload '%s' already exists!"), name));
+			EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Autoload '%s' already exists!"), name));
 			return;
 		}
 
@@ -361,7 +362,7 @@ void EditorAutoloadSettings::_autoload_activated() {
 }
 
 void EditorAutoloadSettings::_autoload_open(const String &fpath) {
-	EditorNode::get_singleton()->load_scene_or_resource(fpath);
+	EditorCore::get_singleton()->load_scene_or_resource(fpath);
 	ProjectSettingsEditor::get_singleton()->hide();
 }
 
@@ -788,17 +789,17 @@ bool EditorAutoloadSettings::autoload_add(const String &p_name, const String &p_
 
 	String error;
 	if (!_autoload_name_is_valid(name, &error)) {
-		EditorNode::get_singleton()->show_warning(TTR("Can't add Autoload:") + "\n" + error);
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Can't add Autoload:") + "\n" + error);
 		return false;
 	}
 
 	if (!FileAccess::exists(p_path)) {
-		EditorNode::get_singleton()->show_warning(TTR("Can't add Autoload:") + "\n" + vformat(TTR("%s is an invalid path. File does not exist."), p_path));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Can't add Autoload:") + "\n" + vformat(TTR("%s is an invalid path. File does not exist."), p_path));
 		return false;
 	}
 
 	if (!p_path.begins_with("res://")) {
-		EditorNode::get_singleton()->show_warning(TTR("Can't add Autoload:") + "\n" + vformat(TTR("%s is an invalid path. Not in resource path (res://)."), p_path));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Can't add Autoload:") + "\n" + vformat(TTR("%s is an invalid path. Not in resource path (res://)."), p_path));
 		return false;
 	}
 
@@ -905,7 +906,7 @@ EditorAutoloadSettings::EditorAutoloadSettings() {
 	error_message->set_focus_mode(FOCUS_ACCESSIBILITY);
 	error_message->hide();
 	error_message->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_RIGHT);
-	error_message->add_theme_color_override(SceneStringName(font_color), EditorNode::get_singleton()->get_editor_theme()->get_color(SNAME("error_color"), EditorStringName(Editor)));
+	error_message->add_theme_color_override(SceneStringName(font_color), EditorCore::get_singleton()->get_editor_theme()->get_color(SNAME("error_color"), EditorStringName(Editor)));
 	add_child(error_message);
 
 	Label *l = memnew(Label);
