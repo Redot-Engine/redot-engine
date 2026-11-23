@@ -37,10 +37,10 @@
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/os/time.h"
-#include "editor/editor_node.h"
+#include "editor/editor_core.h"
+#include "editor/editor_shell.h"
 #include "editor/export/project_zip_packer.h"
-
-#include <emscripten/emscripten.h>
+#include "editor/plugins/editor_plugin_manager.h"
 
 // Web functions defined in library_godot_editor_tools.js
 extern "C" {
@@ -52,7 +52,7 @@ static void _web_editor_init_callback() {
 }
 
 void WebToolsEditorPlugin::initialize() {
-	EditorNode::add_init_callback(_web_editor_init_callback);
+	EditorPluginManager::add_init_callback(_web_editor_init_callback);
 }
 
 WebToolsEditorPlugin::WebToolsEditorPlugin() {
