@@ -84,6 +84,7 @@ class DynamicFontImportSettingsDialog;
 class EditorAbout;
 class EditorBuildProfileManager;
 class EditorBottomPanel;
+class EditorDock;
 class EditorDockManager;
 class EditorExportPreset;
 class EditorFeatureProfileManager;
@@ -275,6 +276,7 @@ private:
 	Button *new_inherited_button = nullptr;
 
 	EditorDockManager *editor_dock_manager = nullptr;
+	HashMap<Control *, EditorDock *> legacy_docks;
 	Timer *editor_layout_save_delay_timer = nullptr;
 	Timer *scan_changes_timer = nullptr;
 	Button *distraction_free = nullptr;
@@ -506,6 +508,8 @@ public:
 	void save_editor_layout_delayed() override; ///< Schedules the editor dock layout to be saved shortly (debounced).
 
 	PopupMenu *get_export_as_menu() override; ///< @return The "Export As..." popup menu (for mesh libraries, etc.).
+
+	EditorDockManager *get_dock_manager() const override { return editor_dock_manager; }
 
 	/// Adds a dock control to one of EditorNode's embedded dock slots.
 	void add_control_to_dock(int p_slot, Control *p_control, const Ref<Shortcut> &p_shortcut) override;
