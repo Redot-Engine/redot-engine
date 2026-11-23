@@ -1,6 +1,19 @@
 name: 🍎 macOS Builds
 on:
   workflow_call:
+    inputs:
+      job-name:
+        type: string
+        required: true
+      target:
+        type: string
+        required: true
+      artifact-name:
+        type: string
+        required: true
+      scons-flags:
+        type: string
+        default: ""
 
 # Global Settings
 env:
@@ -12,22 +25,12 @@ env:
 jobs:
   build-macos:
     runs-on: macos-latest
-    name: ${{ matrix.name }}
+    name: Compile ${{ inputs.target }} (${{ matrix.arch }})
     timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - name: Editor (target=editor)
-            cache-name: macos-editor
-            target: editor
-            bin: ./bin/redot.macos.editor.universal
-
-          - name: Template (target=template_release)
-            cache-name: macos-template
-            target: template_release
-            scons-flags: debug_symbols=no
-            bin: ./bin/redot.macos.template_release.universal
+        arch: [x86_64, arm64]
 
     steps:
       - name: Checkout
@@ -41,7 +44,7 @@ jobs:
       - name: Restore Godot build cache
         uses: ./.github/actions/godot-cache-restore
         with:
-          cache-name: ${{ matrix.cache-name }}
+          cache-name: ${{ inputs.artifact-name }}-${{ matrix.arch }}
         continue-on-error: true
 
       - name: Setup Python and SCons
@@ -69,40 +72,72 @@ jobs:
           fi
         continue-on-error: true
 
-      - name: Compilation (x86_64)
+      - name: Compilation
         uses: ./.github/actions/godot-build
         with:
-          scons-flags: ${{ env.SCONS_FLAGS }} ${{ matrix.scons-flags }} arch=x86_64 vulkan=${{ steps.vulkan-sdk.outputs.VULKAN_ENABLED }}
+          scons-flags: ${{ env.SCONS_FLAGS }} ${{ inputs.scons-flags }} arch=${{ matrix.arch }} vulkan=${{ steps.vulkan-sdk.outputs.VULKAN_ENABLED }}
           platform: macos
-          target: ${{ matrix.target }}
-
-      - name: Compilation (arm64)
-        uses: ./.github/actions/godot-build
-        with:
-          scons-flags: ${{ env.SCONS_FLAGS }} ${{ matrix.scons-flags }} arch=arm64 vulkan=${{ steps.vulkan-sdk.outputs.VULKAN_ENABLED }}
-          platform: macos
-          target: ${{ matrix.target }}
+          target: ${{ inputs.target }}
 
       - name: Save Godot build cache
         uses: ./.github/actions/godot-cache-save
         with:
-          cache-name: ${{ matrix.cache-name }}
+          cache-name: ${{ inputs.artifact-name }}-${{ matrix.arch }}
         continue-on-error: true
 
-      - name: Prepare artifact
+      - name: Upload architecture binary
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.artifact-name }}-slice-${{ matrix.arch }}
+          path: bin/redot.macos.${{ inputs.target }}.${{ matrix.arch }}
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 30
+
+  package-macos:
+    needs: build-macos
+    if: ${{ !cancelled() }}
+    runs-on: macos-latest
+    name: ${{ inputs.job-name }}
+    timeout-minutes: 15
+    env:
+      BIN_BASE: ./bin/redot.macos.${{ inputs.target }}
+
+    steps:
+      - name: Require successful builds
+        if: needs.build-macos.result != 'success'
         run: |
-          lipo -create ./bin/redot.macos.${{ matrix.target }}.x86_64 ./bin/redot.macos.${{ matrix.target }}.arm64 -output ./bin/redot.macos.${{ matrix.target }}.universal
-          rm ./bin/redot.macos.${{ matrix.target }}.x86_64 ./bin/redot.macos.${{ matrix.target }}.arm64
-          strip bin/redot.*
-          chmod +x bin/redot.*
+          echo "::error::Both architecture builds must succeed before packaging."
+          exit 1
+
+      - name: Select Xcode 26
+        run: sudo xcode-select -s /Applications/Xcode_26.0.1.app
+
+      - name: Download architecture binaries
+        uses: actions/download-artifact@v8
+        with:
+          pattern: ${{ inputs.artifact-name }}-slice-*
+          path: bin
+          merge-multiple: true
+
+      - name: Create universal binary
+        run: |
+          lipo -create "$BIN_BASE.x86_64" "$BIN_BASE.arm64" -output "$BIN_BASE.universal"
+          lipo -verify_arch x86_64 arm64 "$BIN_BASE.universal"
+          strip "$BIN_BASE.universal"
+          chmod +x "$BIN_BASE.universal"
 
       - name: Upload artifact
-        uses: ./.github/actions/upload-artifact
+        uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.cache-name }}
+          name: ${{ inputs.artifact-name }}
+          path: bin/redot.macos.${{ inputs.target }}.universal
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 60
 
       - name: Unit tests
         run: |
-          ${{ matrix.bin }} --version
-          ${{ matrix.bin }} --help
-          ${{ matrix.bin }} --test --force-colors
+          "$BIN_BASE.universal" --version
+          "$BIN_BASE.universal" --help
+          "$BIN_BASE.universal" --test --force-colors
