@@ -41,6 +41,7 @@
 
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/debugger/editor_debugger_plugin.h"
+#include "editor/docks/editor_dock.h"
 #include "editor/docks/editor_dock_manager.h"
 #include "editor/docks/inspector_dock.h"
 #include "editor/docks/scene_tree_dock.h"
@@ -93,6 +94,7 @@ Button *EditorPlugin::add_control_to_bottom_panel(Control *p_control, const Stri
 	return EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(p_title, p_control, p_shortcut);
 }
 
+#ifndef DISABLE_DEPRECATED
 void EditorPlugin::add_control_to_dock(DockSlot p_slot, Control *p_control, const Ref<Shortcut> &p_shortcut) {
 	ERR_FAIL_NULL(p_control);
 	EditorCore::get_singleton()->get_shell()->add_control_to_dock(p_slot, p_control, p_shortcut);
@@ -103,14 +105,27 @@ void EditorPlugin::remove_control_from_docks(Control *p_control) {
 	EditorCore::get_singleton()->get_shell()->remove_control_from_docks(p_control);
 }
 
+void EditorPlugin::set_dock_tab_icon(Control *p_control, const Ref<Texture2D> &p_icon) {
+	ERR_FAIL_NULL(p_control);
+	EditorCore::get_singleton()->get_shell()->set_dock_tab_icon(p_control, p_icon);
+}
+#endif
+
 void EditorPlugin::remove_control_from_bottom_panel(Control *p_control) {
 	ERR_FAIL_NULL(p_control);
 	EditorCore::get_singleton()->get_shell()->get_bottom_panel()->remove_item(p_control);
 }
 
-void EditorPlugin::set_dock_tab_icon(Control *p_control, const Ref<Texture2D> &p_icon) {
-	ERR_FAIL_NULL(p_control);
-	EditorCore::get_singleton()->get_shell()->set_dock_tab_icon(p_control, p_icon);
+void EditorPlugin::add_dock(EditorDock *p_dock) {
+	EditorDockManager *dock_manager = EditorCore::get_singleton()->get_shell()->get_dock_manager();
+	ERR_FAIL_NULL_MSG(dock_manager, "This editor shell does not support plugin docks.");
+	dock_manager->add_dock(p_dock);
+}
+
+void EditorPlugin::remove_dock(EditorDock *p_dock) {
+	EditorDockManager *dock_manager = EditorCore::get_singleton()->get_shell()->get_dock_manager();
+	ERR_FAIL_NULL_MSG(dock_manager, "This editor shell does not support plugin docks.");
+	dock_manager->remove_dock(p_dock);
 }
 
 void EditorPlugin::add_control_to_container(CustomControlContainer p_location, Control *p_control) {
@@ -592,19 +607,24 @@ void EditorPlugin::_notification(int p_what) {
 }
 
 void EditorPlugin::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("add_dock", "dock"), &EditorPlugin::add_dock);
+	ClassDB::bind_method(D_METHOD("remove_dock", "dock"), &EditorPlugin::remove_dock);
 	ClassDB::bind_method(D_METHOD("add_control_to_container", "container", "control"), &EditorPlugin::add_control_to_container);
 	ClassDB::bind_method(D_METHOD("add_control_to_bottom_panel", "control", "title", "shortcut"), &EditorPlugin::add_control_to_bottom_panel, DEFVAL(Ref<Shortcut>()));
-	ClassDB::bind_method(D_METHOD("add_control_to_dock", "slot", "control", "shortcut"), &EditorPlugin::add_control_to_dock, DEFVAL(Ref<Shortcut>()));
-	ClassDB::bind_method(D_METHOD("remove_control_from_docks", "control"), &EditorPlugin::remove_control_from_docks);
 	ClassDB::bind_method(D_METHOD("remove_control_from_bottom_panel", "control"), &EditorPlugin::remove_control_from_bottom_panel);
 	ClassDB::bind_method(D_METHOD("remove_control_from_container", "container", "control"), &EditorPlugin::remove_control_from_container);
-	ClassDB::bind_method(D_METHOD("set_dock_tab_icon", "control", "icon"), &EditorPlugin::set_dock_tab_icon);
 	ClassDB::bind_method(D_METHOD("add_tool_menu_item", "name", "callable"), &EditorPlugin::add_tool_menu_item);
 	ClassDB::bind_method(D_METHOD("add_tool_submenu_item", "name", "submenu"), &EditorPlugin::add_tool_submenu_item);
 	ClassDB::bind_method(D_METHOD("remove_tool_menu_item", "name"), &EditorPlugin::remove_tool_menu_item);
 	ClassDB::bind_method(D_METHOD("get_export_as_menu"), &EditorPlugin::get_export_as_menu);
 	ClassDB::bind_method(D_METHOD("add_custom_type", "type", "base", "script", "icon"), &EditorPlugin::add_custom_type);
 	ClassDB::bind_method(D_METHOD("remove_custom_type", "type"), &EditorPlugin::remove_custom_type);
+
+#ifndef DISABLE_DEPRECATED
+	ClassDB::bind_method(D_METHOD("add_control_to_dock", "slot", "control", "shortcut"), &EditorPlugin::add_control_to_dock, DEFVAL(Ref<Shortcut>()));
+	ClassDB::bind_method(D_METHOD("remove_control_from_docks", "control"), &EditorPlugin::remove_control_from_docks);
+	ClassDB::bind_method(D_METHOD("set_dock_tab_icon", "control", "icon"), &EditorPlugin::set_dock_tab_icon);
+#endif
 
 	ClassDB::bind_method(D_METHOD("add_autoload_singleton", "name", "path"), &EditorPlugin::add_autoload_singleton);
 	ClassDB::bind_method(D_METHOD("remove_autoload_singleton", "name"), &EditorPlugin::remove_autoload_singleton);
@@ -692,6 +712,7 @@ void EditorPlugin::_bind_methods() {
 	BIND_ENUM_CONSTANT(CONTAINER_PROJECT_SETTING_TAB_LEFT);
 	BIND_ENUM_CONSTANT(CONTAINER_PROJECT_SETTING_TAB_RIGHT);
 
+	BIND_ENUM_CONSTANT(DOCK_SLOT_NONE);
 	BIND_ENUM_CONSTANT(DOCK_SLOT_LEFT_UL);
 	BIND_ENUM_CONSTANT(DOCK_SLOT_LEFT_BL);
 	BIND_ENUM_CONSTANT(DOCK_SLOT_LEFT_UR);

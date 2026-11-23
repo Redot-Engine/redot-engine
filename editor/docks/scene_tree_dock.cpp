@@ -64,6 +64,7 @@
 #include "editor/scene/rename_dialog.h"
 #include "editor/scene/reparent_dialog.h"
 #include "editor/script/script_editor_plugin.h"
+#include "editor/settings/editor_command_palette.h"
 #include "editor/settings/editor_feature_profile.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/shader/shader_create_dialog.h"
@@ -71,6 +72,7 @@
 #include "scene/2d/node_2d.h"
 #include "scene/animation/animation_tree.h"
 #include "scene/audio/audio_stream_player.h"
+#include "scene/gui/box_container.h"
 #include "scene/gui/check_box.h"
 #include "scene/property_utils.h"
 #include "scene/resources/packed_scene.h"
@@ -4390,7 +4392,7 @@ List<Node *> SceneTreeDock::get_node_clipboard() const {
 
 void SceneTreeDock::add_remote_tree_editor(Control *p_remote) {
 	ERR_FAIL_COND(remote_tree != nullptr);
-	add_child(p_remote);
+	scene_tree->add_sibling(p_remote);
 	remote_tree = p_remote;
 	remote_tree->hide();
 	remote_tree->connect("open", callable_mp(this, &SceneTreeDock::_load_request));
@@ -4701,13 +4703,18 @@ void SceneTreeDock::_update_configuration_warning() {
 }
 
 SceneTreeDock::SceneTreeDock(Node *p_scene_root, EditorSelection *p_editor_selection, EditorData &p_editor_data) {
+	set_name(TTRC("Scene"));
+	set_icon_name("PackedScene");
+	set_dock_shortcut(ED_SHORTCUT_AND_COMMAND("docks/open_scene", TTRC("Open Scene Dock")));
+	set_default_slot(EditorDockManager::DOCK_SLOT_LEFT_UR);
+
 	singleton = this;
-	set_name("Scene");
 	editor_data = &p_editor_data;
 	editor_selection = p_editor_selection;
 	scene_root = p_scene_root;
 
-	VBoxContainer *vbc = this;
+	VBoxContainer *vbc = memnew(VBoxContainer);
+	add_child(vbc);
 
 	HBoxContainer *filter_hbc = memnew(HBoxContainer);
 	filter_hbc->add_theme_constant_override("separate", 0);

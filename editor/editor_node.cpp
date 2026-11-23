@@ -94,6 +94,7 @@
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/debugger/script_editor_debugger.h"
 #include "editor/doc/editor_help.h"
+#include "editor/docks/editor_dock.h"
 #include "editor/docks/editor_dock_manager.h"
 #include "editor/docks/filesystem_dock.h"
 #include "editor/docks/history_dock.h"
@@ -1573,9 +1574,14 @@ void EditorNode::_update_layouts_menu() {
 	}
 
 	Vector<String> layouts = config->get_sections();
+	const String default_layout_name = TTR("Default");
 
 	for (const String &layout : layouts) {
-		if (layout == TTR("Default")) {
+		if (layout.contains_char('/')) {
+			continue;
+		}
+
+		if (layout == default_layout_name) {
 			editor_layouts->remove_item(editor_layouts->get_item_index(LAYOUT_DEFAULT));
 			overridden_default_layout = editor_layouts->get_item_count();
 		}
@@ -2787,36 +2793,26 @@ EditorNode::EditorNode() {
 	// Instantiate and place editor docks.
 
 	memnew(SceneTreeDock(scene_root, core->get_editor_selection(), get_editor_data()));
-	memnew(FileSystemDock);
-	memnew(InspectorDock(get_editor_data()));
-	memnew(ImportDock);
-	memnew(NodeDock);
+	editor_dock_manager->add_dock(SceneTreeDock::get_singleton());
 
-	FileSystemDock *filesystem_dock = FileSystemDock::get_singleton();
+	memnew(ImportDock);
+	editor_dock_manager->add_dock(ImportDock::get_singleton());
+
+	FileSystemDock *filesystem_dock = memnew(FileSystemDock);
 	filesystem_dock->connect("inherit", callable_mp((EditorShell *)this, &EditorShell::_inherit_request));
 	filesystem_dock->connect("instantiate", callable_mp((EditorShell *)this, &EditorShell::_instantiate_request));
 	filesystem_dock->connect("display_mode_changed", callable_mp(this, &EditorNode::_save_editor_layout_to_config));
 	core->get_project_settings_editor()->connect_filesystem_dock_signals(filesystem_dock);
+	editor_dock_manager->add_dock(filesystem_dock);
+
+	memnew(InspectorDock(get_editor_data()));
+	editor_dock_manager->add_dock(InspectorDock::get_singleton());
+
+	memnew(NodeDock);
+	editor_dock_manager->add_dock(NodeDock::get_singleton());
 
 	history_dock = memnew(HistoryDock);
-
-	// Scene: Top left.
-	editor_dock_manager->add_dock(SceneTreeDock::get_singleton(), TTRC("Scene"), EditorDockManager::DOCK_SLOT_LEFT_UR, ED_SHORTCUT_AND_COMMAND("docks/open_scene", TTRC("Open Scene Dock")), "PackedScene");
-
-	// Import: Top left, behind Scene.
-	editor_dock_manager->add_dock(ImportDock::get_singleton(), TTRC("Import"), EditorDockManager::DOCK_SLOT_LEFT_UR, ED_SHORTCUT_AND_COMMAND("docks/open_import", TTRC("Open Import Dock")), "FileAccess");
-
-	// FileSystem: Bottom left.
-	editor_dock_manager->add_dock(FileSystemDock::get_singleton(), TTRC("FileSystem"), EditorDockManager::DOCK_SLOT_LEFT_BR, ED_SHORTCUT_AND_COMMAND("docks/open_filesystem", TTRC("Open FileSystem Dock"), KeyModifierMask::ALT | Key::F), "Folder");
-
-	// Inspector: Full height right.
-	editor_dock_manager->add_dock(InspectorDock::get_singleton(), TTRC("Inspector"), EditorDockManager::DOCK_SLOT_RIGHT_UL, ED_SHORTCUT_AND_COMMAND("docks/open_inspector", TTRC("Open Inspector Dock")), "AnimationTrackList");
-
-	// Node: Full height right, behind Inspector.
-	editor_dock_manager->add_dock(NodeDock::get_singleton(), TTRC("Node"), EditorDockManager::DOCK_SLOT_RIGHT_UL, ED_SHORTCUT_AND_COMMAND("docks/open_node", TTRC("Open Node Dock")), "Object");
-
-	// History: Full height right, behind Node.
-	editor_dock_manager->add_dock(history_dock, TTRC("History"), EditorDockManager::DOCK_SLOT_RIGHT_UL, ED_SHORTCUT_AND_COMMAND("docks/open_history", TTRC("Open History Dock")), "History");
+	editor_dock_manager->add_dock(history_dock);
 
 	// Add some offsets to left_r and main hsplits to make LEFT_R and RIGHT_L docks wider than minsize.
 	left_r_hsplit->set_split_offset(270 * EDSCALE);
@@ -3230,19 +3226,38 @@ EditorNode::EditorNode() {
 void EditorNode::add_control_to_dock(int p_slot, Control *p_control, const Ref<Shortcut> &p_shortcut) {
 	ERR_FAIL_NULL(p_control);
 	ERR_FAIL_NULL(editor_dock_manager);
-	editor_dock_manager->add_dock(p_control, String(), EditorDockManager::DockSlot(p_slot), p_shortcut);
+	ERR_FAIL_COND(legacy_docks.has(p_control));
+	ERR_FAIL_COND(p_control->get_parent());
+	ERR_FAIL_COND(p_slot < EditorDockManager::DOCK_SLOT_NONE || p_slot >= EditorDockManager::DOCK_SLOT_MAX);
+
+	EditorDock *dock = memnew(EditorDock);
+	dock->set_title(p_control->get_name());
+	dock->set_dock_shortcut(p_shortcut);
+	if (p_slot != EditorDockManager::DOCK_SLOT_NONE) {
+		dock->set_default_slot(EditorDockManager::DockSlot(p_slot));
+	}
+	dock->add_child(p_control);
+	legacy_docks.insert(p_control, dock);
+	editor_dock_manager->add_dock(dock);
 }
 
 void EditorNode::remove_control_from_docks(Control *p_control) {
 	ERR_FAIL_NULL(p_control);
 	ERR_FAIL_NULL(editor_dock_manager);
-	editor_dock_manager->remove_dock(p_control);
+	ERR_FAIL_COND(!legacy_docks.has(p_control));
+
+	EditorDock *dock = legacy_docks[p_control];
+	editor_dock_manager->remove_dock(dock);
+	dock->remove_child(p_control);
+	legacy_docks.erase(p_control);
+	dock->queue_free();
 }
 
 void EditorNode::set_dock_tab_icon(Control *p_control, const Ref<Texture2D> &p_icon) {
 	ERR_FAIL_NULL(p_control);
 	ERR_FAIL_NULL(editor_dock_manager);
-	editor_dock_manager->set_dock_tab_icon(p_control, p_icon);
+	ERR_FAIL_COND(!legacy_docks.has(p_control));
+	legacy_docks[p_control]->set_dock_icon(p_icon);
 }
 
 EditorNode::~EditorNode() {
