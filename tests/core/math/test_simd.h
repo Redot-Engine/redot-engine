@@ -252,14 +252,14 @@ struct Mismatches {
 
 struct DispatchMode {
 	const char *name;
-	uint32_t mask;
+	CPUFeatures::Features mask;
+	size_t simdWidth;
 };
 
-// Each level is intersected with what the CPU supports, so on CPUs without AVX the levels collapse.
 static const DispatchMode DISPATCH_MODES[] = {
-	{ "all detected extensions", 0xFFFFFFFFu },
-	{ "AVX without AVX2/FMA/F16C", CPUFeatures::SSE42 | CPUFeatures::AVX },
-	{ "baseline SSE", CPUFeatures::SSE42 },
+	{ "all detected extensions, max width", CPUFeatures::CPUFEATURES_ALL, 0xFFFFFFFFFFFFFFFF },
+	// { "AVX without AVX2/FMA/F16C", CPUFEATURES_FMADD | CPUFEATURES_FP16 },
+	{ "baseline SSE", CPUFeatures::CPUFEATURES_NONE, 128 },
 };
 
 template <typename F>
@@ -270,10 +270,13 @@ void for_each_dispatch(F p_func) {
 		~ResetGuard() { CPUFeatures::reset_override(); }
 	} reset_guard;
 	for (const DispatchMode &mode : DISPATCH_MODES) {
-		CPUFeatures::set_override(mode.mask);
+		CPUFeatures::set_override(mode.mask, mode.simdWidth);
 		p_func(mode.name);
 	}
 }
+
+#if defined(GODOT_SIMD_X86)
+// Each level is intersected with what the CPU supports, so on CPUs without AVX the levels collapse.
 
 TEST_CASE("[SIMD] Runtime CPU feature dispatch") {
 	CHECK(CPUFeatures::has(CPUFeatures::INITIALIZED));
@@ -301,12 +304,14 @@ TEST_CASE("[SIMD] Runtime CPU feature dispatch") {
 	CPUFeatures::reset_override();
 }
 
+#endif
+
 #ifdef GODOT_SIMD_F32X4
 TEST_CASE("[SIMD] Integer lanes count and index exactly past 2^24") {
 	// Float lanes stop representing consecutive integers at 2^24; the counters and vertex indices
 	// used by the convex-shape and vertex-scan paths must not.
 	using namespace simd;
-	const mask4 pattern = cmp_gt(set4(1, 0, 1, 1), zero4());
+	const mask4 pattern = cmp_gt(set4((float[4]){ 1, 0, 1, 1 }), zero4());
 	for (int32_t start : { 16777213, 16777215, 16777216, 16777217, 1 << 30 }) {
 		i32x4 index = iota_i32x4(start);
 		i32x4 count = add(zero_i32x4(), start);
@@ -318,7 +323,7 @@ TEST_CASE("[SIMD] Integer lanes count and index exactly past 2^24") {
 				CHECK(lanes[k] == start + step * 4 + k);
 			}
 			count = count_if(count, pattern);
-			picked = select(pattern, index, picked);
+			picked = select_i32x4(pattern, index, picked);
 			index = add(index, 4);
 		}
 		int32_t counts[4];

@@ -65,13 +65,13 @@ void AudioEffectStereoEnhanceInstance::process(const AudioFrame *p_src_frames, A
 				delay_ringbuff[(ringbuff_pos + 1) & ringbuff_mask] = get_lane<2>(val);
 				float out0 = delay_ringbuff[(ringbuff_pos - delay_frames) & ringbuff_mask] * surround_amount;
 				float out1 = delay_ringbuff[(ringbuff_pos + 1 - delay_frames) & ringbuff_mask] * surround_amount;
-				v = v + set4(out0, -out0, out1, -out1);
+				v = v + set4((float[4]){ out0, -out0, out1, -out1 });
 			} else {
 				delay_ringbuff[ringbuff_pos & ringbuff_mask] = get_lane<1>(v);
 				delay_ringbuff[(ringbuff_pos + 1) & ringbuff_mask] = get_lane<3>(v);
 				float r0 = delay_ringbuff[(ringbuff_pos - delay_frames) & ringbuff_mask];
 				float r1 = delay_ringbuff[(ringbuff_pos + 1 - delay_frames) & ringbuff_mask];
-				v = permute<0, 2, 1, 3>(shuffle<0, 2, 0, 1>(v, set4(r0, r1, 0.0f, 0.0f)));
+				v = permute<0, 2, 1, 3>(shuffle<0, 2, 0, 1>(v, set4((float[4]){ r0, r1, 0.0f, 0.0f })));
 			}
 			store4(&p_dst_frames[i].left, v);
 			ringbuff_pos += 2;
