@@ -734,6 +734,7 @@ public:
 
 	/// Handles the user confirming a file dialog; dispatches on the pending action.
 	virtual void _dialog_action(String p_file);
+	void _cancel_file_dialog();
 
 	/// Handles a custom item added to the Project > Tools menu being triggered.
 	virtual void _tool_menu_option(int p_idx);
@@ -774,7 +775,7 @@ public:
 	virtual bool _is_class_editor_disabled_by_feature_profile(const StringName &p_class);
 
 	/// Saves a scene while rendering a preview thumbnail for it.
-	virtual void _save_scene_with_preview(String p_file, int p_idx = -1) = 0;
+	virtual Error _save_scene_with_preview(String p_file, int p_idx = -1) = 0;
 
 	/// Tears down the scene-save progress indicator after saving completes.
 	/// The default does nothing; shells with a save progress indicator override it.

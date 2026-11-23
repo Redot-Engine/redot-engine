@@ -115,8 +115,8 @@ class EditorSceneManager : public Node {
 
 	/// Index of the tab currently being closed, while a close confirmation is pending.
 	int tab_closing_idx = 0;
-	/// Scene paths queued for closing once pending confirmations resolve.
-	List<String> tabs_to_close;
+	/// Scene history IDs queued for closing once pending confirmations resolve.
+	List<int> tabs_to_close;
 	/// Tab indices queued for "save as" before closing.
 	List<int> scenes_to_save_as;
 	/// Menu option that was in progress when a tab-close confirmation interrupted it.
@@ -151,6 +151,8 @@ class EditorSceneManager : public Node {
 	/// Backs up and resets AnimationMixer state on the scene being saved so
 	/// editor-time playback isn't serialized into the PackedScene.
 	static void _reset_animation_mixers(Node *p_node, List<Pair<AnimationMixer *, Ref<AnimatedValuesBackup>>> *r_backups);
+	Error _load_scene(const String &p_scene, bool p_ignore_broken_deps, bool p_set_inherited, bool p_force_open_imported, bool p_silent_change_tab, int p_replace_index);
+	void _reload_scene(int p_scene_idx, const String &p_path, bool p_ignore_broken_deps);
 
 protected:
 	static void _bind_methods();
@@ -180,8 +182,8 @@ public:
 	/// @returns The menu option that was in progress when a tab-close confirmation interrupted it.
 	int get_tab_closing_menu_option() const { return tab_closing_menu_option; }
 	void set_tab_closing_menu_option(int p_option) { tab_closing_menu_option = p_option; }
-	/// Queues a scene path to be closed once pending close confirmations resolve.
-	void queue_tab_close(const String &p_scene_path) { tabs_to_close.push_back(p_scene_path); }
+	/// Queues a scene tab to be closed once pending close confirmations resolve.
+	void queue_tab_close(int p_tab);
 
 	int new_scene(); ///< Creates a new empty scene tab; @return New scene's index.
 	/// Loads and opens a scene file in the editor, with options for ignoring broken dependencies or opening imported files.
@@ -203,16 +205,13 @@ public:
 	void _update_undo_redo_allowed(); ///< Recomputes whether Undo/Redo menu items should be enabled.
 	void _set_current_scene(int p_idx); ///< Switches the active scene tab, performing validity checks first.
 	void _set_current_scene_nocheck(int p_idx);
-	void _save_scene(String p_file, int p_idx = -1);
+	Error _save_scene(String p_file, int p_idx = -1);
 	void _save_all_scenes();
 	/// Finds the next open scene with unsaved changes at or after index p_start.
 	/// A scene counts as unsaved if its undo history is dirty or a plugin reports unsaved changes in it.
-	/// @param p_valid_filename If true, skip scenes that have never been saved
-	///        (no file path) — used when the caller needs a path to show or
-	///        save to, e.g. listing unsaved scenes in the quit confirmation.
 	/// @param p_start Scene index to begin searching from.
 	/// @return Index of the next unsaved scene, or -1 if none remain.
-	int _next_unsaved_scene(bool p_valid_filename, int p_start = 0);
+	int _next_unsaved_scene(int p_start = 0);
 	/// Completion step for actions that asked "save or discard?"
 	/// Runs after the user clicks "Don't Save" in the confirmation dialogs
 	/// (or immediately when nothing was unsaved), and finishes whatever
@@ -302,7 +301,7 @@ public:
 	void request_instantiate_scenes(const Vector<String> &p_files);
 
 	/// Saves the current scene to the given path, optionally generating a preview thumbnail.
-	void save_scene_to_path(String p_file, bool p_with_preview = true);
+	Error save_scene_to_path(String p_file, bool p_with_preview = true);
 	/// Recursively validates that a scene and its nodes can be saved to disk
 	/// (e.g. no cyclic instance inclusion of the scene itself).
 	bool _validate_scene_recursive(const String &p_filename, Node *p_node);

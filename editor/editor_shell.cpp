@@ -417,20 +417,25 @@ void EditorShell::_dialog_action(String p_file) {
 				}
 
 				if (same_open_scene) {
+					if (scene_idx != -1) {
+						scene_manager->_cancel_close_scene_tab();
+					}
 					show_warning(TTR("Can't overwrite scene that is still open!"));
 					return;
 				}
 
 				EditorCore::get_singleton()->save_default_environment();
-				_save_scene_with_preview(p_file, scene_idx);
+				if (_save_scene_with_preview(p_file, scene_idx) != OK) {
+					if (scene_idx != -1) {
+						EditorSceneManager::get_singleton()->_cancel_close_scene_tab();
+					}
+					return;
+				}
 				_add_to_recent_scenes(p_file);
 				save_editor_layout_delayed();
 
 				if (scene_idx != -1) {
 					EditorSceneManager::get_singleton()->_discard_changes();
-				} else {
-					// Update the path of the edited scene to ensure later do/undo action history matches.
-					get_editor_data().set_scene_path(get_editor_data().get_edited_scene(), p_file);
 				}
 			}
 
@@ -443,20 +448,31 @@ void EditorShell::_dialog_action(String p_file) {
 		case SAVE_AND_RUN: {
 			if (get_file_dialog()->get_file_mode() == EditorFileDialog::FILE_MODE_SAVE_FILE) {
 				EditorCore::get_singleton()->save_default_environment();
-				_save_scene_with_preview(p_file);
-				get_project_run_bar()->play_custom_scene(p_file);
+				if (_save_scene_with_preview(p_file) == OK) {
+					get_project_run_bar()->play_custom_scene(p_file);
+				}
 			}
 		} break;
 
 		case SAVE_AND_RUN_MAIN_SCENE: {
-			ProjectSettings::get_singleton()->set("application/run/main_scene", ResourceUID::path_to_uid(p_file));
-			ProjectSettings::get_singleton()->save();
-
-			if (get_file_dialog()->get_file_mode() == EditorFileDialog::FILE_MODE_SAVE_FILE) {
-				EditorCore::get_singleton()->save_default_environment();
-				_save_scene_with_preview(p_file);
-				get_project_run_bar()->play_main_scene((bool)get_pick_main_scene_dialog()->get_meta("from_native", false));
+			if (get_file_dialog()->get_file_mode() != EditorFileDialog::FILE_MODE_SAVE_FILE) {
+				break;
 			}
+			EditorCore::get_singleton()->save_default_environment();
+			if (_save_scene_with_preview(p_file) != OK) {
+				break;
+			}
+
+			ProjectSettings *project_settings = ProjectSettings::get_singleton();
+			const Variant previous_main_scene = project_settings->get(SNAME("application/run/main_scene"));
+			project_settings->set(SNAME("application/run/main_scene"), ResourceUID::path_to_uid(p_file));
+			const Error err = project_settings->save();
+			if (err != OK) {
+				project_settings->set(SNAME("application/run/main_scene"), previous_main_scene);
+				_dialog_display_save_error("res://project.godot", err);
+				break;
+			}
+			get_project_run_bar()->play_main_scene((bool)get_pick_main_scene_dialog()->get_meta("from_native", false));
 		} break;
 
 		case FILE_EXPORT_MESH_LIBRARY: {
@@ -816,21 +832,21 @@ void EditorShell::_menu_option_confirm(int p_option, bool p_confirmed) {
 				if (i == get_editor_data().get_edited_scene()) {
 					continue;
 				}
-				EditorSceneManager::get_singleton()->queue_tab_close(get_editor_data().get_scene_path(i));
+				EditorSceneManager::get_singleton()->queue_tab_close(i);
 			}
 			EditorSceneManager::get_singleton()->_proceed_closing_scene_tabs();
 		} break;
 		case SCENE_CLOSE_RIGHT: {
 			EditorSceneManager::get_singleton()->set_tab_closing_menu_option(-1);
 			for (int i = get_editor_data().get_edited_scene() + 1; i < get_editor_data().get_edited_scene_count(); i++) {
-				EditorSceneManager::get_singleton()->queue_tab_close(get_editor_data().get_scene_path(i));
+				EditorSceneManager::get_singleton()->queue_tab_close(i);
 			}
 			EditorSceneManager::get_singleton()->_proceed_closing_scene_tabs();
 		} break;
 		case SCENE_CLOSE_ALL: {
 			EditorSceneManager::get_singleton()->set_tab_closing_menu_option(-1);
 			for (int i = 0; i < get_editor_data().get_edited_scene_count(); i++) {
-				EditorSceneManager::get_singleton()->queue_tab_close(get_editor_data().get_scene_path(i));
+				EditorSceneManager::get_singleton()->queue_tab_close(i);
 			}
 			EditorSceneManager::get_singleton()->_proceed_closing_scene_tabs();
 		} break;
@@ -843,10 +859,11 @@ void EditorShell::_menu_option_confirm(int p_option, bool p_confirmed) {
 			Node *scene = get_editor_data().get_edited_scene_root(scene_idx);
 			if (scene && !scene->get_scene_file_path().is_empty()) {
 				if (DirAccess::exists(scene->get_scene_file_path().get_base_dir())) {
-					if (scene_idx != get_editor_data().get_edited_scene()) {
-						_save_scene_with_preview(scene->get_scene_file_path(), scene_idx);
-					} else {
-						_save_scene_with_preview(scene->get_scene_file_path());
+					if (_save_scene_with_preview(scene->get_scene_file_path(), scene_idx) != OK) {
+						if (scene_idx != -1) {
+							EditorSceneManager::get_singleton()->_cancel_close_scene_tab();
+						}
+						break;
 					}
 
 					if (scene_idx != -1) {
@@ -1023,8 +1040,8 @@ void EditorShell::_menu_option_confirm(int p_option, bool p_confirmed) {
 					get_confirmation_button()->show();
 					get_confirmation_button()->grab_focus();
 					break;
-				} else {
-					_save_scene_with_preview(scene_filename);
+				} else if (_save_scene_with_preview(scene_filename) != OK) {
+					break;
 				}
 			}
 
@@ -1132,8 +1149,8 @@ void EditorShell::_menu_option_confirm(int p_option, bool p_confirmed) {
 					break;
 				}
 
-				bool save_each = EDITOR_GET("interface/editor/save_each_scene_on_quit");
-				if (EditorSceneManager::get_singleton()->_next_unsaved_scene(!save_each) == -1) {
+				const int first_unsaved_scene = scene_manager->_next_unsaved_scene();
+				if (first_unsaved_scene == -1) {
 					if (EditorUndoRedoManager::get_singleton()->is_history_unsaved(EditorUndoRedoManager::GLOBAL_HISTORY)) {
 						if (p_option == PROJECT_RELOAD_CURRENT_PROJECT) {
 							get_save_confirmation_dialog()->set_ok_button_text(TTR("Save & Reload"));
@@ -1173,19 +1190,27 @@ void EditorShell::_menu_option_confirm(int p_option, bool p_confirmed) {
 					break;
 				}
 
+				bool save_each = EDITOR_GET("interface/editor/save_each_scene_on_quit");
+				String unsaved_scenes;
+				if (!save_each) {
+					for (int i = first_unsaved_scene; i != -1; i = scene_manager->_next_unsaved_scene(i + 1)) {
+						const String &path = get_editor_data().get_edited_scene_root(i)->get_scene_file_path();
+						if (path.is_empty()) {
+							// A scene needs a destination before it can be saved.
+							save_each = true;
+							break;
+						}
+						unsaved_scenes += "\n            " + path;
+					}
+				}
+
 				if (save_each) {
-					EditorSceneManager::get_singleton()->set_tab_closing_menu_option(current_menu_option);
+					scene_manager->set_tab_closing_menu_option(current_menu_option);
 					for (int i = 0; i < get_editor_data().get_edited_scene_count(); i++) {
-						EditorSceneManager::get_singleton()->queue_tab_close(get_editor_data().get_scene_path(i));
+						scene_manager->queue_tab_close(i);
 					}
-					EditorSceneManager::get_singleton()->_proceed_closing_scene_tabs();
+					scene_manager->_proceed_closing_scene_tabs();
 				} else {
-					String unsaved_scenes;
-					int i = EditorSceneManager::get_singleton()->_next_unsaved_scene(true, 0);
-					while (i != -1) {
-						unsaved_scenes += "\n            " + get_editor_data().get_edited_scene_root(i)->get_scene_file_path();
-						i = EditorSceneManager::get_singleton()->_next_unsaved_scene(true, ++i);
-					}
 					if (p_option == PROJECT_RELOAD_CURRENT_PROJECT) {
 						get_save_confirmation_dialog()->set_ok_button_text(TTR("Save & Reload"));
 						get_save_confirmation_dialog()->set_text(TTR("Save changes to the following scene(s) before reloading?") + unsaved_scenes);
@@ -1199,6 +1224,18 @@ void EditorShell::_menu_option_confirm(int p_option, bool p_confirmed) {
 
 				DisplayServer::get_singleton()->window_request_attention();
 				break;
+			}
+			if (!_is_closing_editor()) {
+				for (int i = scene_manager->_next_unsaved_scene(); i != -1; i = scene_manager->_next_unsaved_scene(i + 1)) {
+					const String &path = get_editor_data().get_edited_scene_root(i)->get_scene_file_path();
+					if (path.is_empty()) {
+						show_accept(TTR("Save unnamed scenes before closing the project."), TTR("OK"));
+						return;
+					}
+					if (scene_manager->_save_scene(path, i) != OK) {
+						return;
+					}
+				}
 			}
 			EditorSceneManager::get_singleton()->_save_external_resources();
 			EditorSceneManager::get_singleton()->_discard_changes();
@@ -1669,6 +1706,9 @@ void EditorShell::_immediate_dialog_confirmed() {
 }
 
 bool EditorShell::immediate_confirmation_dialog(const String &p_text, const String &p_ok_text, const String &p_cancel_text, uint32_t p_wrap_width) {
+	const bool previous_result = immediate_dialog_confirmed;
+	immediate_dialog_confirmed = false;
+
 	ConfirmationDialog *cd = memnew(ConfirmationDialog);
 	cd->set_text(p_text);
 	cd->set_ok_button_text(p_ok_text);
@@ -1691,8 +1731,10 @@ bool EditorShell::immediate_confirmation_dialog(const String &p_text, const Stri
 		}
 	}
 
+	const bool confirmed = immediate_dialog_confirmed;
+	immediate_dialog_confirmed = previous_result;
 	memdelete(cd);
-	return immediate_dialog_confirmed;
+	return confirmed;
 }
 
 bool EditorShell::is_cmdline_mode() {
@@ -1773,6 +1815,13 @@ void EditorShell::restart_editor(bool p_goto_project_manager) {
 
 void EditorShell::_cancel_confirmation() {
 	stop_project_confirmation = false;
+}
+
+void EditorShell::_cancel_file_dialog() {
+	if (current_menu_option == SCENE_TAB_CLOSE || current_menu_option == SCENE_CLOSE) {
+		scene_manager->_cancel_close_scene_tab();
+		current_menu_option = -1;
+	}
 }
 
 void EditorShell::_prepare_save_confirmation_popup() {

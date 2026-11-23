@@ -373,7 +373,7 @@ private:
 	virtual void shortcut_input(const Ref<InputEvent> &p_event) override; ///< Shortcut input hook (handles editor keyboard shortcuts).
 
 	void _find_node_types(Node *p_node, int &count_2d, int &count_3d); ///< Counts 2D vs 3D node types under a node (used to pick the default main screen).
-	void _save_scene_with_preview(String p_file, int p_idx = -1) override; ///< Saves a scene while rendering a preview thumbnail for it.
+	Error _save_scene_with_preview(String p_file, int p_idx = -1) override; ///< Saves a scene while rendering a preview thumbnail for it.
 	void _close_save_scene_progress() override; ///< Tears down the scene-save progress indicator after saving completes.
 
 	void _save_editor_layout_to_config();

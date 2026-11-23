@@ -998,9 +998,11 @@ void EditorNode::_find_node_types(Node *p_node, int &count_2d, int &count_3d) {
 	}
 }
 
-void EditorNode::_save_scene_with_preview(String p_file, int p_idx) {
+Error EditorNode::_save_scene_with_preview(String p_file, int p_idx) {
 	save_scene_progress = memnew(EditorProgress("save", TTR("Saving Scene"), 4));
 
+	Ref<Image> img;
+	String preview_path;
 	if (get_editor_data().get_edited_scene_root() != nullptr) {
 		save_scene_progress->step(TTR("Analyzing"), 0);
 
@@ -1012,7 +1014,6 @@ void EditorNode::_save_scene_with_preview(String p_file, int p_idx) {
 		save_scene_progress->step(TTR("Creating Thumbnail"), 1);
 		// Current view?
 
-		Ref<Image> img;
 		// If neither 3D or 2D nodes are present, make a 1x1 black texture.
 		// We cannot fallback on the 2D editor, because it may not have been used yet,
 		// which would result in an invalid texture.
@@ -1062,25 +1063,27 @@ void EditorNode::_save_scene_with_preview(String p_file, int p_idx) {
 			}
 			img->convert(Image::FORMAT_RGB8);
 
-			// Save thumbnail directly, as thumbnailer may not update due to actual scene not changing md5.
-			String temp_path = EditorPaths::get_singleton()->get_cache_dir();
-			String cache_base = ProjectSettings::get_singleton()->globalize_path(p_file).md5_text();
-			cache_base = temp_path.path_join("resthumb-" + cache_base);
-
-			// Does not have it, try to load a cached thumbnail.
-			post_process_preview(img);
-			img->save_png(cache_base + ".png");
+			const String cache_dir = EditorPaths::get_singleton()->get_cache_dir();
+			preview_path = cache_dir.path_join("resthumb-" + ProjectSettings::get_singleton()->globalize_path(p_file).md5_text() + ".png");
 		}
 	}
 
 	save_scene_progress->step(TTR("Saving Scene"), 4);
-	EditorSceneManager::get_singleton()->_save_scene(p_file, p_idx);
+	const Error err = EditorSceneManager::get_singleton()->_save_scene(p_file, p_idx);
 
-	if (!cmdline_mode) {
-		EditorResourcePreview::get_singleton()->check_for_invalidation(p_file);
+	if (err == OK) {
+		if (!preview_path.is_empty()) {
+			// The thumbnailer may skip an update if the scene file's hash did not change.
+			post_process_preview(img);
+			img->save_png(preview_path);
+		}
+		if (!cmdline_mode) {
+			EditorResourcePreview::get_singleton()->check_for_invalidation(p_file);
+		}
 	}
 
 	_close_save_scene_progress();
+	return err;
 }
 
 void EditorNode::_close_save_scene_progress() {
@@ -2979,6 +2982,7 @@ EditorNode::EditorNode() {
 	settings_menu->connect(SceneStringName(id_pressed), callable_mp((EditorShell *)this, &EditorShell::_menu_option));
 
 	file->connect("file_selected", callable_mp((EditorShell *)this, &EditorShell::_dialog_action));
+	file->connect("canceled", callable_mp((EditorShell *)this, &EditorShell::_cancel_file_dialog));
 	file_templates->connect("file_selected", callable_mp((EditorShell *)this, &EditorShell::_dialog_action));
 
 	audio_preview_gen = memnew(AudioStreamPreviewGenerator);

@@ -147,13 +147,17 @@ Error EditorSceneManager::load_scene(const String &p_scene, bool p_ignore_broken
 		defer_load_scene = p_scene;
 		return OK;
 	}
+	return _load_scene(p_scene, p_ignore_broken_deps, p_set_inherited, p_force_open_imported, p_silent_change_tab, -1);
+}
 
-	String lpath = ProjectSettings::get_singleton()->localize_path(ResourceUID::ensure_path(p_scene));
-	_update_prev_closed_scenes(lpath, false);
+Error EditorSceneManager::_load_scene(const String &p_scene, bool p_ignore_broken_deps, bool p_set_inherited, bool p_force_open_imported, bool p_silent_change_tab, int p_replace_index) {
+	const String lpath = ProjectSettings::get_singleton()->localize_path(ResourceUID::ensure_path(p_scene));
+	const bool replacing_scene = p_replace_index >= 0;
 
-	if (!p_set_inherited) {
+	if (!p_set_inherited && !replacing_scene) {
 		for (int i = 0; i < core->get_editor_data().get_edited_scene_count(); i++) {
 			if (core->get_editor_data().get_scene_path(i) == lpath) {
+				_update_prev_closed_scenes(lpath, false);
 				_set_current_scene(i);
 				return OK;
 			}
@@ -173,25 +177,12 @@ Error EditorSceneManager::load_scene(const String &p_scene, bool p_ignore_broken
 		return ERR_FILE_NOT_FOUND;
 	}
 
-	int prev = core->get_editor_data().get_edited_scene();
-	int idx = prev;
-
-	if (prev == -1 || core->get_editor_data().get_edited_scene_root() || !core->get_editor_data().get_scene_path(prev).is_empty()) {
-		idx = core->get_editor_data().add_edited_scene(-1);
-
-		if (p_silent_change_tab) {
-			_set_current_scene_nocheck(idx);
-		} else {
-			_set_current_scene(idx);
-		}
-	} else {
-		EditorUndoRedoManager::get_singleton()->clear_history(core->get_editor_data().get_current_edited_scene_history_id(), false);
-	}
-
 	core->get_dependency_errors().clear();
 
 	Error err;
-	Ref<PackedScene> sdata = ResourceLoader::load(lpath, "", ResourceFormatLoader::CACHE_MODE_REPLACE, &err);
+	// Keep the open scene and its cached resources intact until the replacement is ready.
+	const ResourceFormatLoader::CacheMode cache_mode = replacing_scene ? ResourceFormatLoader::CACHE_MODE_IGNORE : ResourceFormatLoader::CACHE_MODE_REPLACE;
+	Ref<PackedScene> sdata = ResourceLoader::load(lpath, "", cache_mode, &err);
 
 	if (!p_ignore_broken_deps && core->get_dependency_errors().has(lpath)) {
 		shell->set_current_menu_option(-1);
@@ -201,20 +192,12 @@ Error EditorSceneManager::load_scene(const String &p_scene, bool p_ignore_broken
 		}
 		shell->get_dependency_error_dialog()->show(lpath, errors);
 
-		if (prev != -1 && prev != idx) {
-			_set_current_scene(prev);
-			core->get_editor_data().remove_scene(idx);
-		}
 		return ERR_FILE_MISSING_DEPENDENCIES;
 	}
 
 	if (sdata.is_null()) {
 		shell->_dialog_display_load_error(lpath, err);
 
-		if (prev != -1 && prev != idx) {
-			_set_current_scene(prev);
-			core->get_editor_data().remove_scene(idx);
-		}
 		return ERR_FILE_NOT_FOUND;
 	}
 
@@ -228,6 +211,12 @@ Error EditorSceneManager::load_scene(const String &p_scene, bool p_ignore_broken
 		shell->add_io_error(txt);
 	}
 
+	Node *new_scene = sdata->instantiate(p_set_inherited ? PackedScene::GEN_EDIT_STATE_MAIN_INHERITED : PackedScene::GEN_EDIT_STATE_MAIN);
+	if (!new_scene) {
+		shell->_dialog_display_load_error(lpath, ERR_FILE_CORRUPT);
+		return ERR_FILE_CORRUPT;
+	}
+
 	if (ResourceCache::has(lpath)) {
 		// Used from somewhere else? No problem! Update state and replace sdata.
 		Ref<PackedScene> ps = ResourceCache::get_ref(lpath);
@@ -238,18 +227,27 @@ Error EditorSceneManager::load_scene(const String &p_scene, bool p_ignore_broken
 		}
 
 	} else {
+		if (replacing_scene) {
+			sdata->set_path_cache(String()); // CACHE_MODE_IGNORE sets the path without registering the resource.
+		}
 		sdata->set_path(lpath, true); // Take over path.
 	}
 
-	Node *new_scene = sdata->instantiate(p_set_inherited ? PackedScene::GEN_EDIT_STATE_MAIN_INHERITED : PackedScene::GEN_EDIT_STATE_MAIN);
-	if (!new_scene) {
-		sdata.unref();
-		shell->_dialog_display_load_error(lpath, ERR_FILE_CORRUPT);
-		if (prev != -1 && prev != idx) {
-			_set_current_scene(prev);
-			core->get_editor_data().remove_scene(idx);
+	_update_prev_closed_scenes(lpath, false);
+	if (replacing_scene) {
+		_remove_scene(p_replace_index, false);
+	}
+
+	const int prev = core->get_editor_data().get_edited_scene();
+	if (prev == -1 || core->get_editor_data().get_edited_scene_root() || !core->get_editor_data().get_scene_path(prev).is_empty()) {
+		const int idx = core->get_editor_data().add_edited_scene(-1);
+		if (p_silent_change_tab) {
+			_set_current_scene_nocheck(idx);
+		} else {
+			_set_current_scene(idx);
 		}
-		return ERR_FILE_CORRUPT;
+	} else {
+		EditorUndoRedoManager::get_singleton()->clear_history(core->get_editor_data().get_current_edited_scene_history_id(), false);
 	}
 
 	if (p_set_inherited) {
@@ -608,12 +606,11 @@ void EditorSceneManager::_set_current_scene_nocheck(int p_idx) {
 	_update_unsaved_cache();
 }
 
-void EditorSceneManager::save_scene_to_path(String p_file, bool p_with_preview) {
+Error EditorSceneManager::save_scene_to_path(String p_file, bool p_with_preview) {
 	if (p_with_preview) {
-		shell->_save_scene_with_preview(p_file);
-	} else {
-		_save_scene(p_file);
+		return shell->_save_scene_with_preview(p_file);
 	}
+	return _save_scene(p_file);
 }
 
 bool EditorSceneManager::_validate_scene_recursive(const String &p_filename, Node *p_node) {
@@ -631,19 +628,20 @@ bool EditorSceneManager::_validate_scene_recursive(const String &p_filename, Nod
 	return false;
 }
 
-void EditorSceneManager::_save_scene(String p_file, int idx) {
-	ERR_FAIL_COND_MSG(!saving_scene.is_empty() && saving_scene == p_file, "Scene saved while already being saved!");
+Error EditorSceneManager::_save_scene(String p_file, int p_idx) {
+	ERR_FAIL_COND_V_MSG(!saving_scene.is_empty() && saving_scene == p_file, ERR_BUSY, "Scene saved while already being saved!");
 
+	const int idx = p_idx == -1 ? core->get_editor_data().get_edited_scene() : p_idx;
 	Node *scene = core->get_editor_data().get_edited_scene_root(idx);
 
 	if (!scene) {
 		shell->show_accept(TTR("This operation can't be done without a tree root."), TTR("OK"));
-		return;
+		return ERR_CANT_CREATE;
 	}
 
 	if (!scene->get_scene_file_path().is_empty() && _validate_scene_recursive(scene->get_scene_file_path(), scene)) {
 		shell->show_accept(TTR("This scene can't be saved because there is a cyclic instance inclusion.\nPlease resolve it and then attempt to save again."), TTR("OK"));
-		return;
+		return ERR_CYCLIC_LINK;
 	}
 
 	scene->propagate_notification(NOTIFICATION_EDITOR_PRE_SAVE);
@@ -652,21 +650,14 @@ void EditorSceneManager::_save_scene(String p_file, int idx) {
 	EditorCore::get_singleton()->save_default_environment();
 	List<Pair<AnimationMixer *, Ref<AnimatedValuesBackup>>> anim_backups;
 	_reset_animation_mixers(scene, &anim_backups);
-	_save_editor_states(p_file, idx);
 
-	Ref<PackedScene> sdata;
-
-	if (ResourceCache::has(p_file)) {
+	Ref<PackedScene> sdata = ResourceCache::get_ref(p_file);
+	Ref<SceneState> previous_state;
+	if (sdata.is_valid()) {
 		// Something may be referencing this resource and we are good with that.
-		// We must update it, but also let the previous scene state go, as
-		// old version still work for referencing changes in instantiated or inherited scenes.
-
-		sdata = ResourceCache::get_ref(p_file);
-		if (sdata.is_valid()) {
-			sdata->recreate_state();
-		} else {
-			sdata.instantiate();
-		}
+		// Keep its old state available in case the save fails.
+		previous_state = sdata->get_state();
+		sdata->recreate_state();
 	} else {
 		sdata.instantiate();
 	}
@@ -674,32 +665,38 @@ void EditorSceneManager::_save_scene(String p_file, int idx) {
 
 	if (err != OK) {
 		shell->show_accept(TTR("Couldn't save scene. Likely dependencies (instances or inheritance) couldn't be satisfied."), TTR("OK"));
-		return;
+	} else {
+		int flags = ResourceSaver::FLAG_REPLACE_SUBRESOURCE_PATHS;
+		if (EDITOR_GET("filesystem/on_save/compress_binary_resources")) {
+			flags |= ResourceSaver::FLAG_COMPRESS;
+		}
+		err = ResourceSaver::save(sdata, p_file, flags);
+		if (err != OK) {
+			shell->_dialog_display_save_error(p_file, err);
+		}
 	}
 
-	int flg = 0;
-	if (EDITOR_GET("filesystem/on_save/compress_binary_resources")) {
-		flg |= ResourceSaver::FLAG_COMPRESS;
+	if (err == OK) {
+		_save_editor_states(p_file, idx);
+		// This needs to be emitted before saving external resources.
+		emit_signal(SNAME("scene_saved"), p_file);
+		core->get_editor_data().notify_scene_saved(p_file);
+
+		_save_external_resources();
+		const String previous_saving_scene = saving_scene;
+		saving_scene = p_file; // Some editors may save scenes of built-in resources as external data, so avoid saving this scene again.
+		core->get_editor_data().save_editor_external_data();
+		saving_scene = previous_saving_scene;
+	} else if (previous_state.is_valid()) {
+		sdata->replace_state(previous_state);
 	}
-	flg |= ResourceSaver::FLAG_REPLACE_SUBRESOURCE_PATHS;
-
-	err = ResourceSaver::save(sdata, p_file, flg);
-
-	// This needs to be emitted before saving external resources.
-	emit_signal(SNAME("scene_saved"), p_file);
-	core->get_editor_data().notify_scene_saved(p_file);
-
-	_save_external_resources();
-	saving_scene = p_file; // Some editors may save scenes of built-in resources as external data, so avoid saving this scene again.
-	core->get_editor_data().save_editor_external_data();
-	saving_scene = "";
 
 	for (Pair<AnimationMixer *, Ref<AnimatedValuesBackup>> &E : anim_backups) {
 		E.first->restore(E.second);
 	}
 
 	if (err == OK) {
-		scene->set_scene_file_path(ProjectSettings::get_singleton()->localize_path(p_file));
+		core->get_editor_data().set_scene_path(idx, ProjectSettings::get_singleton()->localize_path(p_file));
 		core->get_editor_data().set_scene_as_saved(idx);
 		core->get_editor_data().set_scene_modified_time(idx, FileAccess::get_modified_time(p_file));
 
@@ -707,12 +704,11 @@ void EditorSceneManager::_save_scene(String p_file, int idx) {
 
 		shell->_update_title();
 		shell->get_scene_tabs()->update_scene_tabs();
-	} else {
-		shell->_dialog_display_save_error(p_file, err);
 	}
 
 	scene->propagate_notification(NOTIFICATION_EDITOR_POST_SAVE);
 	_update_unsaved_cache();
+	return err;
 }
 
 void EditorSceneManager::_save_all_scenes() {
@@ -744,16 +740,13 @@ void EditorSceneManager::_save_all_scenes() {
 	}
 }
 
-int EditorSceneManager::_next_unsaved_scene(bool p_valid_filename, int p_start) {
+int EditorSceneManager::_next_unsaved_scene(int p_start) {
 	for (int i = p_start; i < core->get_editor_data().get_edited_scene_count(); i++) {
 		if (!core->get_editor_data().get_edited_scene_root(i)) {
 			continue;
 		}
 
-		String scene_filename = core->get_editor_data().get_edited_scene_root(i)->get_scene_file_path();
-		if (p_valid_filename && scene_filename.is_empty()) {
-			continue;
-		}
+		const String &scene_filename = core->get_editor_data().get_edited_scene_root(i)->get_scene_file_path();
 
 		bool unsaved = EditorUndoRedoManager::get_singleton()->is_history_unsaved(core->get_editor_data().get_scene_history_id(i));
 		if (unsaved) {
@@ -786,23 +779,9 @@ void EditorSceneManager::_discard_changes(const String &p_str) {
 			_proceed_closing_scene_tabs();
 		} break;
 		case EditorShell::SCENE_RELOAD_SAVED_SCENE: {
-			Node *scene = get_edited_scene();
-
-			String scene_filename = scene->get_scene_file_path();
-
-			int cur_idx = core->get_editor_data().get_edited_scene();
-
-			_remove_edited_scene();
-
-			Error err = load_scene(scene_filename);
-			if (err != OK) {
-				ERR_PRINT("Failed to load scene");
-			}
-			core->get_editor_data().move_edited_scene_to_index(cur_idx);
-			EditorUndoRedoManager::get_singleton()->clear_history(core->get_editor_data().get_current_edited_scene_history_id(), false);
-			shell->get_scene_tabs()->set_current_tab(cur_idx);
-
 			shell->get_confirmation_dialog()->hide();
+			const String scene_path = get_edited_scene()->get_scene_file_path();
+			_reload_scene(core->get_editor_data().get_edited_scene(), scene_path, false);
 		} break;
 		case EditorShell::SCENE_QUIT: {
 			shell->get_project_run_bar()->stop_playing();
@@ -961,8 +940,12 @@ void EditorSceneManager::_update_prev_closed_scenes(const String &p_scene_path, 
 	}
 }
 
+void EditorSceneManager::queue_tab_close(int p_tab) {
+	tabs_to_close.push_back(core->get_editor_data().get_scene_history_id(p_tab));
+}
+
 void EditorSceneManager::_proceed_closing_scene_tabs() {
-	List<String>::Element *E = tabs_to_close.front();
+	List<int>::Element *E = tabs_to_close.front();
 	if (!E) {
 		if (shell->_is_closing_editor()) {
 			shell->set_current_menu_option(tab_closing_menu_option);
@@ -973,12 +956,12 @@ void EditorSceneManager::_proceed_closing_scene_tabs() {
 		}
 		return;
 	}
-	String scene_to_close = E->get();
+	const int scene_to_close = E->get();
 	tabs_to_close.pop_front();
 
 	int tab_idx = -1;
 	for (int i = 0; i < core->get_editor_data().get_edited_scene_count(); i++) {
-		if (core->get_editor_data().get_scene_path(i) == scene_to_close) {
+		if (core->get_editor_data().get_scene_history_id(i) == scene_to_close) {
 			tab_idx = i;
 			break;
 		}
@@ -2024,8 +2007,6 @@ void EditorSceneManager::reload_scene(const String &p_path) {
 		}
 	}
 
-	int current_tab = core->get_editor_data().get_edited_scene();
-
 	if (scene_idx == -1) {
 		if (get_edited_scene()) {
 			int current_history_id = core->get_editor_data().get_current_edited_scene_history_id();
@@ -2040,21 +2021,26 @@ void EditorSceneManager::reload_scene(const String &p_path) {
 		return;
 	}
 
-	if (current_tab == scene_idx) {
+	_reload_scene(scene_idx, lpath, true);
+}
+
+void EditorSceneManager::_reload_scene(int p_scene_idx, const String &p_path, bool p_ignore_broken_deps) {
+	const int current_tab = core->get_editor_data().get_edited_scene();
+	if (current_tab == p_scene_idx) {
 		core->get_editor_data().apply_changes_in_editors();
 		_save_editor_states(p_path);
 	}
 
-	// Reload scene.
-	_remove_scene(scene_idx, false);
-	load_scene(p_path, true, false, true);
+	if (_load_scene(p_path, p_ignore_broken_deps, false, true, false, p_scene_idx) != OK) {
+		return;
+	}
 
-	// Adjust index so tab is back a the previous position.
-	core->get_editor_data().move_edited_scene_to_index(scene_idx);
-	EditorUndoRedoManager::get_singleton()->clear_history(core->get_editor_data().get_scene_history_id(scene_idx), false);
+	// Restore the tab order and previously active scene.
+	core->get_editor_data().move_edited_scene_to_index(p_scene_idx);
+	EditorUndoRedoManager::get_singleton()->clear_history(core->get_editor_data().get_scene_history_id(p_scene_idx), false);
 
-	// Recover the tab.
-	shell->get_scene_tabs()->set_current_tab(current_tab);
+	_set_current_scene(current_tab);
+	shell->get_scene_tabs()->update_scene_tabs();
 }
 
 bool EditorSceneManager::is_scene_open(const String &p_path) {

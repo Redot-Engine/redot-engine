@@ -708,8 +708,8 @@ Error EditorInterface::save_scene() {
 		return ERR_CANT_CREATE;
 	}
 
-	save_scene_as(get_edited_scene_root()->get_scene_file_path());
-	return OK;
+	const Error err = EditorSceneManager::get_singleton()->save_scene_to_path(get_edited_scene_root()->get_scene_file_path());
+	return err == OK ? OK : ERR_CANT_CREATE;
 }
 
 void EditorInterface::save_scene_as(const String &p_scene, bool p_with_preview) {
