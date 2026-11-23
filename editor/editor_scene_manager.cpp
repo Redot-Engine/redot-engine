@@ -234,12 +234,14 @@ Error EditorSceneManager::_load_scene(const String &p_scene, bool p_ignore_broke
 	}
 
 	_update_prev_closed_scenes(lpath, false);
+	// Only reuse the empty placeholder created when removing the last open scene.
+	const bool keep_empty_tab = replacing_scene && core->get_editor_data().get_edited_scene_count() > 1;
 	if (replacing_scene) {
 		_remove_scene(p_replace_index, false);
 	}
 
 	const int prev = core->get_editor_data().get_edited_scene();
-	if (prev == -1 || core->get_editor_data().get_edited_scene_root() || !core->get_editor_data().get_scene_path(prev).is_empty()) {
+	if (keep_empty_tab || prev == -1 || core->get_editor_data().get_edited_scene_root() || !core->get_editor_data().get_scene_path(prev).is_empty()) {
 		const int idx = core->get_editor_data().add_edited_scene(-1);
 		if (p_silent_change_tab) {
 			_set_current_scene_nocheck(idx);
@@ -949,7 +951,9 @@ void EditorSceneManager::_proceed_closing_scene_tabs() {
 	if (!E) {
 		if (shell->_is_closing_editor()) {
 			shell->set_current_menu_option(tab_closing_menu_option);
-			shell->_menu_option_confirm(tab_closing_menu_option, true);
+			tab_closing_menu_option = -1;
+			_save_external_resources();
+			_discard_changes();
 		} else {
 			shell->set_current_menu_option(-1);
 			shell->get_save_confirmation_dialog()->hide();

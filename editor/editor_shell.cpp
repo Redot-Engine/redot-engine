@@ -870,10 +870,12 @@ void EditorShell::_menu_option_confirm(int p_option, bool p_confirmed) {
 						EditorSceneManager::get_singleton()->_discard_changes();
 					}
 					save_editor_layout_delayed();
-				} else {
-					show_save_accept(vformat(TTR("%s no longer exists! Please specify a new save location."), scene->get_scene_file_path().get_base_dir()), TTR("OK"));
+					break;
 				}
-				break;
+				if (scene_idx == -1) {
+					show_save_accept(vformat(TTR("%s no longer exists! Please specify a new save location."), scene->get_scene_file_path().get_base_dir()), TTR("OK"));
+					break;
+				}
 			}
 			[[fallthrough]];
 		}
@@ -917,8 +919,9 @@ void EditorShell::_menu_option_confirm(int p_option, bool p_confirmed) {
 				get_file_dialog()->add_filter("*." + extension, extension.to_upper());
 			}
 
-			if (!scene->get_scene_file_path().is_empty()) {
-				String path = scene->get_scene_file_path();
+			const String scene_path = scene->get_scene_file_path();
+			if (!scene_path.is_empty() && DirAccess::exists(scene_path.get_base_dir())) {
+				String path = scene_path;
 				String root_name = EditorCore::adjust_scene_name_casing(scene->get_name());
 				String ext = path.get_extension().to_lower();
 				path = path.get_base_dir().path_join(root_name + "." + ext);
@@ -930,6 +933,9 @@ void EditorShell::_menu_option_confirm(int p_option, bool p_confirmed) {
 					}
 				}
 			} else if (extensions.size()) {
+				if (!scene_path.is_empty()) {
+					get_file_dialog()->set_current_dir("res://");
+				}
 				String root_name = scene->get_name();
 				root_name = EditorCore::adjust_scene_name_casing(root_name);
 				get_file_dialog()->set_current_path(root_name + "." + extensions.front()->get().to_lower());
@@ -1134,6 +1140,9 @@ void EditorShell::_menu_option_confirm(int p_option, bool p_confirmed) {
 			}
 
 			if (!p_confirmed) {
+				if (_is_closing_editor()) {
+					scene_manager->_cancel_close_scene_tab();
+				}
 				if (!stop_project_confirmation && get_project_run_bar()->is_playing()) {
 					if (p_option == PROJECT_RELOAD_CURRENT_PROJECT) {
 						get_confirmation_dialog()->set_text(TTR("Stop running project before reloading the current project?"));
@@ -1225,16 +1234,14 @@ void EditorShell::_menu_option_confirm(int p_option, bool p_confirmed) {
 				DisplayServer::get_singleton()->window_request_attention();
 				break;
 			}
-			if (!_is_closing_editor()) {
-				for (int i = scene_manager->_next_unsaved_scene(); i != -1; i = scene_manager->_next_unsaved_scene(i + 1)) {
-					const String &path = get_editor_data().get_edited_scene_root(i)->get_scene_file_path();
-					if (path.is_empty()) {
-						show_accept(TTR("Save unnamed scenes before closing the project."), TTR("OK"));
-						return;
-					}
-					if (scene_manager->_save_scene(path, i) != OK) {
-						return;
-					}
+			for (int i = scene_manager->_next_unsaved_scene(); i != -1; i = scene_manager->_next_unsaved_scene(i + 1)) {
+				const String &path = get_editor_data().get_edited_scene_root(i)->get_scene_file_path();
+				if (path.is_empty()) {
+					show_accept(TTR("Save unnamed scenes before closing the project."), TTR("OK"));
+					return;
+				}
+				if (scene_manager->_save_scene(path, i) != OK) {
+					return;
 				}
 			}
 			EditorSceneManager::get_singleton()->_save_external_resources();
