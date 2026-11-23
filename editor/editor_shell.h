@@ -258,8 +258,6 @@ public:
 	bool waiting_for_first_scan = true;
 	/// `true` once a shell has requested the first filesystem scan (fired from processing).
 	bool requested_first_scan = false;
-	/// Result of the most recent `immediate_confirmation_dialog()` poll.
-	bool immediate_dialog_confirmed = false;
 	/// Export preset selected for installing the Android build template from file.
 	Ref<EditorExportPreset> android_export_preset;
 
@@ -874,10 +872,4 @@ private:
 	/// Slot for the one-shot `filesystem_changed` connection made when the
 	/// first scan starts; routes to the (virtual) `_execute_upgrades`.
 	void _on_first_scan_completed();
-
-	/// Slot for the ad-hoc `ConfirmationDialog` created by
-	/// `immediate_confirmation_dialog()`: sets `immediate_dialog_confirmed`,
-	/// which breaks that function's manual event loop and becomes its
-	/// return value (true = OK pressed; false = dialog dismissed).
-	void _immediate_dialog_confirmed();
 };

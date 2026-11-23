@@ -1999,7 +1999,7 @@ void EditorSceneManager::_notify_nodes_scene_reimported(Node *p_node, Array p_re
 	}
 }
 
-void EditorSceneManager::reload_scene(const String &p_path) {
+void EditorSceneManager::reload_scene(const String &p_path, bool p_ignore_broken_deps) {
 	int scene_idx = -1;
 
 	String lpath = ProjectSettings::get_singleton()->localize_path(p_path);
@@ -2025,7 +2025,7 @@ void EditorSceneManager::reload_scene(const String &p_path) {
 		return;
 	}
 
-	_reload_scene(scene_idx, lpath, true);
+	_reload_scene(scene_idx, lpath, p_ignore_broken_deps);
 }
 
 void EditorSceneManager::_reload_scene(int p_scene_idx, const String &p_path, bool p_ignore_broken_deps) {

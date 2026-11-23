@@ -1708,14 +1708,7 @@ bool EditorShell::ensure_main_scene(bool p_from_native) {
 	return true;
 }
 
-void EditorShell::_immediate_dialog_confirmed() {
-	immediate_dialog_confirmed = true;
-}
-
 bool EditorShell::immediate_confirmation_dialog(const String &p_text, const String &p_ok_text, const String &p_cancel_text, uint32_t p_wrap_width) {
-	const bool previous_result = immediate_dialog_confirmed;
-	immediate_dialog_confirmed = false;
-
 	ConfirmationDialog *cd = memnew(ConfirmationDialog);
 	cd->set_text(p_text);
 	cd->set_ok_button_text(p_ok_text);
@@ -1725,7 +1718,8 @@ bool EditorShell::immediate_confirmation_dialog(const String &p_text, const Stri
 		cd->get_label()->set_custom_minimum_size(Size2(p_wrap_width, 0) * EDSCALE);
 	}
 
-	cd->connect(SceneStringName(confirmed), callable_mp(this, &EditorShell::_immediate_dialog_confirmed));
+	const StringName confirmed_meta = SNAME("_editor_confirmed");
+	cd->connect(SceneStringName(confirmed), callable_mp(static_cast<Object *>(cd), &Object::set_meta).bind(confirmed_meta, true));
 	get_gui_base()->add_child(cd);
 
 	cd->popup_centered();
@@ -1733,13 +1727,12 @@ bool EditorShell::immediate_confirmation_dialog(const String &p_text, const Stri
 	while (true) {
 		DisplayServer::get_singleton()->process_events();
 		Main::iteration();
-		if (immediate_dialog_confirmed || !cd->is_visible()) {
+		if (cd->has_meta(confirmed_meta) || !cd->is_visible()) {
 			break;
 		}
 	}
 
-	const bool confirmed = immediate_dialog_confirmed;
-	immediate_dialog_confirmed = previous_result;
+	const bool confirmed = cd->has_meta(confirmed_meta);
 	memdelete(cd);
 	return confirmed;
 }

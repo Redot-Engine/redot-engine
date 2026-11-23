@@ -911,32 +911,13 @@ void EditorNode::_resave_externally_modified_scenes(String p_str) {
 }
 
 void EditorNode::_reload_modified_scenes() {
-	int current_idx = get_editor_data().get_edited_scene();
-
+	disk_changed->hide();
 	for (int i = 0; i < get_editor_data().get_edited_scene_count(); i++) {
-		if (get_editor_data().get_scene_path(i) == "") {
-			continue;
-		}
-
-		uint64_t last_date = get_editor_data().get_scene_modified_time(i);
-		uint64_t date = FileAccess::get_modified_time(get_editor_data().get_scene_path(i));
-
-		if (date > last_date) {
-			String filename = get_editor_data().get_scene_path(i);
-			get_editor_data().set_edited_scene(i);
-			EditorSceneManager::get_singleton()->_remove_edited_scene(false);
-
-			Error err = EditorSceneManager::get_singleton()->load_scene(filename, false, false, false, true);
-			if (err != OK) {
-				ERR_PRINT(vformat("Failed to load scene: %s", filename));
-			}
-			get_editor_data().move_edited_scene_to_index(i);
+		const String path = get_editor_data().get_scene_path(i);
+		if (!path.is_empty() && FileAccess::get_modified_time(path) > get_editor_data().get_scene_modified_time(i)) {
+			EditorSceneManager::get_singleton()->reload_scene(path, false);
 		}
 	}
-
-	EditorSceneManager::get_singleton()->_set_current_scene(current_idx);
-	scene_tabs->update_scene_tabs();
-	disk_changed->hide();
 }
 
 void EditorNode::_reload_project_settings() {

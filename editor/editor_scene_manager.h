@@ -280,7 +280,7 @@ public:
 	void _notify_nodes_scene_reimported(Node *p_node, Array p_reimported_nodes);
 
 	/// Reloads an open scene from disk.
-	void reload_scene(const String &p_path);
+	void reload_scene(const String &p_path, bool p_ignore_broken_deps = true);
 	/// Records modifications on open scenes that instance any of the given paths, before a reimport replaces them.
 	void preload_reimporting_with_path_in_edited_scenes(const List<String> &p_scenes);
 	/// Re-instantiates instances of reimported scenes in the open scenes, re-applying recorded modifications.
