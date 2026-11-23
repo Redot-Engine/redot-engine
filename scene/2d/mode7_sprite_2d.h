@@ -125,6 +125,15 @@ public:
 	/// Exposed for manual refresh (e.g., after a scene reload) without waiting for ENTER_TREE or setter calls.
 	void force_update_follow_cache();
 
+	/// Takes a point in this node's parent-local space, on the undistorted source artwork,
+	/// @param p_visible_area_only If true, return null when the point has no drawn destination
+	/// (e.g. it lies in the area the Mode 7 transform does not cover). When false (default),
+	/// always return the correct transformed location even if that area is not currently drawn.
+	/// @return The point in the same space after the per-scanline global Mode 7 transformation
+	/// that the shader's fragment() function applies (or null per p_visible_area_only).
+	/// This is the CPU-side equivalent of "where does this point move to?"
+	Variant mode7_transform_point(const Vector2 &p_point, bool p_visible_area_only = false) const;
+
 	Mode7Sprite2D();
 
 private:
@@ -144,6 +153,33 @@ private:
 	/// Builds the transform, pivot/offset and color/modulate as 3 "Color" values per row
 	/// We're only after an actual color for the modulate value, though.  The rest, we're using the vec4 for data.
 	void _mode7_rebuild_scanline_texture();
+
+	/// Computes the interpolated per-scanline Transform2D and pivot for a given
+	/// normalized row coordinate (region-local uv.y, 0..1), using whichever
+	/// mode7_interpolation mode is active (NONE/LERP/PROJECTION). This is the
+	/// single shared implementation of the "row data" math used both by
+	/// _mode7_rebuild_scanline_texture() (baking the scanline table) and by
+	/// mode7_transform_point() (exact per-point evaluation, not limited to the
+	/// scanline table's 1024-row resolution/precision).
+	void _mode7_compute_scanline_data(real_t p_uv_y, Transform2D &r_transform, Vector2 &r_pivot, Color &r_modulate) const;
+
+	/// C++ equivalent of the shader's aspect_rotate(angle, aspect) helper:
+	/// builds a rotation basis pre/post scaled by aspect so a non-square
+	/// region doesn't shear the rotation. Returned as a Transform2D with a
+	/// zero origin (only the basis columns matter); origin/pivot handling is
+	/// left to the caller.
+	static Transform2D _mode7_aspect_rotate(real_t p_angle, real_t p_aspect);
+
+	/// Computes the same src_rect/dst_rect pairing Sprite2D::_get_rects() would
+	/// produce, but always against the FULL, uncropped texture (ignoring
+	/// region_enabled/region_rect). This represents "where would this sprite's
+	/// full artwork be positioned in local space," independent of which slice
+	/// is currently visible through the region crop. Used by
+	/// mode7_transform_point() so that point-space conversion stays anchored
+	/// to the whole image, while the region only ever affects the region-local
+	/// normalization step in between.
+	void _mode7_get_full_rects(Rect2 &r_src_rect, Rect2 &r_dst_rect) const;
+
 	/// Shared tail for the projection tuning setters: these four parameters only feed the
 	/// scanline table (not the shader uniforms), so when the material already exists we
 	/// rebuild just the table (rebinding it to the material) and request a redraw —
