@@ -220,6 +220,7 @@ class WorldScape3DAssetDock final : public PanelContainer {
 		WINDOWED = 2,
 	};
 	State _state = HIDDEN;
+	bool _sidebar_open = true;
 
 	enum Slot : int {
 		POS_LEFT_UL = 0,

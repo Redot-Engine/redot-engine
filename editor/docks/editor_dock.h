@@ -100,6 +100,7 @@ public:
 
 	void set_default_slot(EditorDockManager::DockSlot p_slot);
 	EditorDockManager::DockSlot get_default_slot() const { return default_slot; }
+	bool is_open() const { return open; }
 
 	void set_available_layouts(BitField<DockLayout> p_layouts) { available_layouts = p_layouts; }
 	BitField<DockLayout> get_available_layouts() const { return available_layouts; }

@@ -523,6 +523,7 @@ void EditorDockManager::_move_dock(EditorDock *p_dock, Control *p_target, int p_
 
 	// Remove dock from its existing parent.
 	if (parent) {
+		p_dock->dock_slot_index = get_dock_slot(p_dock);
 		if (p_dock->dock_window) {
 			_close_window(p_dock->dock_window);
 		} else if (p_dock->at_bottom) {
@@ -702,7 +703,47 @@ void EditorDockManager::save_docks_to_config(Ref<ConfigFile> p_layout, const Str
 	}
 }
 
+static void _migrate_legacy_dock_settings(const Ref<ConfigFile> &p_layout, const String &p_section) {
+	if (!p_layout->has_section(p_section)) {
+		return;
+	}
+
+	struct LegacyDockSettings {
+		const char *dock_key;
+		const char *prefix;
+	};
+	constexpr LegacyDockSettings legacy_docks[] = {
+		{ "FileSystem", "dock_filesystem_" },
+		{ "History", "dock_history_" },
+		{ "Node", "dock_node_" },
+	};
+	const Vector<String> keys = p_layout->get_section_keys(p_section);
+	for (const LegacyDockSettings &dock : legacy_docks) {
+		const String section = p_section + "/" + dock.dock_key;
+		for (const String &key : keys) {
+			if (key.begins_with(dock.prefix)) {
+				const String nested_key = key.trim_prefix(dock.prefix);
+				if (!p_layout->has_section_key(section, nested_key)) {
+					p_layout->set_value(section, nested_key, p_layout->get_value(p_section, key));
+				}
+			}
+		}
+	}
+}
+
+static bool _is_legacy_vcs_dock_key(const String &p_key, const String &p_translated_commit) {
+	// Older layouts stored the translated tab title and could include a change count.
+	const int count_start = p_key.rfind(" (");
+	if (count_start >= 0 && p_key.ends_with(")") && p_key.substr(count_start + 2, p_key.length() - count_start - 3).is_valid_int()) {
+		const String title = p_key.left(count_start);
+		return title == "Commit" || title == p_translated_commit;
+	}
+	return p_key == "Commit" || p_key == p_translated_commit;
+}
+
 void EditorDockManager::load_docks_from_config(Ref<ConfigFile> p_layout, const String &p_section, bool p_first_load) {
+	_migrate_legacy_dock_settings(p_layout, p_section);
+
 	Dictionary floating_docks_dump = p_layout->get_value(p_section, "dock_floating", Dictionary());
 	Array dock_bottom = p_layout->get_value(p_section, "dock_bottom", Array());
 	Array closed_docks = p_layout->get_value(p_section, "dock_closed", Array());
@@ -714,6 +755,8 @@ void EditorDockManager::load_docks_from_config(Ref<ConfigFile> p_layout, const S
 	for (EditorDock *dock : all_docks) {
 		dock_map[dock->get_effective_layout_key()] = dock;
 	}
+	const String legacy_commit_title = TTR("Commit");
+	EditorDock *const *vcs_dock = dock_map.getptr("VersionCommit");
 
 	// Load docks by slot. Index -1 is for docks that have no slot.
 	for (int i = -1; i < DOCK_SLOT_MAX; i++) {
@@ -725,12 +768,15 @@ void EditorDockManager::load_docks_from_config(Ref<ConfigFile> p_layout, const S
 
 		for (int j = names.size() - 1; j >= 0; j--) {
 			const String &name = names[j];
-			const String section_name = p_section + "/" + name;
-
-			if (!dock_map.has(name)) {
+			EditorDock *const *dock_entry = dock_map.getptr(name);
+			if (!dock_entry && vcs_dock && _is_legacy_vcs_dock_key(name, legacy_commit_title)) {
+				dock_entry = vcs_dock;
+			}
+			if (!dock_entry) {
 				continue;
 			}
-			EditorDock *dock = dock_map[name];
+			EditorDock *dock = *dock_entry;
+			const String section_name = p_section + "/" + dock->get_effective_layout_key();
 
 			if (!dock->enabled) {
 				// Don't open disabled docks.
@@ -881,6 +927,18 @@ TabContainer *EditorDockManager::get_dock_tab_container(Control *p_dock) const {
 	return Object::cast_to<TabContainer>(p_dock->get_parent());
 }
 
+EditorDockManager::DockSlot EditorDockManager::get_dock_slot(EditorDock *p_dock) const {
+	const TabContainer *parent = get_dock_tab_container(p_dock);
+	if (parent) {
+		for (int i = 0; i < DOCK_SLOT_MAX; i++) {
+			if (dock_slot[i] == parent) {
+				return DockSlot(i);
+			}
+		}
+	}
+	return DockSlot(p_dock->dock_slot_index);
+}
+
 void EditorDockManager::focus_dock(EditorDock *p_dock) {
 	ERR_FAIL_NULL(p_dock);
 	ERR_FAIL_COND_MSG(!all_docks.has(p_dock), vformat("Cannot focus unknown dock '%s'.", p_dock->get_display_title()));
@@ -916,7 +974,7 @@ void EditorDockManager::focus_dock(EditorDock *p_dock) {
 	tab_container->set_current_tab(tab_index);
 }
 
-void EditorDockManager::add_dock(EditorDock *p_dock) {
+void EditorDockManager::add_dock(EditorDock *p_dock, bool p_open) {
 	ERR_FAIL_NULL(p_dock);
 	ERR_FAIL_COND_MSG(all_docks.has(p_dock), vformat("Cannot add dock '%s', already added.", p_dock->get_display_title()));
 
@@ -925,7 +983,7 @@ void EditorDockManager::add_dock(EditorDock *p_dock) {
 	p_dock->connect("tab_style_changed", callable_mp(this, &EditorDockManager::_update_tab_style).bind(p_dock));
 	p_dock->connect("renamed", callable_mp(this, &EditorDockManager::_update_tab_style).bind(p_dock));
 
-	if (p_dock->default_slot != DOCK_SLOT_NONE) {
+	if (p_open && p_dock->default_slot != DOCK_SLOT_NONE) {
 		open_dock(p_dock, false);
 	} else {
 		closed_dock_parent->add_child(p_dock);
@@ -939,6 +997,7 @@ void EditorDockManager::remove_dock(EditorDock *p_dock) {
 	ERR_FAIL_COND_MSG(!all_docks.has(p_dock), vformat("Cannot remove unknown dock '%s'.", p_dock->get_display_title()));
 
 	_move_dock(p_dock, nullptr);
+	p_dock->open = false;
 
 	all_docks.erase(p_dock);
 	p_dock->disconnect("tab_style_changed", callable_mp(this, &EditorDockManager::_update_tab_style));

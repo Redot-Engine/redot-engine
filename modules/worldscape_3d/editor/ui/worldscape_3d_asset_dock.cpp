@@ -982,27 +982,41 @@ WorldScape3DAssetDock::~WorldScape3DAssetDock() {
 // Dock placement
 
 void WorldScape3DAssetDock::set_slot(const int slot) {
-	_slot = Math::clamp(_slot, POS_LEFT_UL, POS_BOTTOM);
-
-	if (slot != static_cast<int>(_slot)) {
-		_slot = static_cast<Slot>(slot);
-		_placement_opt->select(_slot);
-		save_editor_settings();
-		_plugin->select_terrain();
-		update_dock();
+	ERR_FAIL_INDEX(slot, POS_MAX);
+	if (_state == SIDEBAR) {
+		EditorDockManager *dock_manager = EditorCore::get_singleton()->get_shell()->get_dock_manager();
+		if (slot == dock_manager->get_dock_slot(_editor_dock)) {
+			return;
+		}
+		remove_dock();
+	} else if (slot == _slot) {
+		return;
 	}
+
+	_slot = static_cast<Slot>(slot);
+	_placement_opt->select(_slot);
+	save_editor_settings();
+	_plugin->select_terrain();
+	update_dock();
 }
 
 void WorldScape3DAssetDock::remove_dock(const bool force) {
 	switch (_state) {
-		case State::SIDEBAR:
+		case State::SIDEBAR: {
+			EditorDockManager *dock_manager = EditorCore::get_singleton()->get_shell()->get_dock_manager();
+			const EditorDockManager::DockSlot last_slot = dock_manager->get_dock_slot(_editor_dock);
+			if (last_slot != EditorDockManager::DOCK_SLOT_NONE) {
+				_slot = static_cast<Slot>(last_slot);
+				_placement_opt->select(_slot);
+			}
+			_sidebar_open = _editor_dock->is_open();
 			_plugin->remove_dock(_editor_dock);
 
 			if (get_parent() == _editor_dock) {
 				_editor_dock->remove_child(this);
 			}
 			_state = State::HIDDEN;
-			break;
+		} break;
 		case State::BOTTOM:
 			_plugin->remove_control_from_bottom_panel(this);
 			EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(EditorCore::get_singleton()->get_log());
@@ -1046,20 +1060,26 @@ void WorldScape3DAssetDock::update_dock() {
 
 	update_assets();
 
-	// Move dock to new destination
-	remove_dock();
+	State target_state = HIDDEN;
 	if (is_visible()) {
-		if (_slot < POS_BOTTOM) { // Sidebar
-			_state = SIDEBAR;
-			_editor_dock->set_default_slot(
-					static_cast<EditorDockManager::DockSlot>(_slot));
+		target_state = _slot == POS_BOTTOM ? BOTTOM : SIDEBAR;
+	}
+	if (_state == target_state) {
+		return;
+	}
 
-			_editor_dock->add_child(this);
-			_plugin->add_dock(_editor_dock);
-		} else if (_slot == POS_BOTTOM) { // Bottom
-			_state = BOTTOM;
-			create_bottom_panel();
-		}
+	remove_dock();
+	if (target_state == SIDEBAR) {
+		EditorDockManager *dock_manager = EditorCore::get_singleton()->get_shell()->get_dock_manager();
+		ERR_FAIL_NULL_MSG(dock_manager, "This editor shell does not support plugin docks.");
+
+		_editor_dock->set_default_slot(static_cast<EditorDockManager::DockSlot>(_slot));
+		_editor_dock->add_child(this);
+		dock_manager->add_dock(_editor_dock, _sidebar_open);
+		_state = SIDEBAR;
+	} else if (target_state == BOTTOM) {
+		_state = BOTTOM;
+		create_bottom_panel();
 	}
 }
 

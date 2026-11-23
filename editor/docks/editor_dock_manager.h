@@ -101,7 +101,7 @@ private:
 	/// @}
 
 	Vector<WindowWrapper *> dock_windows;
-	TabContainer *dock_slot[DOCK_SLOT_MAX];
+	TabContainer *dock_slot[DOCK_SLOT_MAX] = {};
 	EditorDockDragHint *dock_drag_rects[DOCK_SLOT_MAX];
 	LocalVector<EditorDock *> all_docks;
 	EditorDock *dock_tab_dragged = nullptr;
@@ -158,13 +158,14 @@ public:
 	void focus_dock(EditorDock *p_dock);
 
 	TabContainer *get_dock_tab_container(Control *p_dock) const;
+	DockSlot get_dock_slot(EditorDock *p_dock) const;
 
 	void bottom_dock_show_placement_popup(const Rect2i &p_position, EditorDock *p_dock);
 
 	void set_docks_visible(bool p_show);
 	bool are_docks_visible() const;
 
-	void add_dock(EditorDock *p_dock);
+	void add_dock(EditorDock *p_dock, bool p_open = true);
 	void remove_dock(EditorDock *p_dock);
 
 	EditorDockManager();
