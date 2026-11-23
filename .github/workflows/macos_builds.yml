@@ -126,7 +126,7 @@ jobs:
       - name: Create universal binary
         run: |
           lipo -create "$BIN_BASE.x86_64" "$BIN_BASE.arm64" -output "$BIN_BASE.universal"
-          lipo -verify_arch x86_64 arm64 "$BIN_BASE.universal"
+          lipo "$BIN_BASE.universal" -verify_arch x86_64 arm64
           strip "$BIN_BASE.universal"
           chmod +x "$BIN_BASE.universal"
 
