@@ -775,6 +775,7 @@
 		<member name="resize_font_to_fit" type="bool" setter="set_resize_font_to_fit" getter="is_resize_font_to_fit_enabled" default="false">
 			If [code]true[/code], the text size will automatically shrink or grow to fit within the node's bounding rectangle. It will pick the largest font size between [member minimum_font_size] and [member maximum_font_size] that doesn't cause the text to be truncated.
 			Font sizes that are overridden with the [code skip-lint][font_size][/code] tag are scaled relative to the theme font size. For example, if the theme font size is [code]16[/code] and [code skip-lint][font_size=24][/code] is used with an automatic font size determined to be [code]32[/code], text in the overridden block will be in size [code]48[/code].
+			Theme font sizes for bold, italic, and monospace text are scaled by the same ratio.
 			If [member fit_content] is also enabled, this option takes precedence when determining the control's minimum size.
 		</member>
 		<member name="scroll_active" type="bool" setter="set_scroll_active" getter="is_scroll_active" default="true">

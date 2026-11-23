@@ -117,6 +117,11 @@ bool Label::is_uppercase() const {
 }
 
 int Label::get_line_height(int p_line) const {
+	_ensure_shaped();
+	return _get_shaped_line_height(p_line);
+}
+
+int Label::_get_shaped_line_height(int p_line) const {
 	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font() : theme_cache.font;
 	int font_size = _get_layout_font_size();
 	int font_h = font->get_height(font_size);
@@ -307,11 +312,11 @@ void Label::_shape_internal(int p_width, Size2 *r_content_size) const {
 	}
 
 	if (xl_text.length() == 0) {
-		minsize = Size2(1, get_line_height());
+		minsize = Size2(1, _get_shaped_line_height(-1));
 		return;
 	}
 
-	int visible_lines = get_visible_line_count();
+	int visible_lines = _get_shaped_visible_line_count();
 	bool lines_hidden = visible_lines > 0 && visible_lines < total_line_count;
 
 	int line_index = 0;
@@ -1087,6 +1092,11 @@ int Label::get_line_count() const {
 }
 
 int Label::get_visible_line_count() const {
+	_ensure_shaped();
+	return _get_shaped_visible_line_count();
+}
+
+int Label::_get_shaped_visible_line_count() const {
 	Ref<StyleBox> style = theme_cache.normal_style;
 	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font() : theme_cache.font;
 	int font_size = _get_layout_font_size();

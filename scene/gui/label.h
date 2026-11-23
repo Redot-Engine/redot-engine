@@ -119,6 +119,8 @@ private:
 	void _shape_internal(int p_width, Size2 *r_content_size = nullptr) const;
 	Size2 _measure_at_font_size(int p_font_size, int p_width) const;
 	int _get_layout_font_size() const;
+	int _get_shaped_line_height(int p_line) const;
+	int _get_shaped_visible_line_count() const;
 	void _invalidate();
 
 protected:

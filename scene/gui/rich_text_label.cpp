@@ -3231,7 +3231,7 @@ int RichTextLabel::_get_item_font_size(Item *p_item, const ItemFont *p_font, int
 	if (size_override && size_override->font_size > 0) {
 		return _scale_font_size(size_override->font_size, p_base_font_size);
 	}
-	if (p_font && p_font->font_size > 0 && (!resize_font_to_fit || !p_font->def_size)) {
+	if (p_font && p_font->font_size > 0) {
 		return _scale_font_size(p_font->font_size, p_base_font_size);
 	}
 	return p_base_font_size;
