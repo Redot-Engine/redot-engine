@@ -113,6 +113,9 @@ jobs:
       - name: Select Xcode 26
         run: sudo xcode-select -s /Applications/Xcode_26.0.1.app
 
+      - name: Checkout test fixtures
+        uses: actions/checkout@v6
+
       - name: Download architecture binaries
         uses: actions/download-artifact@v8
         with:

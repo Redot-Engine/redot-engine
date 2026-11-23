@@ -33,27 +33,24 @@ jobs:
     needs: static-checks
     uses: ./.github/workflows/linux_builds.yml
 
-  macos-build:
+  macos-editor:
     name: 🍎 macOS
     needs: static-checks
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Editor (target=editor)
-            target: editor
-            artifact-name: macos-editor
-
-          - name: Template (target=template_release)
-            target: template_release
-            artifact-name: macos-template
-            scons-flags: debug_symbols=no
     uses: ./.github/workflows/macos_builds.yml
     with:
-      job-name: ${{ matrix.name }}
-      target: ${{ matrix.target }}
-      artifact-name: ${{ matrix.artifact-name }}
-      scons-flags: ${{ matrix.scons-flags || '' }}
+      job-name: Editor (target=editor)
+      target: editor
+      artifact-name: macos-editor
+
+  macos-template:
+    name: 🍎 macOS
+    needs: static-checks
+    uses: ./.github/workflows/macos_builds.yml
+    with:
+      job-name: Template (target=template_release)
+      target: template_release
+      artifact-name: macos-template
+      scons-flags: debug_symbols=no
 
   windows-build:
     name: 🏁 Windows
