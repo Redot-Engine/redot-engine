@@ -319,7 +319,7 @@ private:
 	/// Returns true if the update spinner button should be shown (based on editor settings and whether the display mode uses it).
 	bool _should_display_update_spinner() const;
 
-	void _update_theme(bool p_skip_creation = false); ///< Thin wrapper around `EditorShell::_update_theme` (keeps the existing call sites working).
+	void _update_theme(bool p_skip_creation = false) override; ///< Thin wrapper around `EditorShell::_update_theme` (keeps the existing call sites working).
 	/// Applies EditorNode-specific theme style overrides (panel styleboxes, menu icons, dock styles).
 	void _apply_theme_styles(const Ref<Theme> &p_theme) override;
 	/// Updates the in-window project title label.
