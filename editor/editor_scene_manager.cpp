@@ -2043,7 +2043,12 @@ void EditorSceneManager::_reload_scene(int p_scene_idx, const String &p_path, bo
 	core->get_editor_data().move_edited_scene_to_index(p_scene_idx);
 	EditorUndoRedoManager::get_singleton()->clear_history(core->get_editor_data().get_scene_history_id(p_scene_idx), false);
 
-	_set_current_scene(current_tab);
+	if (core->get_editor_data().get_edited_scene_count() == 1) {
+		// Reusing the empty tab did not schedule activation for the new root.
+		_set_current_scene_nocheck(current_tab);
+	} else {
+		_set_current_scene(current_tab);
+	}
 	shell->get_scene_tabs()->update_scene_tabs();
 }
 
