@@ -570,6 +570,7 @@ void EditorNode::_notification(int p_what) {
 			EditorCore::get_singleton()->remove_print_handler_early();
 			EditorPluginManager::get_singleton()->get_active_plugins().clear();
 
+			EditorProgressTracker::set_progress_ui(nullptr, nullptr);
 			if (progress_dialog) {
 				progress_dialog->queue_free();
 			}
@@ -1290,6 +1291,7 @@ Error EditorNode::export_preset(const String &p_preset, const String &p_path, bo
 	export_defer.patch = p_patch;
 	export_defer.patches = p_patches;
 	cmdline_mode = true;
+	EditorProgressTracker::set_cmdline_mode(true);
 	return OK;
 }
 
@@ -1832,8 +1834,12 @@ void EditorNode::_feature_profile_changed() {
 	}
 }
 
+void EditorNode::_push_item(Object *p_object, const String &p_property, bool p_inspector_only) {
+	EditorSceneManager::get_singleton()->push_item(p_object, p_property, p_inspector_only);
+}
+
 void EditorNode::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("push_item", "object", "property", "inspector_only"), &EditorSceneManager::push_item, DEFVAL(""), DEFVAL(false));
+	ClassDB::bind_method(D_METHOD("push_item", "object", "property", "inspector_only"), &EditorNode::_push_item, DEFVAL(""), DEFVAL(false));
 
 	ClassDB::bind_method("stop_child_process", &EditorShell::stop_child_process);
 
@@ -3255,6 +3261,7 @@ void EditorNode::set_dock_tab_icon(Control *p_control, const Ref<Texture2D> &p_i
 }
 
 EditorNode::~EditorNode() {
+	EditorProgressTracker::set_progress_ui(nullptr, nullptr);
 	EditorInspector::cleanup_plugins();
 	EditorTranslationParser::get_singleton()->clean_parsers();
 	ResourceImporterScene::clean_up_importer_plugins();

@@ -34,7 +34,6 @@
 
 #include "core/object/ref_counted.h"
 #include "core/templates/list.h"
-#include "editor/gui/editor_file_dialog.h"
 #include "scene/animation/animation_mixer.h"
 #include "scene/main/node.h"
 

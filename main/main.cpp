@@ -37,8 +37,6 @@
  */
 
 #include "main.h"
-#include "editor/editor_core.h"
-#include "editor/editor_scene_manager.h"
 
 #include "core/config/project_settings.h"
 #include "core/core_globals.h"
@@ -124,7 +122,9 @@
 #include "editor/doc/doc_data_class_path.gen.h"
 #include "editor/doc/doc_tools.h"
 #include "editor/doc/editor_help.h"
+#include "editor/editor_core.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/file_system/editor_file_system.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/gui/progress_dialog.h"

@@ -419,6 +419,7 @@ private:
 	/// Recursive function to inform nodes that an array of nodes have had their scene reimported.
 	/// It will attempt to call a method named '_nodes_scene_reimported' on every node in the
 	void _progress_dialog_visibility_changed(); ///< Open the io errors after the progress dialog is closed.
+	void _push_item(Object *p_object, const String &p_property, bool p_inspector_only);
 	void _load_error_dialog_visibility_changed(); ///< Clears load errors if changed to not visible.
 
 	void _execute_upgrades() override; ///< Runs pending project-upgrade steps queued for this session.

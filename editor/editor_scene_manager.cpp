@@ -52,6 +52,7 @@
 #include "editor/file_system/dependency_editor.h"
 #include "editor/file_system/editor_file_system.h"
 #include "editor/file_system/editor_paths.h"
+#include "editor/gui/editor_file_dialog.h"
 #include "editor/inspector/editor_properties.h"
 #include "editor/inspector/multi_node_edit.h"
 #include "editor/run/editor_run_bar.h"
@@ -600,7 +601,7 @@ void EditorSceneManager::_set_current_scene_nocheck(int p_idx) {
 	callable_mp(shell->get_scene_tabs(), &EditorSceneTabs::update_scene_tabs).call_deferred();
 
 	if (tabs_to_close.is_empty()) {
-		callable_mp(this, &EditorSceneManager::_set_main_scene_state); // Do after everything else is done setting up.
+		callable_mp(this, &EditorSceneManager::_set_main_scene_state).call_deferred(state, get_edited_scene()); // Do after everything else is done setting up.
 	}
 
 	_update_undo_redo_allowed();
@@ -1085,6 +1086,7 @@ void EditorSceneManager::_save_editor_states(const String &p_file, int p_idx) {
 }
 
 void EditorSceneManager::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("push_item", "object", "property", "inspector_only"), &EditorSceneManager::push_item, DEFVAL(""), DEFVAL(false));
 	ClassDB::bind_method("set_edited_scene", &EditorSceneManager::set_edited_scene);
 
 	ADD_SIGNAL(MethodInfo("scene_saved", PropertyInfo(Variant::STRING, "path")));

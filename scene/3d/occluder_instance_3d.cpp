@@ -463,7 +463,10 @@ void OccluderInstance3D::set_occluder(const Ref<Occluder3D> &p_occluder) {
 #ifdef TOOLS_ENABLED
 	// PolygonOccluder3D is edited via an editor plugin, this ensures the plugin is shown/hidden when necessary
 	if (Engine::get_singleton()->is_editor_hint()) {
-		callable_mp(EditorCore::get_singleton()->get_shell(), &EditorShell::_edit_current).call_deferred();
+		EditorCore *core = EditorCore::get_singleton();
+		if (EditorShell *shell = core ? core->get_shell() : nullptr) {
+			callable_mp(shell, &EditorShell::_edit_current).call_deferred(false, false);
+		}
 	}
 #endif
 }

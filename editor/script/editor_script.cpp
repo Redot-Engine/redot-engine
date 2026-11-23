@@ -47,13 +47,11 @@
 #include "scene/resources/packed_scene.h"
 
 void EditorScript::add_root_node(Node *p_node) {
-	if (!EditorCore::get_singleton()->get_shell()) {
-		EditorCore::get_singleton()->get_shell()->add_io_error("EditorScript::add_root_node: " + TTR("Write your logic in the _run() method."));
-		return;
-	}
+	EditorCore *core = EditorCore::get_singleton();
+	ERR_FAIL_COND_MSG(!core || !core->get_shell(), TTR("Write your logic in the _run() method."));
 
 	if (EditorSceneManager::get_singleton()->get_edited_scene()) {
-		EditorCore::get_singleton()->get_shell()->add_io_error("EditorScript::add_root_node: " + TTR("The current scene already has a root node."));
+		core->get_shell()->add_io_error("EditorScript::add_root_node: " + TTR("The current scene already has a root node."));
 		return;
 	}
 
@@ -69,15 +67,13 @@ void EditorScript::add_root_node(Node *p_node) {
 	}
 
 	EditorSceneManager::get_singleton()->set_edited_scene(p_node);
-	EditorUndoRedoManager::get_singleton()->set_history_as_unsaved(EditorCore::get_singleton()->get_editor_data().get_current_edited_scene_history_id());
+	EditorUndoRedoManager::get_singleton()->set_history_as_unsaved(core->get_editor_data().get_current_edited_scene_history_id());
 	EditorSceneTabs::get_singleton()->update_scene_tabs();
 }
 
 Node *EditorScript::get_scene() const {
-	if (!EditorCore::get_singleton()->get_shell()) {
-		EditorCore::get_singleton()->get_shell()->add_io_error("EditorScript::get_scene: " + TTR("Write your logic in the _run() method."));
-		return nullptr;
-	}
+	EditorCore *core = EditorCore::get_singleton();
+	ERR_FAIL_COND_V_MSG(!core || !core->get_shell(), nullptr, TTR("Write your logic in the _run() method."));
 
 	return EditorSceneManager::get_singleton()->get_edited_scene();
 }
