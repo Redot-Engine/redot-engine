@@ -2908,13 +2908,17 @@ void RendererSceneCull::_scene_cull(CullData &cull_data, InstanceCullResult &cul
 					cull_result.fog_volumes.push_back(instance_rid);
 				} else if (base_type == RS::INSTANCE_VISIBLITY_NOTIFIER) {
 					InstanceVisibilityNotifierData *vnd = idata.visibility_notifier;
-					if (!vnd->list_element.in_list()) {
-						visible_notifier_list_lock.lock();
-						visible_notifier_list.add(&vnd->list_element);
-						visible_notifier_list_lock.unlock();
-						vnd->just_visible = true;
+					const float max_distance = RSG::utilities->visibility_notifier_get_max_distance(vnd->base);
+					const Vector3 closest_point = cam_origin.clamp(Vector3(aabb.bounds[0], aabb.bounds[1], aabb.bounds[2]), Vector3(aabb.bounds[3], aabb.bounds[4], aabb.bounds[5]));
+					if (max_distance <= 0.0f || closest_point.distance_squared_to(cam_origin) <= max_distance * max_distance) {
+						if (!vnd->list_element.in_list()) {
+							visible_notifier_list_lock.lock();
+							visible_notifier_list.add(&vnd->list_element);
+							visible_notifier_list_lock.unlock();
+							vnd->just_visible = true;
+						}
+						vnd->visible_in_frame = frame_number;
 					}
-					vnd->visible_in_frame = frame_number;
 				} else if (((1 << base_type) & RS::INSTANCE_GEOMETRY_MASK) && !(idata.flags & InstanceData::FLAG_CAST_SHADOWS_ONLY)) {
 					bool keep = true;
 

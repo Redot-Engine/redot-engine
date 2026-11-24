@@ -2838,6 +2838,7 @@ void RenderingServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("visibility_notifier_create"), &RenderingServer::visibility_notifier_create);
 	ClassDB::bind_method(D_METHOD("visibility_notifier_set_aabb", "notifier", "aabb"), &RenderingServer::visibility_notifier_set_aabb);
 	ClassDB::bind_method(D_METHOD("visibility_notifier_set_callbacks", "notifier", "enter_callable", "exit_callable"), &RenderingServer::visibility_notifier_set_callbacks);
+	ClassDB::bind_method(D_METHOD("visibility_notifier_set_max_distance", "notifier", "max_distance"), &RenderingServer::visibility_notifier_set_max_distance);
 
 	/* OCCLUDER */
 

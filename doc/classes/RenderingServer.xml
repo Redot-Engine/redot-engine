@@ -4320,6 +4320,14 @@
 			<description>
 			</description>
 		</method>
+		<method name="visibility_notifier_set_max_distance">
+			<return type="void" />
+			<param index="0" name="notifier" type="RID" />
+			<param index="1" name="max_distance" type="float" />
+			<description>
+				Sets the maximum distance from a camera at which this visibility notifier is considered visible. If set to [code]0[/code], the distance is not limited.
+			</description>
+		</method>
 		<method name="voxel_gi_allocate_data">
 			<return type="void" />
 			<param index="0" name="voxel_gi" type="RID" />

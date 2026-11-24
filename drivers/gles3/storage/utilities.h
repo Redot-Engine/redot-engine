@@ -50,6 +50,7 @@ namespace GLES3 {
 
 struct VisibilityNotifier {
 	AABB aabb;
+	float max_distance = 0.0f;
 	Callable enter_callback;
 	Callable exit_callback;
 	Dependency dependency;
@@ -184,8 +185,10 @@ public:
 
 	virtual void visibility_notifier_set_aabb(RID p_notifier, const AABB &p_aabb) override;
 	virtual void visibility_notifier_set_callbacks(RID p_notifier, const Callable &p_enter_callbable, const Callable &p_exit_callable) override;
+	virtual void visibility_notifier_set_max_distance(RID p_notifier, float p_max_distance) override;
 
 	virtual AABB visibility_notifier_get_aabb(RID p_notifier) const override;
+	virtual float visibility_notifier_get_max_distance(RID p_notifier) const override;
 	virtual void visibility_notifier_call(RID p_notifier, bool p_enter, bool p_deferred) override;
 
 	/// @}

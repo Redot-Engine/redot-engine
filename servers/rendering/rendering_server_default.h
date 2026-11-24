@@ -705,6 +705,7 @@ public:
 	FUNCRIDSPLIT(visibility_notifier)
 	FUNC2(visibility_notifier_set_aabb, RID, const AABB &)
 	FUNC3(visibility_notifier_set_callbacks, RID, const Callable &, const Callable &)
+	FUNC2(visibility_notifier_set_max_distance, RID, float)
 
 #undef server_name
 #undef ServerName

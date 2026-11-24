@@ -44,6 +44,7 @@ class VisibleOnScreenNotifier3D : public VisualInstance3D {
 	GDCLASS(VisibleOnScreenNotifier3D, VisualInstance3D);
 
 	AABB aabb = AABB(Vector3(-1, -1, -1), Vector3(2, 2, 2));
+	float max_distance = 0.0f;
 
 private:
 	bool on_screen = false;
@@ -60,6 +61,10 @@ protected:
 public:
 	void set_aabb(const AABB &p_aabb);
 	virtual AABB get_aabb() const override;
+
+	void set_max_distance(float p_max_distance);
+	float get_max_distance() const;
+
 	bool is_on_screen() const;
 
 	VisibleOnScreenNotifier3D();

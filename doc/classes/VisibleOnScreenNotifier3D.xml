@@ -5,6 +5,7 @@
 	</brief_description>
 	<description>
 		[VisibleOnScreenNotifier3D] represents a box-shaped region of 3D space. When any part of this region becomes visible on screen or in a [Camera3D]'s view, it will emit a [signal screen_entered] signal, and likewise it will emit a [signal screen_exited] signal when no part of it remains visible.
+		If [member max_distance] is greater than [code]0[/code], the region is considered invisible when it is further than that distance from every camera, even if it is still inside a camera's view.
 		If you want a node to be enabled automatically when this region is visible on screen, use [VisibleOnScreenEnabler3D].
 		[b]Note:[/b] [VisibleOnScreenNotifier3D] uses an approximate heuristic that doesn't take walls and other occlusion into account, unless occlusion culling is used. It also won't function unless [member Node3D.visible] is set to [code]true[/code].
 	</description>
@@ -22,6 +23,10 @@
 	<members>
 		<member name="aabb" type="AABB" setter="set_aabb" getter="get_aabb" default="AABB(-1, -1, -1, 2, 2, 2)">
 			The [VisibleOnScreenNotifier3D]'s bounding box.
+		</member>
+		<member name="max_distance" type="float" setter="set_max_distance" getter="get_max_distance" default="0.0">
+			The maximum distance from a camera at which the bounding box is still considered visible on screen. If the bounding box is further than this distance from every camera, [signal screen_exited] is emitted, and [signal screen_entered] is emitted once it comes back within range.
+			If set to [code]0[/code], the distance is not limited, so only the camera frustum (and occlusion culling, if enabled) determines visibility.
 		</member>
 	</members>
 	<signals>
