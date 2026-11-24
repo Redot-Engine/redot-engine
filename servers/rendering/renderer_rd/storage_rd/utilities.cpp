@@ -195,10 +195,22 @@ void Utilities::visibility_notifier_set_callbacks(RID p_notifier, const Callable
 	vn->exit_callback = p_exit_callable;
 }
 
+void Utilities::visibility_notifier_set_max_distance(RID p_notifier, float p_max_distance) {
+	VisibilityNotifier *vn = visibility_notifier_owner.get_or_null(p_notifier);
+	ERR_FAIL_NULL(vn);
+	vn->max_distance = p_max_distance;
+}
+
 AABB Utilities::visibility_notifier_get_aabb(RID p_notifier) const {
 	const VisibilityNotifier *vn = visibility_notifier_owner.get_or_null(p_notifier);
 	ERR_FAIL_NULL_V(vn, AABB());
 	return vn->aabb;
+}
+
+float Utilities::visibility_notifier_get_max_distance(RID p_notifier) const {
+	const VisibilityNotifier *vn = visibility_notifier_owner.get_or_null(p_notifier);
+	ERR_FAIL_NULL_V(vn, 0.0f);
+	return vn->max_distance;
 }
 
 void Utilities::visibility_notifier_call(RID p_notifier, bool p_enter, bool p_deferred) {

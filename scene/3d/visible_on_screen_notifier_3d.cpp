@@ -72,6 +72,20 @@ AABB VisibleOnScreenNotifier3D::get_aabb() const {
 	return aabb;
 }
 
+void VisibleOnScreenNotifier3D::set_max_distance(float p_max_distance) {
+	ERR_FAIL_COND_MSG(p_max_distance < 0.0f, "Max distance cannot be negative.");
+	if (max_distance == p_max_distance) {
+		return;
+	}
+	max_distance = p_max_distance;
+
+	RS::get_singleton()->visibility_notifier_set_max_distance(get_base(), max_distance);
+}
+
+float VisibleOnScreenNotifier3D::get_max_distance() const {
+	return max_distance;
+}
+
 bool VisibleOnScreenNotifier3D::is_on_screen() const {
 	return on_screen;
 }
@@ -87,9 +101,12 @@ void VisibleOnScreenNotifier3D::_notification(int p_what) {
 
 void VisibleOnScreenNotifier3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_aabb", "rect"), &VisibleOnScreenNotifier3D::set_aabb);
+	ClassDB::bind_method(D_METHOD("set_max_distance", "distance"), &VisibleOnScreenNotifier3D::set_max_distance);
+	ClassDB::bind_method(D_METHOD("get_max_distance"), &VisibleOnScreenNotifier3D::get_max_distance);
 	ClassDB::bind_method(D_METHOD("is_on_screen"), &VisibleOnScreenNotifier3D::is_on_screen);
 
 	ADD_PROPERTY(PropertyInfo(Variant::AABB, "aabb", PROPERTY_HINT_NONE, "suffix:m"), "set_aabb", "get_aabb");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "max_distance", PROPERTY_HINT_RANGE, "0,65536,0.001,or_greater,suffix:m"), "set_max_distance", "get_max_distance");
 
 	ADD_SIGNAL(MethodInfo("screen_entered"));
 	ADD_SIGNAL(MethodInfo("screen_exited"));

@@ -943,6 +943,7 @@ public:
 	virtual RID visibility_notifier_create() = 0;
 	virtual void visibility_notifier_set_aabb(RID p_notifier, const AABB &p_aabb) = 0;
 	virtual void visibility_notifier_set_callbacks(RID p_notifier, const Callable &p_enter_callbable, const Callable &p_exit_callable) = 0;
+	virtual void visibility_notifier_set_max_distance(RID p_notifier, float p_max_distance) = 0;
 
 	/// @}
 	/// @name OCCLUDER API
