@@ -59,7 +59,7 @@ private:
 
 	/* VISIBILITY NOTIFIER */
 
-	mutable RID_Owner<VisibilityNotifier> visibility_notifier_owner;
+	mutable RID_Owner<VisibilityNotifier, true> visibility_notifier_owner;
 
 	/* MISC */
 
