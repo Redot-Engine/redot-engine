@@ -40,7 +40,7 @@
 #include "scene/resources/material.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/packed_scene.h"
-#include "unity_shader_converter.h"
+#include "modules/project_converter/unity/unity_shader_converter.h"
 
 // Forward declarations
 class Node3D;

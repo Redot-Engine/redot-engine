@@ -591,6 +591,9 @@ ProjectList::Item ProjectList::load_project_data(const String &p_path, bool p_fa
 	Ref<ConfigFile> cf = memnew(ConfigFile);
 	Error cf_err = cf->load(conf, true);
 
+	String foreign_engine;
+	const bool is_foreign = cf_err != OK && ProjectSettings::detect_foreign_project(p_path, &foreign_engine);
+
 	int config_version = 0;
 	String cf_project_name;
 	String project_name = TTR("Unnamed Project");
@@ -600,6 +603,12 @@ ProjectList::Item ProjectList::load_project_data(const String &p_path, bool p_fa
 			project_name = cf_project_name.xml_unescape();
 		}
 		config_version = (int)cf->get_value("", "config_version", 0);
+	} else if (is_foreign) {
+		// Foreign projects have no project.godot; present them as openable and
+		// already compatible so the project manager doesn't try to convert them.
+		project_name = p_path.get_file();
+		cf_project_name = project_name;
+		config_version = ProjectSettings::CONFIG_VERSION;
 	}
 
 	if (config_version > ProjectSettings::CONFIG_VERSION) {
@@ -630,6 +639,9 @@ ProjectList::Item ProjectList::load_project_data(const String &p_path, bool p_fa
 	PackedStringArray unsupported_features = ProjectSettings::get_unsupported_features(project_features);
 
 	String project_version = "?";
+	if (is_foreign) {
+		project_version = foreign_engine.capitalize();
+	}
 	for (int i = 0; i < project_features.size(); i++) {
 		if (ProjectList::project_feature_looks_like_version(project_features[i])) {
 			project_version = project_features[i];
@@ -637,7 +649,7 @@ ProjectList::Item ProjectList::load_project_data(const String &p_path, bool p_fa
 		}
 	}
 
-	if (config_version < ProjectSettings::CONFIG_VERSION) {
+	if (!is_foreign && config_version < ProjectSettings::CONFIG_VERSION) {
 		// Previous versions may not have unsupported features.
 		if (config_version == 4) {
 			unsupported_features.push_back("3.x");
@@ -661,6 +673,8 @@ ProjectList::Item ProjectList::load_project_data(const String &p_path, bool p_fa
 				last_edited = cache_modified;
 			}
 		}
+	} else if (is_foreign) {
+		last_edited = FileAccess::get_modified_time(p_path.path_join("ProjectSettings/ProjectVersion.txt"));
 	} else {
 		grayed = true;
 		missing = true;
@@ -881,6 +895,17 @@ void ProjectList::_scan_folder_recursive(const String &p_path, List<String> *r_p
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 	Error error = da->change_dir(p_path);
 	ERR_FAIL_COND_MSG(error != OK, vformat("Failed to open the path \"%s\" for scanning (code %d).", p_path, error));
+
+	// Recognize projects from other engines that Redot can open directly.
+	// Don't recurse into them: their asset folders are large and contain no
+	// Redot projects.
+	if (da->dir_exists("Assets")) {
+		String engine;
+		if (ProjectSettings::detect_foreign_project(da->get_current_dir(), &engine)) {
+			r_projects->push_back(da->get_current_dir());
+			return;
+		}
+	}
 
 	da->list_dir_begin();
 	String n = da->get_next();
@@ -1352,7 +1377,12 @@ void ProjectList::_global_menu_open_project(const Variant &p_tag) {
 	if (idx >= 0 && idx < _projects.size()) {
 		String conf = _projects[idx].path.path_join("project.godot");
 		List<String> args;
-		args.push_back(conf);
+		if (!FileAccess::exists(conf) && ProjectSettings::detect_foreign_project(_projects[idx].path)) {
+			args.push_back("--path");
+			args.push_back(_projects[idx].path);
+		} else {
+			args.push_back(conf);
+		}
 		OS::get_singleton()->create_instance(args);
 	}
 }

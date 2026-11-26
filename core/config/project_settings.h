@@ -126,6 +126,12 @@ protected:
 
 	String project_data_dir_name;
 
+	// Set when the editor was pointed at a project made with a different engine.
+	// Such projects are opened read-only from their original folder and use an
+	// out-of-tree data directory, so the source project is never modified.
+	String foreign_project_root;
+	String foreign_project_engine;
+
 	bool _set(const StringName &p_name, const Variant &p_value);
 	bool _get(const StringName &p_name, Variant &r_ret) const;
 	void _get_property_list(List<PropertyInfo> *p_list) const;
@@ -140,6 +146,7 @@ protected:
 	Error _load_settings_text(const String &p_path);
 	Error _load_settings_binary(const String &p_path);
 	Error _load_settings_text_or_binary(const String &p_text_path, const String &p_bin_path);
+	Error _load_foreign_project(const String &p_dir);
 
 	Error _save_settings_text(const String &p_file, const RBMap<String, List<String>> &props, const CustomMap &p_custom = CustomMap(), const String &p_custom_features = String());
 	Error _save_settings_binary(const String &p_file, const RBMap<String, List<String>> &props, const CustomMap &p_custom = CustomMap(), const String &p_custom_features = String());
@@ -229,6 +236,15 @@ public:
 	String get_project_data_path() const;
 	String get_resource_path() const;
 	String get_imported_files_path() const;
+
+	/// Returns true when `p_dir` is the root of a project made with another engine
+	/// that Redot can open directly (currently Unity).
+	static bool detect_foreign_project(const String &p_dir, String *r_engine = nullptr);
+
+	/// True when this editor session was started on a foreign project root.
+	bool is_foreign_project() const { return !foreign_project_root.is_empty(); }
+	String get_foreign_project_root() const { return foreign_project_root; }
+	String get_foreign_project_engine() const { return foreign_project_engine; }
 
 	static ProjectSettings *get_singleton();
 

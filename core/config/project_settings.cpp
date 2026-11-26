@@ -65,6 +65,12 @@ String ProjectSettings::get_project_data_dir_name() const {
 }
 
 String ProjectSettings::get_project_data_path() const {
+	if (!foreign_project_root.is_empty()) {
+		// Foreign projects are opened in place and must not gain a `.godot`
+		// directory. Keep their import/cache data in the user data folder,
+		// keyed by the project root so multiple foreign projects can be open.
+		return "user://redot_foreign_projects/" + foreign_project_root.md5_text() + "/" + PROJECT_DATA_DIR_NAME_SUFFIX;
+	}
 	return "res://" + get_project_data_dir_name();
 }
 
@@ -607,6 +613,90 @@ void ProjectSettings::_convert_to_last_version(int p_from_version) {
 #endif // DISABLE_DEPRECATED
 }
 
+bool ProjectSettings::detect_foreign_project(const String &p_dir, String *r_engine) {
+	Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
+	if (d.is_null()) {
+		return false;
+	}
+	if (d->change_dir(p_dir) != OK) {
+		return false;
+	}
+
+	// Unity keeps its project metadata under `ProjectSettings/` and its
+	// assets under `Assets/`. Either marker is enough to recognize a project,
+	// which also covers projects where only one of them is present.
+	const bool unity_marker = d->file_exists("ProjectSettings/ProjectVersion.txt") ||
+			(d->dir_exists("ProjectSettings") && d->dir_exists("Assets")) ||
+			(d->dir_exists("Assets") && d->file_exists("Packages/manifest.json"));
+	if (unity_marker) {
+		if (r_engine) {
+			*r_engine = "unity";
+		}
+		return true;
+	}
+
+	return false;
+}
+
+Error ProjectSettings::_load_foreign_project(const String &p_dir) {
+	String engine;
+	if (!detect_foreign_project(p_dir, &engine)) {
+		return ERR_FILE_NOT_FOUND;
+	}
+
+	resource_path = p_dir.replace_char('\\', '/');
+	if (!resource_path.is_empty() && resource_path[resource_path.length() - 1] == '/') {
+		resource_path = resource_path.substr(0, resource_path.length() - 1);
+	}
+
+	foreign_project_root = resource_path;
+	foreign_project_engine = engine;
+
+	// Seed the settings the engine and editor need. These are runtime-only:
+	// saving is disabled for foreign projects, so nothing is written back.
+	set_setting("application/config/name", resource_path.get_file());
+	set_setting("application/config/description", vformat("Imported %s project, opened directly from its original folder.", engine.capitalize()));
+	set_setting("application/config/foreign_project_engine", engine);
+	set_setting("application/config/foreign_project_root", resource_path);
+	set_setting("application/config/use_hidden_project_data_directory", true);
+	set_setting("application/run/main_scene", "");
+	set_setting("application/config/icon", "");
+#ifdef TOOLS_ENABLED
+	set_setting("application/config/features", get_required_features());
+#endif
+
+	if (engine == "unity") {
+		// Unity's Y-up, metre-based 3D world maps well to these defaults.
+		set_setting("rendering/renderer/rendering_method", "forward_plus");
+		set_setting("physics/3d/default_gravity", 9.81);
+
+		// Pick the first enabled scene from Unity's build settings so that
+		// "Play" works immediately. The scene is loaded through the Unity
+		// resource loader; no conversion is written to disk.
+		const String build_settings = resource_path.path_join("ProjectSettings/EditorBuildSettings.asset");
+		Error read_err = OK;
+		const String text = FileAccess::get_file_as_string(build_settings, &read_err);
+		if (read_err == OK) {
+			const Vector<String> lines = text.replace("\r\n", "\n").split("\n");
+			bool enabled = false;
+			for (const String &line : lines) {
+				const String trimmed = line.strip_edges();
+				if (trimmed.begins_with("- enabled:")) {
+					enabled = trimmed.substr(10).strip_edges() == "1";
+				} else if (enabled && trimmed.begins_with("path:")) {
+					const String scene_path = trimmed.substr(5).strip_edges();
+					if (!scene_path.is_empty()) {
+						set_setting("application/run/main_scene", "res://" + scene_path);
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	return OK;
+}
+
 Error ProjectSettings::_setup(const String &p_path, const String &p_main_pack, bool p_upwards, bool p_ignore_override) {
 	if (!OS::get_singleton()->get_resource_dir().is_empty()) {
 		// OS will call ProjectSettings->get_resource_path which will be empty if not overridden!
@@ -742,6 +832,13 @@ Error ProjectSettings::_setup(const String &p_path, const String &p_main_pack, b
 		if (err == OK && !p_ignore_override) {
 			// Optional, we don't mind if it fails.
 			_load_settings_text(current_dir.path_join("override.cfg"));
+			found = true;
+			break;
+		}
+
+		// A folder without a `project.godot` may still be a project from
+		// another engine which Redot can open directly.
+		if (err != OK && _load_foreign_project(current_dir) == OK) {
 			found = true;
 			break;
 		}
@@ -948,6 +1045,10 @@ void ProjectSettings::clear(const String &p_name) {
 }
 
 Error ProjectSettings::save() {
+	if (is_foreign_project()) {
+		// Never write a `project.godot` into another engine's project.
+		return ERR_UNAUTHORIZED;
+	}
 	Error error = save_custom(get_resource_path().path_join("project.godot"));
 	if (error == OK) {
 		last_save_time = FileAccess::get_modified_time(get_resource_path().path_join("project.godot"));
@@ -1098,6 +1199,14 @@ bool _csproj_exists(const String &p_root_dir) {
 
 Error ProjectSettings::save_custom(const String &p_path, const CustomMap &p_custom, const Vector<String> &p_custom_features, bool p_merge_with_current) {
 	ERR_FAIL_COND_V_MSG(p_path.is_empty(), ERR_INVALID_PARAMETER, "Project settings save path cannot be empty.");
+
+	if (is_foreign_project()) {
+		const String normalized = p_path.replace_char('\\', '/');
+		if (normalized.begins_with(foreign_project_root + "/") || normalized == foreign_project_root) {
+			ERR_PRINT(vformat("Refusing to write project settings into the imported project at '%s'.", foreign_project_root));
+			return ERR_UNAUTHORIZED;
+		}
+	}
 
 #ifdef TOOLS_ENABLED
 	PackedStringArray project_features = get_setting("application/config/features");
@@ -1530,6 +1639,10 @@ void ProjectSettings::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("load_resource_pack", "pack", "replace_files", "offset"), &ProjectSettings::load_resource_pack, DEFVAL(true), DEFVAL(0));
 
 	ClassDB::bind_method(D_METHOD("save_custom", "file"), &ProjectSettings::_save_custom_bnd);
+
+	ClassDB::bind_method(D_METHOD("is_foreign_project"), &ProjectSettings::is_foreign_project);
+	ClassDB::bind_method(D_METHOD("get_foreign_project_root"), &ProjectSettings::get_foreign_project_root);
+	ClassDB::bind_method(D_METHOD("get_foreign_project_engine"), &ProjectSettings::get_foreign_project_engine);
 
 	ADD_SIGNAL(MethodInfo("settings_changed"));
 }

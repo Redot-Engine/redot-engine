@@ -32,13 +32,30 @@
 
 #include "register_types.h"
 
+#include "core/io/resource_loader.h"
+
+#include "import/engine_importer.h"
+#include "unity/unity_format_loader.h"
+#include "unity/unity_importer.h"
+
 #ifdef TOOLS_ENABLED
 #include "editor/editor_node.h"
 #include "editor/plugins/editor_plugin.h"
 #include "project_converter_plugin.h"
 #endif // TOOLS_ENABLED
 
+static Ref<UnityFormatLoader> unity_format_loader;
+
 void initialize_project_converter_module(ModuleInitializationLevel p_level) {
+	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
+		unity_format_loader.instantiate();
+		ResourceLoader::add_resource_format_loader(unity_format_loader, true);
+
+		Ref<UnityImporter> importer;
+		importer.instantiate();
+		ProjectImportRegistry::get_singleton()->add_importer(importer);
+	}
+
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		EditorPlugins::add_by_type<ProjectConverterPlugin>();
@@ -47,6 +64,15 @@ void initialize_project_converter_module(ModuleInitializationLevel p_level) {
 }
 
 void uninitialize_project_converter_module(ModuleInitializationLevel p_level) {
+	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
+		if (unity_format_loader.is_valid()) {
+			ResourceLoader::remove_resource_format_loader(unity_format_loader);
+			unity_format_loader->clear_cache();
+			unity_format_loader.unref();
+		}
+		ProjectImportRegistry::get_singleton()->clear();
+	}
+
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		// EditorPlugins removes its entries automatically.

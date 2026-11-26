@@ -35,6 +35,7 @@
 #ifdef TOOLS_ENABLED
 
 #include "gdevelop_converter.h"
+#include "import/engine_importer.h"
 #include "scratch_converter.h"
 #include "source_converter.h"
 #include "unreal_converter.h"
@@ -63,6 +64,17 @@ static String _output_dir(const String &p_sub) {
 void ProjectConverterPlugin::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE: {
+			// --- Whole-project import (Unity, extensible via the registry) ---
+			add_tool_menu_item(TTR("Import Project from Another Engine..."),
+					callable_mp(this, &ProjectConverterPlugin::_show_project_dialog));
+
+			project_dialog = memnew(EditorFileDialog);
+			project_dialog->set_file_mode(EditorFileDialog::FILE_MODE_OPEN_DIR);
+			project_dialog->set_title(TTR("Select a Project Folder"));
+			project_dialog->connect("dir_selected",
+					callable_mp(this, &ProjectConverterPlugin::_on_project_selected));
+			EditorNode::get_singleton()->add_child(project_dialog);
+
 			// --- Scratch ---
 			add_tool_menu_item(TTR("Import Scratch Project (.sb3)..."),
 					callable_mp(this, &ProjectConverterPlugin::_show_scratch_dialog));
@@ -153,6 +165,7 @@ void ProjectConverterPlugin::_notification(int p_what) {
 		} break;
 
 		case NOTIFICATION_EXIT_TREE: {
+			remove_tool_menu_item(TTR("Import Project from Another Engine..."));
 			remove_tool_menu_item(TTR("Import Scratch Project (.sb3)..."));
 			remove_tool_menu_item(TTR("Import GDevelop Project (.gdg/.json)..."));
 			remove_tool_menu_item(TTR("Import Source Engine Map (.vmf)..."));
@@ -161,6 +174,44 @@ void ProjectConverterPlugin::_notification(int p_what) {
 			remove_tool_menu_item(TTR("Import Unreal Level (.t3d)..."));
 			remove_tool_menu_item(TTR("Import Unreal Project (.uproject)..."));
 		} break;
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Whole-project import
+// ---------------------------------------------------------------------------
+void ProjectConverterPlugin::_show_project_dialog() {
+	project_dialog->popup_file_dialog();
+}
+
+void ProjectConverterPlugin::_on_project_selected(const String &p_path) {
+	Ref<EngineImporter> importer = ProjectImportRegistry::get_singleton()->find_importer_for(p_path);
+	if (importer.is_null()) {
+		EditorNode::get_singleton()->show_warning(
+				TTR("No importer recognizes this folder.\nSelect the root folder of a Unity, Unreal, Scratch, GDevelop or Source project."));
+		return;
+	}
+
+	const Dictionary info = importer->get_project_info(p_path);
+	const String project_name = info.get("name", p_path.get_file());
+	const String target_res = vformat("res://imported/%s/%s", importer->get_engine_id(), project_name);
+	const String target = ProjectSettings::get_singleton()->globalize_path(target_res);
+
+	EditorNode::get_singleton()->show_warning(vformat(TTR("Importing %s project \"%s\".\nThe editor may be unresponsive while assets are converted."), importer->get_engine_name(), project_name));
+
+	const Dictionary result = importer->import_project(p_path, target);
+	const int errors = result.get("errors", 0);
+	const int converted = result.get("converted", 0);
+	const int warnings = result.get("warnings", 0);
+
+	if (errors > 0) {
+		EditorNode::get_singleton()->show_warning(vformat(
+				TTR("%s import finished with %d error(s).\nConverted: %d, warnings: %d.\nSee %s/import_report.md for details."),
+				importer->get_engine_name(), errors, converted, warnings, target));
+	} else {
+		EditorNode::get_singleton()->show_warning(vformat(
+				TTR("%s import finished.\nConverted: %d, warnings: %d.\nOutput: %s"),
+				importer->get_engine_name(), converted, warnings, target_res));
 	}
 }
 

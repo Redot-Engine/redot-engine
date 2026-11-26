@@ -38,13 +38,18 @@
 #include "editor/plugins/editor_plugin.h"
 
 // Single umbrella EditorPlugin that hosts all cross-engine project converters:
-//   Scratch · GDevelop · Source/S&BOX · Unreal
-// (Unity converters are registered via editor/plugins/unity_importer_plugin.h)
-// Each converter type gets a tool-menu entry that opens a file dialog and
-// writes the converted output to res://imported/<engine>/.
+//   Unity · Scratch · GDevelop · Source/S&BOX · Unreal
+// Project-wide importers are discovered through ProjectImportRegistry, so the
+// menu is populated from the module's backends rather than hard-coded per
+// engine. File-level converters keep their own dialogs.
 
 class ProjectConverterPlugin : public EditorPlugin {
 	GDCLASS(ProjectConverterPlugin, EditorPlugin);
+
+	// Whole-project import (Unity and any future registry backend).
+	EditorFileDialog *project_dialog = nullptr;
+	void _show_project_dialog();
+	void _on_project_selected(const String &p_path);
 
 	// Per-engine file dialogs (created lazily in NOTIFICATION_ENTER_TREE).
 	EditorFileDialog *scratch_dialog = nullptr;

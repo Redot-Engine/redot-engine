@@ -478,7 +478,7 @@ void ProjectManager::_run_project_confirm() {
 		const String &path = selected_list[i].path;
 
 		// `.substr(6)` on `ProjectSettings::get_singleton()->get_imported_files_path()` strips away the leading "res://".
-		if (!DirAccess::exists(path.path_join(ProjectSettings::get_singleton()->get_imported_files_path().substr(6)))) {
+		if (!DirAccess::exists(ProjectSettings::get_singleton()->get_imported_files_path())) {
 			_show_error(TTRC("Can't run project: Assets need to be imported first.\nPlease edit the project to trigger the initial import."));
 			continue;
 		}
@@ -508,7 +508,7 @@ void ProjectManager::_open_selected_projects() {
 	for (const String &path : selected_list) {
 		String conf = path.path_join("project.godot");
 
-		if (!FileAccess::exists(conf)) {
+		if (!FileAccess::exists(conf) && !ProjectSettings::detect_foreign_project(path)) {
 			loading_label->hide();
 			_show_error(vformat(TTR("Can't open project at '%s'.\nProject file doesn't exist or is inaccessible."), path));
 			return;

@@ -7,6 +7,8 @@ Import("env_modules")
 env_pc = env_modules.Clone()
 
 env_pc.add_source_files(env.modules_sources, "register_types.cpp")
+env_pc.add_source_files(env.modules_sources, "import/*.cpp")
+env_pc.add_source_files(env.modules_sources, "unity/*.cpp")
 
 if env.editor_build:
     env_pc.add_source_files(env.modules_sources, "gdevelop_converter.cpp")
