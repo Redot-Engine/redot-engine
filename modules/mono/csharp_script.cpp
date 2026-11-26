@@ -130,7 +130,7 @@ void CSharpLanguage::init() {
 #endif
 
 #ifdef TOOLS_ENABLED
-	EditorNode::add_init_callback(&_editor_init_callback);
+	EditorPluginManager::add_init_callback(&_editor_init_callback);
 #endif
 
 	gdmono = memnew(GDMono);
@@ -1100,7 +1100,7 @@ void CSharpLanguage::_editor_init_callback() {
 	CRASH_COND(godotsharp_editor == nullptr);
 
 	// Add plugin to EditorNode and enable it
-	EditorNode::add_editor_plugin(godotsharp_editor);
+	EditorPluginManager::get_singleton()->add_editor_plugin(godotsharp_editor);
 	godotsharp_editor->enable_plugin();
 
 	get_singleton()->godotsharp_editor = godotsharp_editor;

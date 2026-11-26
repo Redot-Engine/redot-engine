@@ -104,7 +104,7 @@ void ProjectSettingsEditor::_save() {
 	}
 	if (pending_override_notify) {
 		pending_override_notify = false;
-		EditorNode::get_singleton()->notify_settings_overrides_changed();
+		EditorCore::get_singleton()->notify_settings_overrides_changed();
 	}
 }
 
@@ -300,12 +300,12 @@ void ProjectSettingsEditor::shortcut_input(const Ref<InputEvent> &p_event) {
 		bool handled = false;
 
 		if (ED_IS_SHORTCUT("ui_undo", p_event)) {
-			EditorNode::get_singleton()->undo();
+			EditorSceneManager::get_singleton()->undo();
 			handled = true;
 		}
 
 		if (ED_IS_SHORTCUT("ui_redo", p_event)) {
-			EditorNode::get_singleton()->redo();
+			EditorSceneManager::get_singleton()->redo();
 			handled = true;
 		}
 
@@ -435,8 +435,8 @@ void ProjectSettingsEditor::_focus_current_path_box() {
 
 void ProjectSettingsEditor::_editor_restart() {
 	ProjectSettings::get_singleton()->save();
-	EditorNode::get_singleton()->save_all_scenes();
-	EditorNode::get_singleton()->restart_editor();
+	EditorSceneManager::get_singleton()->save_all_open_scenes();
+	EditorCore::get_singleton()->get_shell()->restart_editor();
 }
 
 void ProjectSettingsEditor::_editor_restart_request() {

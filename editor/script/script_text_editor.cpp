@@ -47,6 +47,7 @@
 #include "editor/doc/editor_help.h"
 #include "editor/docks/filesystem_dock.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/gui/editor_toaster.h"
 #include "editor/inspector/editor_context_menu_plugin.h"
@@ -80,7 +81,7 @@ void ConnectionInfoDialog::popup_connections(const String &p_method, const Vecto
 			TreeItem *node_item = tree->create_item(root);
 
 			node_item->set_text(0, Object::cast_to<Node>(connection.signal.get_object())->get_name());
-			node_item->set_icon(0, EditorNode::get_singleton()->get_object_icon(connection.signal.get_object(), "Node"));
+			node_item->set_icon(0, EditorCore::get_singleton()->get_object_icon(connection.signal.get_object(), "Node"));
 			node_item->set_selectable(0, false);
 			node_item->set_editable(0, false);
 
@@ -91,7 +92,7 @@ void ConnectionInfoDialog::popup_connections(const String &p_method, const Vecto
 			node_item->set_editable(1, false);
 
 			node_item->set_text(2, Object::cast_to<Node>(connection.callable.get_object())->get_name());
-			node_item->set_icon(2, EditorNode::get_singleton()->get_object_icon(connection.callable.get_object(), "Node"));
+			node_item->set_icon(2, EditorCore::get_singleton()->get_object_icon(connection.callable.get_object(), "Node"));
 			node_item->set_selectable(2, false);
 			node_item->set_editable(2, false);
 		}
@@ -336,7 +337,7 @@ void ScriptTextEditor::_error_clicked(const Variant &p_line) {
 		} else {
 			Ref<Script> scr = ResourceLoader::load(path);
 			if (scr.is_null()) {
-				EditorNode::get_singleton()->show_warning(TTR("Could not load file at:") + "\n\n" + path, TTR("Error!"));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("Could not load file at:") + "\n\n" + path, TTR("Error!"));
 			} else {
 				int corrected_column = column;
 
@@ -551,7 +552,7 @@ void ScriptTextEditor::_inline_object_handle_click(const Dictionary &p_info, con
 
 		_update_color_constructor_options();
 		inline_color_options->select(p_info["color_mode"]);
-		EditorNode::get_singleton()->setup_color_picker(inline_color_picker);
+		EditorCore::get_singleton()->setup_color_picker(inline_color_picker);
 
 		// Move popup above the line if it's too low.
 		float_t view_h = get_viewport_rect().size.y;
@@ -1278,12 +1279,12 @@ void ScriptTextEditor::_lookup_symbol(const String &p_symbol, int p_row, int p_c
 	String code_text = code_editor->get_text_editor()->get_text_with_cursor_char(p_row, p_column);
 	Error lc_error = script->get_language()->lookup_code(code_text, p_symbol, script->get_path(), base, result);
 	if (ScriptServer::is_global_class(p_symbol)) {
-		EditorNode::get_singleton()->load_resource(ScriptServer::get_global_class_path(p_symbol));
+		EditorCore::get_singleton()->load_resource(ScriptServer::get_global_class_path(p_symbol));
 	} else if (p_symbol.is_resource_file() || p_symbol.begins_with("uid://")) {
 		if (DirAccess::dir_exists_absolute(p_symbol)) {
 			FileSystemDock::get_singleton()->navigate_to_path(p_symbol);
 		} else {
-			EditorNode::get_singleton()->load_scene_or_resource(p_symbol);
+			EditorCore::get_singleton()->load_scene_or_resource(p_symbol);
 		}
 	} else if (lc_error == OK) {
 		_goto_line(p_row);
@@ -1373,13 +1374,13 @@ void ScriptTextEditor::_lookup_symbol(const String &p_symbol, int p_row, int p_c
 		// Check for Autoload scenes.
 		const ProjectSettings::AutoloadInfo &info = ProjectSettings::get_singleton()->get_autoload(p_symbol);
 		if (info.is_singleton) {
-			EditorNode::get_singleton()->load_scene(info.path);
+			EditorSceneManager::get_singleton()->load_scene(info.path);
 		}
 	} else if (p_symbol.is_relative_path()) {
 		// Every symbol other than absolute path is relative path so keep this condition at last.
 		String path = _get_absolute_path(p_symbol);
 		if (FileAccess::exists(path)) {
-			EditorNode::get_singleton()->load_scene_or_resource(path);
+			EditorCore::get_singleton()->load_scene_or_resource(path);
 		}
 	}
 }
@@ -2354,7 +2355,7 @@ void ScriptTextEditor::drop_data_fw(const Point2 &p_point, const Variant &p_data
 	if (type == "nodes") {
 		Node *scene_root = get_tree()->get_edited_scene_root();
 		if (!scene_root) {
-			EditorNode::get_singleton()->show_warning(TTR("Can't drop nodes without an open scene."));
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("Can't drop nodes without an open scene."));
 			return;
 		}
 
@@ -2717,16 +2718,16 @@ void ScriptTextEditor::_enable_code_editor() {
 
 	editor_box->add_child(warnings_panel);
 	warnings_panel->add_theme_font_override(
-			"normal_font", EditorNode::get_singleton()->get_editor_theme()->get_font(SNAME("main"), EditorStringName(EditorFonts)));
+			"normal_font", EditorCore::get_singleton()->get_editor_theme()->get_font(SNAME("main"), EditorStringName(EditorFonts)));
 	warnings_panel->add_theme_font_size_override(
-			"normal_font_size", EditorNode::get_singleton()->get_editor_theme()->get_font_size(SNAME("main_size"), EditorStringName(EditorFonts)));
+			"normal_font_size", EditorCore::get_singleton()->get_editor_theme()->get_font_size(SNAME("main_size"), EditorStringName(EditorFonts)));
 	warnings_panel->connect("meta_clicked", callable_mp(this, &ScriptTextEditor::_warning_clicked));
 
 	editor_box->add_child(errors_panel);
 	errors_panel->add_theme_font_override(
-			"normal_font", EditorNode::get_singleton()->get_editor_theme()->get_font(SNAME("main"), EditorStringName(EditorFonts)));
+			"normal_font", EditorCore::get_singleton()->get_editor_theme()->get_font(SNAME("main"), EditorStringName(EditorFonts)));
 	errors_panel->add_theme_font_size_override(
-			"normal_font_size", EditorNode::get_singleton()->get_editor_theme()->get_font_size(SNAME("main_size"), EditorStringName(EditorFonts)));
+			"normal_font_size", EditorCore::get_singleton()->get_editor_theme()->get_font_size(SNAME("main_size"), EditorStringName(EditorFonts)));
 	errors_panel->connect("meta_clicked", callable_mp(this, &ScriptTextEditor::_error_clicked));
 
 	add_child(context_menu);
@@ -2737,7 +2738,7 @@ void ScriptTextEditor::_enable_code_editor() {
 	color_picker = memnew(ColorPicker);
 	color_picker->set_deferred_mode(true);
 	color_picker->connect("color_changed", callable_mp(this, &ScriptTextEditor::_color_changed));
-	color_panel->connect("about_to_popup", callable_mp(EditorNode::get_singleton(), &EditorNode::setup_color_picker).bind(color_picker));
+	color_panel->connect("about_to_popup", callable_mp(EditorCore::get_singleton(), &EditorCore::setup_color_picker).bind(color_picker));
 
 	color_panel->add_child(color_picker);
 

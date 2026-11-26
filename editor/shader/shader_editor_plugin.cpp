@@ -41,6 +41,7 @@
 #include "editor/docks/filesystem_dock.h"
 #include "editor/docks/inspector_dock.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/gui/editor_bottom_panel.h"
@@ -212,7 +213,7 @@ bool ShaderEditorPlugin::handles(Object *p_object) const {
 
 void ShaderEditorPlugin::make_visible(bool p_visible) {
 	if (p_visible) {
-		EditorNode::get_bottom_panel()->make_item_visible(window_wrapper);
+		EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(window_wrapper);
 	}
 }
 
@@ -388,9 +389,9 @@ void ShaderEditorPlugin::_shader_selected(int p_index, bool p_push_item) {
 	if (p_push_item) {
 		// Avoid `Shader` being edited when editing `ShaderInclude` due to inspector refreshing.
 		if (edited_shaders[p_index].shader.is_valid()) {
-			EditorNode::get_singleton()->push_item_no_inspector(edited_shaders[p_index].shader.ptr());
+			EditorSceneManager::get_singleton()->push_item_no_inspector(edited_shaders[p_index].shader.ptr());
 		} else {
-			EditorNode::get_singleton()->push_item_no_inspector(edited_shaders[p_index].shader_inc.ptr());
+			EditorSceneManager::get_singleton()->push_item_no_inspector(edited_shaders[p_index].shader_inc.ptr());
 		}
 	}
 }
@@ -547,9 +548,9 @@ void ShaderEditorPlugin::_menu_item_pressed(int p_index) {
 				}
 			}
 			if (edited_shaders[index].shader.is_valid()) {
-				EditorNode::get_singleton()->save_resource(edited_shaders[index].shader);
+				EditorCore::get_singleton()->save_resource(edited_shaders[index].shader);
 			} else {
-				EditorNode::get_singleton()->save_resource(edited_shaders[index].shader_inc);
+				EditorCore::get_singleton()->save_resource(edited_shaders[index].shader_inc);
 			}
 			if (editor) {
 				editor->tag_saved_version();
@@ -574,13 +575,13 @@ void ShaderEditorPlugin::_menu_item_pressed(int p_index) {
 				if (!path.is_resource_file()) {
 					path = "";
 				}
-				EditorNode::get_singleton()->save_resource_as(edited_shaders[index].shader, path);
+				EditorCore::get_singleton()->save_resource_as(edited_shaders[index].shader, path);
 			} else {
 				path = edited_shaders[index].shader_inc->get_path();
 				if (!path.is_resource_file()) {
 					path = "";
 				}
-				EditorNode::get_singleton()->save_resource_as(edited_shaders[index].shader_inc, path);
+				EditorCore::get_singleton()->save_resource_as(edited_shaders[index].shader_inc, path);
 			}
 			if (editor) {
 				editor->tag_saved_version();
@@ -590,9 +591,9 @@ void ShaderEditorPlugin::_menu_item_pressed(int p_index) {
 			int index = shader_tabs->get_current_tab();
 			ERR_FAIL_INDEX(index, shader_tabs->get_tab_count());
 			if (edited_shaders[index].shader.is_valid()) {
-				EditorNode::get_singleton()->push_item(edited_shaders[index].shader.ptr());
+				EditorSceneManager::get_singleton()->push_item(edited_shaders[index].shader.ptr());
 			} else {
-				EditorNode::get_singleton()->push_item(edited_shaders[index].shader_inc.ptr());
+				EditorSceneManager::get_singleton()->push_item(edited_shaders[index].shader_inc.ptr());
 			}
 		} break;
 		case FILE_MENU_INSPECT_NATIVE_SHADER_CODE: {
@@ -650,11 +651,11 @@ void ShaderEditorPlugin::_menu_item_pressed(int p_index) {
 }
 
 void ShaderEditorPlugin::_shader_created(Ref<Shader> p_shader) {
-	EditorNode::get_singleton()->push_item(p_shader.ptr());
+	EditorSceneManager::get_singleton()->push_item(p_shader.ptr());
 }
 
 void ShaderEditorPlugin::_shader_include_created(Ref<ShaderInclude> p_shader_inc) {
-	EditorNode::get_singleton()->push_item(p_shader_inc.ptr());
+	EditorSceneManager::get_singleton()->push_item(p_shader_inc.ptr());
 }
 
 Variant ShaderEditorPlugin::get_drag_data_fw(const Point2 &p_point, Control *p_from) {
@@ -849,10 +850,10 @@ void ShaderEditorPlugin::_set_file_specific_items_disabled(bool p_disabled) {
 void ShaderEditorPlugin::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_READY: {
-			EditorNode::get_singleton()->connect("resource_saved", callable_mp(this, &ShaderEditorPlugin::_resource_saved), CONNECT_DEFERRED);
-			EditorNode::get_singleton()->connect("scene_closed", callable_mp(this, &ShaderEditorPlugin::_close_builtin_shaders_from_scene));
+			EditorCore::get_singleton()->connect("resource_saved", callable_mp(this, &ShaderEditorPlugin::_resource_saved), CONNECT_DEFERRED);
+			EditorSceneManager::get_singleton()->connect("scene_closed", callable_mp(this, &ShaderEditorPlugin::_close_builtin_shaders_from_scene));
 			FileSystemDock::get_singleton()->connect("file_removed", callable_mp(this, &ShaderEditorPlugin::_file_removed));
-			EditorNode::get_singleton()->connect("resource_saved", callable_mp(this, &ShaderEditorPlugin::_res_saved_callback));
+			EditorCore::get_singleton()->connect("resource_saved", callable_mp(this, &ShaderEditorPlugin::_res_saved_callback));
 		} break;
 	}
 }
@@ -914,7 +915,7 @@ ShaderEditorPlugin::ShaderEditorPlugin() {
 	empty_menu = memnew(HBoxContainer);
 	shader_vb->add_child(empty_menu);
 	empty_menu->add_child(file_menu);
-	empty_menu->add_theme_style_override(SceneStringName(panel), EditorNode::get_singleton()->get_editor_theme()->get_stylebox(SNAME("ScriptEditorPanel"), EditorStringName(EditorStyles)));
+	empty_menu->add_theme_style_override(SceneStringName(panel), EditorCore::get_singleton()->get_editor_theme()->get_stylebox(SNAME("ScriptEditorPanel"), EditorStringName(EditorStyles)));
 
 	shader_tabs = memnew(TabContainer);
 	shader_tabs->set_custom_minimum_size(Size2(460, 300) * EDSCALE);
@@ -926,7 +927,7 @@ ShaderEditorPlugin::ShaderEditorPlugin() {
 	empty.instantiate();
 	shader_tabs->add_theme_style_override(SceneStringName(panel), empty);
 
-	button = EditorNode::get_bottom_panel()->add_item(TTRC("Shader Editor"), window_wrapper, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_shader_editor_bottom_panel", TTRC("Toggle Shader Editor Bottom Panel"), KeyModifierMask::ALT | Key::S));
+	button = EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(TTRC("Shader Editor"), window_wrapper, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_shader_editor_bottom_panel", TTRC("Toggle Shader Editor Bottom Panel"), KeyModifierMask::ALT | Key::S));
 
 	shader_create_dialog = memnew(ShaderCreateDialog);
 	files_split->add_child(shader_create_dialog);

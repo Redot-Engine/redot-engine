@@ -114,7 +114,7 @@ void TileSetEditor::_load_texture_files(const Vector<String> &p_paths) {
 		Ref<Texture2D> texture = ResourceLoader::load(p_path);
 
 		if (texture.is_null()) {
-			EditorNode::get_singleton()->show_warning(TTR("Invalid texture selected."));
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("Invalid texture selected."));
 			continue;
 		}
 
@@ -390,7 +390,7 @@ void TileSetEditor::_notification(int p_what) {
 
 				read_only = false;
 				if (tile_set.is_valid()) {
-					read_only = EditorNode::get_singleton()->is_resource_read_only(tile_set);
+					read_only = EditorCore::get_singleton()->is_resource_read_only(tile_set);
 				}
 
 				_update_sources_list();
@@ -415,7 +415,7 @@ void TileSetEditor::_notification(int p_what) {
 void TileSetEditor::_patterns_item_list_gui_input(const Ref<InputEvent> &p_event) {
 	ERR_FAIL_COND(tile_set.is_null());
 
-	if (EditorNode::get_singleton()->is_resource_read_only(tile_set)) {
+	if (EditorCore::get_singleton()->is_resource_read_only(tile_set)) {
 		return;
 	}
 
@@ -722,7 +722,7 @@ void TileSetEditor::_undo_redo_inspector_callback(Object *p_undo_redo, Object *p
 void TileSetEditor::edit(Ref<TileSet> p_tile_set) {
 	bool new_read_only_state = false;
 	if (p_tile_set.is_valid()) {
-		new_read_only_state = EditorNode::get_singleton()->is_resource_read_only(p_tile_set);
+		new_read_only_state = EditorCore::get_singleton()->is_resource_read_only(p_tile_set);
 	}
 
 	if (p_tile_set == tile_set && new_read_only_state == read_only) {
@@ -978,8 +978,8 @@ TileSetEditor::TileSetEditor() {
 	expanded_area->hide();
 
 	// Registers UndoRedo inspector callback.
-	EditorNode::get_editor_data().add_move_array_element_function(SNAME("TileSet"), callable_mp(this, &TileSetEditor::_move_tile_set_array_element));
-	EditorNode::get_editor_data().add_undo_redo_inspector_hook_callback(callable_mp(this, &TileSetEditor::_undo_redo_inspector_callback));
+	EditorCore::get_singleton()->get_editor_data().add_move_array_element_function(SNAME("TileSet"), callable_mp(this, &TileSetEditor::_move_tile_set_array_element));
+	EditorCore::get_singleton()->get_editor_data().add_undo_redo_inspector_hook_callback(callable_mp(this, &TileSetEditor::_undo_redo_inspector_callback));
 }
 
 void TileSourceInspectorPlugin::_show_id_edit_dialog(Object *p_for_source) {

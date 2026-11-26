@@ -286,7 +286,7 @@ void OpenXRActionMapEditor::_load_action_map(const String p_path, bool p_create_
 	if (da->file_exists(p_path)) {
 		action_map = ResourceLoader::load(p_path, "", ResourceFormatLoader::CACHE_MODE_REUSE, &err);
 		if (err != OK) {
-			EditorNode::get_singleton()->show_warning(vformat(TTR("Error loading %s: %s."), edited_path, error_names[err]));
+			EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Error loading %s: %s."), edited_path, error_names[err]));
 
 			edited_path = "";
 			header_label->set_text("");
@@ -300,7 +300,7 @@ void OpenXRActionMapEditor::_load_action_map(const String p_path, bool p_create_
 		err = ResourceSaver::save(action_map, p_path);
 		if (err != OK) {
 			// Show warning but continue.
-			EditorNode::get_singleton()->show_warning(vformat(TTR("Error saving file %s: %s"), p_path, error_names[err]));
+			EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Error saving file %s: %s"), p_path, error_names[err]));
 		}
 	}
 
@@ -311,7 +311,7 @@ void OpenXRActionMapEditor::_load_action_map(const String p_path, bool p_create_
 void OpenXRActionMapEditor::_on_save_action_map() {
 	Error err = ResourceSaver::save(action_map, edited_path);
 	if (err != OK) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("Error saving file %s: %s"), edited_path, error_names[err]));
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Error saving file %s: %s"), edited_path, error_names[err]));
 		return;
 	}
 
@@ -391,7 +391,7 @@ void OpenXRActionMapEditor::_do_remove_interaction_profile_editor(OpenXRInteract
 }
 
 void OpenXRActionMapEditor::open_action_map(String p_path) {
-	EditorNode::get_bottom_panel()->make_item_visible(this);
+	EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(this);
 
 	// out with the old...
 	_clear_action_map();

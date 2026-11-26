@@ -43,6 +43,7 @@
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/inspector/editor_context_menu_plugin.h"
 #include "editor/inspector/multi_node_edit.h"
@@ -59,7 +60,7 @@ void EditorSelectionHistory::cleanup_history() {
 				// If the node is a MultiNodeEdit node, examine it and see if anything is missing from it.
 				Ref<MultiNodeEdit> multi_node_edit = history[i].path[j].ref;
 				if (multi_node_edit.is_valid()) {
-					Node *root = EditorNode::get_singleton()->get_edited_scene();
+					Node *root = EditorSceneManager::get_singleton()->get_edited_scene();
 					if (root) {
 						for (int k = 0; k < multi_node_edit->get_node_count(); k++) {
 							NodePath np = multi_node_edit->get_node(k);
@@ -662,7 +663,9 @@ void EditorData::remove_scene(int p_idx) {
 	}
 
 	if (!edited_scene[p_idx].path.is_empty()) {
-		EditorNode::get_singleton()->emit_signal("scene_closed", edited_scene[p_idx].path);
+		// Notify through the scene manager, which owns the "scene_closed" signal
+		// (editor plugins connect to it there).
+		EditorSceneManager::get_singleton()->emit_signal("scene_closed", edited_scene[p_idx].path);
 	}
 
 	if (undo_redo_manager->has_history(edited_scene[p_idx].history_id)) { // Might not exist if scene failed to load.
@@ -738,7 +741,7 @@ bool EditorData::check_and_update_scene(int p_idx) {
 
 		new_scene->set_scene_file_path(edited_scene[p_idx].root->get_scene_file_path());
 		Node *old_root = edited_scene[p_idx].root;
-		EditorNode::get_singleton()->set_edited_scene(new_scene);
+		EditorSceneManager::get_singleton()->set_edited_scene(new_scene);
 		memdelete(old_root);
 		edited_scene.write[p_idx].selection = new_selection;
 
@@ -769,6 +772,11 @@ void EditorData::set_edited_scene(int p_idx) {
 
 Node *EditorData::get_edited_scene_root(int p_idx) {
 	if (p_idx < 0) {
+		// No scene is open (e.g. during editor startup); return silently so
+		// polling callers do not spam the error log.
+		if (edited_scene.is_empty()) {
+			return nullptr;
+		}
 		ERR_FAIL_INDEX_V(current_edited_scene, edited_scene.size(), nullptr);
 		return edited_scene[current_edited_scene].root;
 	} else {

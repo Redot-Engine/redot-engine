@@ -431,7 +431,10 @@ constexpr T cubic_interpolate_in_time(T p_from, T p_to, T p_pre, T p_post, T p_w
 	T t = lerp(T(0), p_to_t, p_weight);
 
 	// At least try to make this easier to parse for others.
-	T pre_scale = (p_pre_t == T(0)) ? T(0.0) : (t - p_pre_t) / -p_pre_t;
+	const bool has_pre_time = p_pre_t != T(0);
+	// Keep the divisor nonzero when MSVC folds a zero previous time.
+	const T pre_range = has_pre_time ? -p_pre_t : T(1);
+	T pre_scale = has_pre_time ? (t - p_pre_t) / pre_range : T(0);
 	T to_scale = (p_to_t == T(0)) ? T(0.5) : t / p_to_t;
 	T post_range = p_post_t - p_to_t;
 	T post_scale = (post_range == T(0)) ? T(1) : (t - p_to_t) / post_range;
@@ -617,15 +620,15 @@ constexpr T rotate_toward(T p_from, T p_to, T p_delta) noexcept {
 	;
 }
 
+/// Converting linear gain to decibals.
 template <std::floating_point T>
 constexpr T linear_to_db(T p_linear) noexcept {
-	// Converting linear gain to decibals.
 	return log(p_linear) * T(DB_CONVERSION_GAIN);
 }
 
+/// Converting decibals to linear gain.
 template <std::floating_point T>
 constexpr T db_to_linear(T p_db) noexcept {
-	// Converting decibals to linear gain.
 	return exp(p_db * T(GAIN_CONVERSION_DB));
 }
 
@@ -702,12 +705,12 @@ _FORCE_INLINE_ float randf() noexcept {
 }
 double randfn(double p_mean, double p_deviation) noexcept;
 
-// TODO: Template + make this better (later.)
+/// @todo Template + make this better (later.)
 double random(double p_from, double p_to) noexcept;
 float random(float p_from, float p_to) noexcept;
 int random(int p_from, int p_to) noexcept;
 
-// This function should be as fast as possible and rounding mode should not matter.
+/// This function should be as fast as possible and rounding mode should not matter.
 constexpr int fast_ftoi(float p_value) noexcept {
 	return static_cast<int>(p_value);
 }

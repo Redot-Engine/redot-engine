@@ -36,6 +36,7 @@
 #include "run_icon_svg.gen.h"
 
 #include "core/config/project_settings.h"
+#include "editor/editor_core.h"
 #include "editor/editor_string_names.h"
 #include "editor/export/editor_export.h"
 #include "editor/import/resource_importer_texture_settings.h"
@@ -919,7 +920,7 @@ Ref<Texture2D> EditorExportPlatformWeb::get_run_icon() const {
 }
 
 EditorExportPlatformWeb::EditorExportPlatformWeb() {
-	if (EditorNode::get_singleton()) {
+	if (EditorCore *core = EditorCore::get_singleton(); core && core->get_shell()) {
 		server.instantiate();
 
 		Ref<Image> img = memnew(Image);
@@ -931,7 +932,7 @@ EditorExportPlatformWeb::EditorExportPlatformWeb() {
 		ImageLoaderSVG::create_image_from_string(img, _web_run_icon_svg, EDSCALE, upsample, false);
 		run_icon = ImageTexture::create_from_image(img);
 
-		Ref<Theme> theme = EditorNode::get_singleton()->get_editor_theme();
+		Ref<Theme> theme = core->get_editor_theme();
 		if (theme.is_valid()) {
 			stop_icon = theme->get_icon(SNAME("Stop"), EditorStringName(EditorIcons));
 			restart_icon = theme->get_icon(SNAME("Reload"), EditorStringName(EditorIcons));

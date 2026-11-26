@@ -458,7 +458,7 @@ public:
 		}
 
 		if (error != OK) {
-			EditorNode::get_singleton()->show_warning("Failed to load texture \'" + path + "\'");
+			EditorCore::get_singleton()->get_shell()->show_warning("Failed to load texture \'" + path + "\'");
 			_preview->set_texture(nullptr);
 		} else {
 			_preview->set_texture(ImageTexture::create_from_image(_image));
@@ -600,13 +600,13 @@ void ChannelPackerDialog::init() {
 
 void ChannelPackerDialog::generate_height_from_luminance() {
 	if (_albedo_panel->get_image().is_null()) {
-		EditorNode::get_singleton()->show_warning("Albedo Image Required for Operation");
+		EditorCore::get_singleton()->get_shell()->show_warning("Albedo Image Required for Operation");
 		return;
 	}
 
 	auto height_texture = WorldScape3DUtil::luminance_to_height(_albedo_panel->get_image());
 	if (height_texture->is_empty()) {
-		EditorNode::get_singleton()->show_warning("Height Texture Generation error");
+		EditorCore::get_singleton()->get_shell()->show_warning("Height Texture Generation error");
 		return;
 	}
 	// blur the image by resizing down and back...
@@ -680,7 +680,7 @@ void ChannelPackerDialog::on_resize_checked() {
 
 void ChannelPackerDialog::on_pack_albedo_pressed() {
 	if (_albedo_panel->get_image().is_null() || _height_panel->get_image().is_null()) {
-		EditorNode::get_singleton()->show_warning("Please select an albedo and height texture");
+		EditorCore::get_singleton()->get_shell()->show_warning("Please select an albedo and height texture");
 		return;
 	}
 	static const String default_path = _last_saved_directory + "/packed_albedo_height";
@@ -701,7 +701,7 @@ void ChannelPackerDialog::on_pack_albedo_pressed() {
 
 void ChannelPackerDialog::on_pack_normal_pressed() {
 	if (_normal_panel->get_image().is_null() || _roughness_panel->get_image().is_null()) {
-		EditorNode::get_singleton()->show_warning("Please select a normal and roughness texture");
+		EditorCore::get_singleton()->get_shell()->show_warning("Please select a normal and roughness texture");
 		return;
 	}
 	static const String default_path = _last_saved_directory + "/packed_normal_roughness";
@@ -786,7 +786,7 @@ void ChannelPackerDialog::set_normal_vector(Ref<Image> image, bool quiet) {
 	sum -= Color{ 1.f, 1.f, 1.f };
 	_normal_vector = Vector3{ sum.r, sum.g, sum.b }.normalized();
 	if (_normal_vector.dot(Vector3{ .0, .0, 1. }) < 0.999 && !quiet) {
-		EditorNode::get_singleton()->show_warning("Normal Texture Not Orthogonal to UV plane.\nFor Compatibility with Detiling and Rotation, Select Orthogonalize Normals");
+		EditorCore::get_singleton()->get_shell()->show_warning("Normal Texture Not Orthogonal to UV plane.\nFor Compatibility with Detiling and Rotation, Select Orthogonalize Normals");
 	}
 }
 
@@ -823,7 +823,7 @@ Error ChannelPackerDialog::pack_textures(
 		Error error = OK;
 
 		if (rgb_img->get_size() != a_img->get_size() && !_resize_packed->is_pressed()) {
-			EditorNode::get_singleton()->show_warning("Textures must be the same size.\nEnable resize to override image dimensions");
+			EditorCore::get_singleton()->get_shell()->show_warning("Textures must be the same size.\nEnable resize to override image dimensions");
 			return FAILED;
 		}
 
@@ -836,31 +836,31 @@ Error ChannelPackerDialog::pack_textures(
 		if (align_the_normals && _normal_vector.dot(Vector3{ .0, .0, 1.0 }) < 0.999) {
 			align_normals(rgb_img);
 		} else if (align_the_normals) {
-			EditorNode::get_singleton()->show_warning("Alignment OK, skipping Normal Orthogonalization");
+			EditorCore::get_singleton()->get_shell()->show_warning("Alignment OK, skipping Normal Orthogonalization");
 		}
 
 		auto output_image = WorldScape3DUtil::pack_image(
 				rgb_img, a_img, invert_green, invert_smooth, normalize_height, alpha_channel);
 
 		if (output_image.is_null()) {
-			EditorNode::get_singleton()->show_warning("Failed to pack textures");
+			EditorCore::get_singleton()->get_shell()->show_warning("Failed to pack textures");
 			return FAILED;
 		}
 
 		if (output_image->detect_alpha() != Image::ALPHA_BLEND) {
-			EditorNode::get_singleton()->show_warning("Warning, Alpha channel empty");
+			EditorCore::get_singleton()->get_shell()->show_warning("Warning, Alpha channel empty");
 		}
 
 		error = output_image->save_png(path);
 		if (error != OK) {
-			EditorNode::get_singleton()->show_warning("Failed to save texture");
+			EditorCore::get_singleton()->get_shell()->show_warning("Failed to save texture");
 			return error;
 		}
 		create_import_file(path);
 		__print_line_rich("Packed to " + path + ".");
 		return OK;
 	} else {
-		EditorNode::get_singleton()->show_warning("Failed to load one or more textures");
+		EditorCore::get_singleton()->get_shell()->show_warning("Failed to load one or more textures");
 		return FAILED;
 	}
 }

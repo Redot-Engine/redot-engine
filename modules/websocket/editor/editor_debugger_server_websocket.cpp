@@ -96,11 +96,11 @@ Error EditorDebuggerServerWebSocket::start(const String &p_uri) {
 			break;
 		}
 		if (attempt >= max_attempts) {
-			EditorNode::get_log()->add_message(vformat("Cannot listen on port %d, remote debugging unavailable.", bind_port), EditorLog::MSG_TYPE_ERROR);
+			EditorCore::get_singleton()->get_log()->add_message(vformat("Cannot listen on port %d, remote debugging unavailable.", bind_port), EditorLog::MSG_TYPE_ERROR);
 			return err;
 		}
 		int last_port = bind_port++;
-		EditorNode::get_log()->add_message(vformat("Cannot listen on port %d, trying %d instead.", last_port, bind_port), EditorLog::MSG_TYPE_WARNING);
+		EditorCore::get_singleton()->get_log()->add_message(vformat("Cannot listen on port %d, trying %d instead.", last_port, bind_port), EditorLog::MSG_TYPE_WARNING);
 	}
 
 	// Endpoint that the client should connect to

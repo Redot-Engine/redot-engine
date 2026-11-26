@@ -46,7 +46,7 @@
 /// @note This gizmo only renders LightmapProbe nodes as wireframes.
 /// The solid sphere representation is handled in LightmapGIGizmoPlugin.
 LightmapProbeGizmoPlugin::LightmapProbeGizmoPlugin() {
-	create_icon_material("lightmap_probe_icon", EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("GizmoLightmapProbe"), EditorStringName(EditorIcons)));
+	create_icon_material("lightmap_probe_icon", EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("GizmoLightmapProbe"), EditorStringName(EditorIcons)));
 
 	Color gizmo_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/lightprobe_lines");
 	probe_size = EDITOR_GET("editors/3d_gizmos/gizmo_settings/lightmap_gi_probe_size");

@@ -298,7 +298,7 @@ void EditorCommandPalette::register_shortcuts_as_command() {
 		Ref<InputEventShortcut> ev;
 		ev.instantiate();
 		ev->set_shortcut(shortcut);
-		add_command(command_name, E.key, callable_mp(EditorNode::get_singleton()->get_viewport(), &Viewport::push_input), varray(ev, false), shortcut);
+		add_command(command_name, E.key, callable_mp(EditorCore::get_singleton()->get_shell()->get_viewport(), &Viewport::push_input), varray(ev, false), shortcut);
 	}
 	unregistered_shortcuts.clear();
 
@@ -317,7 +317,7 @@ Ref<Shortcut> EditorCommandPalette::add_shortcut_command(const String &p_command
 		Ref<InputEventShortcut> ev;
 		ev.instantiate();
 		ev->set_shortcut(p_shortcut);
-		add_command(p_command, p_key, callable_mp(EditorNode::get_singleton()->get_viewport(), &Viewport::push_input), varray(ev, false), p_shortcut);
+		add_command(p_command, p_key, callable_mp(EditorCore::get_singleton()->get_shell()->get_viewport(), &Viewport::push_input), varray(ev, false), p_shortcut);
 	} else {
 		const String key_name = String(p_key);
 		const String command_name = String(p_command);

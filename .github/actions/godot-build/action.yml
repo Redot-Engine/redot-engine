@@ -24,7 +24,7 @@ runs:
     - name: SCons Build
       shell: sh
       run: |
-        echo "Building with flags:" platform=${{ inputs.platform }} target=${{ inputs.target }} ${{ inputs.scons-flags }} "cache_path=${{ inputs.scons-cache }}" redirect_build_objects=no
+        echo "Building with flags:" --cache-debug=- platform=${{ inputs.platform }} target=${{ inputs.target }} ${{ inputs.scons-flags }} "cache_path=${{ inputs.scons-cache }}" redirect_build_objects=no
 
         if [ "${{ inputs.target }}" != "editor" ]; then
           # Ensure we don't include editor code in export template builds.
@@ -38,5 +38,5 @@ runs:
           export BUILD_NAME="gh"
         fi
 
-        scons platform=${{ inputs.platform }} target=${{ inputs.target }} ${{ inputs.scons-flags }} "cache_path=${{ inputs.scons-cache }}" redirect_build_objects=no
+        scons --cache-debug=- platform=${{ inputs.platform }} target=${{ inputs.target }} ${{ inputs.scons-flags }} "cache_path=${{ inputs.scons-cache }}" redirect_build_objects=no
         ls -l bin/

@@ -203,7 +203,7 @@ void EditorHelpSearch::_confirmed() {
 	}
 
 	// Activate the script editor and emit the signal with the documentation link to display.
-	EditorNode::get_singleton()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
+	EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
 
 	emit_signal(SNAME("go_to_help"), item->get_metadata(0));
 
@@ -1151,7 +1151,7 @@ TreeItem *EditorHelpSearch::Runner::_create_class_item(TreeItem *p_parent, const
 
 	TreeItem *item = nullptr;
 	if (_find_or_create_item(p_parent, item_meta, item)) {
-		item->set_icon(0, EditorNode::get_singleton()->get_class_icon(p_doc->name));
+		item->set_icon(0, EditorCore::get_singleton()->get_class_icon(p_doc->name));
 		item->set_text(1, TTR("Class"));
 		item->set_tooltip_text(0, tooltip);
 		item->set_tooltip_text(1, tooltip);

@@ -643,7 +643,7 @@ bool EditorPropertyArray::_is_drop_valid(const Dictionary &p_drag_data) const {
 			for (String at : allowed_type.split(",", false)) {
 				at = at.strip_edges();
 				// Fail if one of the files is not of allowed type.
-				if (!ClassDB::is_parent_class(ftype, at) && !EditorNode::get_editor_data().script_class_is_parent(script_class, at)) {
+				if (!ClassDB::is_parent_class(ftype, at) && !EditorCore::get_singleton()->get_editor_data().script_class_is_parent(script_class, at)) {
 					return false;
 				}
 			}
@@ -662,12 +662,12 @@ bool EditorPropertyArray::_is_drop_valid(const Dictionary &p_drag_data) const {
 		String res_type = res->get_class();
 		StringName script_class;
 		if (res->get_script()) {
-			script_class = EditorNode::get_singleton()->get_object_custom_type_name(res->get_script());
+			script_class = EditorCore::get_singleton()->get_object_custom_type_name(res->get_script());
 		}
 
 		for (String at : allowed_type.split(",", false)) {
 			at = at.strip_edges();
-			if (ClassDB::is_parent_class(res_type, at) || EditorNode::get_editor_data().script_class_is_parent(script_class, at)) {
+			if (ClassDB::is_parent_class(res_type, at) || EditorCore::get_singleton()->get_editor_data().script_class_is_parent(script_class, at)) {
 				return true;
 			}
 		}
@@ -698,7 +698,7 @@ bool EditorPropertyArray::_is_drop_valid(const Dictionary &p_drag_data) const {
 
 			if (allowed_type != "NodePath") {
 				if (!ClassDB::is_parent_class(dropped_node->get_class_name(), allowed_type) &&
-						!EditorNode::get_singleton()->is_object_of_custom_type(dropped_node, allowed_type)) {
+						!EditorCore::get_singleton()->is_object_of_custom_type(dropped_node, allowed_type)) {
 					// Fail if one of the nodes is not of allowed type.
 					return false;
 				}
@@ -710,7 +710,7 @@ bool EditorPropertyArray::_is_drop_valid(const Dictionary &p_drag_data) const {
 					// The dropped node type was not found in the allowed subtype array, we must check if it inherits one of them.
 					for (const String &ast : allowed_subtype_array) {
 						if (ClassDB::is_parent_class(dropped_node->get_class_name(), ast) ||
-								EditorNode::get_singleton()->is_object_of_custom_type(dropped_node, ast)) {
+								EditorCore::get_singleton()->is_object_of_custom_type(dropped_node, ast)) {
 							is_drop_allowed = true;
 							break;
 						} else {
@@ -1660,7 +1660,7 @@ void EditorPropertyStruct::_property_changed(const String &p_property, Variant p
 	if (p_value.get_type() == Variant::OBJECT) {
 		Resource *edited_resource = Object::cast_to<Resource>(get_edited_object());
 		if (edited_resource && editor_property_has_recursive_resource(edited_resource, struct_value)) {
-			EditorNode::get_singleton()->show_warning(TTR("Recursion detected, unable to assign resource to property."));
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("Recursion detected, unable to assign resource to property."));
 			update_property();
 			return;
 		}

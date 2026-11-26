@@ -51,6 +51,8 @@
 
 #define MAX_MESSAGES_BEFORE_COLLAPSE 10
 
+static bool s_shutting_down = false;
+
 void EditorLog::_error_handler(void *p_self, const char *p_func, const char *p_file, int p_line, const char *p_error, const char *p_errorexp, bool p_editor_notify, ErrorHandlerType p_type) {
 	EditorLog *self = static_cast<EditorLog *>(p_self);
 
@@ -233,6 +235,9 @@ void EditorLog::clear() {
 }
 
 void EditorLog::_process_message(const String &p_msg, MessageType p_type, bool p_clear) {
+	if (s_shutting_down) {
+		print_verbose("[EditorLog::_process_message] msg='" + p_msg + "' type=" + itos(p_type));
+	}
 	if (messages.size() > 0 && messages[messages.size() - 1].text == p_msg && messages[messages.size() - 1].type == p_type) {
 		// If previous message is the same as the new one, increase previous count rather than adding another
 		// instance to the messages list.
@@ -255,10 +260,17 @@ void EditorLog::_process_message(const String &p_msg, MessageType p_type, bool p
 		messages.push_back(message);
 	}
 
+	if (s_shutting_down) {
+		bool has_key = type_filter_map.has(p_type);
+		print_verbose("[EditorLog::_process_message] this=" + itos((uint64_t)this) + " has_key=" + itos(has_key) + " p_type=" + itos(p_type) + " map_size=" + itos(type_filter_map.size()));
+	}
 	type_filter_map[p_type]->set_message_count(type_filter_map[p_type]->get_message_count() + 1);
 }
 
 void EditorLog::add_message(const String &p_msg, MessageType p_type) {
+	if (s_shutting_down) {
+		print_verbose("[EditorLog::add_message] msg='" + p_msg + "' type=" + itos(p_type));
+	}
 	// Make text split by new lines their own message.
 	// See #41321 for reasoning. At time of writing, multiple print()'s in running projects
 	// get grouped together and sent to the editor log as one message. This can mess with the
@@ -600,10 +612,13 @@ EditorLog::EditorLog() {
 }
 
 void EditorLog::deinit() {
+	s_shutting_down = true;
+	print_verbose("[EditorLog::deinit] this=" + itos((uint64_t)this) + " removing error handler");
 	remove_error_handler(&eh);
 }
 
 EditorLog::~EditorLog() {
+	print_verbose("[EditorLog::~EditorLog] this=" + itos((uint64_t)this) + " map_size=" + itos(type_filter_map.size()));
 	if (bbcode_parser) {
 		memdelete(bbcode_parser);
 	}

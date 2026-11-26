@@ -202,5 +202,5 @@ void NavigationLink2DEditorPlugin::make_visible(bool p_visible) {
 
 NavigationLink2DEditorPlugin::NavigationLink2DEditorPlugin() {
 	editor = memnew(NavigationLink2DEditor);
-	EditorNode::get_singleton()->get_gui_base()->add_child(editor);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(editor);
 }

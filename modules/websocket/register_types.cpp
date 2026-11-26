@@ -83,7 +83,7 @@ void initialize_websocket_module(ModuleInitializationLevel p_level) {
 
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		EditorNode::add_init_callback(&_editor_init_callback);
+		EditorPluginManager::add_init_callback(&_editor_init_callback);
 	}
 #endif
 }

@@ -133,7 +133,7 @@ void PropertySelector::_update_search() {
 				if (E.name == "Script Variables") {
 					icon = search_options->get_editor_theme_icon(SNAME("Script"));
 				} else {
-					icon = EditorNode::get_singleton()->get_class_icon(E.name);
+					icon = EditorCore::get_singleton()->get_class_icon(E.name);
 				}
 				category->set_icon(0, icon);
 				continue;
@@ -239,7 +239,7 @@ void PropertySelector::_update_search() {
 					icon = search_options->get_editor_theme_icon(SNAME("Script"));
 					script_methods = true;
 				} else {
-					icon = EditorNode::get_singleton()->get_class_icon(rep);
+					icon = EditorCore::get_singleton()->get_class_icon(rep);
 				}
 				category->set_icon(0, icon);
 

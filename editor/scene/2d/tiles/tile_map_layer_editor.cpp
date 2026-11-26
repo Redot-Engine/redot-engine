@@ -1289,7 +1289,7 @@ void TileMapLayerEditorTilesPlugin::_stop_dragging() {
 	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
 	switch (drag_type) {
 		case DRAG_TYPE_SELECT: {
-			undo_redo->create_action_for_history(TTR("Change selection"), EditorNode::get_editor_data().get_current_edited_scene_history_id(), UndoRedo::MERGE_DISABLE, false, false);
+			undo_redo->create_action_for_history(TTR("Change selection"), EditorCore::get_singleton()->get_editor_data().get_current_edited_scene_history_id(), UndoRedo::MERGE_DISABLE, false, false);
 			undo_redo->add_undo_method(this, "_set_tile_map_selection", _get_tile_map_selection());
 
 			if (!Input::get_singleton()->is_key_pressed(Key::SHIFT) && !Input::get_singleton()->is_key_pressed(Key::CMD_OR_CTRL)) {
@@ -1323,7 +1323,7 @@ void TileMapLayerEditorTilesPlugin::_stop_dragging() {
 					edited_layer->set_cell(kv.key, kv.value.source_id, kv.value.get_atlas_coords(), kv.value.alternative_tile);
 				}
 
-				if (!EditorNode::get_singleton()->is_resource_read_only(tile_set)) {
+				if (!EditorCore::get_singleton()->is_resource_read_only(tile_set)) {
 					// Creating a pattern in the pattern list.
 					select_last_pattern = true;
 					int new_pattern_index = tile_set->get_patterns_count();
@@ -2134,7 +2134,7 @@ void TileMapLayerEditorTilesPlugin::edit(ObjectID p_tile_map_layer_id) {
 	if (edited_layer) {
 		tile_set = edited_layer->get_tile_set();
 		if (tile_set.is_valid()) {
-			source_sort_button->set_disabled(EditorNode::get_singleton()->is_resource_read_only(tile_set));
+			source_sort_button->set_disabled(EditorCore::get_singleton()->is_resource_read_only(tile_set));
 		}
 	}
 
@@ -3639,8 +3639,8 @@ void TileMapLayerEditor::_update_tile_map_layers_in_scene_list_cache() {
 	if (!layers_in_scene_list_cache_needs_update) {
 		return;
 	}
-	EditorNode *en = EditorNode::get_singleton();
-	Node *edited_scene_root = en->get_edited_scene();
+
+	Node *edited_scene_root = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (!edited_scene_root) {
 		return;
 	}
@@ -3729,22 +3729,22 @@ void TileMapLayerEditor::_select_next_layer_pressed() {
 }
 
 void TileMapLayerEditor::_select_all_layers_pressed() {
-	EditorNode *en = EditorNode::get_singleton();
-	Node *edited_scene_root = en->get_edited_scene();
+	EditorCore *editor_core = EditorCore::get_singleton();
+	Node *edited_scene_root = EditorSceneManager::get_singleton()->get_edited_scene();
 	ERR_FAIL_NULL(edited_scene_root);
 
-	en->get_editor_selection()->clear();
+	editor_core->get_editor_selection()->clear();
 	if (tile_map_layers_in_scene_cache.size() == 1) {
-		en->edit_node(tile_map_layers_in_scene_cache[0]);
-		en->get_editor_selection()->add_node(tile_map_layers_in_scene_cache[0]);
+		EditorSceneManager::get_singleton()->edit_node(tile_map_layers_in_scene_cache[0]);
+		editor_core->get_editor_selection()->add_node(tile_map_layers_in_scene_cache[0]);
 	} else {
 		_update_tile_map_layers_in_scene_list_cache();
 		Ref<MultiNodeEdit> multi_node_edit = memnew(MultiNodeEdit);
 		for (TileMapLayer *layer : tile_map_layers_in_scene_cache) {
 			multi_node_edit->add_node(edited_scene_root->get_path_to(layer));
-			en->get_editor_selection()->add_node(layer);
+			editor_core->get_editor_selection()->add_node(layer);
 		}
-		en->push_item(multi_node_edit.ptr());
+		EditorSceneManager::get_singleton()->push_item(multi_node_edit.ptr());
 	}
 }
 
@@ -3835,8 +3835,7 @@ void TileMapLayerEditor::_clear_all_layers_highlighting() {
 }
 
 void TileMapLayerEditor::_update_all_layers_highlighting() {
-	EditorNode *en = EditorNode::get_singleton();
-	Node *edited_scene_root = en->get_edited_scene();
+	Node *edited_scene_root = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (!edited_scene_root) {
 		return;
 	}
@@ -3934,8 +3933,7 @@ void TileMapLayerEditor::_advanced_menu_button_id_pressed(int p_id) {
 	} else if (p_id == ADVANCED_MENU_EXTRACT_TILE_MAP_LAYERS) { // Transform internal TileMap layers into TileMapLayers.
 		ERR_FAIL_COND(edited_layer->get_index_in_tile_map() < 0);
 
-		EditorNode *en = EditorNode::get_singleton();
-		Node *edited_scene_root = en->get_edited_scene();
+		Node *edited_scene_root = EditorSceneManager::get_singleton()->get_edited_scene();
 		ERR_FAIL_NULL(edited_scene_root);
 
 		EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
@@ -4110,8 +4108,8 @@ void TileMapLayerEditor::_layers_select_next_or_previous(bool p_next) {
 		return;
 	}
 
-	EditorNode *en = EditorNode::get_singleton();
-	Node *edited_scene_root = en->get_edited_scene();
+	EditorCore *editor_core = EditorCore::get_singleton();
+	Node *edited_scene_root = EditorSceneManager::get_singleton()->get_edited_scene();
 	ERR_FAIL_NULL(edited_scene_root);
 
 	TileMapLayer *new_selected_layer = nullptr;
@@ -4137,9 +4135,9 @@ void TileMapLayerEditor::_layers_select_next_or_previous(bool p_next) {
 
 	if (edited_layer->get_index_in_tile_map() < 0) {
 		// Only if not part of a TileMap.
-		en->edit_node(new_selected_layer);
-		en->get_editor_selection()->clear();
-		en->get_editor_selection()->add_node(new_selected_layer);
+		EditorSceneManager::get_singleton()->edit_node(new_selected_layer);
+		editor_core->get_editor_selection()->clear();
+		editor_core->get_editor_selection()->add_node(new_selected_layer);
 	} else {
 		edit(new_selected_layer);
 	}
@@ -4537,7 +4535,7 @@ TileMapLayerEditor::TileMapLayerEditor() {
 	_tab_changed(0);
 
 	// Registers UndoRedo inspector callback.
-	EditorNode::get_editor_data().add_move_array_element_function(SNAME("TileMap"), callable_mp(this, &TileMapLayerEditor::_move_tile_map_array_element));
+	EditorCore::get_singleton()->get_editor_data().add_move_array_element_function(SNAME("TileMap"), callable_mp(this, &TileMapLayerEditor::_move_tile_map_array_element));
 }
 
 TileMapLayerEditor::~TileMapLayerEditor() {

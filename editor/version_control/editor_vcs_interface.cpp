@@ -44,7 +44,7 @@ EditorVCSInterface *EditorVCSInterface::singleton = nullptr;
 
 void EditorVCSInterface::popup_error(const String &p_msg) {
 	// TRANSLATORS: %s refers to the name of a version control system (e.g. "Git").
-	EditorNode::get_singleton()->show_warning(p_msg.strip_edges(), vformat(TTR("%s Error"), get_vcs_name()));
+	EditorCore::get_singleton()->get_shell()->show_warning(p_msg.strip_edges(), vformat(TTR("%s Error"), get_vcs_name()));
 }
 
 bool EditorVCSInterface::initialize(const String &p_project_path) {

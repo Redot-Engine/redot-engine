@@ -440,8 +440,7 @@ Error GDScriptWorkspace::initialize() {
 		}
 	}
 
-	EditorNode *editor_node = EditorNode::get_singleton();
-	editor_node->connect("script_add_function_request", callable_mp(this, &GDScriptWorkspace::apply_new_signal));
+	EditorCore::get_singleton()->get_shell()->connect("script_add_function_request", callable_mp(this, &GDScriptWorkspace::apply_new_signal));
 
 	return OK;
 }

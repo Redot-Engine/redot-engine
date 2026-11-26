@@ -40,12 +40,15 @@
 
 #include "core/config/project_settings.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/inspector/editor_resource_preview.h"
+#include "editor/settings/editor_command_palette.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
 #include "editor/themes/editor_theme_manager.h"
+#include "scene/gui/box_container.h"
 
 class ImportDockParameters : public Object {
 	GDCLASS(ImportDockParameters, Object);
@@ -602,7 +605,7 @@ void ImportDock::_reimport_and_cleanup() {
 	}
 
 	// After changing resource type we need to make sure that all old instances are unloaded or replaced.
-	EditorNode::get_singleton()->push_item(nullptr);
+	EditorSceneManager::get_singleton()->push_item(nullptr);
 	EditorUndoRedoManager::get_singleton()->clear_history();
 
 	List<Ref<Resource>> external_resources;
@@ -621,10 +624,10 @@ void ImportDock::_reimport_and_cleanup() {
 		}
 	}
 
-	EditorNode::get_singleton()->replace_resources_in_scenes(old_resources_to_replace, new_resources_to_replace);
+	EditorCore::get_singleton()->replace_resources_in_scenes(old_resources_to_replace, new_resources_to_replace);
 
 	for (Ref<Resource> res : external_resources) {
-		EditorNode::get_singleton()->replace_resources_in_object(res.ptr(), old_resources_to_replace, new_resources_to_replace);
+		EditorCore::get_singleton()->replace_resources_in_object(res.ptr(), old_resources_to_replace, new_resources_to_replace);
 	}
 
 	need_cleanup.clear();
@@ -750,16 +753,22 @@ void ImportDock::initialize_import_options() const {
 
 ImportDock::ImportDock() {
 	singleton = this;
-	set_name("Import");
+	set_name(TTRC("Import"));
+	set_icon_name("FileAccess");
+	set_dock_shortcut(ED_SHORTCUT_AND_COMMAND("docks/open_import", TTRC("Open Import Dock")));
+	set_default_slot(EditorDockManager::DOCK_SLOT_LEFT_UR);
+
+	VBoxContainer *main_vb = memnew(VBoxContainer);
+	add_child(main_vb);
 
 	content = memnew(VBoxContainer);
 	content->set_v_size_flags(SIZE_EXPAND_FILL);
-	add_child(content);
+	main_vb->add_child(content);
 	content->hide();
 
 	imported = memnew(Label);
 	imported->set_focus_mode(FOCUS_ACCESSIBILITY);
-	imported->add_theme_style_override(CoreStringName(normal), EditorNode::get_singleton()->get_editor_theme()->get_stylebox(CoreStringName(normal), SNAME("LineEdit")));
+	imported->add_theme_style_override(CoreStringName(normal), EditorCore::get_singleton()->get_editor_theme()->get_stylebox(CoreStringName(normal), SNAME("LineEdit")));
 	imported->set_clip_text(true);
 	content->add_child(imported);
 	HBoxContainer *hb = memnew(HBoxContainer);
@@ -827,7 +836,7 @@ ImportDock::ImportDock() {
 	select_a_resource->set_v_size_flags(SIZE_EXPAND_FILL);
 	select_a_resource->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
 	select_a_resource->set_vertical_alignment(VERTICAL_ALIGNMENT_CENTER);
-	add_child(select_a_resource);
+	main_vb->add_child(select_a_resource);
 }
 
 ImportDock::~ImportDock() {

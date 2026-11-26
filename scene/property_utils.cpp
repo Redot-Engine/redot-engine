@@ -45,6 +45,7 @@
 
 #ifdef TOOLS_ENABLED
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #endif // TOOLS_ENABLED
 
 bool PropertyUtils::is_property_value_different(const Object *p_object, const Variant &p_a, const Variant &p_b) {
@@ -246,7 +247,7 @@ Vector<SceneState::PackState> PropertyUtils::get_node_states_stack(const Node *p
 		const Node *owner = p_owner;
 #ifdef TOOLS_ENABLED
 		if (!p_owner && Engine::get_singleton()->is_editor_hint()) {
-			owner = EditorNode::get_singleton()->get_edited_scene();
+			owner = EditorSceneManager::get_singleton()->get_edited_scene();
 		}
 #endif
 

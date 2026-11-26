@@ -38,7 +38,7 @@
 
 #include "joint_3d_gizmo_plugin.h"
 
-#include "editor/editor_node.h"
+#include "../../node_3d_editor_plugin.h"
 #include "editor/settings/editor_settings.h"
 #include "scene/3d/physics/joints/cone_twist_joint_3d.h"
 #include "scene/3d/physics/joints/generic_6dof_joint_3d.h"
@@ -289,13 +289,8 @@ Joint3DGizmoPlugin::Joint3DGizmoPlugin() {
 	create_material("joint_material", EDITOR_GET("editors/3d_gizmos/gizmo_colors/joint"));
 	create_material("joint_body_a_material", EDITOR_GET("editors/3d_gizmos/gizmo_colors/joint_body_a"));
 	create_material("joint_body_b_material", EDITOR_GET("editors/3d_gizmos/gizmo_colors/joint_body_b"));
-
-	update_timer = memnew(Timer);
-	update_timer->set_name("JointGizmoUpdateTimer");
-	update_timer->set_wait_time(1.0 / 120.0);
-	update_timer->connect("timeout", callable_mp(this, &Joint3DGizmoPlugin::incremental_update_gizmos));
-	update_timer->set_autostart(true);
-	callable_mp((Node *)EditorNode::get_singleton(), &Node::add_child).call_deferred(update_timer, false, Node::INTERNAL_MODE_DISABLED);
+	// Note: update_timer is created lazily in redraw() because node_3d_editor
+	// is not set until add_gizmo_plugin() is called after construction.
 }
 
 void Joint3DGizmoPlugin::incremental_update_gizmos() {
@@ -325,6 +320,18 @@ int Joint3DGizmoPlugin::get_priority() const {
 }
 
 void Joint3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
+	// Create the update timer lazily now that node_3d_editor is set.
+	if (!update_timer) {
+		update_timer = memnew(Timer);
+		update_timer->set_name("JointGizmoUpdateTimer");
+		update_timer->set_wait_time(1.0 / 120.0);
+		update_timer->connect("timeout", callable_mp(this, &Joint3DGizmoPlugin::incremental_update_gizmos));
+		update_timer->set_autostart(true);
+		if (node_3d_editor) {
+			node_3d_editor->add_child(update_timer, false, Node::INTERNAL_MODE_DISABLED);
+		}
+	}
+
 	Joint3D *joint = Object::cast_to<Joint3D>(p_gizmo->get_node_3d());
 
 	p_gizmo->clear();

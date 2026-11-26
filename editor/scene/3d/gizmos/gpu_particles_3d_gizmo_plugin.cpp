@@ -47,7 +47,7 @@ GPUParticles3DGizmoPlugin::GPUParticles3DGizmoPlugin() {
 	Color gizmo_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/particles");
 	create_material("particles_material", gizmo_color);
 	gizmo_color.a = MAX((gizmo_color.a - 0.2) * 0.02, 0.0);
-	create_icon_material("particles_icon", EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("GizmoGPUParticles3D"), EditorStringName(EditorIcons)));
+	create_icon_material("particles_icon", EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("GizmoGPUParticles3D"), EditorStringName(EditorIcons)));
 }
 
 bool GPUParticles3DGizmoPlugin::has_gizmo(Node3D *p_spatial) {

@@ -41,6 +41,7 @@
 
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/debugger/editor_debugger_plugin.h"
+#include "editor/docks/editor_dock.h"
 #include "editor/docks/editor_dock_manager.h"
 #include "editor/docks/inspector_dock.h"
 #include "editor/docks/scene_tree_dock.h"
@@ -55,6 +56,7 @@
 #include "editor/import/3d/resource_importer_scene.h"
 #include "editor/import/editor_import_plugin.h"
 #include "editor/inspector/editor_inspector.h"
+#include "editor/plugins/editor_plugin_manager.h"
 #include "editor/plugins/editor_resource_conversion_plugin.h"
 #include "editor/scene/3d/node_3d_editor_plugin.h"
 #include "editor/scene/canvas_item_editor_plugin.h"
@@ -65,51 +67,65 @@
 #include "scene/gui/popup_menu.h"
 
 void EditorPlugin::add_custom_type(const String &p_type, const String &p_base, const Ref<Script> &p_script, const Ref<Texture2D> &p_icon) {
-	EditorNode::get_editor_data().add_custom_type(p_type, p_base, p_script, p_icon);
+	EditorCore::get_singleton()->get_editor_data().add_custom_type(p_type, p_base, p_script, p_icon);
 }
 
 void EditorPlugin::remove_custom_type(const String &p_type) {
-	EditorNode::get_editor_data().remove_custom_type(p_type);
+	EditorCore::get_singleton()->get_editor_data().remove_custom_type(p_type);
 }
 
 void EditorPlugin::add_autoload_singleton(const String &p_name, const String &p_path) {
 	if (p_path.begins_with("res://")) {
-		EditorNode::get_singleton()->get_project_settings()->get_autoload_settings()->autoload_add(p_name, p_path);
+		EditorCore::get_singleton()->get_project_settings_editor()->get_autoload_settings()->autoload_add(p_name, p_path);
 	} else {
 		const Ref<Script> plugin_script = static_cast<Ref<Script>>(get_script());
 		ERR_FAIL_COND(plugin_script.is_null());
 		const String script_base_path = plugin_script->get_path().get_base_dir();
-		EditorNode::get_singleton()->get_project_settings()->get_autoload_settings()->autoload_add(p_name, script_base_path.path_join(p_path));
+		EditorCore::get_singleton()->get_project_settings_editor()->get_autoload_settings()->autoload_add(p_name, script_base_path.path_join(p_path));
 	}
 }
 
 void EditorPlugin::remove_autoload_singleton(const String &p_name) {
-	EditorNode::get_singleton()->get_project_settings()->get_autoload_settings()->autoload_remove(p_name);
+	EditorCore::get_singleton()->get_project_settings_editor()->get_autoload_settings()->autoload_remove(p_name);
 }
 
 Button *EditorPlugin::add_control_to_bottom_panel(Control *p_control, const String &p_title, const Ref<Shortcut> &p_shortcut) {
 	ERR_FAIL_NULL_V(p_control, nullptr);
-	return EditorNode::get_bottom_panel()->add_item(p_title, p_control, p_shortcut);
+	return EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(p_title, p_control, p_shortcut);
 }
 
+#ifndef DISABLE_DEPRECATED
 void EditorPlugin::add_control_to_dock(DockSlot p_slot, Control *p_control, const Ref<Shortcut> &p_shortcut) {
 	ERR_FAIL_NULL(p_control);
-	EditorDockManager::get_singleton()->add_dock(p_control, String(), EditorDockManager::DockSlot(p_slot), p_shortcut);
+	EditorCore::get_singleton()->get_shell()->add_control_to_dock(p_slot, p_control, p_shortcut);
 }
 
 void EditorPlugin::remove_control_from_docks(Control *p_control) {
 	ERR_FAIL_NULL(p_control);
-	EditorDockManager::get_singleton()->remove_dock(p_control);
-}
-
-void EditorPlugin::remove_control_from_bottom_panel(Control *p_control) {
-	ERR_FAIL_NULL(p_control);
-	EditorNode::get_bottom_panel()->remove_item(p_control);
+	EditorCore::get_singleton()->get_shell()->remove_control_from_docks(p_control);
 }
 
 void EditorPlugin::set_dock_tab_icon(Control *p_control, const Ref<Texture2D> &p_icon) {
 	ERR_FAIL_NULL(p_control);
-	EditorDockManager::get_singleton()->set_dock_tab_icon(p_control, p_icon);
+	EditorCore::get_singleton()->get_shell()->set_dock_tab_icon(p_control, p_icon);
+}
+#endif
+
+void EditorPlugin::remove_control_from_bottom_panel(Control *p_control) {
+	ERR_FAIL_NULL(p_control);
+	EditorCore::get_singleton()->get_shell()->get_bottom_panel()->remove_item(p_control);
+}
+
+void EditorPlugin::add_dock(EditorDock *p_dock) {
+	EditorDockManager *dock_manager = EditorCore::get_singleton()->get_shell()->get_dock_manager();
+	ERR_FAIL_NULL_MSG(dock_manager, "This editor shell does not support plugin docks.");
+	dock_manager->add_dock(p_dock);
+}
+
+void EditorPlugin::remove_dock(EditorDock *p_dock) {
+	EditorDockManager *dock_manager = EditorCore::get_singleton()->get_shell()->get_dock_manager();
+	ERR_FAIL_NULL_MSG(dock_manager, "This editor shell does not support plugin docks.");
+	dock_manager->remove_dock(p_dock);
 }
 
 void EditorPlugin::add_control_to_container(CustomControlContainer p_location, Control *p_control) {
@@ -117,7 +133,7 @@ void EditorPlugin::add_control_to_container(CustomControlContainer p_location, C
 
 	switch (p_location) {
 		case CONTAINER_TOOLBAR: {
-			EditorNode::get_title_bar()->add_child(p_control);
+			EditorCore::get_singleton()->get_shell()->get_title_bar()->add_child(p_control);
 		} break;
 
 		case CONTAINER_SPATIAL_EDITOR_MENU: {
@@ -169,7 +185,7 @@ void EditorPlugin::remove_control_from_container(CustomControlContainer p_locati
 
 	switch (p_location) {
 		case CONTAINER_TOOLBAR: {
-			EditorNode::get_title_bar()->remove_child(p_control);
+			EditorCore::get_singleton()->get_shell()->get_title_bar()->remove_child(p_control);
 		} break;
 
 		case CONTAINER_SPATIAL_EDITOR_MENU: {
@@ -213,31 +229,31 @@ void EditorPlugin::remove_control_from_container(CustomControlContainer p_locati
 }
 
 void EditorPlugin::add_tool_menu_item(const String &p_name, const Callable &p_callable) {
-	EditorNode::get_singleton()->add_tool_menu_item(p_name, p_callable);
+	EditorCore::get_singleton()->get_shell()->add_tool_menu_item(p_name, p_callable);
 }
 
 void EditorPlugin::add_tool_submenu_item(const String &p_name, PopupMenu *p_submenu) {
 	ERR_FAIL_NULL(p_submenu);
-	EditorNode::get_singleton()->add_tool_submenu_item(p_name, p_submenu);
+	EditorCore::get_singleton()->get_shell()->add_tool_submenu_item(p_name, p_submenu);
 }
 
 void EditorPlugin::remove_tool_menu_item(const String &p_name) {
-	EditorNode::get_singleton()->remove_tool_menu_item(p_name);
+	EditorCore::get_singleton()->get_shell()->remove_tool_menu_item(p_name);
 }
 
 PopupMenu *EditorPlugin::get_export_as_menu() {
-	return EditorNode::get_singleton()->get_export_as_menu();
+	return EditorCore::get_singleton()->get_shell()->get_export_as_menu();
 }
 
 void EditorPlugin::set_input_event_forwarding_always_enabled() {
 	input_event_forwarding_always_enabled = true;
-	EditorPluginList *always_input_forwarding_list = EditorNode::get_singleton()->get_editor_plugins_force_input_forwarding();
+	EditorPluginList *always_input_forwarding_list = EditorPluginManager::get_singleton()->get_editor_plugins_force_input_forwarding();
 	always_input_forwarding_list->add_plugin(this);
 }
 
 void EditorPlugin::set_force_draw_over_forwarding_enabled() {
 	force_draw_over_forwarding_enabled = true;
-	EditorPluginList *always_draw_over_forwarding_list = EditorNode::get_singleton()->get_editor_plugins_force_over();
+	EditorPluginList *always_draw_over_forwarding_list = EditorPluginManager::get_singleton()->get_editor_plugins_force_over();
 	always_draw_over_forwarding_list->add_plugin(this);
 }
 
@@ -399,11 +415,11 @@ bool EditorPlugin::get_remove_list(List<Node *> *p_list) {
 }
 
 void EditorPlugin::add_undo_redo_inspector_hook_callback(Callable p_callable) {
-	EditorNode::get_editor_data().add_undo_redo_inspector_hook_callback(p_callable);
+	EditorCore::get_singleton()->get_editor_data().add_undo_redo_inspector_hook_callback(p_callable);
 }
 
 void EditorPlugin::remove_undo_redo_inspector_hook_callback(Callable p_callable) {
-	EditorNode::get_editor_data().remove_undo_redo_inspector_hook_callback(p_callable);
+	EditorCore::get_singleton()->get_editor_data().remove_undo_redo_inspector_hook_callback(p_callable);
 }
 
 void EditorPlugin::add_translation_parser_plugin(const Ref<EditorTranslationParserPlugin> &p_parser) {
@@ -431,7 +447,7 @@ void EditorPlugin::remove_import_plugin(const Ref<EditorImportPlugin> &p_importe
 	ResourceFormatImporter::get_singleton()->remove_importer(p_importer);
 	// Plugins are now loaded during the first scan. It's important not to start another scan,
 	// even a deferred one, as it would cause a scan during a scan at the next main thread iteration.
-	if (!EditorNode::get_singleton()->is_exiting() && !EditorFileSystem::get_singleton()->doing_first_scan()) {
+	if (!EditorCore::get_singleton()->get_shell()->is_exiting() && !EditorFileSystem::get_singleton()->doing_first_scan()) {
 		callable_mp(EditorFileSystem::get_singleton(), &EditorFileSystem::scan).call_deferred();
 	}
 }
@@ -535,15 +551,15 @@ bool EditorPlugin::build() {
 }
 
 void EditorPlugin::queue_save_layout() {
-	EditorNode::get_singleton()->save_editor_layout_delayed();
+	EditorCore::get_singleton()->get_shell()->save_editor_layout_delayed();
 }
 
 void EditorPlugin::make_bottom_panel_item_visible(Control *p_item) {
-	EditorNode::get_bottom_panel()->make_item_visible(p_item);
+	EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(p_item);
 }
 
 void EditorPlugin::hide_bottom_panel() {
-	EditorNode::get_bottom_panel()->hide_bottom_panel();
+	EditorCore::get_singleton()->get_shell()->get_bottom_panel()->hide_bottom_panel();
 }
 
 EditorInterface *EditorPlugin::get_editor_interface() {
@@ -563,11 +579,11 @@ void EditorPlugin::remove_debugger_plugin(const Ref<EditorDebuggerPlugin> &p_plu
 }
 
 void EditorPlugin::add_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin> &p_plugin) {
-	EditorNode::get_singleton()->add_resource_conversion_plugin(p_plugin);
+	EditorPluginManager::get_singleton()->add_resource_conversion_plugin(p_plugin);
 }
 
 void EditorPlugin::remove_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin> &p_plugin) {
-	EditorNode::get_singleton()->remove_resource_conversion_plugin(p_plugin);
+	EditorPluginManager::get_singleton()->remove_resource_conversion_plugin(p_plugin);
 }
 
 #ifndef DISABLE_DEPRECATED
@@ -591,19 +607,24 @@ void EditorPlugin::_notification(int p_what) {
 }
 
 void EditorPlugin::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("add_dock", "dock"), &EditorPlugin::add_dock);
+	ClassDB::bind_method(D_METHOD("remove_dock", "dock"), &EditorPlugin::remove_dock);
 	ClassDB::bind_method(D_METHOD("add_control_to_container", "container", "control"), &EditorPlugin::add_control_to_container);
 	ClassDB::bind_method(D_METHOD("add_control_to_bottom_panel", "control", "title", "shortcut"), &EditorPlugin::add_control_to_bottom_panel, DEFVAL(Ref<Shortcut>()));
-	ClassDB::bind_method(D_METHOD("add_control_to_dock", "slot", "control", "shortcut"), &EditorPlugin::add_control_to_dock, DEFVAL(Ref<Shortcut>()));
-	ClassDB::bind_method(D_METHOD("remove_control_from_docks", "control"), &EditorPlugin::remove_control_from_docks);
 	ClassDB::bind_method(D_METHOD("remove_control_from_bottom_panel", "control"), &EditorPlugin::remove_control_from_bottom_panel);
 	ClassDB::bind_method(D_METHOD("remove_control_from_container", "container", "control"), &EditorPlugin::remove_control_from_container);
-	ClassDB::bind_method(D_METHOD("set_dock_tab_icon", "control", "icon"), &EditorPlugin::set_dock_tab_icon);
 	ClassDB::bind_method(D_METHOD("add_tool_menu_item", "name", "callable"), &EditorPlugin::add_tool_menu_item);
 	ClassDB::bind_method(D_METHOD("add_tool_submenu_item", "name", "submenu"), &EditorPlugin::add_tool_submenu_item);
 	ClassDB::bind_method(D_METHOD("remove_tool_menu_item", "name"), &EditorPlugin::remove_tool_menu_item);
 	ClassDB::bind_method(D_METHOD("get_export_as_menu"), &EditorPlugin::get_export_as_menu);
 	ClassDB::bind_method(D_METHOD("add_custom_type", "type", "base", "script", "icon"), &EditorPlugin::add_custom_type);
 	ClassDB::bind_method(D_METHOD("remove_custom_type", "type"), &EditorPlugin::remove_custom_type);
+
+#ifndef DISABLE_DEPRECATED
+	ClassDB::bind_method(D_METHOD("add_control_to_dock", "slot", "control", "shortcut"), &EditorPlugin::add_control_to_dock, DEFVAL(Ref<Shortcut>()));
+	ClassDB::bind_method(D_METHOD("remove_control_from_docks", "control"), &EditorPlugin::remove_control_from_docks);
+	ClassDB::bind_method(D_METHOD("set_dock_tab_icon", "control", "icon"), &EditorPlugin::set_dock_tab_icon);
+#endif
 
 	ClassDB::bind_method(D_METHOD("add_autoload_singleton", "name", "path"), &EditorPlugin::add_autoload_singleton);
 	ClassDB::bind_method(D_METHOD("remove_autoload_singleton", "name"), &EditorPlugin::remove_autoload_singleton);
@@ -691,6 +712,7 @@ void EditorPlugin::_bind_methods() {
 	BIND_ENUM_CONSTANT(CONTAINER_PROJECT_SETTING_TAB_LEFT);
 	BIND_ENUM_CONSTANT(CONTAINER_PROJECT_SETTING_TAB_RIGHT);
 
+	BIND_ENUM_CONSTANT(DOCK_SLOT_NONE);
 	BIND_ENUM_CONSTANT(DOCK_SLOT_LEFT_UL);
 	BIND_ENUM_CONSTANT(DOCK_SLOT_LEFT_BL);
 	BIND_ENUM_CONSTANT(DOCK_SLOT_LEFT_UR);
