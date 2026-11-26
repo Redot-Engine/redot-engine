@@ -1155,61 +1155,61 @@ String OS_Unix::get_executable_path() const {
 	return s;
 #elif defined(__OpenBSD__)
 	std::string path;
+	auto cpp_getexe = [](std::string exe) {
+		int cntp = 0;
+		std::string res;
+		kvm_t *kd = nullptr;
+		kinfo_file *kif = nullptr;
+		bool error1 = false, error2 = false;
+		kd = kvm_openfiles(nullptr, nullptr, nullptr, KVM_NO_FILES, nullptr);
+		if (kd) {
+			if ((kif = kvm_getfiles(kd, KERN_FILE_BYPID, getpid(), sizeof(struct kinfo_file), &cntp))) {
+				for (int i = 0; i < cntp && kif[i].fd_fd < 0; i++) {
+					if (kif[i].fd_fd == KERN_FILE_TEXT) {
+					fallback:
+						struct stat st;
+						char buffer[PATH_MAX];
+						if (!stat(exe.c_str(), &st) && (st.st_mode & S_IXUSR) &&
+								S_ISREG(st.st_mode) && realpath(exe.c_str(), buffer) &&
+								st.st_dev == (dev_t)kif[i].va_fsid && st.st_ino == (ino_t)kif[i].va_fileid) {
+							res = buffer;
+						}
+						if (res.empty() && !error1) {
+							error1 = true;
+							size_t last_slash_pos = exe.find_last_of("/");
+							if (last_slash_pos != std::string::npos) {
+								exe = exe.substr(0, last_slash_pos + 1) + kif[i].p_comm;
+								goto fallback;
+							}
+						}
+						if (res.empty() && !error2) {
+							error2 = true;
+							size_t last_slash_pos = exe.find_last_of("/");
+							if (last_slash_pos != std::string::npos) {
+								const char *progname = getprogname();
+								if (progname) {
+									exe = exe.substr(0, last_slash_pos + 1) + progname;
+									goto fallback;
+								}
+							}
+						}
+						break;
+					}
+				}
+			}
+			kvm_close(kd);
+		}
+		return res;
+	};
 	// The 'OpenBSD' preprocessor definition, (without the leading/trailing underscores), holds the release date, (as defined in <sys/param.h>)
 #if defined(OpenBSD) && (OpenBSD >= 202610)
 	char buffer[PATH_MAX];
 	// getexecpath() was first introduced in OpenBSD 8.0, released on the date we check for in the 'OpenBSD' preprocessor definition; use when possible
 	if (!getexecpath(buffer, sizeof(buffer))) {
-		path = buffer;
+		path = cpp_getexe(buffer);
 	}
 #endif
 	if (path.empty()) {
-		auto cpp_getexe = [](std::string exe) {
-			int cntp = 0;
-			std::string res;
-			kvm_t *kd = nullptr;
-			kinfo_file *kif = nullptr;
-			bool error1 = false, error2 = false;
-			kd = kvm_openfiles(nullptr, nullptr, nullptr, KVM_NO_FILES, nullptr);
-			if (kd) {
-				if ((kif = kvm_getfiles(kd, KERN_FILE_BYPID, getpid(), sizeof(struct kinfo_file), &cntp))) {
-					for (int i = 0; i < cntp && kif[i].fd_fd < 0; i++) {
-						if (kif[i].fd_fd == KERN_FILE_TEXT) {
-						fallback:
-							struct stat st;
-							char buffer[PATH_MAX];
-							if (!stat(exe.c_str(), &st) && (st.st_mode & S_IXUSR) &&
-									S_ISREG(st.st_mode) && realpath(exe.c_str(), buffer) &&
-									st.st_dev == (dev_t)kif[i].va_fsid && st.st_ino == (ino_t)kif[i].va_fileid) {
-								res = buffer;
-							}
-							if (res.empty() && !error1) {
-								error1 = true;
-								size_t last_slash_pos = exe.find_last_of("/");
-								if (last_slash_pos != std::string::npos) {
-									exe = exe.substr(0, last_slash_pos + 1) + kif[i].p_comm;
-									goto fallback;
-								}
-							}
-							if (res.empty() && !error2) {
-								error2 = true;
-								size_t last_slash_pos = exe.find_last_of("/");
-								if (last_slash_pos != std::string::npos) {
-									const char *progname = getprogname();
-									if (progname) {
-										exe = exe.substr(0, last_slash_pos + 1) + progname;
-										goto fallback;
-									}
-								}
-							}
-							break;
-						}
-					}
-				}
-				kvm_close(kd);
-			}
-			return res;
-		};
 		auto cpp_getenv = [](std::string name) {
 			const char *cresult = getenv(name.c_str());
 			std::string result = cresult ? cresult : "";
