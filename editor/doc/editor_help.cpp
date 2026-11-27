@@ -478,7 +478,7 @@ void EditorHelp::_add_type(const String &p_type, const String &p_enum, bool p_is
 }
 
 void EditorHelp::_add_type_icon(const String &p_type, int p_size, const String &p_fallback) {
-	Ref<Texture2D> icon = EditorNode::get_singleton()->get_class_icon(p_type, p_fallback);
+	Ref<Texture2D> icon = EditorCore::get_singleton()->get_class_icon(p_type, p_fallback);
 	Vector2i size = Vector2i(icon->get_width(), icon->get_height());
 	if (p_size > 0) {
 		// Ensures icon scales proportionally on both axes, based on icon height.
@@ -2368,7 +2368,7 @@ void EditorHelp::_update_doc() {
 void EditorHelp::_request_help(const String &p_string) {
 	Error err = _goto_desc(p_string);
 	if (err == OK) {
-		EditorNode::get_singleton()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
+		EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
 	}
 }
 
@@ -3122,7 +3122,7 @@ void EditorHelp::load_script_doc_cache() {
 		return;
 	}
 
-	if (EditorNode::is_cmdline_mode()) {
+	if (EditorCore::get_singleton()->get_shell()->is_cmdline_mode()) {
 		return;
 	}
 
@@ -4274,7 +4274,7 @@ void EditorHelpBit::_update_labels() {
 }
 
 void EditorHelpBit::_go_to_help(const String &p_what) {
-	EditorNode::get_singleton()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
+	EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
 	ScriptEditor::get_singleton()->goto_help(p_what);
 	emit_signal(SNAME("request_hide"));
 }
@@ -4353,7 +4353,7 @@ void EditorHelpBit::_meta_clicked(const String &p_select) {
 		String path = ProjectSettings::get_singleton()->globalize_path(p_select.trim_prefix("open-file:"));
 		OS::get_singleton()->shell_show_in_file_manager(path, true);
 	} else if (p_select.begins_with("open-res:")) {
-		EditorNode::get_singleton()->load_scene_or_resource(p_select.trim_prefix("open-res:"));
+		EditorCore::get_singleton()->load_scene_or_resource(p_select.trim_prefix("open-res:"));
 	} else if (p_select.begins_with("show:")) {
 		FileSystemDock::get_singleton()->navigate_to_path(p_select.trim_prefix("show:"));
 	} else if (p_select.begins_with("http:") || p_select.begins_with("https:")) {

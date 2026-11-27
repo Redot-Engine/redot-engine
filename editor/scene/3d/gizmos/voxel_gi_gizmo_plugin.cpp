@@ -55,7 +55,7 @@ VoxelGIGizmoPlugin::VoxelGIGizmoPlugin() {
 	gizmo_color.a = 0.02;
 	create_material("voxel_gi_internal_material", gizmo_color);
 
-	create_icon_material("voxel_gi_icon", EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("GizmoVoxelGI"), EditorStringName(EditorIcons)));
+	create_icon_material("voxel_gi_icon", EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("GizmoVoxelGI"), EditorStringName(EditorIcons)));
 	create_handle_material("handles");
 }
 

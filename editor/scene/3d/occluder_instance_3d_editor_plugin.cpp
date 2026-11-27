@@ -58,7 +58,7 @@ void OccluderInstance3DEditorPlugin::_bake_select_file(const String &p_file) {
 					scene_path = occluder_instance->get_owner()->get_scene_file_path();
 				}
 				if (scene_path.is_empty()) {
-					EditorNode::get_singleton()->show_warning(TTR("Can't determine a save path for the occluder.\nSave your scene and try again."));
+					EditorCore::get_singleton()->get_shell()->show_warning(TTR("Can't determine a save path for the occluder.\nSave your scene and try again."));
 					break;
 				}
 				scene_path = scene_path.get_basename() + ".occ";
@@ -68,11 +68,11 @@ void OccluderInstance3DEditorPlugin::_bake_select_file(const String &p_file) {
 
 			} break;
 			case OccluderInstance3D::BAKE_ERROR_NO_MESHES: {
-				EditorNode::get_singleton()->show_warning(TTR("No meshes to bake.\nMake sure there is at least one MeshInstance3D node in the scene whose visual layers are part of the OccluderInstance3D's Bake Mask property."));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("No meshes to bake.\nMake sure there is at least one MeshInstance3D node in the scene whose visual layers are part of the OccluderInstance3D's Bake Mask property."));
 				break;
 			}
 			case OccluderInstance3D::BAKE_ERROR_CANT_SAVE: {
-				EditorNode::get_singleton()->show_warning(TTR("Could not save the new occluder at the specified path:") + " " + p_file);
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("Could not save the new occluder at the specified path:") + " " + p_file);
 				break;
 			}
 			default: {
@@ -113,7 +113,7 @@ void OccluderInstance3DEditorPlugin::_bind_methods() {
 OccluderInstance3DEditorPlugin::OccluderInstance3DEditorPlugin() {
 	bake = memnew(Button);
 	bake->set_theme_type_variation(SceneStringName(FlatButton));
-	bake->set_button_icon(EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Bake"), EditorStringName(EditorIcons)));
+	bake->set_button_icon(EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Bake"), EditorStringName(EditorIcons)));
 	bake->set_text(TTR("Bake Occluders"));
 	bake->hide();
 	bake->connect(SceneStringName(pressed), Callable(this, "_bake"));

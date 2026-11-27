@@ -124,7 +124,7 @@ void MultiplayerEditorDebugger::setup_session(int p_session_id) {
 
 MultiplayerEditorPlugin::MultiplayerEditorPlugin() {
 	repl_editor = memnew(ReplicationEditor);
-	button = EditorNode::get_bottom_panel()->add_item(TTRC("Replication"), repl_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_replication_bottom_panel", TTRC("Toggle Replication Bottom Panel")));
+	button = EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(TTRC("Replication"), repl_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_replication_bottom_panel", TTRC("Toggle Replication Bottom Panel")));
 	button->hide();
 	repl_editor->get_pin()->connect(SceneStringName(pressed), callable_mp(this, &MultiplayerEditorPlugin::_pinned));
 	debugger.instantiate();
@@ -151,7 +151,7 @@ void MultiplayerEditorPlugin::_node_removed(Node *p_node) {
 	if (p_node && p_node == repl_editor->get_current()) {
 		repl_editor->edit(nullptr);
 		if (repl_editor->is_visible_in_tree()) {
-			EditorNode::get_bottom_panel()->hide_bottom_panel();
+			EditorCore::get_singleton()->get_shell()->get_bottom_panel()->hide_bottom_panel();
 		}
 		button->hide();
 		repl_editor->get_pin()->set_pressed(false);
@@ -161,7 +161,7 @@ void MultiplayerEditorPlugin::_node_removed(Node *p_node) {
 void MultiplayerEditorPlugin::_pinned() {
 	if (!repl_editor->get_pin()->is_pressed() && repl_editor->get_current() == nullptr) {
 		if (repl_editor->is_visible_in_tree()) {
-			EditorNode::get_bottom_panel()->hide_bottom_panel();
+			EditorCore::get_singleton()->get_shell()->get_bottom_panel()->hide_bottom_panel();
 		}
 		button->hide();
 	}
@@ -178,10 +178,10 @@ bool MultiplayerEditorPlugin::handles(Object *p_object) const {
 void MultiplayerEditorPlugin::make_visible(bool p_visible) {
 	if (p_visible) {
 		button->show();
-		EditorNode::get_bottom_panel()->make_item_visible(repl_editor);
+		EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(repl_editor);
 	} else if (!repl_editor->get_pin()->is_pressed()) {
 		if (repl_editor->is_visible_in_tree()) {
-			EditorNode::get_bottom_panel()->hide_bottom_panel();
+			EditorCore::get_singleton()->get_shell()->get_bottom_panel()->hide_bottom_panel();
 		}
 		button->hide();
 	}

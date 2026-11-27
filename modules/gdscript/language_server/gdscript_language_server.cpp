@@ -64,7 +64,7 @@ void GDScriptLanguageServer::_notification(int p_what) {
 		} break;
 
 		case NOTIFICATION_INTERNAL_PROCESS: {
-			if (!start_attempted && EditorNode::get_singleton()->is_editor_ready()) {
+			if (!start_attempted && EditorCore::get_singleton()->get_shell()->is_editor_ready()) {
 				start_attempted = true;
 				start();
 			}
@@ -107,7 +107,7 @@ void GDScriptLanguageServer::start() {
 	use_thread = (bool)_EDITOR_GET("network/language_server/use_thread");
 	poll_limit_usec = (int)_EDITOR_GET("network/language_server/poll_limit_usec");
 	if (protocol.start(port, IPAddress(host)) == OK) {
-		EditorNode::get_log()->add_message("--- GDScript language server started on port " + itos(port) + " ---", EditorLog::MSG_TYPE_EDITOR);
+		EditorCore::get_singleton()->get_log()->add_message("--- GDScript language server started on port " + itos(port) + " ---", EditorLog::MSG_TYPE_EDITOR);
 		if (use_thread) {
 			thread_running = true;
 			thread.start(GDScriptLanguageServer::thread_main, this);
@@ -125,7 +125,7 @@ void GDScriptLanguageServer::stop() {
 	}
 	protocol.stop();
 	started = false;
-	EditorNode::get_log()->add_message("--- GDScript language server stopped ---", EditorLog::MSG_TYPE_EDITOR);
+	EditorCore::get_singleton()->get_log()->add_message("--- GDScript language server stopped ---", EditorLog::MSG_TYPE_EDITOR);
 }
 
 void register_lsp_types() {

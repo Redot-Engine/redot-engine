@@ -120,7 +120,7 @@ void EditorAbout::_item_activated(int p_idx, ItemList *p_il) {
 		OS::get_singleton()->shell_open(val);
 	} else {
 		// Easter egg :D
-		if (!EditorNode::get_singleton()) {
+		if (!EditorCore::get_singleton() || !EditorCore::get_singleton()->get_shell()) {
 			// Don't allow in Project Manager.
 			return;
 		}
@@ -151,7 +151,7 @@ Label *EditorAbout::_create_section(Control *p_parent, const String &p_name, con
 	il->set_max_columns(p_flags.has_flag(FLAG_SINGLE_COLUMN) ? 1 : 16);
 	il->add_theme_constant_override("h_separation", 16 * EDSCALE);
 
-	if (p_flags.has_flag(FLAG_ALLOW_WEBSITE) || (p_flags.has_flag(FLAG_EASTER_EGG) && EditorNode::get_singleton())) {
+	if (p_flags.has_flag(FLAG_ALLOW_WEBSITE) || (p_flags.has_flag(FLAG_EASTER_EGG) && EditorCore::get_singleton() && EditorCore::get_singleton()->get_shell())) {
 		Ref<StyleBoxEmpty> empty_stylebox = memnew(StyleBoxEmpty);
 		il->add_theme_style_override("focus", empty_stylebox);
 		il->add_theme_style_override("selected", empty_stylebox);

@@ -2197,7 +2197,7 @@ void TileSetAtlasSourceEditor::edit(Ref<TileSet> p_tile_set, TileSetAtlasSource 
 
 	bool new_read_only_state = false;
 	if (p_tile_set.is_valid()) {
-		new_read_only_state = EditorNode::get_singleton()->is_resource_read_only(p_tile_set);
+		new_read_only_state = EditorCore::get_singleton()->is_resource_read_only(p_tile_set);
 	}
 
 	if (p_tile_set == tile_set && p_tile_set_atlas_source == tile_set_atlas_source && p_source_id == tile_set_atlas_source_id && new_read_only_state == read_only) {
@@ -2486,7 +2486,7 @@ void TileSetAtlasSourceEditor::_notification(int p_what) {
 				read_only = false;
 				// Add the listener again and check for read-only status.
 				if (tile_set.is_valid()) {
-					read_only = EditorNode::get_singleton()->is_resource_read_only(tile_set);
+					read_only = EditorCore::get_singleton()->is_resource_read_only(tile_set);
 				}
 
 				_update_buttons();
@@ -2748,7 +2748,7 @@ TileSetAtlasSourceEditor::TileSetAtlasSourceEditor() {
 	tile_atlas_view->add_control_over_alternative_tiles(alternative_tiles_control_unscaled, false);
 	alternative_tiles_control_unscaled->set_mouse_filter(Control::MOUSE_FILTER_IGNORE);
 
-	EditorNode::get_editor_data().add_undo_redo_inspector_hook_callback(callable_mp(this, &TileSetAtlasSourceEditor::_undo_redo_inspector_callback));
+	EditorCore::get_singleton()->get_editor_data().add_undo_redo_inspector_hook_callback(callable_mp(this, &TileSetAtlasSourceEditor::_undo_redo_inspector_callback));
 
 	// -- Dialogs --
 	confirm_auto_create_tiles = memnew(AcceptDialog);

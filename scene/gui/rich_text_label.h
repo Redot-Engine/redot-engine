@@ -574,6 +574,7 @@ private:
 	void _stop_thread();
 	bool _validate_line_caches();
 	void _process_line_caches();
+	int _find_fitting_font_size(const Size2 &p_size);
 	_FORCE_INLINE_ float _update_scroll_exceeds(float p_total_height, float p_ctrl_height, float p_width, int p_idx, float p_old_scroll, float p_text_rect_height);
 
 	void _add_item(Item *p_item, bool p_enter = false, bool p_ensure_newline = false);
@@ -666,6 +667,8 @@ private:
 	ItemDropcap *_find_dc_item(Item *p_item);
 	int _find_list(Item *p_item, Vector<int> &r_index, Vector<int> &r_count, Vector<ItemList *> &r_list);
 	int _find_margin(Item *p_item, const Ref<Font> &p_base_font, int p_base_font_size);
+	int _get_item_font_size(Item *p_item, const ItemFont *p_font, int p_base_font_size);
+	int _scale_font_size(int p_size, int p_base_font_size) const;
 	PackedFloat32Array _find_tab_stops(Item *p_item);
 	HorizontalAlignment _find_alignment(Item *p_item);
 	BitField<TextServer::JustificationFlag> _find_jst_flags(Item *p_item);
@@ -730,6 +733,11 @@ private:
 	RID accessibility_scroll_element;
 
 	bool fit_content = false;
+
+	bool resize_font_to_fit = false;
+	int minimum_font_size = 10;
+	int maximum_font_size = 60;
+	std::atomic<int> current_fitted_font_size{ 0 };
 
 	struct ThemeCache {
 		Ref<StyleBox> normal_style;
@@ -866,6 +874,17 @@ public:
 
 	void set_fit_content(bool p_enabled);
 	bool is_fit_content_enabled() const;
+
+	void set_resize_font_to_fit(bool p_enabled);
+	bool is_resize_font_to_fit_enabled() const;
+
+	void set_minimum_font_size(int p_size);
+	int get_minimum_font_size() const;
+
+	void set_maximum_font_size(int p_size);
+	int get_maximum_font_size() const;
+
+	int get_rendered_font_size() const;
 
 	bool search(const String &p_string, bool p_from_selection = false, bool p_search_previous = false);
 

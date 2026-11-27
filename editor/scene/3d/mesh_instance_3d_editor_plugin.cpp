@@ -39,6 +39,7 @@
 #include "mesh_instance_3d_editor_plugin.h"
 
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/inspector/multi_node_edit.h"
@@ -121,7 +122,7 @@ void MeshInstance3DEditor::_create_collision_shape() {
 	int placement_option = shape_placement->get_selected();
 	int shape_type_option = shape_type->get_selected();
 
-	EditorSelection *editor_selection = EditorNode::get_singleton()->get_editor_selection();
+	EditorSelection *editor_selection = EditorCore::get_singleton()->get_editor_selection();
 	EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 
 	switch (shape_type_option) {
@@ -701,7 +702,7 @@ void MeshInstance3DEditorPlugin::edit(Object *p_object) {
 	}
 
 	Ref<MultiNodeEdit> mne = Ref<MultiNodeEdit>(p_object);
-	Node *edited_scene = EditorNode::get_singleton()->get_edited_scene();
+	Node *edited_scene = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (mne.is_valid() && edited_scene) {
 		for (int i = 0; i < mne->get_node_count(); i++) {
 			MeshInstance3D *mi = Object::cast_to<MeshInstance3D>(edited_scene->get_node(mne->get_node(i)));
@@ -720,7 +721,7 @@ bool MeshInstance3DEditorPlugin::handles(Object *p_object) const {
 	}
 
 	Ref<MultiNodeEdit> mne = Ref<MultiNodeEdit>(p_object);
-	Node *edited_scene = EditorNode::get_singleton()->get_edited_scene();
+	Node *edited_scene = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (mne.is_valid() && edited_scene) {
 		bool has_mesh = false;
 		for (int i = 0; i < mne->get_node_count(); i++) {
@@ -747,7 +748,7 @@ void MeshInstance3DEditorPlugin::make_visible(bool p_visible) {
 
 MeshInstance3DEditorPlugin::MeshInstance3DEditorPlugin() {
 	mesh_editor = memnew(MeshInstance3DEditor);
-	EditorNode::get_singleton()->get_gui_base()->add_child(mesh_editor);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(mesh_editor);
 
 	mesh_editor->options->hide();
 }

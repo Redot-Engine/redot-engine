@@ -1812,7 +1812,7 @@ void EditorFileDialog::_update_favorites() {
 		EditorSettings::get_singleton()->set_favorites(favorited);
 	}
 
-	EditorNode::disambiguate_filenames(favorited_paths, favorited_names);
+	EditorCore::disambiguate_filenames(favorited_paths, favorited_names);
 
 	for (int i = 0; i < favorited_paths.size(); i++) {
 		favorites->add_item(favorited_names[i], theme_cache.folder);
@@ -1897,7 +1897,7 @@ void EditorFileDialog::_update_recent() {
 		recentd_names.append(name);
 	}
 
-	EditorNode::disambiguate_filenames(recentd_paths, recentd_names);
+	EditorCore::disambiguate_filenames(recentd_paths, recentd_names);
 
 	for (int i = 0; i < recentd_paths.size(); i++) {
 		recent->add_item(recentd_names[i], theme_cache.folder);

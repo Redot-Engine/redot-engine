@@ -99,19 +99,19 @@ void Particles3DEditorPlugin::_node_selected(const NodePath &p_path) {
 	}
 
 	if (!sel->is_class("Node3D")) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("\"%s\" doesn't inherit from Node3D."), sel->get_name()));
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("\"%s\" doesn't inherit from Node3D."), sel->get_name()));
 		return;
 	}
 
 	MeshInstance3D *mi = Object::cast_to<MeshInstance3D>(sel);
 	if (!mi || mi->get_mesh().is_null()) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("\"%s\" doesn't contain geometry."), sel->get_name()));
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("\"%s\" doesn't contain geometry."), sel->get_name()));
 		return;
 	}
 
 	geometry = mi->get_mesh()->get_faces();
 	if (geometry.is_empty()) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("\"%s\" doesn't contain face geometry."), sel->get_name()));
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("\"%s\" doesn't contain face geometry."), sel->get_name()));
 		return;
 	}
 
@@ -172,7 +172,7 @@ bool Particles3DEditorPlugin::_generate(Vector<Vector3> &r_points, Vector<Vector
 		}
 
 		if (!triangle_area_map.size() || area_accum == 0) {
-			EditorNode::get_singleton()->show_warning(TTR("The geometry's faces don't contain any area."));
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("The geometry's faces don't contain any area."));
 			return false;
 		}
 
@@ -203,7 +203,7 @@ bool Particles3DEditorPlugin::_generate(Vector<Vector3> &r_points, Vector<Vector
 		int gcount = geometry.size();
 
 		if (gcount == 0) {
-			EditorNode::get_singleton()->show_warning(TTR("The geometry doesn't contain any faces."));
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("The geometry doesn't contain any faces."));
 			return false;
 		}
 
@@ -286,7 +286,7 @@ Particles3DEditorPlugin::Particles3DEditorPlugin() {
 	generate_seconds->set_value(2);
 	genvb->add_margin_child(TTR("Generation Time (sec):"), generate_seconds);
 
-	EditorNode::get_singleton()->get_gui_base()->add_child(generate_aabb);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(generate_aabb);
 
 	generate_aabb->connect(SceneStringName(confirmed), callable_mp(this, &Particles3DEditorPlugin::_generate_aabb));
 
@@ -294,12 +294,12 @@ Particles3DEditorPlugin::Particles3DEditorPlugin() {
 	Vector<StringName> valid_types;
 	valid_types.push_back("MeshInstance3D");
 	emission_tree_dialog->set_valid_types(valid_types);
-	EditorNode::get_singleton()->get_gui_base()->add_child(emission_tree_dialog);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(emission_tree_dialog);
 	emission_tree_dialog->connect("selected", callable_mp(this, &Particles3DEditorPlugin::_node_selected));
 
 	emission_dialog = memnew(ConfirmationDialog);
 	emission_dialog->set_title(TTR("Create Emitter"));
-	EditorNode::get_singleton()->get_gui_base()->add_child(emission_dialog);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(emission_dialog);
 
 	VBoxContainer *emd_vb = memnew(VBoxContainer);
 	emission_dialog->add_child(emd_vb);
@@ -338,7 +338,7 @@ bool GPUParticles3DEditorPlugin::_can_generate_points() const {
 	GPUParticles3D *particles = Object::cast_to<GPUParticles3D>(edited_node);
 	Ref<ParticleProcessMaterial> mat = particles->get_process_material();
 	if (mat.is_null()) {
-		EditorNode::get_singleton()->show_warning(TTR("A processor material of type 'ParticleProcessMaterial' is required."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("A processor material of type 'ParticleProcessMaterial' is required."));
 		return false;
 	}
 	return true;

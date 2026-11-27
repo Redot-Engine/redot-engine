@@ -418,7 +418,7 @@ void EditorInspectorPluginAudioStreamInteractive::parse_end(Object *p_object) {
 
 EditorInspectorPluginAudioStreamInteractive::EditorInspectorPluginAudioStreamInteractive() {
 	audio_stream_interactive_transition_editor = memnew(AudioStreamInteractiveTransitionEditor);
-	EditorNode::get_singleton()->get_gui_base()->add_child(audio_stream_interactive_transition_editor);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(audio_stream_interactive_transition_editor);
 }
 
 AudioStreamInteractiveEditorPlugin::AudioStreamInteractiveEditorPlugin() {

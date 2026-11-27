@@ -205,7 +205,7 @@ void GroupSettingsEditor::_modify_references(const StringName &p_name, const Str
 	}
 
 	int steps = scenes.size();
-	Vector<EditorData::EditedScene> edited_scenes = EditorNode::get_editor_data().get_edited_scenes();
+	Vector<EditorData::EditedScene> edited_scenes = EditorCore::get_singleton()->get_editor_data().get_edited_scenes();
 	for (const EditorData::EditedScene &es : edited_scenes) {
 		if (!es.root) {
 			continue;
@@ -238,7 +238,7 @@ void GroupSettingsEditor::_modify_references(const StringName &p_name, const Str
 		}
 	}
 	if (!edited_scenes_path.is_empty()) {
-		EditorNode::get_singleton()->save_scene_list(edited_scenes_path);
+		EditorSceneManager::get_singleton()->save_scene_list(edited_scenes_path);
 		SceneTreeDock::get_singleton()->get_tree_editor()->update_tree();
 	}
 

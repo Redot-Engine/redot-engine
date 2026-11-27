@@ -137,7 +137,7 @@ static void _editor_init() {
 #ifndef GDSCRIPT_NO_LSP
 	register_lsp_types();
 	GDScriptLanguageServer *lsp_plugin = memnew(GDScriptLanguageServer);
-	EditorNode::get_singleton()->add_editor_plugin(lsp_plugin);
+	EditorPluginManager::get_singleton()->add_editor_plugin(lsp_plugin);
 	Engine::get_singleton()->add_singleton(Engine::Singleton("GDScriptLanguageProtocol", GDScriptLanguageProtocol::get_singleton()));
 #endif // !GDSCRIPT_NO_LSP
 }
@@ -164,7 +164,7 @@ void initialize_gdscript_module(ModuleInitializationLevel p_level) {
 
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SERVERS) {
-		EditorNode::add_init_callback(_editor_init);
+		EditorPluginManager::add_init_callback(_editor_init);
 
 		gdscript_translation_parser_plugin.instantiate();
 		EditorTranslationParser::get_singleton()->add_parser(gdscript_translation_parser_plugin, EditorTranslationParser::STANDARD);

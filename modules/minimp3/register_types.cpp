@@ -61,7 +61,7 @@ void initialize_minimp3_module(ModuleInitializationLevel p_level) {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		GDREGISTER_CLASS(ResourceImporterMP3);
 
-		EditorNode::add_init_callback(_editor_init);
+		EditorPluginManager::add_init_callback(_editor_init);
 	}
 #endif
 }

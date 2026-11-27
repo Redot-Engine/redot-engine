@@ -224,7 +224,7 @@ void EditorSettingsDialog::popup_edit_settings() {
 }
 
 void EditorSettingsDialog::_undo_redo_callback(void *p_self, const String &p_name) {
-	EditorNode::get_log()->add_message(p_name, EditorLog::MSG_TYPE_EDITOR);
+	EditorCore::get_singleton()->get_log()->add_message(p_name, EditorLog::MSG_TYPE_EDITOR);
 }
 
 void EditorSettingsDialog::_notification(int p_what) {
@@ -284,12 +284,12 @@ void EditorSettingsDialog::shortcut_input(const Ref<InputEvent> &p_event) {
 		bool handled = false;
 
 		if (ED_IS_SHORTCUT("ui_undo", p_event)) {
-			EditorNode::get_singleton()->undo();
+			EditorSceneManager::get_singleton()->undo();
 			handled = true;
 		}
 
 		if (ED_IS_SHORTCUT("ui_redo", p_event)) {
-			EditorNode::get_singleton()->redo();
+			EditorSceneManager::get_singleton()->redo();
 			handled = true;
 		}
 
@@ -857,8 +857,8 @@ void EditorSettingsDialog::_advanced_toggled(bool p_button_pressed) {
 }
 
 void EditorSettingsDialog::_editor_restart() {
-	EditorNode::get_singleton()->save_all_scenes();
-	EditorNode::get_singleton()->restart_editor();
+	EditorSceneManager::get_singleton()->save_all_open_scenes();
+	EditorCore::get_singleton()->get_shell()->restart_editor();
 }
 
 void EditorSettingsDialog::_editor_restart_request() {
@@ -1020,7 +1020,7 @@ void EditorSettingsPropertyWrapper::_remove_override() {
 	ProjectSettings::get_singleton()->set_editor_setting_override(property, Variant());
 	ProjectSettings::get_singleton()->save();
 	EditorSettings::get_singleton()->mark_setting_changed(property);
-	EditorNode::get_singleton()->notify_settings_overrides_changed();
+	EditorCore::get_singleton()->notify_settings_overrides_changed();
 	_update_override();
 
 	if (requires_restart) {
@@ -1063,7 +1063,7 @@ void EditorSettingsPropertyWrapper::setup(const String &p_property, EditorProper
 	goto_button = memnew(Button);
 	goto_button->set_tooltip_text(TTRC("Go to the override in the Project Settings."));
 	override_info->add_child(goto_button);
-	goto_button->connect(SceneStringName(pressed), callable_mp(EditorNode::get_singleton(), &EditorNode::open_setting_override).bind(property), CONNECT_DEFERRED);
+	goto_button->connect(SceneStringName(pressed), callable_mp(EditorCore::get_singleton()->get_shell(), &EditorShell::open_setting_override).bind(property), CONNECT_DEFERRED);
 
 	remove_button = memnew(Button);
 	remove_button->set_tooltip_text(TTRC("Remove this override."));

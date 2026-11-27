@@ -119,7 +119,7 @@ static void _editor_init() {
 		}
 
 		OpenXREditorPlugin *openxr_plugin = memnew(OpenXREditorPlugin());
-		EditorNode::get_singleton()->add_editor_plugin(openxr_plugin);
+		EditorPluginManager::get_singleton()->add_editor_plugin(openxr_plugin);
 	}
 }
 #endif
@@ -271,7 +271,7 @@ void initialize_openxr_module(ModuleInitializationLevel p_level) {
 		GDREGISTER_CLASS(OpenXRInteractionProfileEditor);
 		GDREGISTER_CLASS(OpenXRBindingModifierEditor);
 
-		EditorNode::add_init_callback(_editor_init);
+		EditorPluginManager::add_init_callback(_editor_init);
 	}
 #endif
 }

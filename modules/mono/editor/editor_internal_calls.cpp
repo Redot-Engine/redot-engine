@@ -51,6 +51,7 @@
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/editor_main_screen.h"
 #include "editor/editor_node.h"
+#include "editor/editor_progress.h"
 #include "editor/export/lipo.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/run/editor_run_bar.h"
@@ -90,18 +91,18 @@ void godot_icall_GodotSharpDirs_CSharpProjectName(godot_string *r_dest) {
 void godot_icall_EditorProgress_Create(const godot_string *p_task, const godot_string *p_label, int32_t p_amount, bool p_can_cancel) {
 	String task = *reinterpret_cast<const String *>(p_task);
 	String label = *reinterpret_cast<const String *>(p_label);
-	EditorNode::progress_add_task(task, label, p_amount, (bool)p_can_cancel);
+	EditorProgressTracker::progress_add_task(task, label, p_amount, (bool)p_can_cancel);
 }
 
 void godot_icall_EditorProgress_Dispose(const godot_string *p_task) {
 	String task = *reinterpret_cast<const String *>(p_task);
-	EditorNode::progress_end_task(task);
+	EditorProgressTracker::progress_end_task(task);
 }
 
 bool godot_icall_EditorProgress_Step(const godot_string *p_task, const godot_string *p_state, int32_t p_step, bool p_force_refresh) {
 	String task = *reinterpret_cast<const String *>(p_task);
 	String state = *reinterpret_cast<const String *>(p_state);
-	return EditorNode::progress_task_step(task, state, p_step, (bool)p_force_refresh);
+	return EditorProgressTracker::progress_task_step(task, state, p_step, (bool)p_force_refresh);
 }
 
 void godot_icall_Internal_FullExportTemplatesDir(godot_string *r_dest) {
@@ -166,7 +167,7 @@ bool godot_icall_Internal_ScriptEditorEdit(Resource *p_resource, int32_t p_line,
 }
 
 void godot_icall_Internal_EditorNodeShowScriptScreen() {
-	EditorNode::get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
+	EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
 }
 
 void godot_icall_Internal_EditorRunPlay() {

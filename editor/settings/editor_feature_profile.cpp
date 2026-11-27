@@ -483,12 +483,12 @@ void EditorFeatureProfileManager::_erase_selected_profile() {
 void EditorFeatureProfileManager::_create_new_profile() {
 	String name = new_profile_name->get_text().strip_edges();
 	if (!name.is_valid_filename() || name.contains_char('.')) {
-		EditorNode::get_singleton()->show_warning(TTR("Profile must be a valid filename and must not contain '.'"));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Profile must be a valid filename and must not contain '.'"));
 		return;
 	}
 	String file = EditorPaths::get_singleton()->get_feature_profiles_dir().path_join(name + ".profile");
 	if (FileAccess::exists(file)) {
-		EditorNode::get_singleton()->show_warning(TTR("Profile with this name already exists."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Profile with this name already exists."));
 		return;
 	}
 
@@ -514,7 +514,7 @@ void EditorFeatureProfileManager::_hide_requested() {
 void EditorFeatureProfileManager::_fill_classes_from(TreeItem *p_parent, const String &p_class, const String &p_selected, int p_class_insert_index) {
 	TreeItem *class_item = class_list->create_item(p_parent, p_class_insert_index);
 	class_item->set_cell_mode(0, TreeItem::CELL_MODE_CHECK);
-	class_item->set_icon(0, EditorNode::get_singleton()->get_class_icon(p_class));
+	class_item->set_icon(0, EditorCore::get_singleton()->get_class_icon(p_class));
 	String text = p_class;
 
 	bool disabled = edited->is_class_disabled(p_class);
@@ -637,7 +637,7 @@ void EditorFeatureProfileManager::_class_list_item_selected() {
 			property->set_tooltip_text(0, tooltip);
 			property->set_metadata(0, name);
 			String icon_type = Variant::get_type_name(E.type);
-			property->set_icon(0, EditorNode::get_singleton()->get_class_icon(icon_type));
+			property->set_icon(0, EditorCore::get_singleton()->get_class_icon(icon_type));
 		}
 	}
 
@@ -822,14 +822,14 @@ void EditorFeatureProfileManager::_import_profiles(const Vector<String> &p_paths
 		Error err = profile->load_from_file(p_paths[i]);
 		String basefile = p_paths[i].get_file();
 		if (err != OK) {
-			EditorNode::get_singleton()->show_warning(vformat(TTR("File '%s' format is invalid, import aborted."), basefile));
+			EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("File '%s' format is invalid, import aborted."), basefile));
 			return;
 		}
 
 		String dst_file = EditorPaths::get_singleton()->get_feature_profiles_dir().path_join(basefile);
 
 		if (FileAccess::exists(dst_file)) {
-			EditorNode::get_singleton()->show_warning(vformat(TTR("Profile '%s' already exists. Remove it first before importing, import aborted."), basefile.get_basename()));
+			EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Profile '%s' already exists. Remove it first before importing, import aborted."), basefile.get_basename()));
 			return;
 		}
 	}
@@ -856,7 +856,7 @@ void EditorFeatureProfileManager::_export_profile(const String &p_path) {
 	ERR_FAIL_COND(edited.is_null());
 	Error err = edited->save_to_file(p_path);
 	if (err != OK) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("Error saving profile to path: '%s'."), p_path));
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Error saving profile to path: '%s'."), p_path));
 	}
 }
 

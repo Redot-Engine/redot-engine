@@ -40,6 +40,7 @@
 
 #include "core/math/math_fieldwise.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_undo_redo_manager.h"
 
 bool MultiNodeEdit::_set(const StringName &p_name, const Variant &p_value) {
@@ -47,7 +48,7 @@ bool MultiNodeEdit::_set(const StringName &p_name, const Variant &p_value) {
 }
 
 bool MultiNodeEdit::_set_impl(const StringName &p_name, const Variant &p_value, const String &p_field) {
-	Node *es = EditorNode::get_singleton()->get_edited_scene();
+	Node *es = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (!es) {
 		return false;
 	}
@@ -100,7 +101,7 @@ bool MultiNodeEdit::_set_impl(const StringName &p_name, const Variant &p_value, 
 }
 
 bool MultiNodeEdit::_get(const StringName &p_name, Variant &r_ret) const {
-	Node *es = EditorNode::get_singleton()->get_edited_scene();
+	Node *es = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (!es) {
 		return false;
 	}
@@ -131,7 +132,7 @@ bool MultiNodeEdit::_get(const StringName &p_name, Variant &r_ret) const {
 void MultiNodeEdit::_get_property_list(List<PropertyInfo> *p_list) const {
 	HashMap<String, PLData> usage;
 
-	Node *es = EditorNode::get_singleton()->get_edited_scene();
+	Node *es = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (!es) {
 		return;
 	}
@@ -188,7 +189,7 @@ String MultiNodeEdit::_get_editor_name() const {
 }
 
 bool MultiNodeEdit::_property_can_revert(const StringName &p_name) const {
-	Node *es = EditorNode::get_singleton()->get_edited_scene();
+	Node *es = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (!es) {
 		return false;
 	}
@@ -209,7 +210,7 @@ bool MultiNodeEdit::_property_can_revert(const StringName &p_name) const {
 }
 
 bool MultiNodeEdit::_property_get_revert(const StringName &p_name, Variant &r_property) const {
-	Node *es = EditorNode::get_singleton()->get_edited_scene();
+	Node *es = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (!es) {
 		return false;
 	}
@@ -243,7 +244,7 @@ void MultiNodeEdit::_notify_property_list_changed() {
 void MultiNodeEdit::add_node(const NodePath &p_node) {
 	nodes.push_back(p_node);
 
-	Node *es = EditorNode::get_singleton()->get_edited_scene();
+	Node *es = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (es) {
 		Node *node = es->get_node_or_null(p_node);
 		if (node) {
@@ -262,7 +263,7 @@ NodePath MultiNodeEdit::get_node(int p_index) const {
 }
 
 StringName MultiNodeEdit::get_edited_class_name() const {
-	Node *es = EditorNode::get_singleton()->get_edited_scene();
+	Node *es = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (!es) {
 		return SNAME("Node");
 	}

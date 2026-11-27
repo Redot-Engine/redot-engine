@@ -729,7 +729,7 @@ void EditorBuildProfileManager::_profile_action(int p_action) {
 			if (!profile_path->get_text().is_empty()) {
 				Error err = edited->save_to_file(profile_path->get_text());
 				if (err != OK) {
-					EditorNode::get_singleton()->show_warning(TTR("File saving failed."));
+					EditorCore::get_singleton()->get_shell()->show_warning(TTR("File saving failed."));
 				}
 				break;
 			}
@@ -764,7 +764,7 @@ void EditorBuildProfileManager::_find_files(EditorFileSystemDirectory *p_dir, co
 	for (int i = 0; i < p_dir->get_file_count(); i++) {
 		String p = p_dir->get_file_path(i);
 
-		if (EditorNode::get_singleton()->progress_task_step("detect_classes_from_project", p, 1)) {
+		if (EditorProgressTracker::progress_task_step("detect_classes_from_project", p, 1)) {
 			project_scan_canceled = true;
 			return;
 		}
@@ -830,7 +830,7 @@ void EditorBuildProfileManager::_find_files(EditorFileSystemDirectory *p_dir, co
 }
 
 void EditorBuildProfileManager::_detect_from_project() {
-	EditorNode::get_singleton()->progress_add_task("detect_classes_from_project", TTRC("Scanning Project for Used Classes"), 3, true);
+	EditorProgressTracker::progress_add_task("detect_classes_from_project", TTRC("Scanning Project for Used Classes"), 3, true);
 
 	HashMap<String, DetectedFile> previous_file_cache;
 
@@ -858,12 +858,12 @@ void EditorBuildProfileManager::_detect_from_project() {
 
 	if (project_scan_canceled) {
 		project_scan_canceled = false;
-		EditorNode::get_singleton()->progress_end_task("detect_classes_from_project");
+		EditorProgressTracker::progress_end_task("detect_classes_from_project");
 
 		return;
 	}
 
-	EditorNode::get_singleton()->progress_task_step("detect_classes_from_project", TTRC("Processing Classes Found"), 2);
+	EditorProgressTracker::progress_task_step("detect_classes_from_project", TTRC("Processing Classes Found"), 2);
 
 	HashSet<StringName> used_classes;
 	LocalVector<String> used_build_deps;
@@ -1047,7 +1047,7 @@ void EditorBuildProfileManager::_detect_from_project() {
 		edited->set_disable_build_option(EditorBuildProfile::BUILD_OPTION_TEXT_SERVER_FALLBACK, false);
 	}
 
-	EditorNode::get_singleton()->progress_end_task("detect_classes_from_project");
+	EditorProgressTracker::progress_end_task("detect_classes_from_project");
 }
 
 void EditorBuildProfileManager::_action_confirm() {
@@ -1083,7 +1083,7 @@ void EditorBuildProfileManager::_hide_requested() {
 void EditorBuildProfileManager::_fill_classes_from(TreeItem *p_parent, const String &p_class, const String &p_selected) {
 	TreeItem *class_item = class_list->create_item(p_parent);
 	class_item->set_cell_mode(0, TreeItem::CELL_MODE_CHECK);
-	class_item->set_icon(0, EditorNode::get_singleton()->get_class_icon(p_class));
+	class_item->set_icon(0, EditorCore::get_singleton()->get_class_icon(p_class));
 	const String &text = p_class;
 
 	bool disabled = edited->is_class_disabled(p_class);
@@ -1255,7 +1255,7 @@ void EditorBuildProfileManager::_import_profile(const String &p_path) {
 	Error err = profile->load_from_file(p_path);
 	String basefile = p_path.get_file();
 	if (err != OK) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("File '%s' format is invalid, import aborted."), basefile));
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("File '%s' format is invalid, import aborted."), basefile));
 		return;
 	}
 
@@ -1270,7 +1270,7 @@ void EditorBuildProfileManager::_export_profile(const String &p_path) {
 	ERR_FAIL_COND(edited.is_null());
 	Error err = edited->save_to_file(p_path);
 	if (err != OK) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("Error saving profile to path: '%s'."), p_path));
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Error saving profile to path: '%s'."), p_path));
 	} else {
 		profile_path->set_text(p_path);
 		EditorSettings::get_singleton()->set_project_metadata("build_profile", "last_file_path", p_path);

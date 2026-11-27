@@ -39,6 +39,7 @@
 #include "navigation_region_3d_editor_plugin.h"
 
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/inspector/multi_node_edit.h"
 #include "editor/scene/3d/node_3d_editor_plugin.h"
@@ -279,7 +280,7 @@ void NavigationRegion3DEditorPlugin::edit(Object *p_object) {
 	}
 
 	Ref<MultiNodeEdit> mne = Ref<MultiNodeEdit>(p_object);
-	Node *edited_scene = EditorNode::get_singleton()->get_edited_scene();
+	Node *edited_scene = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (mne.is_valid() && edited_scene) {
 		for (int i = 0; i < mne->get_node_count(); i++) {
 			NavigationRegion3D *region = Object::cast_to<NavigationRegion3D>(edited_scene->get_node(mne->get_node(i)));
@@ -298,7 +299,7 @@ bool NavigationRegion3DEditorPlugin::handles(Object *p_object) const {
 	}
 
 	Ref<MultiNodeEdit> mne = Ref<MultiNodeEdit>(p_object);
-	Node *edited_scene = EditorNode::get_singleton()->get_edited_scene();
+	Node *edited_scene = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (mne.is_valid() && edited_scene) {
 		for (int i = 0; i < mne->get_node_count(); i++) {
 			if (Object::cast_to<NavigationRegion3D>(edited_scene->get_node(mne->get_node(i)))) {
@@ -322,7 +323,7 @@ void NavigationRegion3DEditorPlugin::make_visible(bool p_visible) {
 
 NavigationRegion3DEditorPlugin::NavigationRegion3DEditorPlugin() {
 	navigation_region_editor = memnew(NavigationRegion3DEditor);
-	EditorNode::get_singleton()->get_gui_base()->add_child(navigation_region_editor);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(navigation_region_editor);
 	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, navigation_region_editor->bake_hbox);
 	navigation_region_editor->hide();
 	navigation_region_editor->bake_hbox->hide();
