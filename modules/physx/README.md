@@ -86,6 +86,51 @@ On Linux the template binary finds the `.so` files next to itself (the build
 sets an `$ORIGIN` rpath; the Flow loader opens them by absolute path). Other
 platforms (Android, macOS, web) are not supported by the module yet.
 
+## Diagnosing runtime problems
+
+A PhysX or Blast runtime library with the right **name** but the wrong
+**content** — a leftover from another project, an SDK reinstall, an antivirus
+quarantine restore — fails in confusing ways. The classic case on Linux: an
+older `libNvBlastExtShaders.so` on `LD_LIBRARY_PATH` or in a system directory
+is searched **before** the binary's own folder, shadows the correct copy, and
+the editor dies at startup with
+
+```
+symbol lookup error: ./redot.linuxbsd.editor.x86_64.mono: undefined symbol: NvBlastExtFalloffSubgraphShader
+```
+
+even though the correct library sits right next to it.
+
+The editor defends on its own: every runtime check logs which file each
+loaded PhysX/Blast library resolved from and verifies it against the
+manifest's hashes (`PhysX: runtime library ... loaded from ...`), a mismatch
+is reported as a warning naming the offending path, and a file beside the
+editor binary that no longer matches the installed file list is offered a
+hash-verified reinstall (`Download and Restart`) that replaces only the
+mismatching files.
+
+To diagnose by hand on Linux:
+
+```bash
+# Which copy of each library the loader actually picked up. Search order is
+# LD_LIBRARY_PATH first, then the binary's own folder ($ORIGIN), then the
+# system paths -- so a stale copy in any of the other locations wins over
+# the one next to the binary:
+ldd ./redot.linuxbsd.editor.x86_64.mono | grep -iE 'blast|physx|nvflow'
+
+# The loader's full decision trace, including every candidate it rejected:
+LD_DEBUG=libs ./redot.linuxbsd.editor.x86_64.mono 2>&1 | grep -iE 'blast|physx|nvflow'
+```
+
+Fix: remove the stale copies the trace points at (or unset
+`LD_LIBRARY_PATH` for the editor), and if the file next to the binary is
+itself the wrong one, reinstall it — either through the editor's offer or by
+hand from the [redot-physx-runtime Releases](https://github.com/Vlado-VG/redot-physx-runtime/releases)
+bundle, which verifies every file's SHA-256 against the manifest on the way
+in. The installed bundle's expected hashes are recorded next to the libraries
+(`.physx-runtime-files`), and `PhysXRuntimeManager.get_stale_runtime_files()`
+reports any required file that no longer matches them.
+
 ## Credits
 **Credits** to [**Uno "Wild-ox"**](https://github.com/uno1982) for:
 MPM shaders, a lot of fixes and implementations for water, 2W/4W vehicles, tank, boat, foam, CompositorEffects and more features. Visit his Godot upstream (4.7+) PhysX module at:

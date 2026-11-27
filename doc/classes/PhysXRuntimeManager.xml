@@ -26,6 +26,12 @@
 				Extracts the manifest-listed files from the bundle zip at [param zip_path] into [param target_dir], verifying each file's SHA-256 (from [param bundle] [code]files[].sha256[/code]) as it is written. On a mismatch or read failure, the offending file is removed and every file written by this call is rolled back, leaving no half-updated mix of binaries. Returns an [enum Error] code.
 			</description>
 		</method>
+		<method name="get_installed_file_list" qualifiers="static">
+			<return type="Dictionary" />
+			<description>
+				Returns the file list an install recorded next to the runtime libraries ([code]{runtime_version, files: {name: sha256}}[/code]), which the offline integrity checks use as their source of expected hashes. An empty [Dictionary] when no install through this flow has happened (e.g. a repo-staged editor) or the list is unreadable.
+			</description>
+		</method>
 		<method name="get_installed_runtime_version" qualifiers="static">
 			<return type="String" />
 			<description>
@@ -42,6 +48,12 @@
 			<return type="PackedStringArray" />
 			<description>
 				Returns the runtime file names that must sit next to the editor executable for PhysX and Blast to work, for the current platform.
+			</description>
+		</method>
+		<method name="get_stale_runtime_files" qualifiers="static">
+			<return type="PackedStringArray" />
+			<description>
+				Returns the required runtime files that are present but whose content does not match the known-good hashes (the manifest parsed this session, or the installed file list) — the same-named leftover or corrupted library that would silently shadow the real one at load time. Files with no known expected hash cannot be verified and are not reported; hashing can take a moment on large libraries.
 			</description>
 		</method>
 		<method name="install_missing_files" qualifiers="static">

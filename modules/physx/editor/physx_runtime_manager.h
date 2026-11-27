@@ -33,6 +33,7 @@
 #pragma once
 
 #include "core/object/class_db.h"
+#include "core/templates/hash_map.h"
 
 // Tracks the PhysX runtime binaries that must sit next to the editor
 // executable (PhysXGpu_64.dll and the Blast DLLs on Windows;
@@ -40,6 +41,17 @@
 // delay-loaded (Windows) or without a static import (Linux -- the SDK loads
 // the shared object itself), so it starts without them; the module uses this
 // manager to detect the gap and offer the download-and-restart flow.
+//
+// The flow's failure class that existence checks alone cannot see: a file
+// with the RIGHT name but the WRONG content (a leftover from another
+// project, an SDK reinstall, an antivirus restore). On Linux a stale
+// libNvBlastExtShaders.so from LD_LIBRARY_PATH or a system directory shadows
+// the one beside the binary and kills the editor at exec ("undefined symbol:
+// NvBlastExtFalloffSubgraphShader"). The integrity surface below detects it:
+// extract_bundle records the installed files' hashes, the loaded-library
+// diagnostic logs which file each library resolved from, and
+// get_stale_runtime_files()/the editor's integrity probe compare content
+// against the known-good hashes and offer a hash-verified reinstall.
 class PhysXRuntimeManager : public Object {
 	GDCLASS(PhysXRuntimeManager, Object);
 
@@ -69,6 +81,12 @@ public:
 	// executable's directory.
 	static PackedStringArray get_missing_runtime_files();
 
+	// Required files that ARE present but whose content does not match the
+	// known-good hashes -- the manifest parsed this session, or, offline, the
+	// file list the last install wrote (".physx-runtime-files"). Files with
+	// no known expected hash cannot be verified and are not reported.
+	static PackedStringArray get_stale_runtime_files();
+
 	static bool is_runtime_complete();
 
 	// Script-facing stub: the editor plugin's dialog drives the real flow
@@ -96,6 +114,8 @@ public:
 	// p_target_dir -- only a marker in the editor executable's directory is
 	// applied automatically at startup (extracting elsewhere warns and never
 	// applies); complete_pending_swaps() applies it at the next editor start.
+	// On success the installed files' hashes are also recorded next to them
+	// (".physx-runtime-files") for the offline integrity checks above.
 	static Error extract_bundle(const String &p_zip_path, const Dictionary &p_bundle, const String &p_target_dir);
 
 	// --- Installed-version tracking (the updater) ---
@@ -109,6 +129,27 @@ public:
 	// empty version (a manifest without the field leaves the marker alone);
 	// a failure (read-only install directory) is reported, not swallowed.
 	static void write_runtime_version_marker(const String &p_version);
+
+	// The file list an install recorded next to the libraries
+	// (".physx-runtime-files": {runtime_version, files: {name: sha256}}) --
+	// the offline source of expected hashes for get_stale_runtime_files() and
+	// the loaded-library diagnostic. Empty Dictionary when no install through
+	// this flow has happened (e.g. a repo-staged editor).
+	static Dictionary get_installed_file_list();
+
+	// Feeds the session's manifest file hashes (name -> sha256) into the
+	// integrity surface: they take precedence over the installed file list
+	// until the next manifest is parsed. Called by the editor plugin after a
+	// version check; a manifest whose runtime_version disagrees with
+	// LINKED_RUNTIME_VERSION must not be fed here.
+	static void set_manifest_file_hashes(const Dictionary &p_bundle);
+
+	// Prints one line per loaded runtime library: which file the loader
+	// actually resolved it from (the F-36 shadowing evidence), plus its hash
+	// compared against p_expected (or the installed file list) when known.
+	// Safe to call from any thread; hashes files, so the editor plugin runs
+	// it on its integrity probe rather than the main thread.
+	static void log_loaded_runtime_libraries(const HashMap<String, String> &p_expected = HashMap<String, String>());
 
 	// Applies any pending-swap entries recorded by extract_bundle (verified
 	// "<name>.part" files whose target was in use). Runs at editor startup,

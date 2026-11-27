@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include "core/templates/hash_map.h"
 #include "editor/plugins/editor_plugin.h"
 #include "editor/scene/3d/gizmos/gizmo_3d_helper.h"
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
@@ -235,15 +236,21 @@ class PhysXEditorPlugin : public EditorPlugin {
 	// the installed files against the manifest by hash. The comparison can
 	// touch hundreds of MB, so it runs on a worker thread and comes back via
 	// call_deferred; joined in the destructor (and a no-threads build runs it
-	// inline).
-	struct VersionHashProbe;
+	// inline). The same probe doubles as the runtime integrity check: it
+	// hashes the files beside the executable against the known-good hashes
+	// (the manifest, or offline the installed file list) and logs which file
+	// each loaded runtime library resolved from -- a stale same-named library
+	// is offered a hash-verified reinstall instead of shadowing (F-36).
+	struct RuntimeIntegrityProbe;
 	Thread *version_hash_thread = nullptr;
-	VersionHashProbe *version_hash_probe = nullptr;
+	RuntimeIntegrityProbe *version_hash_probe = nullptr;
 
 	void _start_version_check();
 	void _on_version_check_completed(int p_result, int p_code, const PackedStringArray &p_headers, const PackedByteArray &p_body);
 	void _on_version_check_transport_failed();
 	void _offer_runtime_update(const String &p_installed, const String &p_available);
+	void _offer_runtime_reinstall(const String &p_name, const String &p_path, const String &p_expected, const String &p_actual);
+	void _spawn_version_probe(const HashMap<String, String> &p_expected, bool p_integrity, const String &p_available);
 	static void _version_hash_probe(void *p_user);
 	void _finish_version_hash_probe();
 

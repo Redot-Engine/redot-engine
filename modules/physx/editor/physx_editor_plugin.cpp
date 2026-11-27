@@ -739,6 +739,30 @@ void PhysXEditorPlugin::_check_runtime_files() {
 		return;
 	}
 
+	// All required files present: verify their content against the file list
+	// the last install wrote (offline, no manifest fetch needed) before
+	// trusting them. A same-named library whose content no longer matches --
+	// a leftover from another project, an SDK reinstall, an antivirus
+	// restore -- is offered a hash-verified reinstall instead of silently
+	// shadowing the good one at load time. Without an installed file list
+	// (repo-staged or manual runtimes) the version check below verifies
+	// against the manifest once it arrives.
+	if (!install_active && version_hash_thread == nullptr) {
+		HashMap<String, String> expected;
+		const Dictionary list = PhysXRuntimeManager::get_installed_file_list();
+		if (!list.is_empty()) {
+			const Dictionary files = list["files"];
+			for (const String &name : PhysXRuntimeManager::get_required_runtime_files()) {
+				if (files.has(name)) {
+					expected[name] = String(files[name]).to_lower();
+				}
+			}
+		}
+		if (!expected.is_empty()) {
+			_spawn_version_probe(expected, true, String());
+		}
+	}
+
 	// Files complete: still check the manifest for a NEWER runtime. This is
 	// the updater -- without it, an editor linked against a newer SDK keeps
 	// running old DLLs (a GPU-solver protocol mismatch) forever, because the
@@ -748,17 +772,77 @@ void PhysXEditorPlugin::_check_runtime_files() {
 	}
 }
 
-// The manifest-vs-disk comparison state for a pre-versioning install (see
-// _on_version_check_completed): filled on the main thread, consumed by the
-// worker thread, applied back on the main thread via _finish_version_hash_probe.
-struct PhysXEditorPlugin::VersionHashProbe {
+// The runtime integrity / hash-comparison state (see _spawn_version_probe):
+// filled on the main thread, consumed by the worker thread, applied back on
+// the main thread via _finish_version_hash_probe. Two modes:
+//  - integrity (p_integrity): verify the files beside the executable against
+//    the known-good hashes and offer a hash-verified reinstall on mismatch
+//    (F-36: a stale same-named library must not silently shadow);
+//  - adopt (default): the pre-versioning flow -- mismatch offers an update,
+//    a full match adopts the manifest's runtime_version as the marker.
+// Both modes log which file each loaded runtime library resolved from when
+// expected hashes are known (the loaded-library diagnostic).
+struct PhysXEditorPlugin::RuntimeIntegrityProbe {
 	PhysXEditorPlugin *plugin = nullptr;
 	String exe_dir;
-	String available;
+	String available; // manifest runtime_version (adopt mode); empty otherwise
+	bool integrity = false;
+	bool scan_loaded = false;
+	HashMap<String, String> expected; // loaded-library hash comparison
 	PackedStringArray names;
 	PackedStringArray hashes;
 	bool mismatch = false;
+	String bad_name;
+	String bad_path;
+	String bad_expected;
+	String bad_actual;
 };
+
+void PhysXEditorPlugin::_spawn_version_probe(const HashMap<String, String> &p_expected, bool p_integrity, const String &p_available) {
+	if (version_hash_thread != nullptr) {
+		return; // a probe from an earlier check is somehow still running
+	}
+	if (install_active) {
+		return; // an install is in progress; its own verification governs
+	}
+	version_hash_probe = memnew(RuntimeIntegrityProbe);
+	version_hash_probe->plugin = this;
+	version_hash_probe->exe_dir = OS::get_singleton()->get_executable_path().get_base_dir();
+	version_hash_probe->available = p_available;
+	version_hash_probe->integrity = p_integrity;
+	version_hash_probe->expected = p_expected;
+	version_hash_probe->scan_loaded = !p_expected.is_empty();
+	version_hash_probe->mismatch = false;
+	for (const String &name : PhysXRuntimeManager::get_required_runtime_files()) {
+		// Only files this build actually stages are checked (UPD-7): a
+		// Blast/Flow-disabled build never uses the rest, and requiring them
+		// would offer a spurious reinstall every session. The full list is
+		// still installed when the user accepts.
+		const String *hash = p_expected.getptr(name);
+		if (hash != nullptr) {
+			version_hash_probe->names.push_back(name);
+			version_hash_probe->hashes.push_back(*hash);
+		}
+	}
+	if (version_hash_probe->names.is_empty()) {
+		// Nothing this build stages is verifiable against the known hashes.
+		if (!p_integrity && !p_available.is_empty()) {
+			// Adopt the version so the check does not re-run every session.
+			PhysXRuntimeManager::write_runtime_version_marker(p_available);
+		}
+		memdelete(version_hash_probe);
+		version_hash_probe = nullptr;
+		return;
+	}
+#ifdef THREADS_ENABLED
+	version_hash_thread = memnew(Thread);
+	version_hash_thread->start(&PhysXEditorPlugin::_version_hash_probe, version_hash_probe);
+#else
+	// No-threads build: no worker to offload to, run it inline.
+	_version_hash_probe(version_hash_probe);
+	_finish_version_hash_probe();
+#endif
+}
 
 void PhysXEditorPlugin::_start_version_check() {
 	update_check_active = true;
@@ -808,7 +892,6 @@ void PhysXEditorPlugin::_on_version_check_completed(int p_result, int p_code, co
 	if (available.is_empty()) {
 		return; // a manifest without the field cannot drive the updater
 	}
-	const String installed = PhysXRuntimeManager::get_installed_runtime_version();
 	if (available != String(PhysXRuntimeManager::LINKED_RUNTIME_VERSION)) {
 		// The manifest targets a different engine build. Installing it would
 		// put libraries this build's delay-imports cannot be guaranteed to
@@ -820,67 +903,56 @@ void PhysXEditorPlugin::_on_version_check_completed(int p_result, int p_code, co
 		WARN_PRINT_ONCE(vformat("PhysX: the runtime manifest offers version '%s' but this editor build expects '%s'; the update check is skipped. The runtime repository and the engine builds must move in lockstep.", available, String(PhysXRuntimeManager::LINKED_RUNTIME_VERSION)));
 		return;
 	}
-	if (!installed.is_empty() && installed == available) {
-		return; // up to date
-	}
-	if (installed.is_empty()) {
-		// Pre-versioning install (or a manual one): the marker can't say what
-		// is on disk, so hash the files against the manifest. Only files this
-		// build actually stages are checked -- a Blast/Flow-disabled build
-		// never uses the rest, and requiring them offered a spurious update
-		// every session. The full list is still installed when the user
-		// accepts. The comparison can touch hundreds of MB, so it runs on a
-		// worker thread instead of stalling the editor.
-		Dictionary want_hash;
+	// The manifest matches this build: its file hashes are the known-good set
+	// for the integrity checks (get_stale_runtime_files, the loaded-library
+	// diagnostic) until the next manifest is parsed.
+	PhysXRuntimeManager::set_manifest_file_hashes(bundle);
+	HashMap<String, String> expected;
+	{
 		Array files = bundle["files"];
 		for (int i = 0; i < files.size(); i++) {
 			Dictionary entry = files[i];
-			want_hash[entry["name"]] = String(entry["sha256"]);
+			expected[entry["name"]] = String(entry["sha256"]).to_lower();
 		}
-		PackedStringArray names;
-		PackedStringArray hashes;
-		for (const String &name : PhysXRuntimeManager::get_required_runtime_files()) {
-			if (want_hash.has(name)) {
-				names.push_back(name);
-				hashes.push_back(want_hash[name]);
-			}
-		}
-		if (names.is_empty()) {
-			// Nothing this build stages is verifiable against the manifest:
-			// adopt the version so the check does not re-run every session.
-			PhysXRuntimeManager::write_runtime_version_marker(available);
-			return;
-		}
-		if (version_hash_thread != nullptr) {
-			return; // a probe from an earlier check is somehow still running
-		}
-		version_hash_probe = memnew(VersionHashProbe);
-		version_hash_probe->plugin = this;
-		version_hash_probe->exe_dir = OS::get_singleton()->get_executable_path().get_base_dir();
-		version_hash_probe->available = available;
-		version_hash_probe->names = names;
-		version_hash_probe->hashes = hashes;
-		version_hash_probe->mismatch = false;
-#ifdef THREADS_ENABLED
-		version_hash_thread = memnew(Thread);
-		version_hash_thread->start(&PhysXEditorPlugin::_version_hash_probe, version_hash_probe);
-#else
-		// No-threads build: no worker to offload to, run it inline.
-		_version_hash_probe(version_hash_probe);
-		_finish_version_hash_probe();
-#endif
+	}
+	const String installed = PhysXRuntimeManager::get_installed_runtime_version();
+	if (!installed.is_empty() && installed == available) {
+		// Up to date by the marker -- but the files themselves may still be
+		// stale or corrupted (the same name, different content). Verify them
+		// against the manifest and offer a hash-verified reinstall when they
+		// do not match; a match stays quiet.
+		_spawn_version_probe(expected, true, available);
+		return;
+	}
+	if (installed.is_empty()) {
+		// Pre-versioning install (or a manual one): the marker can't say what
+		// is on disk, so hash the files against the manifest on the probe
+		// thread. All matching means the current bundle is already installed
+		// (the marker is adopted); anything else is an update offer. The full
+		// list is still installed when the user accepts.
+		_spawn_version_probe(expected, false, available);
 		return;
 	}
 	_offer_runtime_update(installed, available);
 }
 
 void PhysXEditorPlugin::_version_hash_probe(void *p_user) {
-	VersionHashProbe *probe = static_cast<VersionHashProbe *>(p_user);
+	RuntimeIntegrityProbe *probe = static_cast<RuntimeIntegrityProbe *>(p_user);
+	if (probe->scan_loaded) {
+		// Which file the loader actually resolved each runtime library from
+		// -- the F-36 shadowing evidence -- plus its hash against the
+		// known-good set.
+		PhysXRuntimeManager::log_loaded_runtime_libraries(probe->expected);
+	}
 	for (int i = 0; i < probe->names.size() && !probe->mismatch; i++) {
 		const String path = probe->exe_dir.path_join(probe->names[i]);
-		if (!FileAccess::exists(path) ||
-				PhysXRuntimeManager::sha256_file(path).to_lower() != probe->hashes[i].to_lower()) {
+		const String got = PhysXRuntimeManager::sha256_file(path);
+		if (got.is_empty() || got.to_lower() != probe->hashes[i].to_lower()) {
 			probe->mismatch = true;
+			probe->bad_name = probe->names[i];
+			probe->bad_path = path;
+			probe->bad_expected = probe->hashes[i];
+			probe->bad_actual = got;
 		}
 	}
 	// Off the main thread: apply the result deferred (thread-safe; the call is
@@ -900,17 +972,63 @@ void PhysXEditorPlugin::_finish_version_hash_probe() {
 	}
 #endif
 	const bool mismatch = version_hash_probe->mismatch;
+	const bool integrity = version_hash_probe->integrity;
 	const String available = version_hash_probe->available;
+	const String bad_name = version_hash_probe->bad_name;
+	const String bad_path = version_hash_probe->bad_path;
+	const String bad_expected = version_hash_probe->bad_expected;
+	const String bad_actual = version_hash_probe->bad_actual;
 	memdelete(version_hash_probe);
 	version_hash_probe = nullptr;
 	if (mismatch) {
-		// All matching means the current bundle is already installed --
-		// anything else is an update offer (the installed version is unknown
-		// here: there was no marker, hence the probe).
-		_offer_runtime_update(String(), available);
+		if (integrity) {
+			// A file beside the executable no longer matches the known-good
+			// hashes: offer the hash-verified reinstall (the extraction
+			// replaces only the files that do not match the manifest).
+			_offer_runtime_reinstall(bad_name, bad_path, bad_expected, bad_actual);
+		} else {
+			// Adopt mode: the installed version is unknown (no marker), so
+			// anything other than a full match is an update offer.
+			_offer_runtime_update(String(), available);
+		}
 		return;
 	}
-	PhysXRuntimeManager::write_runtime_version_marker(available);
+	if (!integrity && !available.is_empty()) {
+		PhysXRuntimeManager::write_runtime_version_marker(available);
+	}
+}
+
+void PhysXEditorPlugin::_offer_runtime_reinstall(const String &p_name, const String &p_path, const String &p_expected, const String &p_actual) {
+	if (!is_inside_tree() || install_active) {
+		return;
+	}
+	const String detail = vformat(
+			TTR("PhysX runtime file '%1$s' (%2$s) does not match the runtime manifest:\n    expected sha256 %3$s\n    got sha256 %4$s"),
+			p_name, p_path, p_expected, p_actual);
+	print_line(detail);
+	// Reuse the missing-files offer: its confirm starts the same download-
+	// and-restart flow, whose hash-skip extraction replaces only the files
+	// that do not match the manifest.
+	if (runtime_missing_dialog) {
+		runtime_missing_dialog->set_title(TTR("PhysX runtime files out of date"));
+		runtime_missing_dialog->set_text(vformat(
+				TTR("The last runtime check found a mismatch:\n\n%1$s\n\nReinstall the PhysX runtime now? Only the files that do not match are replaced, and the editor restarts afterwards."),
+				detail));
+		if (!runtime_missing_dialog->is_visible()) {
+			runtime_missing_dialog->popup_centered();
+		}
+		return;
+	}
+	runtime_missing_dialog = memnew(ConfirmationDialog);
+	runtime_missing_dialog->set_title(TTR("PhysX runtime files out of date"));
+	runtime_missing_dialog->set_text(vformat(
+			TTR("%1$s\n\nReinstall the PhysX runtime now? Only the files that do not match are replaced, and the editor restarts afterwards. You can also install them manually later (see the redot-physx-runtime Releases page)."),
+			detail));
+	runtime_missing_dialog->set_ok_button_text(TTR("Download and Restart"));
+	runtime_missing_dialog->set_min_size(Vector2i(520, 0));
+	EditorNode::get_singleton()->get_gui_base()->add_child(runtime_missing_dialog);
+	runtime_missing_dialog->connect("confirmed", callable_mp(this, &PhysXEditorPlugin::_start_install_from_missing));
+	runtime_missing_dialog->popup_centered();
 }
 
 void PhysXEditorPlugin::_offer_runtime_update(const String &p_installed, const String &p_available) {

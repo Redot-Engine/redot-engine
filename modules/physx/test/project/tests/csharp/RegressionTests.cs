@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections;
+using System.IO;
 
 namespace PhysxTestProject.Tests;
 
@@ -33,6 +34,7 @@ internal static class RegressionTests
 		//        position at that time), deterministically. SPACE-009 now waits for touchdown.
 		s.Add("PHYSX-REG-0014", "REG-0014: mesh shape on a default-rigid body must not crash the engine (FIXED — guard)", MeshOnDynamicNoCrash);
 		s.Add("PHYSX-REG-0034", "REG-0034: heightmap attached data-less collides once shape_set_data arrives (WorldScape3D fall-through — FIXED — guard)", HeightmapLateDataAttach);
+		s.Add("PHYSX-RT-002", "RT-002: a same-named runtime file whose content mismatches the installed list is reported stale (F-36 shadowing hardening — guard)", RuntimeFileStaleDetection);
 		// ---- FIXED (kept as permanent regression guards; must stay PASSING):
 		// REG-0010 vehicle subsystem ...... FIXED 2026-08-21 (missing RigidBodyComponent in
 		//        the vehicle2 sequence + vehicle not registered with the chassis's space;
@@ -305,5 +307,73 @@ internal static class RegressionTests
 		var hit = w.Ray(new Vector3(0, 10, 0), new Vector3(0, -10, 0));
 		Assert.Expect(hit.Count > 0 && hit["rid"].AsRid() == body, "late-data heightmap collides after shape_set_data");
 		Assert.ExpectNear(hit.Count > 0 ? hit["position"].AsVector3().Y : -1f, 2f, 0.15f, "ray hits the heightfield surface");
+	}
+
+	static IEnumerator RuntimeFileStaleDetection()
+	{
+		// F-36 hardening: the Linux reporter's editor died at exec with
+		// "undefined symbol: NvBlastExtFalloffSubgraphShader" because a stale
+		// libNvBlastExtShaders.so shadowed the correct one. Existence checks
+		// cannot see wrong-content files, so get_stale_runtime_files()
+		// compares the required files' content against the known-good hashes
+		// -- the installed file list an install records beside them
+		// (".physx-runtime-files"). This test tamper-records the first
+		// required file's hash beside the executable and expects the
+		// detection, then proves the real hash reports nothing and unknown
+		// files are skipped, restoring the directory afterwards.
+		string exeDir = OS.GetExecutablePath().GetBaseDir();
+		string listPath = Path.Join(exeDir, ".physx-runtime-files");
+		string saved = File.Exists(listPath) ? File.ReadAllText(listPath) : null;
+		try
+		{
+			var required = PhysXRuntimeManager.GetRequiredRuntimeFiles();
+			Assert.Expect(required.Length > 0, "this build requires at least one runtime file");
+			string probeName = required[0];
+			string probePath = Path.Join(exeDir, probeName);
+			Assert.Expect(File.Exists(probePath), probeName + " is present beside the executable");
+
+			WriteFileList(listPath, probeName, new string('0', 64));
+			var stale = PhysXRuntimeManager.GetStaleRuntimeFiles();
+			Assert.Expect(Contains(stale, probeName), "content mismatching the installed list is reported stale");
+
+			WriteFileList(listPath, probeName, PhysXRuntimeManager.Sha256File(probePath));
+			stale = PhysXRuntimeManager.GetStaleRuntimeFiles();
+			Assert.Expect(!Contains(stale, probeName), "the installed list holding the file's real hash reports nothing");
+
+			WriteFileList(listPath, "definitely-not-a-runtime-file.dll", new string('a', 64));
+			stale = PhysXRuntimeManager.GetStaleRuntimeFiles();
+			Assert.Expect(!Contains(stale, probeName), "files without a known expected hash are not reported stale");
+		}
+		finally
+		{
+			if (saved != null)
+			{
+				File.WriteAllText(listPath, saved);
+			}
+			else
+			{
+				File.Delete(listPath);
+			}
+		}
+		yield break;
+	}
+
+	static void WriteFileList(string path, string name, string hash)
+	{
+		// The same shape extract_bundle records: {runtime_version, files:{name:sha}}.
+		string json = "{\n  \"runtime_version\": \"0.0.0-test\",\n  \"files\": {\n    \"" + name + "\": \"" + hash + "\"\n  }\n}";
+		File.WriteAllText(path, json);
+	}
+
+	static bool Contains(string[] list, string value)
+	{
+		foreach (string item in list)
+		{
+			if (item == value)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 }
