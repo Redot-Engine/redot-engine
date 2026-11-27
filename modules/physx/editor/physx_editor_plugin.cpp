@@ -45,10 +45,12 @@
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
+#include "core/os/thread.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/label.h"
 #include "scene/gui/progress_bar.h"
 #include "scene/main/http_request.h"
+#include "scene/main/scene_tree.h"
 
 #include "core/config/project_settings.h"
 
@@ -700,14 +702,23 @@ void PhysXEditorPlugin::_check_runtime_files() {
 	// Pending renames from a runtime update whose target was in use land here,
 	// before any physics has had a chance to load the (delay-loaded) DLLs.
 	PhysXRuntimeManager::complete_pending_swaps();
+	const bool runtime_complete = PhysXRuntimeManager::is_runtime_complete();
 	if (runtime_missing_dialog) {
 		// Offer already built: re-pop it while the files stay missing (the
 		// engine moved away and back, or the user dismissed it earlier). Not
 		// while an install is running.
-		if (!runtime_missing_dialog->is_visible() && !install_active && !PhysXRuntimeManager::is_runtime_complete()) {
+		if (!runtime_missing_dialog->is_visible() && !install_active && !runtime_complete) {
 			runtime_missing_dialog->popup_centered();
 		}
-		return;
+		if (!runtime_complete) {
+			return;
+		}
+		// The files are complete now -- installed manually, or by a script,
+		// without a restart: fall through to the updater instead of latching
+		// off for the rest of the session.
+		if (runtime_missing_dialog->is_visible()) {
+			runtime_missing_dialog->hide();
+		}
 	}
 	if (!is_inside_tree()) {
 		return; // popup_centered() aborts out-of-tree; never build the offer unshown.
@@ -722,7 +733,7 @@ void PhysXEditorPlugin::_check_runtime_files() {
 		runtime_missing_dialog->set_ok_button_text(TTR("Download and Restart"));
 		runtime_missing_dialog->set_min_size(Vector2i(520, 0));
 		EditorNode::get_singleton()->get_gui_base()->add_child(runtime_missing_dialog);
-		runtime_missing_dialog->connect("confirmed", callable_mp(this, &PhysXEditorPlugin::_start_install));
+		runtime_missing_dialog->connect("confirmed", callable_mp(this, &PhysXEditorPlugin::_start_install_from_missing));
 		runtime_missing_dialog->popup_centered();
 		print_line(vformat("PhysX: %d runtime file(s) missing -- offering the download-and-restart flow.", missing.size()));
 		return;
@@ -737,6 +748,18 @@ void PhysXEditorPlugin::_check_runtime_files() {
 	}
 }
 
+// The manifest-vs-disk comparison state for a pre-versioning install (see
+// _on_version_check_completed): filled on the main thread, consumed by the
+// worker thread, applied back on the main thread via _finish_version_hash_probe.
+struct PhysXEditorPlugin::VersionHashProbe {
+	PhysXEditorPlugin *plugin = nullptr;
+	String exe_dir;
+	String available;
+	PackedStringArray names;
+	PackedStringArray hashes;
+	bool mismatch = false;
+};
+
 void PhysXEditorPlugin::_start_version_check() {
 	update_check_active = true;
 	if (version_check_http == nullptr) {
@@ -744,16 +767,39 @@ void PhysXEditorPlugin::_start_version_check() {
 		EditorNode::get_singleton()->get_gui_base()->add_child(version_check_http);
 		version_check_http->connect("request_completed", callable_mp(this, &PhysXEditorPlugin::_on_version_check_completed));
 	}
-	version_check_http->request(PhysXRuntimeManager::MANIFEST_URL);
+	const Error err = version_check_http->request(PhysXRuntimeManager::MANIFEST_URL);
+	if (err != OK) {
+		// request() failed synchronously, so request_completed will NOT fire:
+		// clear the in-flight flag here or the check would latch forever.
+		update_check_active = false;
+		_on_version_check_transport_failed();
+	}
+}
+
+void PhysXEditorPlugin::_on_version_check_transport_failed() {
+	if (!is_inside_tree()) {
+		update_check_done = true; // editor is shutting down; no retry window
+		return;
+	}
+	if (update_check_failures == 0) {
+		// The editor may simply have started while offline: retry once later
+		// in the session instead of disabling the updater for the whole day.
+		update_check_failures++;
+		print_line("PhysX: runtime update check could not connect; retrying once in a minute.");
+		get_tree()->create_timer(60.0)->connect("timeout", callable_mp(this, &PhysXEditorPlugin::_start_version_check));
+		return;
+	}
+	update_check_done = true; // second transport failure: give up for this session
 }
 
 void PhysXEditorPlugin::_on_version_check_completed(int p_result, int p_code, const PackedStringArray &p_headers, const PackedByteArray &p_body) {
 	update_check_active = false;
-	update_check_done = true; // one check per session, whatever the outcome
 	if (p_result != HTTPRequest::RESULT_SUCCESS || p_code != 200) {
-		// Offline or the manifest host is down: stay quiet, retry next session.
+		// Offline or the manifest host is down.
+		_on_version_check_transport_failed();
 		return;
 	}
+	update_check_done = true; // one check per session once an answer arrived
 	const Dictionary bundle = PhysXRuntimeManager::parse_manifest(String::utf8((const char *)p_body.ptr(), p_body.size()));
 	if (bundle.is_empty()) {
 		return; // malformed manifest: nothing to compare against
@@ -763,42 +809,118 @@ void PhysXEditorPlugin::_on_version_check_completed(int p_result, int p_code, co
 		return; // a manifest without the field cannot drive the updater
 	}
 	const String installed = PhysXRuntimeManager::get_installed_runtime_version();
+	if (available != String(PhysXRuntimeManager::LINKED_RUNTIME_VERSION)) {
+		// The manifest targets a different engine build. Installing it would
+		// put libraries this build's delay-imports cannot be guaranteed to
+		// resolve, and no bundle from it can repair a runtime that does not
+		// match this build either -- so never offer or adopt it. The runtime
+		// repo and the engine builds must move in lockstep (see
+		// LINKED_RUNTIME_VERSION); a disagreement means one of the two is
+		// missing its version bump.
+		WARN_PRINT_ONCE(vformat("PhysX: the runtime manifest offers version '%s' but this editor build expects '%s'; the update check is skipped. The runtime repository and the engine builds must move in lockstep.", available, String(PhysXRuntimeManager::LINKED_RUNTIME_VERSION)));
+		return;
+	}
 	if (!installed.is_empty() && installed == available) {
 		return; // up to date
 	}
 	if (installed.is_empty()) {
 		// Pre-versioning install (or a manual one): the marker can't say what
-		// is on disk, so hash the files against the manifest. All matching
-		// means the current bundle is already installed -- adopt the version
-		// silently; anything else is an update offer.
-		const String exe_dir = OS::get_singleton()->get_executable_path().get_base_dir();
+		// is on disk, so hash the files against the manifest. Only files this
+		// build actually stages are checked -- a Blast/Flow-disabled build
+		// never uses the rest, and requiring them offered a spurious update
+		// every session. The full list is still installed when the user
+		// accepts. The comparison can touch hundreds of MB, so it runs on a
+		// worker thread instead of stalling the editor.
+		Dictionary want_hash;
 		Array files = bundle["files"];
 		for (int i = 0; i < files.size(); i++) {
 			Dictionary entry = files[i];
-			const String path = exe_dir.path_join(entry["name"]);
-			if (!FileAccess::exists(path) ||
-					PhysXRuntimeManager::sha256_file(path).to_lower() != String(entry["sha256"]).to_lower()) {
-				_offer_runtime_update(installed, available);
-				return;
+			want_hash[entry["name"]] = String(entry["sha256"]);
+		}
+		PackedStringArray names;
+		PackedStringArray hashes;
+		for (const String &name : PhysXRuntimeManager::get_required_runtime_files()) {
+			if (want_hash.has(name)) {
+				names.push_back(name);
+				hashes.push_back(want_hash[name]);
 			}
 		}
-		PhysXRuntimeManager::write_runtime_version_marker(available);
+		if (names.is_empty()) {
+			// Nothing this build stages is verifiable against the manifest:
+			// adopt the version so the check does not re-run every session.
+			PhysXRuntimeManager::write_runtime_version_marker(available);
+			return;
+		}
+		if (version_hash_thread != nullptr) {
+			return; // a probe from an earlier check is somehow still running
+		}
+		version_hash_probe = memnew(VersionHashProbe);
+		version_hash_probe->plugin = this;
+		version_hash_probe->exe_dir = OS::get_singleton()->get_executable_path().get_base_dir();
+		version_hash_probe->available = available;
+		version_hash_probe->names = names;
+		version_hash_probe->hashes = hashes;
+		version_hash_probe->mismatch = false;
+#ifdef THREADS_ENABLED
+		version_hash_thread = memnew(Thread);
+		version_hash_thread->start(&PhysXEditorPlugin::_version_hash_probe, version_hash_probe);
+#else
+		// No-threads build: no worker to offload to, run it inline.
+		_version_hash_probe(version_hash_probe);
+		_finish_version_hash_probe();
+#endif
 		return;
 	}
 	_offer_runtime_update(installed, available);
 }
 
-void PhysXEditorPlugin::_offer_runtime_update(const String &p_installed, const String &p_available) {
-	if (update_dialog) {
-		// Re-offer while the update stays pending (same pattern as the
-		// missing-files dialog).
-		if (!update_dialog->is_visible() && !install_active) {
-			update_dialog->popup_centered();
+void PhysXEditorPlugin::_version_hash_probe(void *p_user) {
+	VersionHashProbe *probe = static_cast<VersionHashProbe *>(p_user);
+	for (int i = 0; i < probe->names.size() && !probe->mismatch; i++) {
+		const String path = probe->exe_dir.path_join(probe->names[i]);
+		if (!FileAccess::exists(path) ||
+				PhysXRuntimeManager::sha256_file(path).to_lower() != probe->hashes[i].to_lower()) {
+			probe->mismatch = true;
 		}
+	}
+	// Off the main thread: apply the result deferred (thread-safe; the call is
+	// dropped silently if the plugin is gone by then). A main-thread caller is
+	// the no-threads build's inline path -- it applies the result directly.
+	if (!Thread::is_main_thread()) {
+		callable_mp(probe->plugin, &PhysXEditorPlugin::_finish_version_hash_probe).call_deferred();
+	}
+}
+
+void PhysXEditorPlugin::_finish_version_hash_probe() {
+#ifdef THREADS_ENABLED
+	if (version_hash_thread != nullptr) {
+		version_hash_thread->wait_to_finish();
+		memdelete(version_hash_thread);
+		version_hash_thread = nullptr;
+	}
+#endif
+	const bool mismatch = version_hash_probe->mismatch;
+	const String available = version_hash_probe->available;
+	memdelete(version_hash_probe);
+	version_hash_probe = nullptr;
+	if (mismatch) {
+		// All matching means the current bundle is already installed --
+		// anything else is an update offer (the installed version is unknown
+		// here: there was no marker, hence the probe).
+		_offer_runtime_update(String(), available);
 		return;
 	}
+	PhysXRuntimeManager::write_runtime_version_marker(available);
+}
+
+void PhysXEditorPlugin::_offer_runtime_update(const String &p_installed, const String &p_available) {
+	// One offer per session (the version check latches after its first
+	// answer); a failed update re-popups this dialog from _install_failed.
 	if (!is_inside_tree()) {
 		return;
+	}
+	if (install_active) {
+		return; // an install is already running; its restart supersedes this offer
 	}
 	const String installed_text = p_installed.is_empty() ? TTR("unknown (pre-versioning install)") : p_installed;
 	update_dialog = memnew(ConfirmationDialog);
@@ -809,9 +931,19 @@ void PhysXEditorPlugin::_offer_runtime_update(const String &p_installed, const S
 	update_dialog->set_ok_button_text(TTR("Update and Restart"));
 	update_dialog->set_min_size(Vector2i(520, 0));
 	EditorNode::get_singleton()->get_gui_base()->add_child(update_dialog);
-	update_dialog->connect("confirmed", callable_mp(this, &PhysXEditorPlugin::_start_install));
+	update_dialog->connect("confirmed", callable_mp(this, &PhysXEditorPlugin::_start_install_from_update));
 	update_dialog->popup_centered();
 	print_line(vformat("PhysX: runtime update available (%s installed, %s available) -- offering the update.", installed_text, p_available));
+}
+
+void PhysXEditorPlugin::_start_install_from_update() {
+	install_is_update = true;
+	_start_install();
+}
+
+void PhysXEditorPlugin::_start_install_from_missing() {
+	install_is_update = false;
+	_start_install();
 }
 
 void PhysXEditorPlugin::_start_install() {
@@ -914,14 +1046,41 @@ void PhysXEditorPlugin::_install_failed(const String &p_message) {
 	print_line(manual);
 	// The failure goes on the offer dialog itself (the progress dialog is
 	// transient): the reason and the manual fallback stay visible, and the
-	// offer button doubles as the retry.
+	// offer button doubles as the retry. The update flow has no
+	// missing-files dialog -- surface the failure on the update dialog, or a
+	// failed "Update and Restart" would die invisibly with no retry.
 	install_progress_dialog->hide();
-	if (runtime_missing_dialog) {
-		runtime_missing_dialog->set_text(vformat(
+	ConfirmationDialog *offer = (install_is_update && update_dialog) ? update_dialog : runtime_missing_dialog;
+	if (offer == nullptr) {
+		return; // neither offer exists: the logs above carry the reason
+	}
+	if (offer == update_dialog) {
+		update_dialog->set_text(vformat(
+				TTR("The last runtime update failed: %s\n\n%s\n\nTry again now? Only the changed libraries are downloaded, and the editor restarts afterwards."),
+				p_message, manual));
+	} else {
+		offer->set_text(vformat(
 				TTR("The last runtime install failed: %s\n\n%s\n\nDownload them now? The editor restarts afterwards."),
 				p_message, manual));
-		if (!runtime_missing_dialog->is_visible()) {
-			runtime_missing_dialog->popup_centered();
-		}
+	}
+	if (!offer->is_visible()) {
+		offer->popup_centered();
+	}
+}
+
+PhysXEditorPlugin::~PhysXEditorPlugin() {
+	// An in-flight hash probe must not outlive the member state its deferred
+	// result reads; block shutdown on it. (The deferred call itself is dropped
+	// safely if it lands after this.)
+#ifdef THREADS_ENABLED
+	if (version_hash_thread != nullptr) {
+		version_hash_thread->wait_to_finish();
+		memdelete(version_hash_thread);
+		version_hash_thread = nullptr;
+	}
+#endif
+	if (version_hash_probe != nullptr) {
+		memdelete(version_hash_probe);
+		version_hash_probe = nullptr;
 	}
 }

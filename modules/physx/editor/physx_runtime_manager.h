@@ -52,6 +52,15 @@ public:
 	// automatic install fails).
 	static const char *RELEASES_PAGE_URL;
 
+	// The runtime version this editor binary was built and tested against.
+	// The runtime repo must bump its manifest "runtime_version" in lockstep
+	// with this constant (both change together with the vendored SDK under
+	// thirdparty/physx): the updater only offers/adopts bundles whose
+	// runtime_version equals it, because another bundle's libraries cannot
+	// be guaranteed to satisfy this build's delay-imports. A manifest that
+	// disagrees is logged, never installed.
+	static const char *LINKED_RUNTIME_VERSION;
+
 	// Runtime files that must sit next to the editor executable, per
 	// platform. Names only: the directory is always the executable's.
 	static PackedStringArray get_required_runtime_files();
@@ -62,8 +71,9 @@ public:
 
 	static bool is_runtime_complete();
 
-	// Downloads and installs the missing runtime files. Not implemented yet:
-	// the download-and-restart flow is being added incrementally.
+	// Script-facing stub: the editor plugin's dialog drives the real flow
+	// (manifest -> download -> verify -> extract -> restart). Scripts calling
+	// this get a warning and no install.
 	static Error install_missing_files();
 
 	// --- Install helpers (used by the editor plugin's install flow) ---
@@ -82,8 +92,10 @@ public:
 	// p_target_dir, verifying each file's SHA-256 while writing. Fails
 	// without leaving partial files behind. A file whose target is in use
 	// (Windows: a loaded DLL keeps its name) is kept as a verified
-	// "<name>.part" and recorded in the pending-swap marker instead --
-	// complete_pending_swaps() applies it at the next editor start.
+	// "<name>.part" and recorded in the pending-swap marker written next to
+	// p_target_dir -- only a marker in the editor executable's directory is
+	// applied automatically at startup (extracting elsewhere warns and never
+	// applies); complete_pending_swaps() applies it at the next editor start.
 	static Error extract_bundle(const String &p_zip_path, const Dictionary &p_bundle, const String &p_target_dir);
 
 	// --- Installed-version tracking (the updater) ---
@@ -94,13 +106,17 @@ public:
 	static String get_installed_runtime_version();
 
 	// Records the installed runtime_version next to the DLLs. No-op for an
-	// empty version (a manifest without the field leaves the marker alone).
+	// empty version (a manifest without the field leaves the marker alone);
+	// a failure (read-only install directory) is reported, not swallowed.
 	static void write_runtime_version_marker(const String &p_version);
 
 	// Applies any pending-swap entries recorded by extract_bundle (verified
 	// "<name>.part" files whose target was in use). Runs at editor startup,
 	// before any physics has had a chance to load the DLLs; a file that is
-	// still locked stays pending for the next start.
+	// still locked stays pending for the next start. Reads the marker beside
+	// the executable only; entries are re-validated on read (the marker is
+	// self-written, but a corrupt or hand-edited line must not aim a rename
+	// outside the executable's directory).
 	static void complete_pending_swaps();
 
 protected:

@@ -176,6 +176,11 @@ const char *PhysXRuntimeManager::MANIFEST_URL =
 const char *PhysXRuntimeManager::RELEASES_PAGE_URL =
 		"https://github.com/Vlado-VG/redot-physx-runtime/releases";
 
+// Keep in lockstep with the runtime repo's manifest "runtime_version" (both
+// change together with the vendored SDK under thirdparty/physx): the updater
+// offers/adopts only bundles whose runtime_version equals this.
+const char *PhysXRuntimeManager::LINKED_RUNTIME_VERSION = "5.12.0";
+
 // Version/pending-swap markers next to the runtime DLLs (see the header).
 static const char *VERSION_MARKER_NAME = ".physx-runtime-version";
 static const char *PENDING_MARKER_NAME = ".physx-runtime-pending";
@@ -420,7 +425,12 @@ Error PhysXRuntimeManager::extract_bundle(const String &p_zip_path, const Dictio
 	}
 	if (!pending.is_empty()) {
 		// Register the deferred renames; complete_pending_swaps() applies
-		// them at the next editor start.
+		// them at the next editor start -- from the executable's directory
+		// only, so extracting elsewhere warns instead of stranding a marker
+		// that is never read.
+		if (p_target_dir.simplify_path() != runtime_exe_dir().simplify_path()) {
+			WARN_PRINT(vformat("PhysX: extract_bundle target '%s' is not the editor executable's directory; its pending-swap marker will not be applied automatically at startup.", p_target_dir));
+		}
 		Ref<FileAccess> pf = FileAccess::open(p_target_dir.path_join(PENDING_MARKER_NAME), FileAccess::WRITE);
 		if (pf.is_valid()) {
 			for (const String &name : pending) {
@@ -454,9 +464,15 @@ void PhysXRuntimeManager::write_runtime_version_marker(const String &p_version) 
 	if (p_version.is_empty()) {
 		return; // a manifest without runtime_version leaves the marker alone
 	}
-	Ref<FileAccess> f = FileAccess::open(runtime_exe_dir().path_join(VERSION_MARKER_NAME), FileAccess::WRITE);
+	const String path = runtime_exe_dir().path_join(VERSION_MARKER_NAME);
+	Ref<FileAccess> f = FileAccess::open(path, FileAccess::WRITE);
 	if (f.is_valid()) {
 		f->store_line(p_version);
+	} else {
+		// A read-only install directory can never persist the marker, so
+		// every session would re-verify the whole bundle by hash. Name the
+		// cause instead of silently degrading into a per-session stall.
+		ERR_PRINT(vformat("PhysX: cannot write the runtime version marker '%s' (read-only install directory?). The update check will re-verify the installed files each session.", path));
 	}
 }
 
@@ -480,6 +496,18 @@ void PhysXRuntimeManager::complete_pending_swaps() {
 			if (name.is_empty()) {
 				continue;
 			}
+			// Re-validate on read (the marker is self-written, but a corrupt
+			// or hand-edited line must not aim a rename outside this
+			// directory -- the same contract extract_bundle enforces when it
+			// writes). Invalid entries are dropped from the rewritten marker
+			// below, not retried forever. Entries always belong to the most
+			// recent install's bundle: extract_bundle rewrites the whole
+			// marker, so a restructured runtime cannot resurrect files it no
+			// longer ships.
+			if (name.contains("/") || name.contains("\\") || name.contains("..")) {
+				ERR_PRINT(vformat("PhysX: invalid pending-swap entry '%s'; dropped.", name));
+				continue;
+			}
 			const String part_name = name + ".part";
 			if (!FileAccess::exists(runtime_exe_dir().path_join(part_name))) {
 				continue; // nothing to apply (already swapped or cleaned up)
@@ -489,15 +517,21 @@ void PhysXRuntimeManager::complete_pending_swaps() {
 			// name until its handle closes (the loader opens with delete-share,
 			// so the rename itself succeeds even while mapped -- the leftover
 			// .old is removed below, or at a later start).
-			if (FileAccess::exists(target_path)) {
-				dir->rename(name, name + ".old");
-			}
+			const String old_name = name + ".old";
+			const bool moved_aside = FileAccess::exists(target_path) && dir->rename(name, old_name) == OK;
 			if (dir->rename(part_name, name) != OK) {
+				// Roll the aside-move back: without it the library would sit
+				// MISSING under its real name for the whole session (the next
+				// delay-load would fail until a restart). The verified .part
+				// stays and is retried at the next start either way.
+				if (moved_aside) {
+					dir->rename(old_name, name);
+				}
 				remaining.push_back(name); // still locked -- retried next start
 				continue;
 			}
 			// Best effort: the .old goes away here, or on a later start.
-			dir->remove(name + ".old");
+			dir->remove(old_name);
 			print_line(vformat("PhysX: runtime update for '%s' applied -- restart the editor once more if it was in use.", name));
 		}
 	}

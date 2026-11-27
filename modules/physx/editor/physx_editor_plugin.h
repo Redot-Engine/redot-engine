@@ -45,6 +45,7 @@ class AcceptDialog;
 class HTTPRequest;
 class ProgressBar;
 class Label;
+class Thread;
 class PhysXExportPlugin;
 
 // Viewport gizmo for PhysXParticleFluid3D: a wireframe box for the spawn region
@@ -201,31 +202,55 @@ class PhysXEditorPlugin : public EditorPlugin {
 	String install_zip_path;
 	int install_step = STEP_MANIFEST;
 	bool install_active = false;
+	// True when the running install was started from the update offer rather
+	// than the missing-files offer: a failure must surface on that dialog --
+	// in the pure-update flow it is the only offer dialog ever built, and
+	// _install_failed has no other way to tell which flow is in progress.
+	bool install_is_update = false;
 
 	void _on_project_settings_changed();
 	void _check_runtime_files();
 	void _start_install();
+	void _start_install_from_missing();
+	void _start_install_from_update();
 	void _on_install_request_completed(int p_result, int p_code, const PackedStringArray &p_headers, const PackedByteArray &p_body);
 	void _install_failed(const String &p_message);
 	void _poll_install_progress();
 
 	// --- Runtime updater ---
 	// When the runtime files are COMPLETE, the manifest is fetched anyway and
-	// its runtime_version compared against the marker the last install wrote:
-	// a mismatch offers the same download-and-restart flow, whose hash-skip
-	// extraction then replaces only the changed libraries.
+	// its runtime_version compared against LINKED_RUNTIME_VERSION (the version
+	// this editor binary was built against) and against the marker the last
+	// install wrote: a stale runtime offers the same download-and-restart
+	// flow, whose hash-skip extraction then replaces only the changed
+	// libraries. One offer per session; a transport failure retries once
+	// before giving up for the session.
 	HTTPRequest *version_check_http = nullptr;
 	ConfirmationDialog *update_dialog = nullptr;
 	bool update_check_active = false; // a version fetch is in flight
-	bool update_check_done = false; // one check per editor session
+	bool update_check_done = false; // an answer arrived (or gave up) this session
+	int update_check_failures = 0; // transport failures this session
+
+	// Pre-versioning installs have no version marker, so the updater verifies
+	// the installed files against the manifest by hash. The comparison can
+	// touch hundreds of MB, so it runs on a worker thread and comes back via
+	// call_deferred; joined in the destructor (and a no-threads build runs it
+	// inline).
+	struct VersionHashProbe;
+	Thread *version_hash_thread = nullptr;
+	VersionHashProbe *version_hash_probe = nullptr;
 
 	void _start_version_check();
 	void _on_version_check_completed(int p_result, int p_code, const PackedStringArray &p_headers, const PackedByteArray &p_body);
+	void _on_version_check_transport_failed();
 	void _offer_runtime_update(const String &p_installed, const String &p_available);
+	static void _version_hash_probe(void *p_user);
+	void _finish_version_hash_probe();
 
 protected:
 	virtual void _notification(int p_what);
 
 public:
 	PhysXEditorPlugin();
+	~PhysXEditorPlugin();
 };
