@@ -11,6 +11,12 @@
 	<tutorials>
 	</tutorials>
 	<methods>
+		<method name="complete_pending_swaps" qualifiers="static">
+			<return type="void" />
+			<description>
+				Applies the pending-swap entries recorded by [method extract_bundle] — verified [code]&lt;name&gt;.part[/code] files whose target was in use during the install — by renaming each into place at editor startup, before any physics has had a chance to load the libraries. A file that is still locked stays pending for the next start. Entries are re-validated on read; only the marker beside the executable is applied.
+			</description>
+		</method>
 		<method name="extract_bundle" qualifiers="static">
 			<return type="int" enum="Error" />
 			<param index="0" name="zip_path" type="String" />
@@ -18,6 +24,12 @@
 			<param index="2" name="target_dir" type="String" />
 			<description>
 				Extracts the manifest-listed files from the bundle zip at [param zip_path] into [param target_dir], verifying each file's SHA-256 (from [param bundle] [code]files[].sha256[/code]) as it is written. On a mismatch or read failure, the offending file is removed and every file written by this call is rolled back, leaving no half-updated mix of binaries. Returns an [enum Error] code.
+			</description>
+		</method>
+		<method name="get_installed_runtime_version" qualifiers="static">
+			<return type="String" />
+			<description>
+				Returns the runtime version recorded next to the runtime libraries by the last successful install, or an empty [String] when the runtime predates versioning or was installed by hand. The editor's update check compares this against the manifest's [code]runtime_version[/code].
 			</description>
 		</method>
 		<method name="get_missing_runtime_files" qualifiers="static">
