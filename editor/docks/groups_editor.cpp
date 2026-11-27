@@ -40,6 +40,7 @@
 
 #include "editor/docks/scene_tree_dock.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/gui/editor_validation_panel.h"
@@ -56,7 +57,7 @@ static bool can_edit(Node *p_node, const String &p_group) {
 	Node *n = p_node;
 	bool can_edit = true;
 	while (n) {
-		Ref<SceneState> ss = (n == EditorNode::get_singleton()->get_edited_scene()) ? n->get_scene_inherited_state() : n->get_scene_instance_state();
+		Ref<SceneState> ss = (n == EditorSceneManager::get_singleton()->get_edited_scene()) ? n->get_scene_inherited_state() : n->get_scene_instance_state();
 		if (ss.is_valid()) {
 			int path = ss->find_node_by_path(n->get_path_to(p_node));
 			if (path != -1) {
@@ -303,9 +304,9 @@ void GroupsEditor::_update_scene_groups(const ObjectID &p_id) {
 }
 
 void GroupsEditor::_cache_scene_groups(const ObjectID &p_id) {
-	const int edited_scene_count = EditorNode::get_editor_data().get_edited_scene_count();
+	const int edited_scene_count = EditorCore::get_singleton()->get_editor_data().get_edited_scene_count();
 	for (int i = 0; i < edited_scene_count; i++) {
-		Node *edited_scene_root = EditorNode::get_editor_data().get_edited_scene_root(i);
+		Node *edited_scene_root = EditorCore::get_singleton()->get_editor_data().get_edited_scene_root(i);
 		if (edited_scene_root && p_id == edited_scene_root->get_instance_id()) {
 			scene_groups_cache[p_id] = scene_groups_for_caching;
 			break;

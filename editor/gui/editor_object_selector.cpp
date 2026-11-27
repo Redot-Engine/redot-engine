@@ -40,6 +40,7 @@
 
 #include "editor/editor_data.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/margin_container.h"
@@ -74,7 +75,7 @@ void EditorObjectSelector::_add_children_to_popup(Object *p_obj, int p_depth) {
 			continue;
 		}
 
-		Ref<Texture2D> obj_icon = EditorNode::get_singleton()->get_object_icon(obj);
+		Ref<Texture2D> obj_icon = EditorCore::get_singleton()->get_object_icon(obj);
 
 		String proper_name = "";
 		Vector<String> name_parts = E.name.split("/");
@@ -132,7 +133,7 @@ void EditorObjectSelector::update_path() {
 			continue;
 		}
 
-		Ref<Texture2D> obj_icon = EditorNode::get_singleton()->get_object_icon(obj);
+		Ref<Texture2D> obj_icon = EditorCore::get_singleton()->get_object_icon(obj);
 		if (obj_icon.is_valid()) {
 			current_object_icon->set_texture(obj_icon);
 		}
@@ -190,7 +191,7 @@ void EditorObjectSelector::_id_pressed(int p_idx) {
 		return;
 	}
 
-	EditorNode::get_singleton()->push_item(obj);
+	EditorSceneManager::get_singleton()->push_item(obj);
 }
 
 void EditorObjectSelector::_notification(int p_what) {

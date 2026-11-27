@@ -337,5 +337,5 @@ void Camera2DEditorPlugin::make_visible(bool p_visible) {
 
 Camera2DEditorPlugin::Camera2DEditorPlugin() {
 	camera_2d_editor = memnew(Camera2DEditor(this));
-	EditorNode::get_singleton()->get_gui_base()->add_child(camera_2d_editor);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(camera_2d_editor);
 }

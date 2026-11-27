@@ -42,6 +42,7 @@
 #include "core/io/marshalls.h"
 #include "editor/docks/inspector_dock.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "scene/debugger/scene_debugger.h"
 
@@ -340,7 +341,7 @@ void EditorDebuggerInspector::clear_remote_inspector() {
 	const Object *obj = InspectorDock::get_inspector_singleton()->get_edited_object();
 	// Check if the inspector holds remote items, and take it out if so.
 	if (Object::cast_to<EditorDebuggerRemoteObjects>(obj)) {
-		EditorNode::get_singleton()->push_item(nullptr);
+		EditorSceneManager::get_singleton()->push_item(nullptr);
 	}
 }
 
@@ -360,7 +361,7 @@ void EditorDebuggerInspector::invalidate_selection_from_cache(const TypedArray<u
 		if (robjs->remote_object_ids == p_ids) {
 			const Object *obj = InspectorDock::get_inspector_singleton()->get_edited_object();
 			if (obj == robjs) {
-				EditorNode::get_singleton()->push_item(nullptr);
+				EditorSceneManager::get_singleton()->push_item(nullptr);
 			}
 
 			remote_objects_list.erase(robjs);

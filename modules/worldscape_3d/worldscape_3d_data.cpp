@@ -1298,7 +1298,7 @@ void WorldScape3DData::select_data_directory() {
 	file_dialog->set_transient(false);
 	file_dialog->set_exclusive(true);
 	file_dialog->set_flag(Window::Flags::FLAG_POPUP, true);
-	EditorNode::get_singleton()->add_child(file_dialog);
+	EditorCore::get_singleton()->get_shell()->add_child(file_dialog);
 	file_dialog->popup_centered();
 }
 

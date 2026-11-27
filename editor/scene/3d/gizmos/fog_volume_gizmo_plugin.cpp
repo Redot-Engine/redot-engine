@@ -51,7 +51,7 @@ FogVolumeGizmoPlugin::FogVolumeGizmoPlugin() {
 	gizmo_color.a = 0.15;
 	create_material("shape_material_internal", gizmo_color);
 
-	create_icon_material("fog_volume_icon", EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("GizmoFogVolume"), EditorStringName(EditorIcons)));
+	create_icon_material("fog_volume_icon", EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("GizmoFogVolume"), EditorStringName(EditorIcons)));
 
 	create_handle_material("handles");
 }

@@ -39,11 +39,25 @@ jobs:
     needs: static-checks
     uses: ./.github/workflows/linux_builds.yml
 
-  macos-build:
+  macos-editor:
     name: 🍎 macOS
     needs: static-checks
     if: ${{ vars.ENABLE_MAC_IOS_ANDROID == 'true' }}
     uses: ./.github/workflows/macos_builds.yml
+    with:
+      job-name: Editor (target=editor)
+      target: editor
+      artifact-name: macos-editor
+
+  macos-template:
+    name: 🍎 macOS
+    needs: static-checks
+    uses: ./.github/workflows/macos_builds.yml
+    with:
+      job-name: Template (target=template_release)
+      target: template_release
+      artifact-name: macos-template
+      scons-flags: debug_symbols=no
 
   windows-build:
     name: 🏁 Windows

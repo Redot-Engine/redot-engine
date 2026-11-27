@@ -42,6 +42,7 @@
 #include "editor/docks/filesystem_dock.h"
 #include "editor/docks/inspector_dock.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/file_system/editor_file_system.h"
@@ -124,7 +125,7 @@ void ThemeItemImportTree::_update_items_tree() {
 		if (E == "") {
 			type_icon = get_editor_theme_icon(SNAME("NodeDisabled"));
 		} else {
-			type_icon = EditorNode::get_singleton()->get_class_icon(E, "NodeDisabled");
+			type_icon = EditorCore::get_singleton()->get_class_icon(E, "NodeDisabled");
 		}
 
 		TreeItem *type_node = import_items_tree->create_item(root);
@@ -765,7 +766,7 @@ void ThemeItemImportTree::_deselect_all_data_type_pressed(int p_data_type) {
 
 void ThemeItemImportTree::_import_selected() {
 	if (selected_items.is_empty()) {
-		EditorNode::get_singleton()->show_accept(TTR("Nothing was selected for the import."), TTR("OK"));
+		EditorCore::get_singleton()->get_shell()->show_accept(TTR("Nothing was selected for the import."), TTR("OK"));
 		return;
 	}
 
@@ -1246,7 +1247,7 @@ void ThemeItemEditorDialog::_dialog_about_to_show() {
 	import_default_theme_items->reset_item_tree();
 
 	import_editor_theme_items->set_edited_theme(edited_theme);
-	import_editor_theme_items->set_base_theme(EditorNode::get_singleton()->get_editor_theme());
+	import_editor_theme_items->set_base_theme(EditorCore::get_singleton()->get_editor_theme());
 	import_editor_theme_items->reset_item_tree();
 
 	import_other_theme_items->set_edited_theme(edited_theme);
@@ -1269,7 +1270,7 @@ void ThemeItemEditorDialog::_update_edit_types() {
 		if (E == "") {
 			item_icon = get_editor_theme_icon(SNAME("NodeDisabled"));
 		} else {
-			item_icon = EditorNode::get_singleton()->get_class_icon(E, "NodeDisabled");
+			item_icon = EditorCore::get_singleton()->get_class_icon(E, "NodeDisabled");
 		}
 		TreeItem *list_item = edit_type_list->create_item(list_root);
 		list_item->set_text(0, E);
@@ -1919,11 +1920,11 @@ void ThemeItemEditorDialog::_open_select_another_theme() {
 void ThemeItemEditorDialog::_select_another_theme_cbk(const String &p_path) {
 	Ref<Theme> loaded_theme = ResourceLoader::load(p_path);
 	if (loaded_theme.is_null()) {
-		EditorNode::get_singleton()->show_warning(TTR("Invalid file, not a Theme resource."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Invalid file, not a Theme resource."));
 		return;
 	}
 	if (loaded_theme == edited_theme) {
-		EditorNode::get_singleton()->show_warning(TTR("Invalid file, same as the edited Theme resource."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Invalid file, same as the edited Theme resource."));
 		return;
 	}
 
@@ -2227,7 +2228,7 @@ void ThemeTypeDialog::_update_add_type_options(const String &p_filter) {
 		if (E == "") {
 			item_icon = get_editor_theme_icon(SNAME("NodeDisabled"));
 		} else {
-			item_icon = EditorNode::get_singleton()->get_class_icon(E, "NodeDisabled");
+			item_icon = EditorCore::get_singleton()->get_class_icon(E, "NodeDisabled");
 		}
 
 		add_type_options->add_item(E, item_icon);
@@ -2430,7 +2431,7 @@ void ThemeTypeEditor::_update_type_list() {
 			if (E == "") {
 				item_icon = get_editor_theme_icon(SNAME("NodeDisabled"));
 			} else {
-				item_icon = EditorNode::get_singleton()->get_class_icon(E, "NodeDisabled");
+				item_icon = EditorCore::get_singleton()->get_class_icon(E, "NodeDisabled");
 			}
 			theme_type_list->add_icon_item(item_icon, E);
 
@@ -2616,7 +2617,7 @@ void ThemeTypeEditor::_update_type_items() {
 			if (E.value) {
 				item_editor->set_pick_color(edited_theme->get_color(E.key, edited_type));
 				item_editor->connect("color_changed", callable_mp(this, &ThemeTypeEditor::_color_item_changed).bind(E.key));
-				item_editor->get_popup()->connect("about_to_popup", callable_mp(EditorNode::get_singleton(), &EditorNode::setup_color_picker).bind(item_editor->get_picker()));
+				item_editor->get_popup()->connect("about_to_popup", callable_mp(EditorCore::get_singleton(), &EditorCore::setup_color_picker).bind(item_editor->get_picker()));
 			} else {
 				item_editor->set_pick_color(ThemeDB::get_singleton()->get_default_theme()->get_color(E.key, edited_type));
 				item_editor->set_disabled(true);
@@ -3265,7 +3266,7 @@ void ThemeTypeEditor::_font_size_item_changed(float p_value, String p_item_name)
 }
 
 void ThemeTypeEditor::_edit_resource_item(Ref<Resource> p_resource, bool p_edit) {
-	EditorNode::get_singleton()->edit_resource(p_resource);
+	EditorSceneManager::get_singleton()->edit_resource(p_resource);
 }
 
 void ThemeTypeEditor::_font_item_changed(Ref<Font> p_value, String p_item_name) {
@@ -3720,9 +3721,9 @@ void ThemeEditor::_theme_save_button_cbk(bool p_save_as) {
 	ERR_FAIL_COND_MSG(theme.is_null(), "Invalid state of the Theme Editor; the Theme resource is missing.");
 
 	if (p_save_as) {
-		EditorNode::get_singleton()->save_resource_as(theme);
+		EditorCore::get_singleton()->save_resource_as(theme);
 	} else {
-		EditorNode::get_singleton()->save_resource(theme);
+		EditorCore::get_singleton()->save_resource(theme);
 	}
 }
 
@@ -3733,17 +3734,17 @@ void ThemeEditor::_theme_edit_button_cbk() {
 void ThemeEditor::_theme_close_button_cbk() {
 	plugin->make_visible(false); // Enables auto hide.
 	if (theme.is_valid() && InspectorDock::get_inspector_singleton()->get_edited_object() == theme.ptr()) {
-		EditorNode::get_singleton()->push_item(nullptr);
+		EditorSceneManager::get_singleton()->push_item(nullptr);
 	} else {
 		theme = Ref<Theme>();
-		EditorNode::get_singleton()->hide_unused_editors(plugin);
+		EditorSceneManager::get_singleton()->hide_unused_editors(plugin);
 	}
 }
 
 void ThemeEditor::_scene_closed(const String &p_path) {
 	if (theme.is_valid() && theme->is_built_in() && theme->get_path().get_slice("::", 0) == p_path) {
 		theme = Ref<Theme>();
-		EditorNode::get_singleton()->hide_unused_editors(plugin);
+		EditorSceneManager::get_singleton()->hide_unused_editors(plugin);
 	}
 }
 
@@ -3785,7 +3786,7 @@ void ThemeEditor::_add_preview_tab(ThemeEditorPreview *p_preview_tab, const Stri
 
 	preview_tabs->add_tab(p_preview_name, p_icon);
 	preview_tabs_content->add_child(p_preview_tab);
-	preview_tabs->set_tab_button_icon(preview_tabs->get_tab_count() - 1, EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("close"), SNAME("TabBar")));
+	preview_tabs->set_tab_button_icon(preview_tabs->get_tab_count() - 1, EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("close"), SNAME("TabBar")));
 	p_preview_tab->connect("control_picked", callable_mp(this, &ThemeEditor::_preview_control_picked));
 
 	preview_tabs->set_current_tab(preview_tabs->get_tab_count() - 1);
@@ -3882,7 +3883,7 @@ void ThemeEditor::drop_data_fw(const Point2 &p_point, const Variant &p_data, Con
 
 	preview_tabs->add_tab(path.get_file(), icon);
 	preview_tabs_content->add_child(preview_tab);
-	preview_tabs->set_tab_button_icon(preview_tabs->get_tab_count() - 1, EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("close"), SNAME("TabBar")));
+	preview_tabs->set_tab_button_icon(preview_tabs->get_tab_count() - 1, EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("close"), SNAME("TabBar")));
 	preview_tab->connect("control_picked", callable_mp(this, &ThemeEditor::_preview_control_picked));
 
 	preview_tabs->set_current_tab(preview_tabs->get_tab_count() - 1);
@@ -3893,8 +3894,8 @@ void ThemeEditor::drop_data_fw(const Point2 &p_point, const Variant &p_data, Con
 void ThemeEditor::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_READY: {
-			EditorNode::get_singleton()->connect("scene_closed", callable_mp(this, &ThemeEditor::_scene_closed));
-			EditorNode::get_singleton()->connect("resource_saved", callable_mp(this, &ThemeEditor::_resource_saved));
+			EditorSceneManager::get_singleton()->connect("scene_closed", callable_mp(this, &ThemeEditor::_scene_closed));
+			EditorCore::get_singleton()->connect("resource_saved", callable_mp(this, &ThemeEditor::_resource_saved));
 			FileSystemDock::get_singleton()->connect("files_moved", callable_mp(this, &ThemeEditor::_files_moved));
 		} break;
 
@@ -4018,10 +4019,10 @@ bool ThemeEditorPlugin::handles(Object *p_object) const {
 void ThemeEditorPlugin::make_visible(bool p_visible) {
 	if (p_visible) {
 		button->show();
-		EditorNode::get_bottom_panel()->make_item_visible(theme_editor);
+		EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(theme_editor);
 	} else {
 		if (theme_editor->is_visible_in_tree()) {
-			EditorNode::get_bottom_panel()->hide_bottom_panel();
+			EditorCore::get_singleton()->get_shell()->get_bottom_panel()->hide_bottom_panel();
 		}
 
 		button->hide();
@@ -4037,6 +4038,6 @@ ThemeEditorPlugin::ThemeEditorPlugin() {
 	theme_editor->plugin = this;
 	theme_editor->set_custom_minimum_size(Size2(0, 200) * EDSCALE);
 
-	button = EditorNode::get_bottom_panel()->add_item(TTRC("Theme"), theme_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_theme_bottom_panel", TTRC("Toggle Theme Bottom Panel")));
+	button = EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(TTRC("Theme"), theme_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_theme_bottom_panel", TTRC("Toggle Theme Bottom Panel")));
 	button->hide();
 }

@@ -66,19 +66,19 @@ void VoxelGIEditorPlugin::_bake() {
 					String base = path.substr(0, srpos);
 					if (ResourceLoader::get_resource_type(base) == "PackedScene") {
 						if (!get_tree()->get_edited_scene_root() || get_tree()->get_edited_scene_root()->get_scene_file_path() != base) {
-							EditorNode::get_singleton()->show_warning(TTR("Voxel GI data is not local to the scene."));
+							EditorCore::get_singleton()->get_shell()->show_warning(TTR("Voxel GI data is not local to the scene."));
 							return;
 						}
 					} else {
 						if (FileAccess::exists(base + ".import")) {
-							EditorNode::get_singleton()->show_warning(TTR("Voxel GI data is part of an imported resource."));
+							EditorCore::get_singleton()->get_shell()->show_warning(TTR("Voxel GI data is part of an imported resource."));
 							return;
 						}
 					}
 				}
 			} else {
 				if (FileAccess::exists(path + ".import")) {
-					EditorNode::get_singleton()->show_warning(TTR("Voxel GI data is an imported resource."));
+					EditorCore::get_singleton()->get_shell()->show_warning(TTR("Voxel GI data is an imported resource."));
 					return;
 				}
 			}
@@ -193,7 +193,7 @@ VoxelGIEditorPlugin::VoxelGIEditorPlugin() {
 	bake->set_theme_type_variation(SceneStringName(FlatButton));
 	/// @todo Rework this as a dedicated toolbar control so we can hook into theme changes and update it
 	/// when the editor theme updates.
-	bake->set_button_icon(EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Bake"), EditorStringName(EditorIcons)));
+	bake->set_button_icon(EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Bake"), EditorStringName(EditorIcons)));
 	bake->set_text(TTR("Bake VoxelGI"));
 	bake->connect(SceneStringName(pressed), callable_mp(this, &VoxelGIEditorPlugin::_bake));
 	bake_hb->add_child(bake);

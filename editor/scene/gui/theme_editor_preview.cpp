@@ -475,7 +475,7 @@ void SceneThemeEditorPreview::_reload_scene() {
 	}
 
 	if (loaded_scene->get_path().is_empty() || !ResourceLoader::exists(loaded_scene->get_path())) {
-		EditorNode::get_singleton()->show_warning(TTR("Invalid path, the PackedScene resource was probably moved or removed."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Invalid path, the PackedScene resource was probably moved or removed."));
 		emit_signal(SNAME("scene_invalidated"));
 		return;
 	}
@@ -488,7 +488,7 @@ void SceneThemeEditorPreview::_reload_scene() {
 
 	Node *instance = loaded_scene->instantiate();
 	if (!instance || !Object::cast_to<Control>(instance)) {
-		EditorNode::get_singleton()->show_warning(TTR("Invalid PackedScene resource, must have a Control node at its root."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Invalid PackedScene resource, must have a Control node at its root."));
 		emit_signal(SNAME("scene_invalidated"));
 		return;
 	}
@@ -513,19 +513,19 @@ void SceneThemeEditorPreview::_bind_methods() {
 bool SceneThemeEditorPreview::set_preview_scene(const String &p_path) {
 	loaded_scene = ResourceLoader::load(p_path);
 	if (loaded_scene.is_null()) {
-		EditorNode::get_singleton()->show_warning(TTR("Invalid file, not a PackedScene resource."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Invalid file, not a PackedScene resource."));
 		return false;
 	}
 
 	Node *instance = loaded_scene->instantiate();
 
 	if (!instance) {
-		EditorNode::get_singleton()->show_warning(TTR("Invalid PackedScene resource, could not instantiate it."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Invalid PackedScene resource, could not instantiate it."));
 		return false;
 	}
 
 	if (!Object::cast_to<Control>(instance)) {
-		EditorNode::get_singleton()->show_warning(TTR("Invalid PackedScene resource, must have a Control node at its root."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Invalid PackedScene resource, must have a Control node at its root."));
 		memdelete(instance);
 		return false;
 	}

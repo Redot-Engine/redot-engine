@@ -45,6 +45,7 @@
 #include "editor/docks/inspector_dock.h"
 #include "editor/docks/scene_tree_dock.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/gui/editor_bottom_panel.h"
 #include "editor/gui/editor_file_dialog.h"
@@ -138,12 +139,12 @@ void AnimationPlayerEditor::_notification(int p_what) {
 
 			get_tree()->connect(SNAME("node_removed"), callable_mp(this, &AnimationPlayerEditor::_node_removed));
 
-			add_theme_style_override(SceneStringName(panel), EditorNode::get_singleton()->get_editor_theme()->get_stylebox(SceneStringName(panel), SNAME("Panel")));
+			add_theme_style_override(SceneStringName(panel), EditorCore::get_singleton()->get_editor_theme()->get_stylebox(SceneStringName(panel), SNAME("Panel")));
 		} break;
 
 		case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
 			if (EditorThemeManager::is_generated_theme_outdated()) {
-				add_theme_style_override(SceneStringName(panel), EditorNode::get_singleton()->get_editor_theme()->get_stylebox(SceneStringName(panel), SNAME("Panel")));
+				add_theme_style_override(SceneStringName(panel), EditorCore::get_singleton()->get_editor_theme()->get_stylebox(SceneStringName(panel), SNAME("Panel")));
 			}
 		} break;
 
@@ -250,7 +251,7 @@ void AnimationPlayerEditor::go_to_nearest_keyframe(bool p_backward) {
 	bool bezier_active = track_editor->is_bezier_editor_active();
 
 	Node *root = get_tree()->get_edited_scene_root();
-	EditorSelection *selection = EditorNode::get_singleton()->get_editor_selection();
+	EditorSelection *selection = EditorCore::get_singleton()->get_editor_selection();
 
 	Vector<int> selected_tracks;
 	for (int i = 0; i < track_count; ++i) {
@@ -453,7 +454,7 @@ void AnimationPlayerEditor::_animation_selected(int p_which) {
 		Ref<Animation> anim = player->get_animation(current);
 		ERR_FAIL_COND(anim.is_null());
 		{
-			bool animation_is_readonly = EditorNode::get_singleton()->is_resource_read_only(anim);
+			bool animation_is_readonly = EditorCore::get_singleton()->is_resource_read_only(anim);
 
 			track_editor->set_animation(anim, animation_is_readonly);
 			Node *root = player->get_node_or_null(player->get_root_node());
@@ -894,8 +895,8 @@ Dictionary AnimationPlayerEditor::get_state() const {
 
 	if (!is_dummy) {
 		d["visible"] = is_visible_in_tree();
-		if (EditorNode::get_singleton()->get_edited_scene() && is_visible_in_tree() && player) {
-			d["player"] = EditorNode::get_singleton()->get_edited_scene()->get_path_to(player);
+		if (EditorSceneManager::get_singleton()->get_edited_scene() && is_visible_in_tree() && player) {
+			d["player"] = EditorSceneManager::get_singleton()->get_edited_scene()->get_path_to(player);
 			d["animation"] = player->get_assigned_animation();
 			d["track_editor_state"] = track_editor->get_state();
 		}
@@ -908,13 +909,13 @@ void AnimationPlayerEditor::set_state(const Dictionary &p_state) {
 	if (!p_state.has("visible") || !p_state["visible"]) {
 		return;
 	}
-	if (!EditorNode::get_singleton()->get_edited_scene()) {
+	if (!EditorSceneManager::get_singleton()->get_edited_scene()) {
 		return;
 	}
 
 	if (p_state.has("player")) {
-		Node *n = EditorNode::get_singleton()->get_edited_scene()->get_node(p_state["player"]);
-		if (Object::cast_to<AnimationPlayer>(n) && EditorNode::get_singleton()->get_editor_selection()->is_selected(n)) {
+		Node *n = EditorSceneManager::get_singleton()->get_edited_scene()->get_node(p_state["player"]);
+		if (Object::cast_to<AnimationPlayer>(n) && EditorCore::get_singleton()->get_editor_selection()->is_selected(n)) {
 			if (player) {
 				if (player->is_connected(SNAME("animation_list_changed"), callable_mp(this, &AnimationPlayerEditor::_animation_libraries_updated))) {
 					player->disconnect(SNAME("animation_list_changed"), callable_mp(this, &AnimationPlayerEditor::_animation_libraries_updated));
@@ -934,7 +935,7 @@ void AnimationPlayerEditor::set_state(const Dictionary &p_state) {
 			}
 
 			_update_player();
-			EditorNode::get_bottom_panel()->make_item_visible(this);
+			EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(this);
 			set_process(true);
 			ensure_visibility();
 
@@ -961,7 +962,7 @@ void AnimationPlayerEditor::_animation_resource_edit() {
 	String current = _get_current();
 	if (current != String()) {
 		Ref<Animation> anim = player->get_animation(current);
-		EditorNode::get_singleton()->edit_resource(anim);
+		EditorSceneManager::get_singleton()->edit_resource(anim);
 	}
 }
 
@@ -970,7 +971,7 @@ void AnimationPlayerEditor::_animation_edit() {
 	if (current != String()) {
 		Ref<Animation> anim = player->get_animation(current);
 
-		track_editor->set_animation(anim, EditorNode::get_singleton()->is_resource_read_only(anim));
+		track_editor->set_animation(anim, EditorCore::get_singleton()->is_resource_read_only(anim));
 
 		Node *root = player->get_node_or_null(player->get_root_node());
 		if (root) {
@@ -1037,7 +1038,7 @@ void AnimationPlayerEditor::_update_player() {
 
 		// Check if the global library is read-only since we want to disable options for adding/remove/renaming animations if it is.
 		Ref<AnimationLibrary> anim_library = player->get_animation_library(K);
-		bool is_animation_library_read_only = EditorNode::get_singleton()->is_resource_read_only(anim_library);
+		bool is_animation_library_read_only = EditorCore::get_singleton()->is_resource_read_only(anim_library);
 		if (!is_animation_library_read_only) {
 			all_animation_libraries_are_readonly = false;
 		} else {
@@ -1088,7 +1089,7 @@ void AnimationPlayerEditor::_update_player() {
 		String current = animation->get_item_text(animation->get_selected());
 		Ref<Animation> anim = player->get_animation(current);
 
-		bool animation_library_is_readonly = EditorNode::get_singleton()->is_resource_read_only(anim);
+		bool animation_library_is_readonly = EditorCore::get_singleton()->is_resource_read_only(anim);
 
 		track_editor->set_animation(anim, animation_library_is_readonly);
 		Node *root = player->get_node_or_null(player->get_root_node());
@@ -1165,7 +1166,7 @@ void AnimationPlayerEditor::_update_name_dialog_library_dropdown() {
 
 	int current_lib_id = index_offset; // Don't default to [Global] if it doesn't exist yet.
 	for (const StringName &library_name : libraries) {
-		if (!EditorNode::get_singleton()->is_resource_read_only(player->get_animation_library(library_name))) {
+		if (!EditorCore::get_singleton()->is_resource_read_only(player->get_animation_library(library_name))) {
 			library->add_item((library_name == StringName()) ? String(TTR("[Global]")) : String(library_name));
 			library->set_item_metadata(valid_library_count, String(library_name));
 			// Default to duplicating into same library.
@@ -1182,7 +1183,7 @@ void AnimationPlayerEditor::_update_name_dialog_library_dropdown() {
 	bool auto_assigning_non_global_library = false;
 	if (current_library_name == StringName() && valid_library_count > 0) {
 		for (const StringName &library_name : libraries) {
-			if (!EditorNode::get_singleton()->is_resource_read_only(player->get_animation_library(library_name))) {
+			if (!EditorCore::get_singleton()->is_resource_read_only(player->get_animation_library(library_name))) {
 				current_library_name = library_name;
 				current_lib_id = 0;
 				if (library_name != StringName()) {
@@ -1487,7 +1488,7 @@ void AnimationPlayerEditor::_current_animation_changed(const String &p_name) {
 		bool all_animation_libraries_are_readonly = true;
 		for (const StringName &K : libraries) {
 			Ref<AnimationLibrary> anim_library = player->get_animation_library(K);
-			bool animation_library_is_readonly = EditorNode::get_singleton()->is_resource_read_only(anim_library);
+			bool animation_library_is_readonly = EditorCore::get_singleton()->is_resource_read_only(anim_library);
 			if (!animation_library_is_readonly) {
 				all_animation_libraries_are_readonly = false;
 			}
@@ -1513,7 +1514,7 @@ void AnimationPlayerEditor::_current_animation_changed(const String &p_name) {
 
 		StringName library_name = player->find_animation_library(anim);
 
-		bool animation_is_readonly = EditorNode::get_singleton()->is_resource_read_only(anim);
+		bool animation_is_readonly = EditorCore::get_singleton()->is_resource_read_only(anim);
 
 		track_editor->set_animation(anim, animation_is_readonly);
 		_update_animation();
@@ -1590,7 +1591,7 @@ void AnimationPlayerEditor::_animation_tool_menu(int p_option) {
 		} break;
 		case TOOL_EDIT_RESOURCE: {
 			if (anim.is_valid()) {
-				EditorNode::get_singleton()->edit_resource(anim);
+				EditorSceneManager::get_singleton()->edit_resource(anim);
 			}
 		} break;
 	}
@@ -1606,7 +1607,7 @@ void AnimationPlayerEditor::_onion_skinning_menu(int p_option) {
 
 			if (onion.enabled) {
 				if (get_player() && !get_player()->has_animation(SceneStringName(RESET))) {
-					EditorNode::get_singleton()->show_warning(TTR("Onion skinning requires a RESET animation."));
+					EditorCore::get_singleton()->get_shell()->show_warning(TTR("Onion skinning requires a RESET animation."));
 				}
 				_start_onion_skinning(); // It will check for RESET animation anyway.
 			} else {
@@ -2445,7 +2446,7 @@ void AnimationPlayerEditorPlugin::make_visible(bool p_visible) {
 		if (AnimationTreeEditor::get_singleton() && AnimationTreeEditor::get_singleton()->is_visible_in_tree()) {
 			return;
 		}
-		EditorNode::get_bottom_panel()->make_item_visible(anim_editor);
+		EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(anim_editor);
 		anim_editor->set_process(true);
 		anim_editor->ensure_visibility();
 	}
@@ -2453,7 +2454,7 @@ void AnimationPlayerEditorPlugin::make_visible(bool p_visible) {
 
 AnimationPlayerEditorPlugin::AnimationPlayerEditorPlugin() {
 	anim_editor = memnew(AnimationPlayerEditor(this));
-	EditorNode::get_bottom_panel()->add_item(TTRC("Animation"), anim_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_animation_bottom_panel", TTRC("Toggle Animation Bottom Panel"), KeyModifierMask::ALT | Key::N));
+	EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(TTRC("Animation"), anim_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_animation_bottom_panel", TTRC("Toggle Animation Bottom Panel"), KeyModifierMask::ALT | Key::N));
 }
 
 AnimationPlayerEditorPlugin::~AnimationPlayerEditorPlugin() {

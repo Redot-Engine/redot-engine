@@ -149,11 +149,11 @@ void Polygon2DEditor::_notification(int p_what) {
 		case NOTIFICATION_VISIBILITY_CHANGED: {
 			if (is_visible()) {
 				dock_button->show();
-				EditorNode::get_bottom_panel()->make_item_visible(polygon_edit);
+				EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(polygon_edit);
 			} else {
 				dock_button->hide();
 				if (polygon_edit->is_visible_in_tree()) {
-					EditorNode::get_bottom_panel()->hide_bottom_panel();
+					EditorCore::get_singleton()->get_shell()->get_bottom_panel()->hide_bottom_panel();
 				}
 			}
 		} break;
@@ -1513,7 +1513,7 @@ Polygon2DEditor::Polygon2DEditor() {
 	error = memnew(AcceptDialog);
 	add_child(error);
 
-	dock_button = EditorNode::get_bottom_panel()->add_item(TTRC("Polygon"), polygon_edit, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_polygon_2d_bottom_panel", TTR("Toggle Polygon Bottom Panel")));
+	dock_button = EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(TTRC("Polygon"), polygon_edit, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_polygon_2d_bottom_panel", TTR("Toggle Polygon Bottom Panel")));
 	dock_button->hide();
 }
 

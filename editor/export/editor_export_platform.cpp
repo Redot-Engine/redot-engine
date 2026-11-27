@@ -426,7 +426,7 @@ Error EditorExportPlatform::_save_zip_patch_file(void *p_userdata, const String 
 }
 
 Ref<Texture2D> EditorExportPlatform::get_option_icon(int p_index) const {
-	Ref<Theme> theme = EditorNode::get_singleton()->get_editor_theme();
+	Ref<Theme> theme = EditorCore::get_singleton()->get_editor_theme();
 	ERR_FAIL_COND_V(theme.is_null(), Ref<Texture2D>());
 	return theme->get_icon(SNAME("Play"), EditorStringName(EditorIcons));
 }

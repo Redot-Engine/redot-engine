@@ -577,12 +577,12 @@ void EditorAssetInstaller::_install_asset() {
 			}
 			msg += "\n" + failed_files[i];
 		}
-		if (EditorNode::get_singleton() != nullptr) {
-			EditorNode::get_singleton()->show_warning(msg);
+		if (EditorCore::get_singleton()->get_shell() != nullptr) {
+			EditorCore::get_singleton()->get_shell()->show_warning(msg);
 		}
 	} else {
-		if (EditorNode::get_singleton() != nullptr) {
-			EditorNode::get_singleton()->show_warning(vformat(TTR("Asset \"%s\" installed successfully!"), asset_name), TTRC("Success!"));
+		if (EditorCore::get_singleton()->get_shell() != nullptr) {
+			EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Asset \"%s\" installed successfully!"), asset_name), TTRC("Success!"));
 		}
 	}
 

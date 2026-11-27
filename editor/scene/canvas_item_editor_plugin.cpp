@@ -46,6 +46,7 @@
 #include "editor/docks/scene_tree_dock.h"
 #include "editor/editor_main_screen.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/gui/editor_toaster.h"
@@ -458,7 +459,7 @@ Point2 CanvasItemEditor::snap_point(Point2 p_target, unsigned int p_modes, unsig
 
 	if (((is_snap_active && snap_guides && (p_modes & SNAP_GUIDES)) || (p_forced_modes & SNAP_GUIDES)) && std::fmod(rotation, (real_t)360.0) == 0.0) {
 		// Guides.
-		if (Node *scene = EditorNode::get_singleton()->get_edited_scene()) {
+		if (Node *scene = EditorSceneManager::get_singleton()->get_edited_scene()) {
 			Array vguides = scene->get_meta("_edit_vertical_guides_", Array());
 			for (int i = 0; i < vguides.size(); i++) {
 				_snap_if_closer_float(p_target.x, output.x, snap_target[0], vguides[i], SNAP_TARGET_GUIDE);
@@ -675,7 +676,7 @@ void CanvasItemEditor::_find_canvas_items_at_pos(const Point2 &p_pos, Node *p_no
 }
 
 void CanvasItemEditor::_get_canvas_items_at_pos(const Point2 &p_pos, Vector<_SelectResult> &r_items, bool p_allow_locked) {
-	Node *scene = EditorNode::get_singleton()->get_edited_scene();
+	Node *scene = EditorSceneManager::get_singleton()->get_edited_scene();
 
 	_find_canvas_items_at_pos(p_pos, scene, r_items);
 
@@ -724,7 +725,7 @@ void CanvasItemEditor::_find_canvas_items_in_rect(const Rect2 &p_rect, Node *p_n
 		return;
 	}
 	CanvasItem *ci = Object::cast_to<CanvasItem>(p_node);
-	Node *scene = EditorNode::get_singleton()->get_edited_scene();
+	Node *scene = EditorSceneManager::get_singleton()->get_edited_scene();
 
 	if (p_node != scene && !p_node->get_owner()) {
 		return;
@@ -794,7 +795,7 @@ bool CanvasItemEditor::_select_click_on_item(CanvasItem *item, Point2 p_click_po
 			still_selected = false;
 
 			if (top_node_list.size() == 1) {
-				EditorNode::get_singleton()->push_item(top_node_list.front()->get());
+				EditorSceneManager::get_singleton()->push_item(top_node_list.front()->get());
 			}
 		} else {
 			// Add the item to the selection
@@ -991,7 +992,7 @@ void CanvasItemEditor::_add_node_pressed(int p_result) {
 			[[fallthrough]];
 		}
 		case ADD_MOVE: {
-			nodes_to_move = EditorNode::get_singleton()->get_editor_selection()->get_top_selected_node_list();
+			nodes_to_move = EditorCore::get_singleton()->get_editor_selection()->get_top_selected_node_list();
 			if (nodes_to_move.is_empty()) {
 				return;
 			}
@@ -1110,11 +1111,11 @@ void CanvasItemEditor::_switch_theme_preview(int p_mode) {
 		theme_menu->set_item_checked(i, i == theme_preview);
 	}
 
-	EditorNode::get_singleton()->update_preview_themes(theme_preview);
+	EditorCore::get_singleton()->update_preview_themes(theme_preview);
 }
 
 void CanvasItemEditor::_is_hovering_guide(Point2 p_pos, bool p_is_pressed) {
-	Node *const scene = EditorNode::get_singleton()->get_edited_scene();
+	Node *const scene = EditorSceneManager::get_singleton()->get_edited_scene();
 	Array vguides = scene->get_meta("_edit_vertical_guides_", Array());
 	Array hguides = scene->get_meta("_edit_horizontal_guides_", Array());
 	Transform2D xform = viewport_scrollable->get_transform() * transform;
@@ -1160,7 +1161,7 @@ void CanvasItemEditor::_is_hovering_guide(Point2 p_pos, bool p_is_pressed) {
 }
 
 bool CanvasItemEditor::_gui_input_rulers_and_guides(const Ref<InputEvent> &p_event) {
-	Node *const scene = EditorNode::get_singleton()->get_edited_scene();
+	Node *const scene = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (!scene) {
 		return true;
 	}
@@ -1613,8 +1614,8 @@ bool CanvasItemEditor::_gui_input_open_scene_on_double_click(const Ref<InputEven
 		List<CanvasItem *> selection = _get_edited_canvas_items();
 		if (selection.size() == 1) {
 			CanvasItem *ci = selection.front()->get();
-			if (!ci->get_scene_file_path().is_empty() && ci != EditorNode::get_singleton()->get_edited_scene()) {
-				EditorNode::get_singleton()->load_scene(ci->get_scene_file_path());
+			if (!ci->get_scene_file_path().is_empty() && ci != EditorSceneManager::get_singleton()->get_edited_scene()) {
+				EditorSceneManager::get_singleton()->load_scene(ci->get_scene_file_path());
 				return true;
 			}
 		}
@@ -2451,19 +2452,19 @@ bool CanvasItemEditor::_gui_input_select(const Ref<InputEvent> &p_event) {
 
 				NodePath root_path = get_tree()->get_edited_scene_root()->get_path();
 				StringName root_name = root_path.get_name(root_path.get_name_count() - 1);
-				int icon_max_width = EditorNode::get_singleton()->get_editor_theme()->get_constant(SNAME("class_icon_size"), EditorStringName(Editor));
+				int icon_max_width = EditorCore::get_singleton()->get_editor_theme()->get_constant(SNAME("class_icon_size"), EditorStringName(Editor));
 
 				for (int i = 0; i < selection_results.size(); i++) {
 					CanvasItem *item = selection_results[i].item;
 
-					Ref<Texture2D> icon = EditorNode::get_singleton()->get_object_icon(item, "Node");
+					Ref<Texture2D> icon = EditorCore::get_singleton()->get_object_icon(item, "Node");
 					String node_path = "/" + root_name + "/" + String(root_path.rel_path_to(item->get_path()));
 
 					int locked = 0;
 					if (_is_node_locked(item)) {
 						locked = 1;
 					} else {
-						Node *scene = EditorNode::get_singleton()->get_edited_scene();
+						Node *scene = EditorSceneManager::get_singleton()->get_edited_scene();
 						Node *node = item;
 
 						while (node && node != scene->get_parent()) {
@@ -2507,7 +2508,7 @@ bool CanvasItemEditor::_gui_input_select(const Ref<InputEvent> &p_event) {
 					break;
 				}
 			}
-			for (Node *node : EditorNode::get_singleton()->get_editor_selection()->get_top_selected_node_list()) {
+			for (Node *node : EditorCore::get_singleton()->get_editor_selection()->get_top_selected_node_list()) {
 				if (Object::cast_to<CanvasItem>(node)) {
 					add_node_menu->add_icon_item(get_editor_theme_icon(SNAME("ToolMove")), TTRC("Move Node(s) Here"), ADD_MOVE);
 					break;
@@ -2546,7 +2547,7 @@ bool CanvasItemEditor::_gui_input_select(const Ref<InputEvent> &p_event) {
 
 		if (can_select) {
 			// Single item selection.
-			Node *scene = EditorNode::get_singleton()->get_edited_scene();
+			Node *scene = EditorSceneManager::get_singleton()->get_edited_scene();
 			if (!scene) {
 				return true;
 			}
@@ -2624,7 +2625,7 @@ bool CanvasItemEditor::_gui_input_select(const Ref<InputEvent> &p_event) {
 	if (drag_type == DRAG_BOX_SELECTION) {
 		if (b.is_valid() && !b->is_pressed() && b->get_button_index() == MouseButton::LEFT) {
 			// Confirms box selection.
-			if (Node *const scene = EditorNode::get_singleton()->get_edited_scene()) {
+			if (Node *const scene = EditorSceneManager::get_singleton()->get_edited_scene()) {
 				List<CanvasItem *> selitems;
 
 				Point2 bsfrom = drag_from;
@@ -2638,7 +2639,7 @@ bool CanvasItemEditor::_gui_input_select(const Ref<InputEvent> &p_event) {
 
 				_find_canvas_items_in_rect(Rect2(bsfrom, bsto - bsfrom), scene, &selitems);
 				if (selitems.size() == 1 && editor_selection->get_top_selected_node_list().is_empty()) {
-					EditorNode::get_singleton()->push_item(selitems.front()->get());
+					EditorSceneManager::get_singleton()->push_item(selitems.front()->get());
 				}
 				for (CanvasItem *E : selitems) {
 					editor_selection->add_node(E);
@@ -2731,7 +2732,7 @@ bool CanvasItemEditor::_gui_input_hover(const Ref<InputEvent> &p_event) {
 
 			_HoverResult hover_result;
 			hover_result.position = ci->get_screen_transform().get_origin();
-			hover_result.icon = EditorNode::get_singleton()->get_object_icon(ci);
+			hover_result.icon = EditorCore::get_singleton()->get_object_icon(ci);
 			hover_result.name = ci->get_name();
 
 			hovering_results_tmp.push_back(hover_result);
@@ -2772,7 +2773,7 @@ void CanvasItemEditor::_gui_input_viewport(const Ref<InputEvent> &p_event) {
 		accepted = true;
 		if (_gui_input_rulers_and_guides(p_event)) {
 			// print_line("Rulers and guides");
-		} else if (EditorNode::get_singleton()->get_editor_plugins_over()->forward_gui_input(p_event)) {
+		} else if (EditorPluginManager::get_singleton()->get_editor_plugins_over()->forward_gui_input(p_event)) {
 			// print_line("Plugin");
 		} else if (_gui_input_open_scene_on_double_click(p_event)) {
 			// print_line("Open scene on double click");
@@ -3020,7 +3021,7 @@ void CanvasItemEditor::_draw_guides() {
 	Transform2D xform = viewport_scrollable->get_transform() * transform;
 
 	// Guides already there.
-	if (Node *scene = EditorNode::get_singleton()->get_edited_scene()) {
+	if (Node *scene = EditorSceneManager::get_singleton()->get_edited_scene()) {
 		Array vguides = scene->get_meta("_edit_vertical_guides_", Array());
 		for (int i = 0; i < vguides.size(); i++) {
 			if (drag_type == DRAG_V_GUIDE && i == dragged_guide_index) {
@@ -3888,7 +3889,7 @@ void CanvasItemEditor::_draw_axis() {
 void CanvasItemEditor::_draw_invisible_nodes_positions(Node *p_node, const Transform2D &p_parent_xform, const Transform2D &p_canvas_xform) {
 	ERR_FAIL_NULL(p_node);
 
-	Node *scene = EditorNode::get_singleton()->get_edited_scene();
+	Node *scene = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (p_node != scene && p_node->get_owner() != scene && !scene->is_editable_instance(p_node->get_owner())) {
 		return;
 	}
@@ -4019,7 +4020,7 @@ void CanvasItemEditor::_draw_message() {
 void CanvasItemEditor::_draw_locks_and_groups(Node *p_node, const Transform2D &p_parent_xform, const Transform2D &p_canvas_xform) {
 	ERR_FAIL_NULL(p_node);
 
-	Node *scene = EditorNode::get_singleton()->get_edited_scene();
+	Node *scene = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (p_node != scene && p_node->get_owner() != scene && !scene->is_editable_instance(p_node->get_owner())) {
 		return;
 	}
@@ -4071,12 +4072,12 @@ void CanvasItemEditor::_draw_viewport() {
 	transform = Transform2D();
 	transform.scale_basis(Size2(zoom, zoom));
 	transform.columns[2] = -view_offset * zoom;
-	EditorNode::get_singleton()->get_scene_root()->set_global_canvas_transform(transform);
+	EditorCore::get_singleton()->get_shell()->get_scene_root()->set_global_canvas_transform(transform);
 
 	_draw_grid();
 	_draw_ruler_tool();
 	_draw_axis();
-	if (Node *const scene = EditorNode::get_singleton()->get_edited_scene()) {
+	if (Node *const scene = EditorSceneManager::get_singleton()->get_edited_scene()) {
 		_draw_locks_and_groups(scene);
 		_draw_invisible_nodes_positions(scene);
 	}
@@ -4085,11 +4086,11 @@ void CanvasItemEditor::_draw_viewport() {
 	RID ci = viewport->get_canvas_item();
 	RenderingServer::get_singleton()->canvas_item_add_set_transform(ci, Transform2D());
 
-	EditorPluginList *over_plugin_list = EditorNode::get_singleton()->get_editor_plugins_over();
+	EditorPluginList *over_plugin_list = EditorPluginManager::get_singleton()->get_editor_plugins_over();
 	if (!over_plugin_list->is_empty()) {
 		over_plugin_list->forward_canvas_draw_over_viewport(viewport);
 	}
-	EditorPluginList *force_over_plugin_list = EditorNode::get_singleton()->get_editor_plugins_force_over();
+	EditorPluginList *force_over_plugin_list = EditorPluginManager::get_singleton()->get_editor_plugins_force_over();
 	if (!force_over_plugin_list->is_empty()) {
 		force_over_plugin_list->forward_canvas_force_draw_over_viewport(viewport);
 	}
@@ -4163,7 +4164,7 @@ void CanvasItemEditor::_update_editor_settings() {
 }
 
 void CanvasItemEditor::_project_settings_changed() {
-	EditorNode::get_singleton()->get_scene_root()->set_snap_controls_to_pixels(GLOBAL_GET("gui/common/snap_controls_to_pixels"));
+	EditorCore::get_singleton()->get_shell()->get_scene_root()->set_snap_controls_to_pixels(GLOBAL_GET("gui/common/snap_controls_to_pixels"));
 }
 
 void CanvasItemEditor::_notification(int p_what) {
@@ -4336,8 +4337,9 @@ void CanvasItemEditor::_update_scrollbars() {
 
 	// Calculate scrollable area.
 	Rect2 canvas_item_rect = Rect2(Point2(), screen_rect);
-	if (EditorNode::get_singleton()->is_inside_tree()) {
-		if (Node *const scene = EditorNode::get_singleton()->get_edited_scene()) {
+	EditorShell *shell = EditorCore::get_singleton()->get_shell();
+	if (shell && shell->is_inside_tree()) {
+		if (Node *const scene = EditorSceneManager::get_singleton()->get_edited_scene()) {
 			Rect2 content_rect = _get_encompassing_rect(scene);
 			canvas_item_rect.expand_to(content_rect.position);
 			canvas_item_rect.expand_to(content_rect.position + content_rect.size);
@@ -4554,7 +4556,7 @@ void CanvasItemEditor::_insert_animation_keys(bool p_location, bool p_rotation, 
 void CanvasItemEditor::_prepare_view_menu() {
 	PopupMenu *popup = view_menu->get_popup();
 
-	Node *root = EditorNode::get_singleton()->get_edited_scene();
+	Node *root = EditorSceneManager::get_singleton()->get_edited_scene();
 	bool has_guides = root && (root->has_meta("_edit_horizontal_guides_") || root->has_meta("_edit_vertical_guides_"));
 	popup->set_item_disabled(popup->get_item_index(CLEAR_GUIDES), !has_guides);
 }
@@ -4856,7 +4858,7 @@ void CanvasItemEditor::_popup_callback(int p_op) {
 
 		} break;
 		case CLEAR_GUIDES: {
-			Node *const root = EditorNode::get_singleton()->get_edited_scene();
+			Node *const root = EditorSceneManager::get_singleton()->get_edited_scene();
 
 			if (root && (root->has_meta("_edit_horizontal_guides_") || root->has_meta("_edit_vertical_guides_"))) {
 				undo_redo->create_action(TTR("Clear Guides"));
@@ -5326,7 +5328,7 @@ void CanvasItemEditor::focus_selection() {
 }
 
 void CanvasItemEditor::center_at(const Point2 &p_pos) {
-	Vector2 offset = viewport->get_size() / 2 - EditorNode::get_singleton()->get_scene_root()->get_global_canvas_transform().xform(p_pos);
+	Vector2 offset = viewport->get_size() / 2 - EditorCore::get_singleton()->get_shell()->get_scene_root()->get_global_canvas_transform().xform(p_pos);
 	view_offset -= (offset / zoom).round();
 	update_viewport();
 }
@@ -5337,7 +5339,7 @@ CanvasItemEditor::CanvasItemEditor() {
 	snap_target2[0] = SNAP_TARGET_NONE;
 	snap_target2[1] = SNAP_TARGET_NONE;
 
-	editor_selection = EditorNode::get_singleton()->get_editor_selection();
+	editor_selection = EditorCore::get_singleton()->get_editor_selection();
 	editor_selection->add_editor_plugin(this);
 	editor_selection->connect("selection_changed", callable_mp((CanvasItem *)this, &CanvasItem::queue_redraw));
 	editor_selection->connect("selection_changed", callable_mp(this, &CanvasItemEditor::_selection_changed));
@@ -5386,7 +5388,7 @@ CanvasItemEditor::CanvasItemEditor() {
 	viewport_scrollable->add_child(scene_tree);
 	scene_tree->set_stretch(true);
 	scene_tree->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-	scene_tree->add_child(EditorNode::get_singleton()->get_scene_root());
+	scene_tree->add_child(EditorCore::get_singleton()->get_shell()->get_scene_root());
 
 	controls_vb = memnew(VBoxContainer);
 	controls_vb->set_begin(Point2(5, 5));
@@ -5843,14 +5845,14 @@ void CanvasItemEditorPlugin::make_visible(bool p_visible) {
 	if (p_visible) {
 		canvas_item_editor->show();
 		canvas_item_editor->set_process(true);
-		RenderingServer::get_singleton()->viewport_set_disable_2d(EditorNode::get_singleton()->get_scene_root()->get_viewport_rid(), false);
-		RenderingServer::get_singleton()->viewport_set_environment_mode(EditorNode::get_singleton()->get_scene_root()->get_viewport_rid(), RS::VIEWPORT_ENVIRONMENT_ENABLED);
+		RenderingServer::get_singleton()->viewport_set_disable_2d(EditorCore::get_singleton()->get_shell()->get_scene_root()->get_viewport_rid(), false);
+		RenderingServer::get_singleton()->viewport_set_environment_mode(EditorCore::get_singleton()->get_shell()->get_scene_root()->get_viewport_rid(), RS::VIEWPORT_ENVIRONMENT_ENABLED);
 
 	} else {
 		canvas_item_editor->hide();
 		canvas_item_editor->set_process(false);
-		RenderingServer::get_singleton()->viewport_set_disable_2d(EditorNode::get_singleton()->get_scene_root()->get_viewport_rid(), true);
-		RenderingServer::get_singleton()->viewport_set_environment_mode(EditorNode::get_singleton()->get_scene_root()->get_viewport_rid(), RS::VIEWPORT_ENVIRONMENT_DISABLED);
+		RenderingServer::get_singleton()->viewport_set_disable_2d(EditorCore::get_singleton()->get_shell()->get_scene_root()->get_viewport_rid(), true);
+		RenderingServer::get_singleton()->viewport_set_environment_mode(EditorCore::get_singleton()->get_shell()->get_scene_root()->get_viewport_rid(), RS::VIEWPORT_ENVIRONMENT_DISABLED);
 	}
 }
 
@@ -5878,7 +5880,7 @@ void CanvasItemEditorPlugin::_notification(int p_what) {
 CanvasItemEditorPlugin::CanvasItemEditorPlugin() {
 	canvas_item_editor = memnew(CanvasItemEditor);
 	canvas_item_editor->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	EditorNode::get_singleton()->get_editor_main_screen()->get_control()->add_child(canvas_item_editor);
+	EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->get_control()->add_child(canvas_item_editor);
 	canvas_item_editor->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
 	canvas_item_editor->hide();
 }
@@ -5947,7 +5949,7 @@ void CanvasItemEditorViewport::_create_preview(const Vector<String> &files) cons
 	}
 
 	if (add_preview) {
-		EditorNode::get_singleton()->get_scene_root()->add_child(preview_node);
+		EditorCore::get_singleton()->get_shell()->get_scene_root()->add_child(preview_node);
 	}
 }
 
@@ -5962,7 +5964,7 @@ void CanvasItemEditorViewport::_remove_preview() {
 			node->queue_free();
 			preview_node->remove_child(node);
 		}
-		EditorNode::get_singleton()->get_scene_root()->remove_child(preview_node);
+		EditorCore::get_singleton()->get_shell()->get_scene_root()->remove_child(preview_node);
 
 		label->hide();
 		label_desc->hide();
@@ -5996,21 +5998,21 @@ void CanvasItemEditorViewport::_create_texture_node(Node *p_parent, Node *p_chil
 
 	if (p_parent) {
 		undo_redo->add_do_method(p_parent, "add_child", p_child, true);
-		undo_redo->add_do_method(p_child, "set_owner", EditorNode::get_singleton()->get_edited_scene());
+		undo_redo->add_do_method(p_child, "set_owner", EditorSceneManager::get_singleton()->get_edited_scene());
 		undo_redo->add_do_reference(p_child);
 		undo_redo->add_undo_method(p_parent, "remove_child", p_child);
 	} else { // If no parent is selected, set as root node of the scene.
-		undo_redo->add_do_method(EditorNode::get_singleton(), "set_edited_scene", p_child);
-		undo_redo->add_do_method(p_child, "set_owner", EditorNode::get_singleton()->get_edited_scene());
+		undo_redo->add_do_method(EditorSceneManager::get_singleton(), "set_edited_scene", p_child);
+		undo_redo->add_do_method(p_child, "set_owner", EditorSceneManager::get_singleton()->get_edited_scene());
 		undo_redo->add_do_reference(p_child);
-		undo_redo->add_undo_method(EditorNode::get_singleton(), "set_edited_scene", (Object *)nullptr);
+		undo_redo->add_undo_method(EditorSceneManager::get_singleton(), "set_edited_scene", (Object *)nullptr);
 	}
 
 	if (p_parent) {
 		String new_name = p_parent->validate_child_name(p_child);
 		EditorDebuggerNode *ed = EditorDebuggerNode::get_singleton();
-		undo_redo->add_do_method(ed, "live_debug_create_node", EditorNode::get_singleton()->get_edited_scene()->get_path_to(p_parent), p_child->get_class(), new_name);
-		undo_redo->add_undo_method(ed, "live_debug_remove_node", NodePath(String(EditorNode::get_singleton()->get_edited_scene()->get_path_to(p_parent)) + "/" + new_name));
+		undo_redo->add_do_method(ed, "live_debug_create_node", EditorSceneManager::get_singleton()->get_edited_scene()->get_path_to(p_parent), p_child->get_class(), new_name);
+		undo_redo->add_undo_method(ed, "live_debug_remove_node", NodePath(String(EditorSceneManager::get_singleton()->get_edited_scene()->get_path_to(p_parent)) + "/" + new_name));
 	}
 
 	if (Object::cast_to<TouchScreenButton>(p_child) || Object::cast_to<TextureButton>(p_child)) {
@@ -6066,21 +6068,21 @@ void CanvasItemEditorViewport::_create_audio_node(Node *p_parent, const String &
 
 	if (p_parent) {
 		undo_redo->add_do_method(p_parent, "add_child", child, true);
-		undo_redo->add_do_method(child, "set_owner", EditorNode::get_singleton()->get_edited_scene());
+		undo_redo->add_do_method(child, "set_owner", EditorSceneManager::get_singleton()->get_edited_scene());
 		undo_redo->add_do_reference(child);
 		undo_redo->add_undo_method(p_parent, "remove_child", child);
 	} else { // If no parent is selected, set as root node of the scene.
-		undo_redo->add_do_method(EditorNode::get_singleton(), "set_edited_scene", child);
-		undo_redo->add_do_method(child, "set_owner", EditorNode::get_singleton()->get_edited_scene());
+		undo_redo->add_do_method(EditorSceneManager::get_singleton(), "set_edited_scene", child);
+		undo_redo->add_do_method(child, "set_owner", EditorSceneManager::get_singleton()->get_edited_scene());
 		undo_redo->add_do_reference(child);
-		undo_redo->add_undo_method(EditorNode::get_singleton(), "set_edited_scene", (Object *)nullptr);
+		undo_redo->add_undo_method(EditorSceneManager::get_singleton(), "set_edited_scene", (Object *)nullptr);
 	}
 
 	if (p_parent) {
 		String new_name = p_parent->validate_child_name(child);
 		EditorDebuggerNode *ed = EditorDebuggerNode::get_singleton();
-		undo_redo->add_do_method(ed, "live_debug_create_node", EditorNode::get_singleton()->get_edited_scene()->get_path_to(p_parent), child->get_class(), new_name);
-		undo_redo->add_undo_method(ed, "live_debug_remove_node", NodePath(String(EditorNode::get_singleton()->get_edited_scene()->get_path_to(p_parent)) + "/" + new_name));
+		undo_redo->add_do_method(ed, "live_debug_create_node", EditorSceneManager::get_singleton()->get_edited_scene()->get_path_to(p_parent), child->get_class(), new_name);
+		undo_redo->add_undo_method(ed, "live_debug_remove_node", NodePath(String(EditorSceneManager::get_singleton()->get_edited_scene()->get_path_to(p_parent)) + "/" + new_name));
 	}
 
 	// Compute the global position
@@ -6095,7 +6097,7 @@ void CanvasItemEditorViewport::_create_audio_node(Node *p_parent, const String &
 
 	undo_redo->add_do_method(child, "set_position", local_target_pos);
 
-	EditorSelection *editor_selection = EditorNode::get_singleton()->get_editor_selection();
+	EditorSelection *editor_selection = EditorCore::get_singleton()->get_editor_selection();
 	undo_redo->add_do_method(editor_selection, "add_node", child);
 }
 
@@ -6110,7 +6112,7 @@ bool CanvasItemEditorViewport::_create_instance(Node *p_parent, const String &p_
 		return false;
 	}
 
-	Node *edited_scene = EditorNode::get_singleton()->get_edited_scene();
+	Node *edited_scene = EditorSceneManager::get_singleton()->get_edited_scene();
 
 	if (!edited_scene->get_scene_file_path().is_empty()) { // Cyclic instantiation.
 		if (_cyclical_dependency_exists(edited_scene->get_scene_file_path(), instantiated_scene)) {
@@ -6122,7 +6124,7 @@ bool CanvasItemEditorViewport::_create_instance(Node *p_parent, const String &p_
 	instantiated_scene->set_scene_file_path(ProjectSettings::get_singleton()->localize_path(p_path));
 
 	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-	EditorSelection *editor_selection = EditorNode::get_singleton()->get_editor_selection();
+	EditorSelection *editor_selection = EditorCore::get_singleton()->get_editor_selection();
 	undo_redo->add_do_method(p_parent, "add_child", instantiated_scene, true);
 	undo_redo->add_do_method(instantiated_scene, "set_owner", edited_scene);
 	undo_redo->add_do_reference(instantiated_scene);
@@ -6170,7 +6172,7 @@ void CanvasItemEditorViewport::_perform_drop_data() {
 		Ref<PackedScene> scene = res;
 		if (scene.is_valid()) {
 			// Without root node act the same as "Load Inherited Scene".
-			Error err = EditorNode::get_singleton()->load_scene(path, false, true);
+			Error err = EditorSceneManager::get_singleton()->load_scene(path, false, true);
 			if (err != OK) {
 				accept->set_text(vformat(TTR("Error instantiating scene from %s."), path.get_file()));
 				accept->popup_centered();
@@ -6182,8 +6184,8 @@ void CanvasItemEditorViewport::_perform_drop_data() {
 	PackedStringArray error_files;
 
 	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action_for_history(TTR("Create Node"), EditorNode::get_editor_data().get_current_edited_scene_history_id());
-	EditorSelection *editor_selection = EditorNode::get_singleton()->get_editor_selection();
+	undo_redo->create_action_for_history(TTR("Create Node"), EditorCore::get_singleton()->get_editor_data().get_current_edited_scene_history_id());
+	EditorSelection *editor_selection = EditorCore::get_singleton()->get_editor_selection();
 	undo_redo->add_do_method(editor_selection, "clear");
 
 	for (int i = 0; i < selected_files.size(); i++) {
@@ -6235,7 +6237,7 @@ bool CanvasItemEditorViewport::can_drop_data(const Point2 &p_point, const Varian
 
 	Vector<String> files = d["files"];
 
-	const Node *edited_scene = EditorNode::get_singleton()->get_edited_scene();
+	const Node *edited_scene = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (!edited_scene && files.size() > 1) {
 		canvas_item_editor->message = TTR("Can't instantiate multiple nodes without root.");
 		canvas_item_editor->update_viewport();
@@ -6373,8 +6375,8 @@ void CanvasItemEditorViewport::drop_data(const Point2 &p_point, const Variant &p
 		return;
 	}
 
-	List<Node *> selected_nodes = EditorNode::get_singleton()->get_editor_selection()->get_top_selected_node_list();
-	Node *root_node = EditorNode::get_singleton()->get_edited_scene();
+	List<Node *> selected_nodes = EditorCore::get_singleton()->get_editor_selection()->get_top_selected_node_list();
+	Node *root_node = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (selected_nodes.size() > 0) {
 		Node *selected_node = selected_nodes.front()->get();
 		if (is_alt) {
@@ -6453,10 +6455,10 @@ CanvasItemEditorViewport::CanvasItemEditorViewport(CanvasItemEditor *p_canvas_it
 	preview_node = memnew(Control);
 
 	accept = memnew(AcceptDialog);
-	EditorNode::get_singleton()->get_gui_base()->add_child(accept);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(accept);
 
 	texture_node_type_selector = memnew(AcceptDialog);
-	EditorNode::get_singleton()->get_gui_base()->add_child(texture_node_type_selector);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(texture_node_type_selector);
 	texture_node_type_selector->connect(SceneStringName(confirmed), callable_mp(this, &CanvasItemEditorViewport::_on_change_type_confirmed));
 	texture_node_type_selector->connect("canceled", callable_mp(this, &CanvasItemEditorViewport::_on_change_type_closed));
 

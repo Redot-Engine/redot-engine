@@ -310,12 +310,12 @@ bool ShaderFileEditorPlugin::handles(Object *p_object) const {
 void ShaderFileEditorPlugin::make_visible(bool p_visible) {
 	if (p_visible) {
 		button->show();
-		EditorNode::get_bottom_panel()->make_item_visible(shader_editor);
+		EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(shader_editor);
 
 	} else {
 		button->hide();
 		if (shader_editor->is_visible_in_tree()) {
-			EditorNode::get_bottom_panel()->hide_bottom_panel();
+			EditorCore::get_singleton()->get_shell()->get_bottom_panel()->hide_bottom_panel();
 		}
 	}
 }
@@ -324,6 +324,6 @@ ShaderFileEditorPlugin::ShaderFileEditorPlugin() {
 	shader_editor = memnew(ShaderFileEditor);
 
 	shader_editor->set_custom_minimum_size(Size2(0, 300) * EDSCALE);
-	button = EditorNode::get_bottom_panel()->add_item(TTRC("ShaderFile"), shader_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_shader_file_bottom_panel", TTRC("Toggle ShaderFile Bottom Panel")));
+	button = EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(TTRC("ShaderFile"), shader_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_shader_file_bottom_panel", TTRC("Toggle ShaderFile Bottom Panel")));
 	button->hide();
 }

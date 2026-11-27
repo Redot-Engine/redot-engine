@@ -3284,14 +3284,14 @@ Error ResourceImporterScene::import(ResourceUID::ID p_source_id, const String &p
 		}
 		Ref<Script> scr = ResourceLoader::load(post_import_script_path);
 		if (scr.is_null()) {
-			EditorNode::add_io_error(TTR("Couldn't load post-import script:") + " " + post_import_script_path);
+			EditorCore::get_singleton()->get_shell()->add_io_error(TTR("Couldn't load post-import script:") + " " + post_import_script_path);
 		} else if (scr->get_instance_base_type() != "EditorScenePostImport") {
-			EditorNode::add_io_error(TTR("Script is not a subtype of EditorScenePostImport:") + " " + post_import_script_path);
+			EditorCore::get_singleton()->get_shell()->add_io_error(TTR("Script is not a subtype of EditorScenePostImport:") + " " + post_import_script_path);
 		} else {
 			post_import_script.instantiate();
 			post_import_script->set_script(scr);
 			if (!post_import_script->get_script_instance()) {
-				EditorNode::add_io_error(TTR("Invalid/broken script for post-import (check console):") + " " + post_import_script_path);
+				EditorCore::get_singleton()->get_shell()->add_io_error(TTR("Invalid/broken script for post-import (check console):") + " " + post_import_script_path);
 				post_import_script.unref();
 				return ERR_CANT_CREATE;
 			}
@@ -3315,7 +3315,7 @@ Error ResourceImporterScene::import(ResourceUID::ID p_source_id, const String &p
 		post_import_script->init(p_source_file);
 		scene = post_import_script->post_import(scene);
 		if (!scene) {
-			EditorNode::add_io_error(
+			EditorCore::get_singleton()->get_shell()->add_io_error(
 					TTR("Error running post-import script:") + " " + post_import_script_path + "\n" +
 					TTR("Did you return a Node-derived object in the `_post_import()` method?"));
 			return err;
@@ -3368,7 +3368,7 @@ Error ResourceImporterScene::import(ResourceUID::ID p_source_id, const String &p
 	memdelete(scene);
 
 	//this is not the time to reimport, wait until import process is done, import file is saved, etc.
-	//EditorNode::get_singleton()->reload_scene(p_source_file);
+	//EditorSceneManager::get_singleton()->reload_scene(p_source_file);
 
 	return OK;
 }

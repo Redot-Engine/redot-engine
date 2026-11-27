@@ -42,6 +42,7 @@
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
+#include "editor/settings/editor_command_palette.h"
 #include "editor/settings/editor_settings.h"
 #include "scene/gui/check_box.h"
 #include "scene/gui/item_list.h"
@@ -71,7 +72,7 @@ void HistoryDock::refresh_history() {
 		return;
 	}
 
-	const EditorUndoRedoManager::History &current_scene_history = ur_manager->get_or_create_history(EditorNode::get_editor_data().get_current_edited_scene_history_id());
+	const EditorUndoRedoManager::History &current_scene_history = ur_manager->get_or_create_history(EditorCore::get_singleton()->get_editor_data().get_current_edited_scene_history_id());
 	const EditorUndoRedoManager::History &global_history = ur_manager->get_or_create_history(EditorUndoRedoManager::GLOBAL_HISTORY);
 
 	Vector<EditorUndoRedoManager::Action> full_history;
@@ -140,7 +141,7 @@ void HistoryDock::refresh_version() {
 		return;
 	}
 
-	const EditorUndoRedoManager::History &current_scene_history = ur_manager->get_or_create_history(EditorNode::get_editor_data().get_current_edited_scene_history_id());
+	const EditorUndoRedoManager::History &current_scene_history = ur_manager->get_or_create_history(EditorCore::get_singleton()->get_editor_data().get_current_edited_scene_history_id());
 	const EditorUndoRedoManager::History &global_history = ur_manager->get_or_create_history(EditorUndoRedoManager::GLOBAL_HISTORY);
 	double newest_undo_timestamp = 0;
 
@@ -183,14 +184,14 @@ void HistoryDock::refresh_version() {
 	action_list->set_current(idx);
 }
 
-void HistoryDock::_save_layout_to_config(Ref<ConfigFile> p_layout, const String &p_section) const {
-	p_layout->set_value(p_section, "dock_history_include_scene", current_scene_checkbox->is_pressed());
-	p_layout->set_value(p_section, "dock_history_include_global", global_history_checkbox->is_pressed());
+void HistoryDock::save_layout_to_config(Ref<ConfigFile> &p_layout, const String &p_section) const {
+	p_layout->set_value(p_section, "include_scene", current_scene_checkbox->is_pressed());
+	p_layout->set_value(p_section, "include_global", global_history_checkbox->is_pressed());
 }
 
-void HistoryDock::_load_layout_from_config(Ref<ConfigFile> p_layout, const String &p_section) {
-	current_scene_checkbox->set_pressed_no_signal(p_layout->get_value(p_section, "dock_history_include_scene", true));
-	global_history_checkbox->set_pressed_no_signal(p_layout->get_value(p_section, "dock_history_include_global", true));
+void HistoryDock::load_layout_from_config(const Ref<ConfigFile> &p_layout, const String &p_section) {
+	current_scene_checkbox->set_pressed_no_signal(p_layout->get_value(p_section, "include_scene", true));
+	global_history_checkbox->set_pressed_no_signal(p_layout->get_value(p_section, "include_global", true));
 	refresh_history();
 }
 
@@ -201,7 +202,7 @@ void HistoryDock::seek_history(int p_index) {
 	if (!include_scene && !include_global) {
 		return;
 	}
-	int current_scene_id = EditorNode::get_editor_data().get_current_edited_scene_history_id();
+	int current_scene_id = EditorCore::get_singleton()->get_editor_data().get_current_edited_scene_history_id();
 
 	while (current_version < p_index) {
 		if (include_scene) {
@@ -231,7 +232,7 @@ void HistoryDock::seek_history(int p_index) {
 void HistoryDock::_notification(int p_notification) {
 	switch (p_notification) {
 		case NOTIFICATION_READY: {
-			EditorNode::get_singleton()->connect("scene_changed", callable_mp(this, &HistoryDock::on_history_changed));
+			EditorSceneManager::get_singleton()->connect("scene_changed", callable_mp(this, &HistoryDock::on_history_changed));
 		} break;
 
 		case NOTIFICATION_VISIBILITY_CHANGED: {
@@ -242,20 +243,21 @@ void HistoryDock::_notification(int p_notification) {
 	}
 }
 
-void HistoryDock::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("_save_layout_to_config"), &HistoryDock::_save_layout_to_config);
-	ClassDB::bind_method(D_METHOD("_load_layout_from_config"), &HistoryDock::_load_layout_from_config);
-}
-
 HistoryDock::HistoryDock() {
-	set_name("History");
+	set_name(TTRC("History"));
+	set_icon_name("History");
+	set_dock_shortcut(ED_SHORTCUT_AND_COMMAND("docks/open_history", TTRC("Open History Dock")));
+	set_default_slot(EditorDockManager::DOCK_SLOT_RIGHT_UL);
 
 	ur_manager = EditorUndoRedoManager::get_singleton();
 	ur_manager->connect("history_changed", callable_mp(this, &HistoryDock::on_history_changed));
 	ur_manager->connect("version_changed", callable_mp(this, &HistoryDock::on_version_changed));
 
+	VBoxContainer *main_vb = memnew(VBoxContainer);
+	add_child(main_vb);
+
 	HBoxContainer *mode_hb = memnew(HBoxContainer);
-	add_child(mode_hb);
+	main_vb->add_child(mode_hb);
 
 	current_scene_checkbox = memnew(CheckBox);
 	mode_hb->add_child(current_scene_checkbox);
@@ -277,7 +279,7 @@ HistoryDock::HistoryDock() {
 
 	action_list = memnew(ItemList);
 	action_list->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-	add_child(action_list);
+	main_vb->add_child(action_list);
 	action_list->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 	action_list->connect(SceneStringName(item_selected), callable_mp(this, &HistoryDock::seek_history));
 }

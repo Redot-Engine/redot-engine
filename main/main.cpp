@@ -122,7 +122,9 @@
 #include "editor/doc/doc_data_class_path.gen.h"
 #include "editor/doc/doc_tools.h"
 #include "editor/doc/editor_help.h"
+#include "editor/editor_core.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/file_system/editor_file_system.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/gui/progress_dialog.h"
@@ -4542,6 +4544,10 @@ int Main::start() {
 				translation_server->get_editor_domain()->set_pseudolocalization_enabled(true);
 			}
 
+			EditorCore *editor_core = memnew(EditorCore);
+			sml->get_root()->add_child(editor_core);
+			editor_core->initialize();
+
 			editor_node = memnew(EditorNode);
 			sml->get_root()->add_child(editor_node);
 
@@ -4668,8 +4674,9 @@ int Main::start() {
 
 #ifdef TOOLS_ENABLED
 			if (editor) {
-				if (!recovery_mode && (game_path != ResourceUID::ensure_path(String(GLOBAL_GET("application/run/main_scene"))) || !editor_node->has_scenes_in_session())) {
-					Error serr = editor_node->load_scene(local_game_path);
+				bool has_scenes = editor_node != nullptr ? editor_node->has_scenes_in_session() : EditorSceneManager::get_singleton()->has_scenes_in_session();
+				if (!recovery_mode && (game_path != ResourceUID::ensure_path(String(GLOBAL_GET("application/run/main_scene"))) || !has_scenes)) {
+					Error serr = EditorSceneManager::get_singleton()->load_scene(local_game_path);
 					if (serr != OK) {
 						ERR_PRINT("Failed to load scene");
 					}
@@ -5106,7 +5113,7 @@ bool Main::iteration() {
 			ERR_FAIL_V_MSG(true,
 					"Command line option --build-solutions was passed, but no project is being edited. Aborting.");
 		}
-		if (!EditorNode::get_singleton()->call_build()) {
+		if (!EditorCore::get_singleton()->get_shell()->call_build()) {
 			OS::get_singleton()->set_exit_code(EXIT_FAILURE);
 			ERR_FAIL_V_MSG(true,
 					"Command line option --build-solutions was passed, but the build callback failed. Aborting.");
@@ -5115,8 +5122,8 @@ bool Main::iteration() {
 #endif
 
 #ifdef TOOLS_ENABLED
-	if (exit && quit_after_timeout && EditorNode::get_singleton()) {
-		EditorNode::get_singleton()->unload_editor_addons();
+	if (exit && quit_after_timeout && EditorPluginManager::get_singleton()) {
+		EditorPluginManager::get_singleton()->unload_editor_addons();
 	}
 #endif
 

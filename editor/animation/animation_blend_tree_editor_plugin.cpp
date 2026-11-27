@@ -41,6 +41,7 @@
 #include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/gui/editor_file_dialog.h"
@@ -319,7 +320,7 @@ void AnimationNodeBlendTreeEditor::_file_opened(const String &p_file) {
 	if (file_loaded.is_valid()) {
 		_add_node(MENU_LOAD_FILE_CONFIRM);
 	} else {
-		EditorNode::get_singleton()->show_warning(TTR("This type of node can't be used. Only animation nodes are allowed."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("This type of node can't be used. Only animation nodes are allowed."));
 	}
 }
 
@@ -362,7 +363,7 @@ void AnimationNodeBlendTreeEditor::_add_node(int p_idx) {
 
 	Ref<AnimationNodeOutput> out = anode;
 	if (out.is_valid()) {
-		EditorNode::get_singleton()->show_warning(TTR("Output node can't be added to the blend tree."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Output node can't be added to the blend tree."));
 		return;
 	}
 
@@ -479,7 +480,7 @@ void AnimationNodeBlendTreeEditor::_connection_request(const String &p_from, int
 	}
 
 	if (err != AnimationNodeBlendTree::CONNECTION_OK) {
-		EditorNode::get_singleton()->show_warning(TTR("Unable to connect, port may be in use or connection may be invalid."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Unable to connect, port may be in use or connection may be invalid."));
 		return;
 	}
 
@@ -602,7 +603,7 @@ void AnimationNodeBlendTreeEditor::_node_selected(Object *p_node) {
 	Ref<AnimationNode> anode = blend_tree->get_node(name);
 	ERR_FAIL_COND(anode.is_null());
 
-	EditorNode::get_singleton()->push_item(anode.ptr(), "", true);
+	EditorSceneManager::get_singleton()->push_item(anode.ptr(), "", true);
 }
 
 void AnimationNodeBlendTreeEditor::_open_in_editor(const String &p_which) {
@@ -758,7 +759,7 @@ bool AnimationNodeBlendTreeEditor::_update_filters(const Ref<AnimationNode> &ano
 
 	Node *base = tree->get_node(tree->get_root_node());
 	if (!base) {
-		EditorNode::get_singleton()->show_warning(TTR("Animation player has no valid root node path, so unable to retrieve track names."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Animation player has no valid root node path, so unable to retrieve track names."));
 		return false;
 	}
 
@@ -827,7 +828,7 @@ bool AnimationNodeBlendTreeEditor::_update_filters(const Ref<AnimationNode> &ano
 
 				if (base->has_node(accum)) {
 					Node *node = base->get_node(accum);
-					ti->set_icon(0, EditorNode::get_singleton()->get_object_icon(node, "Node"));
+					ti->set_icon(0, EditorCore::get_singleton()->get_object_icon(node, "Node"));
 				}
 
 			} else {
@@ -1058,11 +1059,11 @@ AnimationNodeBlendTreeEditor *AnimationNodeBlendTreeEditor::singleton = nullptr;
 
 void AnimationNodeBlendTreeEditor::_node_changed(const StringName &p_node_name) {
 	/// @todo
-	/// Here is executed during the commit of EditorNode::undo_redo, it is not possible to create an undo_redo action here.
+	/// Here is executed during the commit of EditorSceneManager::undo_redo, it is not possible to create an undo_redo action here.
 	/// The disconnect when the number of enabled inputs decreases is done in AnimationNodeBlendTree and update_graph().
 	/// This means that there is no place to register undo_redo actions.
 	/// In order to implement undo_redo correctly, we may need to implement AnimationNodeEdit such as AnimationTrackKeyEdit
-	/// and add it to _node_selected() with EditorNode::get_singleton()->push_item(AnimationNodeEdit).
+	/// and add it to _node_selected() with EditorSceneManager::get_singleton()->push_item(AnimationNodeEdit).
 	update_graph();
 }
 
@@ -1175,7 +1176,7 @@ void AnimationNodeBlendTreeEditor::edit(const Ref<AnimationNode> &p_node) {
 	if (blend_tree.is_null()) {
 		hide();
 	} else {
-		read_only = EditorNode::get_singleton()->is_resource_read_only(blend_tree);
+		read_only = EditorCore::get_singleton()->is_resource_read_only(blend_tree);
 
 		blend_tree->connect("node_changed", callable_mp(this, &AnimationNodeBlendTreeEditor::_node_changed));
 

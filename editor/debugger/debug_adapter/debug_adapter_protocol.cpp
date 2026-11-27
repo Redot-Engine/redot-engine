@@ -158,7 +158,7 @@ Error DebugAdapterProtocol::on_client_connected() {
 	clients.push_back(peer);
 
 	EditorDebuggerNode::get_singleton()->get_default_debugger()->set_move_to_foreground(false);
-	EditorNode::get_log()->add_message("[DAP] Connection Taken", EditorLog::MSG_TYPE_EDITOR);
+	EditorCore::get_singleton()->get_log()->add_message("[DAP] Connection Taken", EditorLog::MSG_TYPE_EDITOR);
 	return OK;
 }
 
@@ -168,7 +168,7 @@ void DebugAdapterProtocol::on_client_disconnected(const Ref<DAPeer> &p_peer) {
 		reset_ids();
 		EditorDebuggerNode::get_singleton()->get_default_debugger()->set_move_to_foreground(true);
 	}
-	EditorNode::get_log()->add_message("[DAP] Disconnected", EditorLog::MSG_TYPE_EDITOR);
+	EditorCore::get_singleton()->get_log()->add_message("[DAP] Disconnected", EditorLog::MSG_TYPE_EDITOR);
 }
 
 void DebugAdapterProtocol::reset_current_info() {

@@ -103,7 +103,7 @@ Skeleton2DEditor::Skeleton2DEditor() {
 	CanvasItemEditor::get_singleton()->add_control_to_menu_panel(options);
 
 	options->set_text(TTR("Skeleton2D"));
-	options->set_button_icon(EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Skeleton2D"), EditorStringName(EditorIcons)));
+	options->set_button_icon(EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("Skeleton2D"), EditorStringName(EditorIcons)));
 	options->set_flat(false);
 	options->set_theme_type_variation("FlatMenuButton");
 
@@ -138,7 +138,7 @@ void Skeleton2DEditorPlugin::make_visible(bool p_visible) {
 
 Skeleton2DEditorPlugin::Skeleton2DEditorPlugin() {
 	sprite_editor = memnew(Skeleton2DEditor);
-	EditorNode::get_singleton()->get_gui_base()->add_child(sprite_editor);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(sprite_editor);
 	make_visible(false);
 
 	//sprite_editor->options->hide();

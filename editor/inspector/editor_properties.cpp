@@ -44,6 +44,7 @@
 #include "editor/docks/inspector_dock.h"
 #include "editor/docks/scene_tree_dock.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/gui/create_dialog.h"
 #include "editor/gui/editor_file_dialog.h"
@@ -970,10 +971,10 @@ void EditorPropertyLayersGrid::_rename_pressed(int p_menu) {
 void EditorPropertyLayersGrid::_rename_operation_confirm() {
 	String new_name = rename_dialog_text->get_text().strip_edges();
 	if (new_name.length() == 0) {
-		EditorNode::get_singleton()->show_warning(TTR("No name provided."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("No name provided."));
 		return;
 	} else if (new_name.contains_char('/') || new_name.contains_char('\\') || new_name.contains_char(':')) {
-		EditorNode::get_singleton()->show_warning(TTR("Name contains invalid characters."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Name contains invalid characters."));
 		return;
 	}
 	names.set(renamed_layer_index, new_name);
@@ -1516,7 +1517,7 @@ void EditorPropertyObjectID::update_property() {
 		edit->set_text(type + " ID: " + uitos(id));
 		edit->set_tooltip_text(type + " ID: " + uitos(id));
 		edit->set_disabled(false);
-		edit->set_button_icon(EditorNode::get_singleton()->get_class_icon(type));
+		edit->set_button_icon(EditorCore::get_singleton()->get_class_icon(type));
 	} else {
 		edit->set_text(TTR("<empty>"));
 		edit->set_tooltip_text("");
@@ -2752,7 +2753,7 @@ void EditorPropertyColor::_picker_created() {
 }
 
 void EditorPropertyColor::_popup_opening() {
-	EditorNode::get_singleton()->setup_color_picker(picker->get_picker());
+	EditorCore::get_singleton()->setup_color_picker(picker->get_picker());
 	last_color = picker->get_pick_color();
 	was_checked = !is_checkable() || is_checked();
 }
@@ -2990,7 +2991,7 @@ bool EditorPropertyNodePath::is_drop_valid(const Dictionary &p_drag_data) const 
 
 	for (const StringName &E : valid_types) {
 		if (dropped_node->is_class(E) ||
-				EditorNode::get_singleton()->is_object_of_custom_type(dropped_node, E)) {
+				EditorCore::get_singleton()->is_object_of_custom_type(dropped_node, E)) {
 			return true;
 		} else {
 			Ref<Script> dropped_node_script = dropped_node->get_script();
@@ -3035,7 +3036,7 @@ void EditorPropertyNodePath::update_property() {
 	}
 
 	assign->set_text(target_node->get_name());
-	assign->set_button_icon(EditorNode::get_singleton()->get_object_icon(target_node, "Node"));
+	assign->set_button_icon(EditorCore::get_singleton()->get_object_icon(target_node, "Node"));
 }
 
 void EditorPropertyNodePath::setup(const Vector<StringName> &p_valid_types, bool p_use_path_from_scene_root, bool p_editing_node) {
@@ -3078,8 +3079,8 @@ Node *EditorPropertyNodePath::get_base_node() {
 	}
 	if (!base_node) {
 		// Try a base node within history.
-		if (EditorNode::get_singleton()->get_editor_selection_history()->get_path_size() > 0) {
-			Object *base = ObjectDB::get_instance(EditorNode::get_singleton()->get_editor_selection_history()->get_path_object(0));
+		if (EditorCore::get_singleton()->get_editor_selection_history()->get_path_size() > 0) {
+			Object *base = ObjectDB::get_instance(EditorCore::get_singleton()->get_editor_selection_history()->get_path_object(0));
 			if (base) {
 				base_node = Object::cast_to<Node>(base);
 			}
@@ -3162,10 +3163,10 @@ void EditorPropertyResource::_resource_selected(const Ref<Resource> &p_resource,
 		ResourceLoader::get_recognized_extensions_for_type("PackedScene", &extensions);
 
 		if (p_inspect) {
-			if (extensions.find(parent.get_extension()) && (!EditorNode::get_singleton()->get_edited_scene() || EditorNode::get_singleton()->get_edited_scene()->get_scene_file_path() != parent)) {
+			if (extensions.find(parent.get_extension()) && (!EditorSceneManager::get_singleton()->get_edited_scene() || EditorSceneManager::get_singleton()->get_edited_scene()->get_scene_file_path() != parent)) {
 				// If the resource belongs to another (non-imported) scene, edit it in that scene instead.
 				if (!FileAccess::exists(parent + ".import")) {
-					callable_mp(EditorNode::get_singleton(), &EditorNode::edit_foreign_resource).call_deferred(p_resource);
+					callable_mp(EditorCore::get_singleton()->get_shell(), &EditorShell::edit_foreign_resource).call_deferred(p_resource);
 					return;
 				}
 			}
@@ -3278,7 +3279,7 @@ void EditorPropertyResource::_resource_changed(const Ref<Resource> &p_resource) 
 		resources_found.insert(r);
 		bool found = _find_recursive_resources(p_resource, resources_found);
 		if (found) {
-			EditorNode::get_singleton()->show_warning(TTR("Recursion detected, unable to assign resource to property."));
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("Recursion detected, unable to assign resource to property."));
 			emit_changed(get_edited_property(), Ref<Resource>());
 			update_property();
 			return;
@@ -3300,21 +3301,21 @@ void EditorPropertyResource::_resource_changed(const Ref<Resource> &p_resource) 
 	if (vpt.is_valid()) {
 		r = Object::cast_to<Resource>(get_edited_object());
 		if (Object::cast_to<VisualShaderNodeTexture>(r)) {
-			EditorNode::get_singleton()->show_warning(TTR("Can't create a ViewportTexture in a Texture2D node because the texture will not be bound to a scene.\nUse a Texture2DParameter node instead and set the texture in the \"Shader Parameters\" tab."));
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("Can't create a ViewportTexture in a Texture2D node because the texture will not be bound to a scene.\nUse a Texture2DParameter node instead and set the texture in the \"Shader Parameters\" tab."));
 			emit_changed(get_edited_property(), Ref<Resource>());
 			update_property();
 			return;
 		}
 
 		if (r && r->get_path().is_resource_file()) {
-			EditorNode::get_singleton()->show_warning(TTR("Can't create a ViewportTexture on resources saved as a file.\nResource needs to belong to a scene."));
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("Can't create a ViewportTexture on resources saved as a file.\nResource needs to belong to a scene."));
 			emit_changed(get_edited_property(), Ref<Resource>());
 			update_property();
 			return;
 		}
 
 		if (r && !r->is_local_to_scene()) {
-			EditorNode::get_singleton()->show_warning(TTR("Can't create a ViewportTexture on this resource because it's not set as local to scene.\nPlease switch on the 'local to scene' property on it (and all resources containing it up to a node)."));
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("Can't create a ViewportTexture on this resource because it's not set as local to scene.\nPlease switch on the 'local to scene' property on it (and all resources containing it up to a node)."));
 			emit_changed(get_edited_property(), Ref<Resource>());
 			update_property();
 			return;
@@ -3365,7 +3366,7 @@ void EditorPropertyResource::_sub_inspector_object_id_selected(int p_id) {
 void EditorPropertyResource::_open_editor_pressed() {
 	Ref<Resource> res = get_edited_property_value();
 	if (res.is_valid()) {
-		EditorNode::get_singleton()->edit_item(res.ptr(), this);
+		EditorSceneManager::get_singleton()->edit_item(res.ptr(), this);
 	}
 }
 
@@ -3405,7 +3406,7 @@ bool EditorPropertyResource::_should_stop_editing() const {
 void EditorPropertyResource::_viewport_selected(const NodePath &p_path) {
 	Node *to_node = get_node(p_path);
 	if (!Object::cast_to<Viewport>(to_node)) {
-		EditorNode::get_singleton()->show_warning(TTR("Selected node is not a Viewport!"));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Selected node is not a Viewport!"));
 		return;
 	}
 
@@ -3497,8 +3498,8 @@ void EditorPropertyResource::update_property() {
 				resource_picker->set_toggle_pressed(true);
 
 				Array editor_list;
-				for (int i = 0; i < EditorNode::get_editor_data().get_editor_plugin_count(); i++) {
-					EditorPlugin *ep = EditorNode::get_editor_data().get_editor_plugin(i);
+				for (int i = 0; i < EditorCore::get_singleton()->get_editor_data().get_editor_plugin_count(); i++) {
+					EditorPlugin *ep = EditorCore::get_singleton()->get_editor_data().get_editor_plugin(i);
 					if (ep->handles(res.ptr())) {
 						editor_list.push_back(ep);
 					}
@@ -3524,7 +3525,7 @@ void EditorPropertyResource::update_property() {
 			sub_inspector = nullptr;
 
 			if (opened_editor) {
-				EditorNode::get_singleton()->hide_unused_editors();
+				EditorSceneManager::get_singleton()->hide_unused_editors();
 				opened_editor = false;
 			}
 		}

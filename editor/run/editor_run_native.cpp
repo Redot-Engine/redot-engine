@@ -115,7 +115,7 @@ Error EditorRunNative::start_run_native(int p_id) {
 	int idx = p_id % 10000;
 	resume_id = p_id;
 
-	if (!EditorNode::get_singleton()->ensure_main_scene(true)) {
+	if (!EditorCore::get_singleton()->get_shell()->ensure_main_scene(true)) {
 		return OK;
 	}
 
@@ -133,7 +133,7 @@ Error EditorRunNative::start_run_native(int p_id) {
 	}
 
 	if (preset.is_null()) {
-		EditorNode::get_singleton()->show_warning(TTR("No runnable export preset found for this platform.\nPlease add a runnable preset in the Export menu or define an existing preset as runnable."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("No runnable export preset found for this platform.\nPlease add a runnable preset in the Export menu or define an existing preset as runnable."));
 		return ERR_UNAVAILABLE;
 	}
 

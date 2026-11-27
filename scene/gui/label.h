@@ -86,6 +86,12 @@ private:
 	int max_lines_visible = -1;
 	PackedFloat32Array tab_stops;
 
+	bool resize_font_to_fit = false;
+	int minimum_font_size = 10;
+	int maximum_font_size = 60;
+	mutable int current_fitted_font_size = -1;
+	mutable float minimum_fitted_width = 1.0f;
+
 	Ref<LabelSettings> settings;
 
 	struct ThemeCache {
@@ -110,6 +116,11 @@ private:
 	void _ensure_shaped() const;
 	void _update_visible() const;
 	void _shape() const;
+	void _shape_internal(int p_width, Size2 *r_content_size = nullptr) const;
+	Size2 _measure_at_font_size(int p_font_size, int p_width) const;
+	int _get_layout_font_size() const;
+	int _get_shaped_line_height(int p_line) const;
+	int _get_shaped_visible_line_count() const;
 	void _invalidate();
 
 protected:
@@ -147,6 +158,17 @@ public:
 
 	void set_paragraph_separator(const String &p_paragraph_separator);
 	String get_paragraph_separator() const;
+
+	void set_resize_font_to_fit(bool p_enabled);
+	bool is_resize_font_to_fit_enabled() const;
+
+	void set_minimum_font_size(int p_size);
+	int get_minimum_font_size() const;
+
+	void set_maximum_font_size(int p_size);
+	int get_maximum_font_size() const;
+
+	int get_rendered_font_size() const;
 
 	void set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser);
 	TextServer::StructuredTextParser get_structured_text_bidi_override() const;

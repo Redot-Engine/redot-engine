@@ -149,7 +149,7 @@ void EditorBottomPanel::_switch_to_item(bool p_visible, int p_idx, bool p_ignore
 
 		expand_button->show();
 		if (expand_button->is_pressed()) {
-			EditorNode::get_top_split()->hide();
+			EditorCore::get_singleton()->get_shell()->get_top_split()->hide();
 		}
 		callable_mp(this, &EditorBottomPanel::_ensure_control_visible).call_deferred(items[p_idx].button->get_instance_id());
 	} else {
@@ -162,7 +162,7 @@ void EditorBottomPanel::_switch_to_item(bool p_visible, int p_idx, bool p_ignore
 
 		expand_button->hide();
 		if (expand_button->is_pressed()) {
-			EditorNode::get_top_split()->show();
+			EditorCore::get_singleton()->get_shell()->get_top_split()->show();
 		}
 	}
 
@@ -174,7 +174,7 @@ void EditorBottomPanel::_pin_button_toggled(bool p_pressed) {
 }
 
 void EditorBottomPanel::_expand_button_toggled(bool p_pressed) {
-	EditorNode::get_top_split()->set_visible(!p_pressed);
+	EditorCore::get_singleton()->get_shell()->get_top_split()->set_visible(!p_pressed);
 }
 
 bool EditorBottomPanel::_button_drag_hover(const Vector2 &, const Variant &, Button *p_button, Control *p_control) {
