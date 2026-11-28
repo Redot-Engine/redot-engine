@@ -648,7 +648,8 @@ PhysXEditorPlugin::PhysXEditorPlugin() {
 	physx_export_plugin.instantiate();
 	EditorExport::get_singleton()->add_export_plugin(physx_export_plugin);
 
-	// No runtime check here: popups need the tree; NOTIFICATION_READY handles it.
+	// No runtime check here: popups need the tree; NOTIFICATION_READY defers
+	// the check to the end of the frame.
 }
 
 void PhysXEditorPlugin::_notification(int p_what) {
@@ -656,7 +657,12 @@ void PhysXEditorPlugin::_notification(int p_what) {
 	// invoked by the GDCLASS dispatch chain; calling it here would connect the
 	// relay twice and trip ProjectSettings connect/disconnect checks.
 	if (p_what == NOTIFICATION_READY) {
-		_check_runtime_files();
+		// The plugin is parented to gui_base (EditorPluginManager::add_editor_plugin),
+		// which is still propagating ready to its children here, blocked against
+		// add_child(). Defer to the end of the frame: by then the editor tree is
+		// fully set up, so the runtime offer dialog / update-check HTTPRequest
+		// can be attached to gui_base without being rejected.
+		callable_mp(this, &PhysXEditorPlugin::_check_runtime_files).call_deferred();
 	}
 	if (p_what == NOTIFICATION_PROCESS) {
 		_poll_install_progress();
@@ -849,8 +855,15 @@ void PhysXEditorPlugin::_start_version_check() {
 	update_check_active = true;
 	if (version_check_http == nullptr) {
 		version_check_http = memnew(HTTPRequest);
-		EditorNode::get_singleton()->get_gui_base()->add_child(version_check_http);
 		version_check_http->connect("request_completed", callable_mp(this, &PhysXEditorPlugin::_on_version_check_completed));
+	}
+	if (version_check_http->get_parent() == nullptr) {
+		// A previous add_child() may have been rejected (e.g. gui_base was still
+		// setting up its children), leaving the node orphaned; re-parent it or
+		// request() would fail with !is_inside_tree(), and every retry after it
+		// as well. Parented but out of the tree (editor shutting down) is left
+		// alone: the request fails and the transport-failed path gives up.
+		EditorNode::get_singleton()->get_gui_base()->add_child(version_check_http);
 	}
 	const Error err = version_check_http->request(PhysXRuntimeManager::MANIFEST_URL);
 	if (err != OK) {
