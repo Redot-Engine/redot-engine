@@ -39,7 +39,6 @@
 #include <dlfcn.h> // Godot patch: preload libcuda so the GPU runtime's cu* symbols resolve (see the GPU init below).
 #endif
 
-#include <cstdio>
 #include <cstring>
 
 #include "joints/physx_joint_3d.h"
@@ -298,9 +297,22 @@ public:
 		// debug-only): the runtime's device-validation findings feed the
 		// GPU-dynamics reason API.
 		if (message != nullptr) {
-			if (strstr(message, "Minimum GPU compute capability") == message &&
-					sscanf(message, "Minimum GPU compute capability %d.%d", &gpu_runtime_cc_major, &gpu_runtime_cc_minor) == 2) {
-				gpu_runtime_saw_cc_below_minimum = true;
+			if (strstr(message, "Minimum GPU compute capability") == message) {
+				// The message is "Minimum GPU compute capability %d.%d is
+				// required" (see the runtime's CudaContextManager): parse the
+				// Major.Minor pair with Godot's string API -- sscanf is
+				// deprecated by MSVC (C4996, an error under STRICT_CHECKS).
+				const String msg = String::utf8(message);
+				const PackedStringArray parts = msg.trim_prefix("Minimum GPU compute capability ").split(".", false);
+				if (parts.size() >= 2) {
+					const int major = parts[0].to_int();
+					const int minor = parts[1].to_int();
+					if (major > 0 || minor > 0) {
+						gpu_runtime_cc_major = major;
+						gpu_runtime_cc_minor = minor;
+						gpu_runtime_saw_cc_below_minimum = true;
+					}
+				}
 			} else if (strstr(message, "nvcuda.dll") != nullptr ||
 					strstr(message, "CUDA driver version is") != nullptr) {
 				gpu_runtime_saw_driver_problem = true;
