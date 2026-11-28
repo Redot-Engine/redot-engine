@@ -288,7 +288,10 @@ void PhysXMotorcycle3D::apply_torque_impulse(const Vector3 &p_impulse) {
 	}
 	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
 	ERR_FAIL_NULL(dynamic_body);
-	dynamic_body->addTorque(godot_to_px(p_impulse), PxForceMode::eIMPULSE);
+	// Applied where the scene may be touched: outside physics process a
+	// direct write would race the physics thread's step (queued behind the
+	// server's other commands, PhysXServer3D::run_on_physics_thread()).
+	PhysXServer3D::run_on_physics_thread([=]() { dynamic_body->addTorque(godot_to_px(p_impulse), PxForceMode::eIMPULSE); });
 }
 
 void PhysXMotorcycle3D::apply_force_at_local_position(const Vector3 &p_force, const Vector3 &p_local_position) {
@@ -303,7 +306,10 @@ void PhysXMotorcycle3D::apply_force_at_local_position(const Vector3 &p_force, co
 	// mismatch wrong with the sibling PxRigidBodyExt overloads. eFORCE (not
 	// eIMPULSE) since this is meant to be applied continuously across ticks
 	// (e.g. a small ongoing rear-wheel slide force), not a one-shot kick.
-	PxRigidBodyExt::addForceAtLocalPos(*dynamic_body, godot_to_px(p_force), godot_to_px(p_local_position), PxForceMode::eFORCE);
+	// Applied where the scene may be touched (see apply_torque_impulse()).
+	PhysXServer3D::run_on_physics_thread([=]() {
+		PxRigidBodyExt::addForceAtLocalPos(*dynamic_body, godot_to_px(p_force), godot_to_px(p_local_position), PxForceMode::eFORCE);
+	});
 }
 
 void PhysXMotorcycle3D::set_angular_velocity(const Vector3 &p_angular_velocity) {
@@ -312,39 +318,42 @@ void PhysXMotorcycle3D::set_angular_velocity(const Vector3 &p_angular_velocity) 
 	}
 	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
 	ERR_FAIL_NULL(dynamic_body);
-	dynamic_body->setAngularVelocity(godot_to_px(p_angular_velocity));
+	// Applied where the scene may be touched (see apply_torque_impulse()).
+	PhysXServer3D::run_on_physics_thread([=]() { dynamic_body->setAngularVelocity(godot_to_px(p_angular_velocity)); });
 }
 
 Vector3 PhysXMotorcycle3D::get_angular_velocity() const {
 	if (!impl->built) {
 		return Vector3();
 	}
-	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
-	ERR_FAIL_NULL_V(dynamic_body, Vector3());
-	return px_to_godot(dynamic_body->getAngularVelocity());
+	// The per-tick solver readback: no live actor read, so this cannot race
+	// the physics thread's step outside physics process.
+	return px_to_godot(impl->vehicle.rigidBodyState.angularVelocity);
 }
 
 Vector3 PhysXMotorcycle3D::get_up() const {
 	if (!impl->built) {
 		return Vector3(0, 1, 0);
 	}
-	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
-	return px_to_godot(actor_pose.q.getBasisVector1());
+	// Cached chassis state: the node's transform tracks the actor pose at the
+	// end of every tick, so this reads last tick's state instead of racing
+	// the physics thread's step with a live getGlobalPose() (as RigidBody3D's
+	// getters do).
+	return get_global_transform().basis.get_column(1);
 }
 
 Vector3 PhysXMotorcycle3D::get_forward() const {
-	if (!impl->built) {
-		return -get_global_transform().basis.get_column(2);
-	}
-	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
-	return -px_to_godot(actor_pose.q.getBasisVector2());
+	// Cached chassis state (see get_up()): built or not, this reads the node's
+	// transform, which tracks the actor pose at the end of every tick.
+	return -get_global_transform().basis.get_column(2);
 }
 
 real_t PhysXMotorcycle3D::get_roll_angle() const {
 	if (!impl->built) {
 		return 0.0;
 	}
-	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
+	// Cached chassis state (see get_up()).
+	const PxTransform actor_pose = godot_to_px(get_global_transform());
 	const PxVec3 right = actor_pose.q.getBasisVector0();
 	const PxVec3 up = actor_pose.q.getBasisVector1();
 	return (real_t)Math::atan2((double)right.y, (double)up.y);
@@ -369,7 +378,10 @@ real_t PhysXMotorcycle3D::get_forward_speed() const {
 	// vehicle yaws further away from its start heading -- the actual cause
 	// of "leans in for the first half of a held turn, leans out for the
 	// second half," since this feeds target_lean's banking-angle formula).
-	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
+	// Cached chassis state (see get_up()): the node's transform tracks the
+	// actor pose at the end of every tick; rigidBodyState is the per-tick
+	// solver readback, so neither read races the physics thread's step.
+	const PxTransform actor_pose = godot_to_px(get_global_transform());
 	const PxVec3 fwd = actor_pose.q.rotate(impl->vehicle.frame.getLngAxis());
 	return (real_t)impl->vehicle.rigidBodyState.linearVelocity.dot(fwd);
 }
@@ -408,7 +420,8 @@ real_t PhysXMotorcycle3D::get_wheel_lateral_force(int p_wheel) const {
 	for (uint32_t i = 0; i < 2; i++) {
 		if (impl->wheel_order[i] == (uint32_t)p_wheel) {
 			const Vector3 lateral_force_world = px_to_godot(impl->vehicle.tireForces[i].forces[PxVehicleTireDirectionModes::eLATERAL]);
-			const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
+			// Cached chassis state (see get_up()).
+			const PxTransform actor_pose = godot_to_px(get_global_transform());
 			const Vector3 right_now = px_to_godot(actor_pose.q.getBasisVector0());
 			return lateral_force_world.dot(right_now);
 		}
@@ -486,7 +499,8 @@ Vector3 PhysXMotorcycle3D::get_actor_position() const {
 	if (!impl->built) {
 		return Vector3();
 	}
-	return px_to_godot(impl->vehicle.physxActor.rigidBody->getGlobalPose().p);
+	// Cached chassis state (see get_up()).
+	return get_global_transform().origin;
 }
 
 PackedStringArray PhysXMotorcycle3D::get_configuration_warnings() const {
@@ -664,7 +678,8 @@ void PhysXMotorcycle3D::apply_torque(const Vector3 &p_torque) {
 	}
 	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
 	ERR_FAIL_NULL(dynamic_body);
-	dynamic_body->addTorque(godot_to_px(p_torque), PxForceMode::eFORCE);
+	// Applied where the scene may be touched (see apply_torque_impulse()).
+	PhysXServer3D::run_on_physics_thread([=]() { dynamic_body->addTorque(godot_to_px(p_torque), PxForceMode::eFORCE); });
 }
 
 void PhysXMotorcycle3D::add_collision_exception_with(Node *p_node) {

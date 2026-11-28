@@ -45,6 +45,18 @@ struct PhysXTankProbe::Impl {
 	PxScene *scene = nullptr;
 	bool initialized = false;
 };
+// A probe is driven from a script at any time: whatever touches the PhysX scene runs where it may and is waited for
+// (see PhysXServer3D::run_on_physics_thread()).
+template <typename F>
+static void _on_physics_thread(const F &p_func) {
+	PhysXServer3D::run_on_physics_thread(p_func, true);
+}
+
+static PxTransform _pose_of(const PxRigidActor *p_actor) {
+	PxTransform pose;
+	_on_physics_thread([&]() { pose = p_actor->getGlobalPose(); });
+	return pose;
+}
 
 PhysXTankProbe::PhysXTankProbe() {
 	impl = memnew(Impl);
@@ -53,8 +65,10 @@ PhysXTankProbe::PhysXTankProbe() {
 PhysXTankProbe::~PhysXTankProbe() {
 	if (impl) {
 		if (impl->initialized && impl->scene) {
-			impl->scene->removeActor(*impl->vehicle.physxActor.rigidBody);
-			impl->vehicle.destroy();
+			_on_physics_thread([&]() {
+				impl->scene->removeActor(*impl->vehicle.physxActor.rigidBody);
+				impl->vehicle.destroy();
+			});
 		}
 		memdelete(impl);
 	}
@@ -80,27 +94,29 @@ bool PhysXTankProbe::initialize(RID p_space, const Vector3 &p_position, const Pa
 		config.wheels[i] = wc;
 	}
 
-	PxVehiclePhysXSimulationContext &out_context = impl->simulationContext;
-	if (!configure_vehicle_track(impl->vehicle, config, *physics, *scene, out_context)) {
-		return false;
-	}
+	_on_physics_thread([&]() {
+		PxVehiclePhysXSimulationContext &out_context = impl->simulationContext;
+		if (!configure_vehicle_track(impl->vehicle, config, *physics, *scene, out_context)) {
+			return;
+		}
 
-	VehicleTrack &v = impl->vehicle;
-	const PxTransform startPose(godot_to_px(p_position), PxQuat(PxIdentity));
-	v.physxActor.rigidBody->setGlobalPose(startPose);
-	scene->addActor(*v.physxActor.rigidBody);
-	v.physxActor.rigidBody->setName("PhysXTankProbe");
+		VehicleTrack &v = impl->vehicle;
+		const PxTransform startPose(godot_to_px(p_position), PxQuat(PxIdentity));
+		v.physxActor.rigidBody->setGlobalPose(startPose);
+		scene->addActor(*v.physxActor.rigidBody);
+		v.physxActor.rigidBody->setName("PhysXTankProbe");
 
-	impl->scene = scene;
-	impl->initialized = true;
-	return true;
+		impl->scene = scene;
+		impl->initialized = true;
+	});
+	return impl->initialized;
 }
 
 void PhysXTankProbe::step(real_t p_dt, real_t p_left_ratio, real_t p_right_ratio, real_t p_brake) {
 	ERR_FAIL_COND(!impl->initialized);
 	VehicleTrack &v = impl->vehicle;
 	v.setDriverInput((PxReal)p_left_ratio, (PxReal)p_right_ratio, (PxReal)p_brake);
-	v.step((PxReal)p_dt, impl->simulationContext);
+	_on_physics_thread([&]() { v.step((PxReal)p_dt, impl->simulationContext); });
 }
 
 Vector3 PhysXTankProbe::get_position() const {
@@ -117,7 +133,9 @@ Vector3 PhysXTankProbe::get_angular_velocity() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3());
 	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
 	ERR_FAIL_NULL_V(dynamic_body, Vector3());
-	return px_to_godot(dynamic_body->getAngularVelocity());
+	Vector3 velocity;
+	_on_physics_thread([&]() { velocity = px_to_godot(dynamic_body->getAngularVelocity()); });
+	return velocity;
 }
 
 real_t PhysXTankProbe::get_forward_speed() const {
@@ -126,20 +144,20 @@ real_t PhysXTankProbe::get_forward_speed() const {
 	// direction -- rotate it into world space by the actor's current
 	// orientation first (see PhysXVehicle3D::get_forward_speed()'s own
 	// comment for the real bug this was found from).
-	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
+	const PxTransform actor_pose = _pose_of(impl->vehicle.physxActor.rigidBody);
 	const PxVec3 fwd = actor_pose.q.rotate(impl->vehicle.frame.getLngAxis());
 	return (real_t)impl->vehicle.rigidBodyState.linearVelocity.dot(fwd);
 }
 
 Vector3 PhysXTankProbe::get_up() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3(0, 1, 0));
-	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
+	const PxTransform actor_pose = _pose_of(impl->vehicle.physxActor.rigidBody);
 	return px_to_godot(actor_pose.q.getBasisVector1());
 }
 
 Vector3 PhysXTankProbe::get_forward() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3(0, 0, -1));
-	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
+	const PxTransform actor_pose = _pose_of(impl->vehicle.physxActor.rigidBody);
 	// Godot forward is -Z, PxVehicleFrame::eNegZ (see configure_vehicle_track()) --
 	// basis vector 2 is the local Z axis, negate it.
 	return -px_to_godot(actor_pose.q.getBasisVector2());
@@ -159,7 +177,7 @@ real_t PhysXTankProbe::get_wheel_separation(int p_wheel) const {
 
 Vector3 PhysXTankProbe::get_actor_position() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3());
-	return px_to_godot(impl->vehicle.physxActor.rigidBody->getGlobalPose().p);
+	return px_to_godot(_pose_of(impl->vehicle.physxActor.rigidBody).p);
 }
 
 void PhysXTankProbe::_bind_methods() {

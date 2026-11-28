@@ -46,6 +46,21 @@ documented constants or round-trip caches:
   once — keep async stepping off for projects that mutate module objects
   (vehicles, GPU fluids/cloths, articulations) from scripts.
 
+### Physics on its own thread
+
+The standard `physics/3d/run_on_separate_thread` setting is supported: the
+PhysX step runs on the physics server's thread while the main thread processes
+and renders the next frame. The module's own nodes (vehicles, `PhysXCloth3D`,
+`PhysXParticleFluid3D`) follow the same rules as the stock bodies: what they
+change outside `_physics_process()` reaches PhysX in order before the next
+step (the vehicle force/torque helpers and the velocity setters are queued on
+the physics thread; build and free wait for it), the vehicles' getters read
+outside `_physics_process()` return the state as of the end of the last
+`_physics_process()` (the node's transform tracks the chassis pose per tick),
+and a `SoftBody3D` built off the main thread reads its mesh on the next
+`flush_queries()`. Inside `_physics_process()` everything reads and writes
+the live simulation.
+
 ### The GPU fallback ladder
 
 `PhysXServer3D.get_gpu_dynamics_status()` /

@@ -45,6 +45,18 @@ struct PhysXVehicleProbe::Impl {
 	PxScene *scene = nullptr;
 	bool initialized = false;
 };
+// A probe is driven from a script at any time: whatever touches the PhysX scene runs where it may and is waited for
+// (see PhysXServer3D::run_on_physics_thread()).
+template <typename F>
+static void _on_physics_thread(const F &p_func) {
+	PhysXServer3D::run_on_physics_thread(p_func, true);
+}
+
+static PxTransform _pose_of(const PxRigidActor *p_actor) {
+	PxTransform pose;
+	_on_physics_thread([&]() { pose = p_actor->getGlobalPose(); });
+	return pose;
+}
 
 PhysXVehicleProbe::PhysXVehicleProbe() {
 	impl = memnew(Impl);
@@ -53,8 +65,10 @@ PhysXVehicleProbe::PhysXVehicleProbe() {
 PhysXVehicleProbe::~PhysXVehicleProbe() {
 	if (impl) {
 		if (impl->initialized && impl->scene) {
-			impl->scene->removeActor(*impl->vehicle.physxActor.rigidBody);
-			impl->vehicle.destroy();
+			_on_physics_thread([&]() {
+				impl->scene->removeActor(*impl->vehicle.physxActor.rigidBody);
+				impl->vehicle.destroy();
+			});
 		}
 		memdelete(impl);
 	}
@@ -92,20 +106,22 @@ bool PhysXVehicleProbe::initialize(RID p_space, const Vector3 &p_position, real_
 		}
 	}
 
-	PxU32 wheel_order[4];
-	if (!configure_vehicle4w(impl->vehicle, config, *physics, *scene, impl->simulationContext, wheel_order)) {
-		return false;
-	}
+	_on_physics_thread([&]() {
+		PxU32 wheel_order[4];
+		if (!configure_vehicle4w(impl->vehicle, config, *physics, *scene, impl->simulationContext, wheel_order)) {
+			return;
+		}
 
-	Vehicle4W &v = impl->vehicle;
-	const PxTransform startPose(godot_to_px(p_position), PxQuat(PxIdentity));
-	v.physxActor.rigidBody->setGlobalPose(startPose);
-	scene->addActor(*v.physxActor.rigidBody);
-	v.physxActor.rigidBody->setName("PhysXVehicleProbe");
+		Vehicle4W &v = impl->vehicle;
+		const PxTransform startPose(godot_to_px(p_position), PxQuat(PxIdentity));
+		v.physxActor.rigidBody->setGlobalPose(startPose);
+		scene->addActor(*v.physxActor.rigidBody);
+		v.physxActor.rigidBody->setName("PhysXVehicleProbe");
 
-	impl->scene = scene;
-	impl->initialized = true;
-	return true;
+		impl->scene = scene;
+		impl->initialized = true;
+	});
+	return impl->initialized;
 }
 
 void PhysXVehicleProbe::step(real_t p_dt, real_t p_throttle, real_t p_brake, real_t p_steer) {
@@ -117,7 +133,7 @@ void PhysXVehicleProbe::step(real_t p_dt, real_t p_throttle, real_t p_brake, rea
 	v.commandState.brakes[0] = (PxReal)p_brake;
 	v.commandState.nbBrakes = 1;
 	v.commandState.steer = (PxReal)p_steer;
-	v.step((PxReal)p_dt, impl->simulationContext);
+	_on_physics_thread([&]() { v.step((PxReal)p_dt, impl->simulationContext); });
 }
 
 Vector3 PhysXVehicleProbe::get_position() const {
@@ -136,14 +152,14 @@ real_t PhysXVehicleProbe::get_forward_speed() const {
 	// direction -- rotate it into world space by the actor's current
 	// orientation first (see PhysXVehicle3D::get_forward_speed()'s own
 	// comment for the real bug this was found from).
-	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
+	const PxTransform actor_pose = _pose_of(impl->vehicle.physxActor.rigidBody);
 	const PxVec3 fwd = actor_pose.q.rotate(impl->vehicle.frame.getLngAxis());
 	return (real_t)impl->vehicle.rigidBodyState.linearVelocity.dot(fwd);
 }
 
 Vector3 PhysXVehicleProbe::get_actor_position() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3());
-	return px_to_godot(impl->vehicle.physxActor.rigidBody->getGlobalPose().p);
+	return px_to_godot(_pose_of(impl->vehicle.physxActor.rigidBody).p);
 }
 
 Vector3 PhysXVehicleProbe::get_wheel_position(int p_wheel) const {
@@ -152,7 +168,7 @@ Vector3 PhysXVehicleProbe::get_wheel_position(int p_wheel) const {
 	// wheelLocalPoses[i].localPose is in the CoM frame, not the actor's own
 	// origin frame -- see PhysXVehicle3D's identical note for the SDK source
 	// citation that confirmed this.
-	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
+	const PxTransform actor_pose = _pose_of(impl->vehicle.physxActor.rigidBody);
 	const PxTransform cmass_local_pose = impl->vehicle.physxActor.rigidBody->getCMassLocalPose();
 	const PxTransform wheel_world = actor_pose * cmass_local_pose * impl->vehicle.wheelLocalPoses[p_wheel].localPose;
 	return px_to_godot(wheel_world.p);

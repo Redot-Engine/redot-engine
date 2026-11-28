@@ -394,7 +394,11 @@ real_t PhysXVehicle3D::get_forward_speed() const {
 	// velocity, or this is only correct when yaw matches spawn orientation
 	// (found via a real bug report: correct at first, sign-flips as the
 	// vehicle yaws further away from its start heading).
-	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
+	// The chassis pose cached at the end of the last tick (the node's own
+	// transform tracks it): a live getGlobalPose() here would race the
+	// physics thread's step when called outside physics process, so this
+	// reads last tick's state, as RigidBody3D's getters do.
+	const PxTransform actor_pose = godot_to_px(get_global_transform());
 	// frame.getLngAxis() is a fixed LOCAL-frame constant (e.g. (0,0,-1)), not
 	// a world-space direction -- rotate it into world space by the actor's
 	// current orientation before dotting against the world-space velocity
@@ -549,7 +553,9 @@ Vector3 PhysXVehicle3D::get_actor_position() const {
 	if (!impl->built) {
 		return Vector3();
 	}
-	return px_to_godot(impl->vehicle.physxActor.rigidBody->getGlobalPose().p);
+	// Cached chassis state (see get_forward_speed()): the node's transform
+	// tracks the actor pose at the end of every tick.
+	return get_global_transform().origin;
 }
 
 PackedStringArray PhysXVehicle3D::get_configuration_warnings() const {
@@ -822,8 +828,13 @@ void PhysXVehicle3D::apply_force_at_local_position(const Vector3 &p_force, const
 	ERR_FAIL_NULL(dynamic_body);
 	// eFORCE (not eIMPULSE): meant to be applied continuously across ticks
 	// (autopilot steering, docking assists), like RigidBody3D.apply_force.
-	PxRigidBodyExt::addForceAtLocalPos(*dynamic_body, godot_to_px(p_force),
-			godot_to_px(p_local_position), PxForceMode::eFORCE);
+	// Applied where the scene may be touched: outside physics process a
+	// direct write would race the physics thread's step (queued behind the
+	// server's other commands, PhysXServer3D::run_on_physics_thread()).
+	PhysXServer3D::run_on_physics_thread([=]() {
+		PxRigidBodyExt::addForceAtLocalPos(*dynamic_body, godot_to_px(p_force),
+				godot_to_px(p_local_position), PxForceMode::eFORCE);
+	});
 }
 
 void PhysXVehicle3D::apply_torque(const Vector3 &p_torque) {
@@ -832,7 +843,8 @@ void PhysXVehicle3D::apply_torque(const Vector3 &p_torque) {
 	}
 	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
 	ERR_FAIL_NULL(dynamic_body);
-	dynamic_body->addTorque(godot_to_px(p_torque), PxForceMode::eFORCE);
+	// Applied where the scene may be touched (see apply_force_at_local_position()).
+	PhysXServer3D::run_on_physics_thread([=]() { dynamic_body->addTorque(godot_to_px(p_torque), PxForceMode::eFORCE); });
 }
 
 void PhysXVehicle3D::_ensure_exception_synced() {

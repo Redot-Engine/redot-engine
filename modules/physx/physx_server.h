@@ -129,6 +129,34 @@ public:
 		GPU_DYNAMICS_BUILD_WITHOUT_GPU, // physx_gpu=no build: no GPU code compiled in
 	};
 
+	// Whether this thread may touch the PhysX scenes now: the physics thread,
+	// or the main thread while that thread is parked (physics process) or when
+	// physics doesn't run on its own thread. The module's nodes reach PhysX
+	// directly (vehicles, fluids, cloth), so anything they do outside physics
+	// process goes through run_on_physics_thread().
+	static bool can_touch_scene() {
+		return singleton_ptr == nullptr || Thread::get_caller_id() == singleton_ptr->server_thread || (Thread::is_main_thread() && singleton_ptr->syncing);
+	}
+	// Runs p_func where the scenes may be touched: right away if this thread
+	// may (see can_touch_scene()), else queued in order behind the physics
+	// thread's other commands. p_wait waits for it to have run -- a sync with
+	// the physics thread, as any PhysicsServer3D getter called outside
+	// physics process. p_func mustn't touch the scene tree or wait on the
+	// main thread (it may run on the physics thread while the main thread
+	// waits for it).
+	template <typename F>
+	static void run_on_physics_thread(const F &p_func, bool p_wait = false) {
+		if (can_touch_scene() || !singleton_ptr->dispatch_body.is_valid()) {
+			p_func();
+			return;
+		}
+		PhysicsServer3D *wrapper = PhysicsServer3D::get_singleton();
+		wrapper->body_set_state_sync_callback(singleton_ptr->dispatch_body, Callable(memnew(GodotPhysXQueuedCall<F>(p_func))));
+		if (p_wait) {
+			wrapper->body_get_space(singleton_ptr->dispatch_body); // returns once the queue has run up to it
+		}
+	}
+
 private:
 	static PhysXServer3D *singleton_ptr;
 	// RID Owners — map Godot RIDs to internal wrapper objects; the `true`
@@ -160,33 +188,6 @@ private:
 	// command queue (a body in no space).
 	RID dispatch_body;
 
-	// Whether this thread may touch the PhysX scenes now: the physics thread,
-	// or the main thread while that thread is parked (physics process) or when
-	// physics doesn't run on its own thread. The module's nodes reach PhysX
-	// directly (vehicles, fluids, cloth), so anything they do outside physics
-	// process goes through run_on_physics_thread().
-	static bool can_touch_scene() {
-		return singleton_ptr == nullptr || Thread::get_caller_id() == singleton_ptr->server_thread || (Thread::is_main_thread() && singleton_ptr->syncing);
-	}
-	// Runs p_func where the scenes may be touched: right away if this thread
-	// may (see can_touch_scene()), else queued in order behind the physics
-	// thread's other commands. p_wait waits for it to have run -- a sync with
-	// the physics thread, as any PhysicsServer3D getter called outside
-	// physics process. p_func mustn't touch the scene tree or wait on the
-	// main thread (it may run on the physics thread while the main thread
-	// waits for it).
-	template <typename F>
-	static void run_on_physics_thread(const F &p_func, bool p_wait = false) {
-		if (can_touch_scene() || !singleton_ptr->dispatch_body.is_valid()) {
-			p_func();
-			return;
-		}
-		PhysicsServer3D *wrapper = PhysicsServer3D::get_singleton();
-		wrapper->body_set_state_sync_callback(singleton_ptr->dispatch_body, Callable(memnew(GodotPhysXQueuedCall<F>(p_func))));
-		if (p_wait) {
-			wrapper->body_get_space(singleton_ptr->dispatch_body); // returns once the queue has run up to it
-		}
-	}
 	void _drain_dispatch();
 	// ------------------------------------------------------------------
 	// PhysX SDK singletons (created in init(), released in finish()).

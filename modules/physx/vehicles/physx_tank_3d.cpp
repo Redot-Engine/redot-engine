@@ -302,7 +302,10 @@ real_t PhysXTank3D::get_forward_speed() const {
 	// direction -- rotate it into world space by the actor's current
 	// orientation first (see PhysXVehicle3D::get_forward_speed()'s own
 	// comment for the real bug this was found from).
-	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
+	// Cached chassis state (see PhysXVehicle3D::get_forward_speed()): the
+	// node's transform tracks the actor pose at the end of every tick, so
+	// neither read races the physics thread's step outside physics process.
+	const PxTransform actor_pose = godot_to_px(get_global_transform());
 	const PxVec3 fwd = actor_pose.q.rotate(impl->vehicle.frame.getLngAxis());
 	return (real_t)impl->vehicle.rigidBodyState.linearVelocity.dot(fwd);
 }
@@ -311,16 +314,14 @@ Vector3 PhysXTank3D::get_up() const {
 	if (!impl->built) {
 		return Vector3(0, 1, 0);
 	}
-	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
-	return px_to_godot(actor_pose.q.getBasisVector1());
+	// Cached chassis state (see PhysXVehicle3D::get_forward_speed()).
+	return get_global_transform().basis.get_column(1);
 }
 
 Vector3 PhysXTank3D::get_forward() const {
-	if (!impl->built) {
-		return -get_global_transform().basis.get_column(2);
-	}
-	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
-	return -px_to_godot(actor_pose.q.getBasisVector2());
+	// Cached chassis state: the node's transform tracks the actor pose at the
+	// end of every tick, built or not.
+	return -get_global_transform().basis.get_column(2);
 }
 
 real_t PhysXTank3D::get_wheel_jounce(int p_wheel) const {
@@ -343,7 +344,8 @@ Vector3 PhysXTank3D::get_actor_position() const {
 	if (!impl->built) {
 		return Vector3();
 	}
-	return px_to_godot(impl->vehicle.physxActor.rigidBody->getGlobalPose().p);
+	// Cached chassis state (see PhysXVehicle3D::get_forward_speed()).
+	return get_global_transform().origin;
 }
 
 PackedStringArray PhysXTank3D::get_configuration_warnings() const {
@@ -530,8 +532,13 @@ void PhysXTank3D::apply_force_at_local_position(const Vector3 &p_force, const Ve
 	}
 	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
 	ERR_FAIL_NULL(dynamic_body);
-	PxRigidBodyExt::addForceAtLocalPos(*dynamic_body, godot_to_px(p_force),
-			godot_to_px(p_local_position), PxForceMode::eFORCE);
+	// Applied where the scene may be touched: outside physics process a
+	// direct write would race the physics thread's step (queued behind the
+	// server's other commands, PhysXServer3D::run_on_physics_thread()).
+	PhysXServer3D::run_on_physics_thread([=]() {
+		PxRigidBodyExt::addForceAtLocalPos(*dynamic_body, godot_to_px(p_force),
+				godot_to_px(p_local_position), PxForceMode::eFORCE);
+	});
 }
 
 void PhysXTank3D::apply_torque(const Vector3 &p_torque) {
@@ -540,7 +547,8 @@ void PhysXTank3D::apply_torque(const Vector3 &p_torque) {
 	}
 	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
 	ERR_FAIL_NULL(dynamic_body);
-	dynamic_body->addTorque(godot_to_px(p_torque), PxForceMode::eFORCE);
+	// Applied where the scene may be touched (see apply_force_at_local_position()).
+	PhysXServer3D::run_on_physics_thread([=]() { dynamic_body->addTorque(godot_to_px(p_torque), PxForceMode::eFORCE); });
 }
 
 void PhysXTank3D::add_collision_exception_with(Node *p_node) {
