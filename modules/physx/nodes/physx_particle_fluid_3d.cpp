@@ -1713,6 +1713,12 @@ void PhysXParticleFluid3D::set_surface_friction(float p_v) {
 void PhysXParticleFluid3D::set_render_mode(RenderMode p_mode) {
 	const RenderMode before = get_render_mode();
 	screen_space_requested = (p_mode == RENDER_MODE_SCREEN_SPACE);
+	if (screen_space_requested) {
+		// The screen-space compositor pass is parked (Redot Compositor
+		// maturity); the value still round-trips for authored scenes, but the
+		// fluid draws as particles -- never a silent no-op.
+		WARN_PRINT_ONCE("PhysXParticleFluid3D: Screen Space render mode is not implemented in this build; the fluid renders as Particles.");
+	}
 	set_surface_mesh(p_mode == RENDER_MODE_ISOSURFACE);
 	if (get_render_mode() != before) {
 		notify_property_list_changed();
@@ -1974,6 +1980,9 @@ PackedStringArray PhysXParticleFluid3D::get_configuration_warnings() const {
 	if (on_mpm && (int)mpm_colliders.size() > 32) {
 		warnings.push_back(RTR("MPM coupling uses at most 32 colliders (rigid bodies plus any nearby debris chunks); the rest are ignored."));
 	}
+	if (screen_space_requested) {
+		warnings.push_back(RTR("Render Mode \"Screen Space\" is not implemented in this build (the screen-space compositor pass is parked on Redot Compositor maturity) -- the fluid renders as Particles."));
+	}
 	if (surface_anisotropy && !surface_mesh) {
 		warnings.push_back(RTR("\"Surface Anisotropy\" has no effect unless \"Surface Mesh\" is enabled."));
 	}
@@ -2090,7 +2099,10 @@ void PhysXParticleFluid3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "emission_radius", PROPERTY_HINT_RANGE, "0,2,0.001,or_greater,suffix:m"), "set_emission_radius", "get_emission_radius");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "emission_velocity", PROPERTY_HINT_NONE, "suffix:m/s"), "set_emission_velocity", "get_emission_velocity");
 	ADD_GROUP("Rendering", "");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "render_mode", PROPERTY_HINT_ENUM, "Particles,Isosurface,Screen Space"), "set_render_mode", "get_render_mode");
+	// "Screen Space" is deliberately absent from the hint: the renderer is
+	// parked on Redot Compositor maturity, and selecting it was a silent no-op
+	// (F-38). The value stays loadable/round-tripping for authored scenes.
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "render_mode", PROPERTY_HINT_ENUM, "Particles,Isosurface"), "set_render_mode", "get_render_mode");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "surface_mesh", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE), "set_surface_mesh", "is_surface_mesh");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "surface_anisotropy"), "set_surface_anisotropy", "is_surface_anisotropy");
 	ADD_GROUP("Foam", "foam_");

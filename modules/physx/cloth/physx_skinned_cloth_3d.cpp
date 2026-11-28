@@ -768,6 +768,12 @@ void PhysXSkinnedCloth3D::_try_build() {
 				}
 			}
 			worn_pos[p] = shaped;
+			// CLOTH-1 approximation: the tether limit scales by the AVERAGE of
+			// the three blended-basis column lengths. Unscaled rigs map 1:1
+			// (verified); a strongly anisotropic worn blend (non-uniformly
+			// scaled bone chains) needs a direction-dependent factor, which
+			// this average over/under-scales per direction. Revisit only if
+			// anisotropic rigs show up in practice.
 			const real_t worn_span = worn_basis.get_column(0).length() +
 					worn_basis.get_column(1).length() + worn_basis.get_column(2).length();
 			const real_t worn_scale = worn_span / 3.0;

@@ -15,6 +15,7 @@ internal static class BindingTests
 		s.Add("PHYSX-BIND-002", "PhysXCloth3D bound in ClassDB + instantiable from C#", ClothBound);
 		s.Add("PHYSX-BIND-003", "PhysXParticleFluid3D bound in ClassDB + instantiable from C#", FluidBound);
 		s.Add("PHYSX-BIND-004", "PhysXServer3D singleton reachable from C#", ServerSingletonReachable);
+		s.Add("PHYSX-FLUID-SS-001", "FLUID-SS-001: Screen Space render mode hidden from the editor, round-trips, names the substitution (F-38 — guard)", FluidScreenSpaceModeHidden);
 	}
 
 	static IEnumerator ChunkEmitterBound()
@@ -52,6 +53,41 @@ internal static class BindingTests
 		Assert.Expect(fluid != null, "new PhysXParticleFluid3D() returns an instance");
 		Assert.Expect(fluid.ParticleCount == 4096, $"particle_count default is 4096 (got {fluid.ParticleCount})");
 		Assert.Expect(fluid.GetLiveParticleCount() == 0, "no live particles before spawn");
+		fluid.Free();
+		yield return Wait.Frame();
+	}
+
+	static IEnumerator FluidScreenSpaceModeHidden()
+	{
+		// F-38: the screen-space fluid renderer was deliberately not ported
+		// (parked on Redot Compositor maturity), but the enum value used to be
+		// selectable and silently rendered particles. The editor hint now
+		// hides the option; authored Screen Space scenes still round-trip (the
+		// value stays loadable), and the node names the substitution in its
+		// configuration warnings instead of staying silent.
+		var fluid = new Godot.PhysXParticleFluid3D();
+		Assert.Expect(fluid != null, "PhysXParticleFluid3D instantiable");
+
+		// The editor hint must not offer Screen Space anymore.
+		string hint = "";
+		foreach (var prop in fluid.GetPropertyList())
+		{
+			var dict = prop;
+			if (dict["name"].AsString() == "render_mode")
+			{
+				hint = dict["hint_string"].AsString();
+			}
+		}
+		Assert.Expect(!hint.Contains("Screen Space"), $"the render_mode hint hides Screen Space (hint=\"{hint}\")");
+
+		// Authored values still round-trip, and selecting the mode is not a
+		// silent no-op: set_render_mode warns once at runtime (the
+		// configuration warnings name the substitution in the editor).
+		fluid.Set("render_mode", 2);
+		Assert.Expect(fluid.Get("render_mode").AsInt32() == 2, "an authored Screen Space value still round-trips");
+
+		fluid.Set("render_mode", 1);
+		Assert.Expect(fluid.Get("render_mode").AsInt32() == 1, "Isosurface still selects");
 		fluid.Free();
 		yield return Wait.Frame();
 	}
