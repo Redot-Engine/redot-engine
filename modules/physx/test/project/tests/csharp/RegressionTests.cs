@@ -35,6 +35,10 @@ internal static class RegressionTests
 		s.Add("PHYSX-REG-0014", "REG-0014: mesh shape on a default-rigid body must not crash the engine (FIXED — guard)", MeshOnDynamicNoCrash);
 		s.Add("PHYSX-REG-0034", "REG-0034: heightmap attached data-less collides once shape_set_data arrives (WorldScape3D fall-through — FIXED — guard)", HeightmapLateDataAttach);
 		s.Add("PHYSX-RT-002", "RT-002: a same-named runtime file whose content mismatches the installed list is reported stale (F-36 shadowing hardening — guard)", RuntimeFileStaleDetection);
+		s.Add("PHYSX-GPU-REASON-001", "GPU-REASON-001: GPU-dynamics status/reason API contract + cached rd probe (F-37 clarity — guard)", GpuDynamicsReasonApi);
+		s.Add("PHYSX-REG-0035", "REG-0035: empty convex/concave RIDs attach silently and recover on shape_set_data (F-34 — guard)", EmptyMeshShapesLateDataAttach);
+		s.Add("PHYSX-REG-0036", "REG-0036: articulation link shape attached data-less retries on shape_set_data (F-33a — guard)", ArticulationLinkLateDataAttach);
+		s.Add("PHYSX-HEIGHTMAP-NAN-001", "HEIGHTMAP-NAN-001: NaN holes keep finite bounds; an all-NaN map refuses to cook (F-35 — guard)", HeightmapNanHoles);
 		// ---- FIXED (kept as permanent regression guards; must stay PASSING):
 		// REG-0010 vehicle subsystem ...... FIXED 2026-08-21 (missing RigidBodyComponent in
 		//        the vehicle2 sequence + vehicle not registered with the chassis's space;
@@ -363,6 +367,218 @@ internal static class RegressionTests
 		// The same shape extract_bundle records: {runtime_version, files:{name:sha}}.
 		string json = "{\n  \"runtime_version\": \"0.0.0-test\",\n  \"files\": {\n    \"" + name + "\": \"" + hash + "\"\n  }\n}";
 		File.WriteAllText(path, json);
+	}
+
+	static IEnumerator GpuDynamicsReasonApi()
+	{
+		// F-37 (the GTX-1060 report): GPU-dynamics unavailability used to be a
+		// bare "no usable CUDA device" warning with nothing script-facing. The
+		// reason API classifies the cause (setting, determinism, driver,
+		// runtime, compute capability, no device, CPU-only build) and
+		// rd_compute_available() reports the RenderingDevice-compute half of
+		// the fallback ladder. The classification itself is machine-dependent,
+		// so the contract is checked, not a specific value: ACTIVE iff the
+		// enabled flag is set, the reason names the cause iff unavailable, the
+		// value within the enum range, and the probe cached.
+		int status = ArticulationApi.Call("get_gpu_dynamics_status").AsInt32();
+		string reason = ArticulationApi.Call("get_gpu_dynamics_unavailable_reason").AsString();
+		bool enabled = ArticulationApi.Call("is_gpu_dynamics_enabled").AsBool();
+		Assert.Expect(status >= 0 && status <= 7, $"gpu dynamics status {status} is a known GpuDynamicsStatus value");
+		Assert.Expect(enabled == (status == 0), "GPU_DYNAMICS_ACTIVE iff is_gpu_dynamics_enabled()");
+		Assert.Expect(status == 0 ? reason.Length == 0 : reason.Length > 0, "the reason names the cause iff GPU dynamics is unavailable");
+		bool rd1 = ArticulationApi.Call("rd_compute_available").AsBool();
+		bool rd2 = ArticulationApi.Call("rd_compute_available").AsBool();
+		Assert.Expect(rd1 == rd2, $"rd_compute_available is cached (same answer twice: {rd1})");
+		yield break;
+	}
+
+	static Vector3[] ConvexBoxPoints(float half)
+	{
+		return new Vector3[] {
+			new(-half, -half, -half), new(half, -half, -half),
+			new(-half, -half, half), new(half, -half, half),
+			new(-half, half, -half), new(half, half, -half),
+			new(-half, half, half), new(half, half, half),
+		};
+	}
+
+	static Godot.Collections.Dictionary ConcavePlateData()
+	{
+		// Two triangles forming a 1x1 m plate at y = 0 (the dictionary form the
+		// concave set_data requires: faces + backface_collision).
+		var a = new Vector3(-0.5f, 0, -0.5f);
+		var b = new Vector3(0.5f, 0, -0.5f);
+		var c = new Vector3(0.5f, 0, 0.5f);
+		var d = new Vector3(-0.5f, 0, 0.5f);
+		return new Godot.Collections.Dictionary
+		{
+			["faces"] = new Vector3[] { a, b, c, a, c, d },
+			["backface_collision"] = false,
+		};
+	}
+
+	static IEnumerator EmptyMeshShapesLateDataAttach()
+	{
+		// F-34: an empty ConvexPolygonShape3D / ConcavePolygonShape3D RID (the
+		// procedural-mesh pattern: attach first, set the geometry later) used
+		// to print the generic "failed to generate geometry" error per shape.
+		// Both now report has_geometry_data() == false, so the data-less
+		// attach stays silent and the shape_changed() retry attaches the slot
+		// when set_data supplies the geometry (the REG-0034 recovery, which
+		// previously covered only the heightmap).
+		using var w = new PhysxWorld(false);
+		var convex = PhysicsServer3D.ConvexPolygonShapeCreate();
+		w.AdoptShape(convex);
+		var concave = PhysicsServer3D.ConcavePolygonShapeCreate();
+		w.AdoptShape(concave);
+
+		var bodyConvex = PhysicsServer3D.BodyCreate();
+		w.TrackBody(bodyConvex);
+		PhysicsServer3D.BodySetMode(bodyConvex, PhysicsServer3D.BodyMode.Static);
+		PhysicsServer3D.BodySetSpace(bodyConvex, w.Space);
+		PhysicsServer3D.BodySetState(bodyConvex, PhysicsServer3D.BodyState.Transform,
+			new Transform3D(Basis.Identity, new Vector3(5, 0, 0)));
+		PhysicsServer3D.BodyAddShape(bodyConvex, convex, Transform3D.Identity); // data-less: must stay silent
+		var bodyConcave = PhysicsServer3D.BodyCreate();
+		w.TrackBody(bodyConcave);
+		PhysicsServer3D.BodySetMode(bodyConcave, PhysicsServer3D.BodyMode.Static);
+		PhysicsServer3D.BodySetSpace(bodyConcave, w.Space);
+		PhysicsServer3D.BodySetState(bodyConcave, PhysicsServer3D.BodyState.Transform,
+			new Transform3D(Basis.Identity, new Vector3(-5, 0, 0)));
+		PhysicsServer3D.BodyAddShape(bodyConcave, concave, Transform3D.Identity); // data-less: must stay silent
+
+		yield return Wait.Frames(3);
+		Assert.Expect(w.Ray(new Vector3(5, 10, 0), new Vector3(5, -10, 0)).Count == 0, "data-less convex slot is not in the broadphase");
+		Assert.Expect(w.Ray(new Vector3(-5, 10, 0), new Vector3(-5, -10, 0)).Count == 0, "data-less concave slot is not in the broadphase");
+
+		PhysicsServer3D.ShapeSetData(convex, ConvexBoxPoints(0.3f));
+		PhysicsServer3D.ShapeSetData(concave, ConcavePlateData());
+		yield return Wait.Frames(3);
+		Assert.Expect(w.Ray(new Vector3(5, 10, 0), new Vector3(5, -10, 0)).Count > 0, "convex slot attaches once set_data supplies the points");
+		Assert.Expect(w.Ray(new Vector3(-5, 10, 0), new Vector3(-5, -10, 0)).Count > 0, "concave slot attaches once set_data supplies the faces");
+	}
+
+	static IEnumerator ArticulationLinkLateDataAttach()
+	{
+		// F-33a: an articulation link shape attached data-less (the WS3D
+		// RID-shape-then-data sequence) failed its cook with
+		// "failed to create articulation link shape" and never retried -- the
+		// link kept no collider forever. The articulation now registers as a
+		// shape owner: shape_set_data() fires shape_changed() and the slot
+		// attaches (mirroring the REG-0034 body/area recovery).
+		//
+		// Observed via simulation (the ART-003 idiom): direct-state rays and
+		// overlaps do not report articulation-link shapes (pre-existing
+		// behavior across every articulation setup, including the implicit
+		// link boxes), so a dropped sphere is the honest witness. Pre-data the
+		// sphere falls through to the floor; once the data lands and the slot
+		// attaches, it rests on the shape.
+		using var w = new PhysxWorld(); // floor top at y=0
+		var shape = PhysicsServer3D.ConvexPolygonShapeCreate();
+		w.AdoptShape(shape);
+		var art = ArticulationApi.Create();
+		ArticulationApi.SetFixBase(art, true);
+		int link = ArticulationApi.AddLink(art, -1, Transform3D.Identity,
+			new Transform3D(Basis.Identity, new Vector3(0, 2, 0)), 0, 1000f,
+			new Vector3(0.02f, 0.02f, 0.02f)); // tiny implicit box, off the drop path
+		Assert.Expect(link >= 0, "articulation base link created");
+		ArticulationApi.SetSpace(art, w.Space);
+		ArticulationApi.Wake(art);
+		// Attach the convex data-less, offset to the side of the implicit box.
+		ArticulationApi.SetLinkShape(art, link, shape,
+			new Transform3D(Basis.Identity, new Vector3(0.5f, 0, 0)));
+		var sphere = w.MakeBody(w.Sphere(0.4f), new Vector3(0.5f, 3, 0));
+		yield return Wait.UntilOrFail(() => w.Pos(sphere).Origin.Y < 1.0f, 300,
+			"sphere falls through the data-less slot to the floor");
+		PhysicsServer3D.ShapeSetData(shape, ConvexBoxPoints(0.3f)); // fires shape_changed -> retry attaches
+		yield return Wait.Frames(3);
+		// Drop onto the freshly attached slot from above (a resting sphere
+		// would never lift on its own).
+		PhysicsServer3D.BodySetState(sphere, PhysicsServer3D.BodyState.Transform,
+			new Transform3D(Basis.Identity, new Vector3(0.5f, 4, 0)));
+		PhysicsServer3D.BodySetState(sphere, PhysicsServer3D.BodyState.LinearVelocity, Vector3.Zero);
+		yield return Wait.Frames(90);
+		Assert.ExpectNear(w.Pos(sphere).Origin.Y, 2.7f, 0.3f,
+			$"sphere rests on the retried link shape (y={w.Pos(sphere).Origin.Y:F2}; box top 2.3 + radius 0.4)");
+		PhysicsServer3D.FreeRid(art);
+		yield return Wait.Frame();
+	}
+
+	static IEnumerator HeightmapNanHoles()
+	{
+		// F-35: WorldScape3D writes NaN for heightmap holes. heights[0] == NaN
+		// made the min/max scan produce NaN bounds, every quantized sample
+		// collapsed through an undefined float->int conversion, and
+		// get_local_pose() handed PhysX a NaN transform. Policy: NaN is
+		// excluded from the bounds and clamped to the lowest finite height at
+		// cook time (a pit -- PhysX heightfields have no hole support; Jolt
+		// skips NaN quads via its FLT_MAX marker), and an all-NaN map refuses
+		// to cook with a guarded error instead of building a NaN field.
+		using var w = new PhysxWorld(false);
+		var hf = PhysicsServer3D.HeightmapShapeCreate();
+		w.AdoptShape(hf);
+		var body = PhysicsServer3D.BodyCreate();
+		w.TrackBody(body);
+		PhysicsServer3D.BodySetMode(body, PhysicsServer3D.BodyMode.Static);
+		PhysicsServer3D.BodySetSpace(body, w.Space);
+		PhysicsServer3D.BodyAddShape(body, hf, Transform3D.Identity, true);
+		PhysicsServer3D.BodySetShapeDisabled(body, 0, false);
+		const int n = 33;
+		var heights = new float[n * n];
+		for (int i = 0; i < heights.Length; i++)
+		{
+			heights[i] = 2f;
+		}
+		heights[0] = float.NaN; // heights[0] == NaN is the pre-fix NaN-bounds trigger
+		for (int z = 6; z <= 10; z++)
+		{
+			for (int x = 6; x <= 10; x++)
+			{
+				heights[z * n + x] = float.NaN; // a hole patch (grid -> world -10..-6)
+			}
+		}
+		PhysicsServer3D.ShapeSetData(hf, new Godot.Collections.Dictionary
+		{
+			["width"] = n,
+			["depth"] = n,
+			["heights"] = heights,
+		});
+		yield return Wait.Frames(3);
+		var hitFlat = w.Ray(new Vector3(0, 10, 0), new Vector3(0, -10, 0));
+		Assert.Expect(hitFlat.Count > 0 && Math.Abs(hitFlat["position"].AsVector3().Y - 2f) < 0.15f,
+			"finite bounds: the field surfaces at its heights (NaN bounds would break the whole field)");
+		var hitHole = w.Ray(new Vector3(-8, 10, -8), new Vector3(-8, -10, -8));
+		Assert.Expect(hitHole.Count > 0 && Math.Abs(hitHole["position"].AsVector3().Y - 2f) < 0.15f,
+			"NaN hole clamps to the finite field height (no undefined conversion, no NaN transform)");
+
+		// All-NaN region: the field refuses to cook (guarded error, no NaN
+		// transform); queries and other bodies stay healthy.
+		var hfAllNan = PhysicsServer3D.HeightmapShapeCreate();
+		w.AdoptShape(hfAllNan);
+		var bodyAllNan = PhysicsServer3D.BodyCreate();
+		w.TrackBody(bodyAllNan);
+		PhysicsServer3D.BodySetMode(bodyAllNan, PhysicsServer3D.BodyMode.Static);
+		PhysicsServer3D.BodySetSpace(bodyAllNan, w.Space);
+		PhysicsServer3D.BodySetState(bodyAllNan, PhysicsServer3D.BodyState.Transform,
+			new Transform3D(Basis.Identity, new Vector3(40, 0, 0)));
+		PhysicsServer3D.BodyAddShape(bodyAllNan, hfAllNan, Transform3D.Identity, true);
+		PhysicsServer3D.BodySetShapeDisabled(bodyAllNan, 0, false);
+		var allNan = new float[n * n];
+		for (int i = 0; i < allNan.Length; i++)
+		{
+			allNan[i] = float.NaN;
+		}
+		PhysicsServer3D.ShapeSetData(hfAllNan, new Godot.Collections.Dictionary
+		{
+			["width"] = n,
+			["depth"] = n,
+			["heights"] = allNan,
+		});
+		yield return Wait.Frames(3);
+		Assert.Expect(w.Ray(new Vector3(40, 10, 0), new Vector3(40, -10, 0)).Count == 0, "the all-NaN field never enters the broadphase");
+		var canary = w.MakeBody(w.Sphere(0.3f), new Vector3(0, 5, 0));
+		yield return Wait.UntilOrFail(() => w.Pos(canary).Origin.Y < 2.5f, 300, "canary settles on the healthy field");
+		Assert.Expect(PhysxWorld.Finite(w.Pos(canary)), "engine healthy after the all-NaN field");
 	}
 
 	static bool Contains(string[] list, string value)

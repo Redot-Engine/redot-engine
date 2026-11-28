@@ -107,6 +107,14 @@ void PhysXArticulation3D::_destroy() {
 		px_articulation->release();
 		px_articulation = nullptr;
 	}
+	// Release the blueprint ownerships before the records vanish: the shapes
+	// may outlive the articulation and must not notify a dangling pointer.
+	for (LinkRecord &rec : links) {
+		if (rec.shape_blueprint) {
+			rec.shape_blueprint->remove_articulation_owner(this);
+			rec.shape_blueprint = nullptr;
+		}
+	}
 	links.clear();
 }
 
@@ -258,12 +266,41 @@ void PhysXArticulation3D::set_link_shape(int p_link_index, PhysXShape3D *p_shape
 		rec->link->detachShape(*rec->shape);
 		rec->shape = nullptr;
 	}
+	// Owner bookkeeping first: the blueprint (old out, new in) drives the
+	// shape_changed() retry below, which needs the stored inputs to re-attach
+	// a data-less slot. Re-setting the same shape only updates the transform.
+	if (rec->shape_blueprint != p_shape) {
+		if (rec->shape_blueprint) {
+			rec->shape_blueprint->remove_articulation_owner(this);
+		}
+		rec->shape_blueprint = p_shape;
+		p_shape->add_articulation_owner(this);
+	}
+	rec->shape_transform = p_transform;
+
+	_attach_link_shape(*rec);
+}
+
+void PhysXArticulation3D::_attach_link_shape(LinkRecord &rec) {
+	PhysXShape3D *p_shape = rec.shape_blueprint;
+	if (!p_shape || !rec.link || !px_articulation || rec.shape) {
+		return;
+	}
+	// Data-less blueprint (the WS3D pattern: an RID shape attached before any
+	// data exists): keep the slot detached and stay silent -- shape_changed()
+	// retries once shape_set_data supplies the geometry (mirrors
+	// PhysXShape3D::create_shape's silent skip and PhysXShapedObject3D's
+	// retry).
+	if (!p_shape->has_geometry_data()) {
+		return;
+	}
 
 	// Same dispatch as PhysXShapedObject3D::_shape_geometry_scale_for: convex
 	// polygon meshes consume the signed (mirror-capable) scale — the shape_blueprint
 	// bakes the mirror — every other geometry the absolute scale. Links have
 	// no separate body scale.
 	const bool convex_poly = p_shape->get_type() == PhysicsServer3D::SHAPE_CONVEX_POLYGON;
+	const Transform3D &p_transform = rec.shape_transform;
 	const Vector3 scale = (convex_poly && !Math::is_zero_approx(p_transform.basis.determinant()))
 			? p_transform.basis.get_scale()
 			: p_transform.basis.get_scale_abs();
@@ -282,16 +319,38 @@ void PhysXArticulation3D::set_link_shape(int p_link_index, PhysXShape3D *p_shape
 			physx::PxVec3(scale.x, scale.y, scale.z),
 			server->get_default_material(),
 			flags);
-	ERR_FAIL_NULL_MSG(shape, "PhysX: failed to create articulation link shape.");
+	if (shape == nullptr) {
+		// A genuine cook failure (not the data-less case above): report it
+		// and keep the slot detached for a later retry.
+		ERR_PRINT("PhysX: failed to create articulation link shape.");
+		return;
+	}
 	shape->setLocalPose(godot_to_px(p_transform) * p_shape->get_local_pose(physx::PxVec3(scale.x, scale.y, scale.z)));
-	rec->link->attachShape(*shape);
+	// attachShape mutates the broadphase: set_link_shape's caller fetched the
+	// in-flight solve; the shape_changed() retry fetches its own.
+	rec.link->attachShape(*shape);
 	// The link owns the shape after attach (refcount 2 -> 1 on release).
 	shape->release();
-	rec->shape = shape;
-	_apply_link_filter(*rec);
+	rec.shape = shape;
+	_apply_link_filter(rec);
 
 	// Geometry changed: recompute mass properties at the stored density.
-	physx::PxRigidBodyExt::updateMassAndInertia(*rec->link, rec->density);
+	physx::PxRigidBodyExt::updateMassAndInertia(*rec.link, rec.density);
+}
+
+void PhysXArticulation3D::shape_changed(PhysXShape3D *p_shape) {
+	bool retried = false;
+	for (LinkRecord &rec : links) {
+		if (rec.shape_blueprint == p_shape && rec.shape == nullptr) {
+			if (!retried && space) {
+				// attachShape mutates the scene's broadphase -- fetch an
+				// in-flight solve first (async stepping), once for the batch.
+				space->ensure_synced();
+				retried = true;
+			}
+			_attach_link_shape(rec);
+		}
+	}
 }
 
 void PhysXArticulation3D::set_link_collision_layer(int p_link_index, uint32_t p_layer) {

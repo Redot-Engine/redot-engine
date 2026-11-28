@@ -1969,7 +1969,7 @@ PackedStringArray PhysXParticleFluid3D::get_configuration_warnings() const {
 		warnings.push_back(RTR("Solver is \"PBD (CUDA)\" but no CUDA device is available (or Enhanced Determinism is on) -- the fluid will be inert. Use \"Auto\" or \"MPM (compute)\"."));
 	}
 	if (solver == SOLVER_PBD && server && server->is_gpu_dynamics_enabled() && !server->particle_fluid_supports_diffuse()) {
-		warnings.push_back(RTR("Solver is \"PBD (CUDA)\" but this platform's PhysX SDK lacks the CUDA particle buffer factory (Windows only through PhysX 5.11) -- the fluid will be inert. Use \"Auto\" or \"MPM (compute)\"."));
+		warnings.push_back(RTR("Solver is \"PBD (CUDA)\" but this platform's PhysX SDK lacks the CUDA particle buffer factory (Windows builds only) -- the fluid will be inert. Use \"Auto\" (picks MPM here) or \"MPM (compute)\"."));
 	}
 	if (on_mpm && (int)mpm_colliders.size() > 32) {
 		warnings.push_back(RTR("MPM coupling uses at most 32 colliders (rigid bodies plus any nearby debris chunks); the rest are ignored."));

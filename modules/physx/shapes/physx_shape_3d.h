@@ -61,6 +61,7 @@
 #include <PxPhysicsAPI.h>
 
 class PhysXShapedObject3D;
+class PhysXArticulation3D;
 
 class PhysXShape3D {
 public:
@@ -72,6 +73,14 @@ public:
 	void remove_owner(PhysXShapedObject3D *p_owner);
 	bool has_owner(PhysXShapedObject3D *p_owner) const;
 	const HashMap<PhysXShapedObject3D *, int> &get_owners() const { return owners; }
+
+	// Articulation links register separately from PhysXShapedObject3D owners:
+	// their per-link shapes attach through PxArticulationLink::attachShape, not
+	// the shared attach machinery, so _notify_shape_changed reaches them
+	// through its own list (their shape_changed() retries data-less slots --
+	// see PhysXArticulation3D::shape_changed).
+	void add_articulation_owner(PhysXArticulation3D *p_owner);
+	void remove_articulation_owner(PhysXArticulation3D *p_owner);
 
 	// Sums count_shapes_with_callback() over every registered owner: the
 	// reference count an attached PxShape-embedded external object (a
@@ -181,6 +190,7 @@ protected:
 
 	PhysXRIDOwner physx_rid;
 	HashMap<PhysXShapedObject3D *, int> owners;
+	HashMap<PhysXArticulation3D *, int> articulation_owners;
 	mutable Mutex owners_mutex;
 	// Contact offset (PhysX sums both shapes' offsets for pair contact
 	// generation). 0.04 gave a 0.08 m combined zone where a moderately fast

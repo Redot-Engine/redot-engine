@@ -56,6 +56,11 @@ public:
 	virtual void set_data(const Variant &p_data) override;
 	virtual Variant get_data() const override;
 
+	// An empty faces array (the procedural-mesh pattern: an RID shape attached
+	// before its geometry is set) cannot cook — keep the attach silent until
+	// set_data supplies the triangles, like the heightmap override.
+	virtual bool has_geometry_data() const override { return !faces.is_empty(); }
+
 	virtual AABB get_aabb() const override { return aabb; }
 
 	// Generates a Concave Polygon as a fast fallback

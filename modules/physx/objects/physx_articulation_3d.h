@@ -135,6 +135,12 @@ public:
 	uint32_t get_link_collision_layer(int p_index) const;
 	uint32_t get_link_collision_mask(int p_index) const;
 
+	/// Called by PhysXShape3D::_notify_shape_changed when a link shape's
+	/// blueprint gains geometry: re-attaches the slots that failed their first
+	/// cook (a data-less RID-shape-then-data sequence keeps the slot and
+	/// retries here, mirroring PhysXShapedObject3D's WorldScape recovery).
+	void shape_changed(PhysXShape3D *p_shape);
+
 	/// Linear + angular world velocity of the link ("linear"/"angular" keys).
 	Dictionary get_link_velocity(int p_index) const;
 
@@ -146,6 +152,11 @@ private:
 	struct LinkRecord {
 		physx::PxArticulationLink *link = nullptr;
 		physx::PxShape *shape = nullptr;
+		// The blueprint + transform the shape was set from, kept so
+		// shape_changed() can retry a data-less first cook (the blueprint is
+		// also what the articulation registers as an owner for).
+		PhysXShape3D *shape_blueprint = nullptr;
+		Transform3D shape_transform;
 		uint32_t collision_layer = 1;
 		uint32_t collision_mask = 1;
 		float density = 1.0f;
@@ -158,6 +169,11 @@ private:
 	void _destroy();
 	physx::PxArticulationLink *_link(int p_index) const;
 	LinkRecord *_record(int p_index);
+	// (Re-)attaches rec's blueprint to its link: the shared body of
+	// set_link_shape and the shape_changed() retry. Silent no-op while the
+	// blueprint has no geometry data (the slot stays detached); on success it
+	// applies the link filter and recomputes mass properties.
+	void _attach_link_shape(LinkRecord &rec);
 	const LinkRecord *_record(int p_index) const;
 	/// Writes the record's layer/mask into its shape's filter data.
 	void _apply_link_filter(LinkRecord &p_rec) const;

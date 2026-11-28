@@ -46,6 +46,35 @@ documented constants or round-trip caches:
   once — keep async stepping off for projects that mutate module objects
   (vehicles, GPU fluids/cloths, articulations) from scripts.
 
+### The GPU fallback ladder
+
+`PhysXServer3D.get_gpu_dynamics_status()` /
+`get_gpu_dynamics_unavailable_reason()` name the reason GPU dynamics is (not)
+running; `rd_compute_available()` says whether the RenderingDevice-compute
+systems can run. The ladder, once per startup:
+
+1. **CUDA, compute capability ≥ 7.0** → GPU dynamics (rigid bodies, PBD
+   fluids, GPU cloth, GPU soft bodies) **and** the RenderingDevice-compute
+   systems (MPM fluids, MPM granular, gas, Flow, water) all use the GPU.
+2. **No usable CUDA** — the setting is off, determinism is on, no NVIDIA
+   driver, the PhysXGpu runtime is missing, or the device's compute
+   capability is below the SDK's minimum (7.0; a GTX 10-series card, for
+   example) → PhysX runs **CPU simulation** for rigid bodies, cloth and soft
+   bodies (there is no compute-shader substitute for them — MPM is a
+   grid-material solver, not a rigid-body solver). The
+   RenderingDevice-compute systems are **unaffected**: MPM fluids/granular,
+   gas, Flow and water keep using the GPU, so a GTX 1060 still simulates its
+   `PhysXParticleFluid3D` on the GPU (Solver = Auto picks MPM whenever GPU
+   dynamics is unavailable; note PBD fluids are Windows builds only — the
+   CUDA particle buffer factory does not exist on Linux, so Auto always
+   picks MPM there).
+3. **No RenderingDevice either** (headless, CPU rendering) → the compute
+   systems no-op; CPU simulation is the last resort for everything.
+
+`physx/physx_3d/simulation/enhanced_determinism` and `gpu_dynamics` off both
+skip CUDA context creation entirely; the compute systems don't care either
+way.
+
 ## Exporting a game
 
 The downloadable export templates do not contain this module, so export with a

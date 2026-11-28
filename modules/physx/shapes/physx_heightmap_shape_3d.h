@@ -79,6 +79,10 @@ private:
 	float min_height = 0.0f;
 	float max_height = 0.0f;
 	float height_scale = 1.0f;
+	// The set_data all-NaN guard: no finite sample exists to derive the
+	// quantization bounds from, so the field refuses to cook (see the bounds
+	// comment in set_data and the guard in _ensure_physx_height_field).
+	bool all_nan_heights = false;
 
 	mutable physx::PxHeightField *height_field = nullptr;
 

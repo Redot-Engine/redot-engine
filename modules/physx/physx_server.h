@@ -111,6 +111,25 @@ public:
 class PhysXServer3D : public PhysicsServer3D {
 	GDCLASS(PhysXServer3D, PhysicsServer3D);
 
+public:
+	// Why GPU dynamics is or is not running on this machine. Classified once
+	// at init(); PhysX itself requires compute capability >= 7.0 for every
+	// GPU feature (rigid bodies, particles, deformables), while the module's
+	// RenderingDevice-compute systems (MPM fluids/granular, gas, Flow, water)
+	// are CUDA-independent and keep working whenever a rendering device
+	// exists -- see rd_compute_available().
+	enum GpuDynamicsStatus {
+		GPU_DYNAMICS_ACTIVE, // a CUDA context validated; GPU dynamics runs
+		GPU_DYNAMICS_SETTING_OFF, // simulation/gpu_dynamics is off (no CUDA context created)
+		GPU_DYNAMICS_ENHANCED_DETERMINISM, // determinism forces the CPU solver (no CUDA context created)
+		GPU_DYNAMICS_NO_CUDA_DRIVER, // no NVIDIA driver, or the CUDA driver is missing/too old
+		GPU_DYNAMICS_RUNTIME_MISSING, // PhysXGpu_64.dll / libPhysXGpu_64.so could not be loaded
+		GPU_DYNAMICS_COMPUTE_CAPABILITY, // the device's compute capability is below the SDK minimum (7.0)
+		GPU_DYNAMICS_NO_DEVICE, // a driver and the runtime are present, but no device validated
+		GPU_DYNAMICS_BUILD_WITHOUT_GPU, // physx_gpu=no build: no GPU code compiled in
+	};
+
+private:
 	static PhysXServer3D *singleton_ptr;
 	// RID Owners — map Godot RIDs to internal wrapper objects; the `true`
 	// template parameter enables thread-safe atomics.
@@ -185,9 +204,27 @@ class PhysXServer3D : public PhysicsServer3D {
 	// CUDA device was found at init(). null otherwise.
 	physx::PxCudaContextManager *px_cuda_context = nullptr;
 	bool gpu_dynamics_enabled = false;
+	// Why GPU dynamics is (not) running, classified once at init() -- see the
+	// GpuDynamicsStatus enum below. The PhysXGpu runtime rejects unsuitable
+	// devices inside its own closed code and only reports through the error
+	// callback, so PhysXErrorCallback records the runtime's findings (compute
+	// capability, driver errors) while init() composes the final status.
+	GpuDynamicsStatus gpu_dynamics_status = GPU_DYNAMICS_BUILD_WITHOUT_GPU;
+	String gpu_dynamics_unavailable_reason;
+	// Lazily-probed "can a RenderingDevice run compute shaders here" (the MPM
+	// / gas solvers' requirement). Not evaluated at startup: probing creates a
+	// local RenderingDevice, which costs too much for init().
+	mutable bool rd_compute_probed = false;
+	mutable bool rd_compute_available_cache = false;
 
 	bool extensions_initialized = false;
 	bool vehicle_sdk_initialized = false;
+
+	// Composes the GPU-dynamics classification when CUDA-context creation
+	// failed: the runtime's device-validation findings (compute capability,
+	// driver probes, recorded by PhysXErrorCallback) first, a generic
+	// "no device validated" otherwise.
+	void _classify_gpu_dynamics_failure();
 
 	// Server-global simulation gate. Independent of per-space activation
 	// (space_set_active): the editor sets this to false on startup so physics
@@ -245,6 +282,24 @@ public:
 	/// usable device + determinism not forced); null otherwise.
 	physx::PxCudaContextManager *get_cuda_context() const { return px_cuda_context; }
 	bool is_gpu_dynamics_enabled() const { return gpu_dynamics_enabled; }
+	/// Why GPU dynamics is or is not running on this machine (classified once
+	/// at init()): the setting, determinism, the CUDA driver, the PhysXGpu
+	/// runtime, the device's compute capability (PhysX requires >= 7.0), or a
+	/// device that failed to validate. CPU simulation is the only fallback
+	/// for rigid bodies, cloth and soft bodies -- the MPM/gas/Flow/water
+	/// compute systems keep using the GPU through RenderingDevice whenever
+	/// rd_compute_available() is true.
+	GpuDynamicsStatus get_gpu_dynamics_status() const { return gpu_dynamics_status; }
+	/// Human-readable sentence for the classification above; empty when GPU
+	/// dynamics is ACTIVE.
+	String get_gpu_dynamics_unavailable_reason() const { return gpu_dynamics_unavailable_reason; }
+	/// Whether a RenderingDevice capable of running compute shaders exists on
+	/// this machine -- the requirement of the MPM fluid/granular solvers, the
+	/// gas solver and (with Flow's own device) the Flow simulation. Probed
+	/// once, on demand (creating the device is too costly for init()); false
+	/// on headless and CPU-rendering builds, which is exactly when those
+	/// systems no-op.
+	bool rd_compute_available() const;
 	/// Script-facing GPU query (PhysXServer3D singleton): device name from the
 	/// CUDA context, empty when GPU dynamics is unavailable (CPU-only build,
 	/// no usable device, or enhanced_determinism).
@@ -745,4 +800,7 @@ public:
 
 	virtual int get_process_info(PhysicsServer3D::ProcessInfo p_process_info) override;
 };
+
+VARIANT_ENUM_CAST(PhysXServer3D::GpuDynamicsStatus);
+
 #endif // PHYSX_SERVER_H

@@ -53,17 +53,20 @@ public:
 	// independent of the CPU worker count and API call order (it is NOT
 	// cross-platform deterministic). Has a performance cost.
 	//
-	// GPU dynamics is never deterministic, so enabling this forces the CPU
-	// solver even when a CUDA device is available.
+	// GPU dynamics is never deterministic, so enabling this skips CUDA
+	// context creation entirely and forces the CPU solver -- the GPU solver
+	// AND the CUDA-context systems (PBD fluids, GPU cloth, GPU soft bodies)
+	// are unavailable, exactly like physics/physx_3d/simulation/gpu_dynamics
+	// being off. RenderingDevice-compute systems (MPM fluids, gas, Flow,
+	// water) are unaffected.
 	inline static bool enhanced_determinism = false;
 
 	// physics/physx_3d/simulation/gpu_dynamics
 	//
 	// Off: no CUDA context is created at all -- every scene runs the CPU
 	// solver with its full worker pool, exactly like a machine without
-	// CUDA. Distinct from enhanced_determinism, which keeps the context
-	// and only forces the CPU simulation path (GPU work like soft-body
-	// CUDA solvers stays available there).
+	// CUDA. Distinct from enhanced_determinism only in intent: both skip
+	// the CUDA context (see that comment).
 	inline static bool gpu_dynamics = true;
 
 	// physics/physx_3d/simulation/solver_type

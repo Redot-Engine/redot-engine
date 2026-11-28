@@ -45,6 +45,11 @@ public:
 	virtual void set_data(const Variant &p_data) override;
 	virtual Variant get_data() const override;
 
+	// An empty points array (the procedural-mesh pattern: an RID shape attached
+	// before its geometry is set) cannot cook — keep the attach silent until
+	// set_data supplies the points, like the heightmap override.
+	virtual bool has_geometry_data() const override { return !points.is_empty(); }
+
 	virtual AABB get_aabb() const override { return aabb; }
 
 	virtual bool get_physx_geometry(physx::PxGeometryHolder &p_geometry_holder, const physx::PxVec3 &p_scale) const override;

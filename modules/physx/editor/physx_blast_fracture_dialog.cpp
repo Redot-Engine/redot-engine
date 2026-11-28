@@ -53,6 +53,7 @@
 #include "core/object/callable_method_pointer.h"
 #include "core/object/object.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/file_system/editor_file_system.h"
@@ -139,7 +140,7 @@ void PhysXBlastFractureDialog::_on_confirmed() {
 	String save_dir;
 	String base_name;
 	if (mode == MODE_SCENE_NODE && target_node) {
-		Node *scene_root = EditorNode::get_singleton()->get_edited_scene();
+		Node *scene_root = EditorSceneManager::get_singleton()->get_edited_scene();
 		const String scene_path = scene_root ? scene_root->get_scene_file_path() : String();
 		save_dir = scene_path.is_empty() ? "res://" : scene_path.get_base_dir();
 		base_name = target_node->get_name();

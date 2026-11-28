@@ -96,12 +96,28 @@ void PhysXHeightMapShape3D::set_data(const Variant &p_data) {
 	depth = new_depth;
 	heights = new_heights;
 
-	// Calculate bounds and quantization scale
-	min_height = heights[0];
-	max_height = heights[0];
-
+	// Calculate bounds and quantization scale. NaN samples (WorldScape3D's
+	// hole marker) are excluded from the bounds: PhysX heightfields have no
+	// hole support (Jolt skips NaN quads via its FLT_MAX marker), so the cook
+	// clamps NaN to the field's lowest finite height -- a pit, the closest
+	// analog of a hole -- and the bounds stay finite so get_local_pose()
+	// never hands PhysX a NaN transform. A map with NO finite sample at all
+	// refuses to cook (guarded error in _ensure_physx_height_field) instead
+	// of building a NaN field.
+	min_height = 0.0f;
+	max_height = 0.0f;
+	bool saw_finite = false;
 	for (int i = 0; i < heights.size(); ++i) {
-		float h = heights[i];
+		const float h = heights[i];
+		if (Math::is_nan(h)) {
+			continue;
+		}
+		if (!saw_finite) {
+			min_height = h;
+			max_height = h;
+			saw_finite = true;
+			continue;
+		}
 		if (h < min_height) {
 			min_height = h;
 		}
@@ -109,6 +125,7 @@ void PhysXHeightMapShape3D::set_data(const Variant &p_data) {
 			max_height = h;
 		}
 	}
+	all_nan_heights = !saw_finite;
 
 	// Map [min_height, max_height] onto the FULL signed 16-bit range so the
 	// quantization error is (max-min)/65535 everywhere. The old zero-centered
@@ -177,6 +194,14 @@ bool PhysXHeightMapShape3D::_ensure_physx_height_field() const {
 		return false;
 	}
 
+	if (all_nan_heights) {
+		// Guarded error, not a NaN field: the map has no finite sample to
+		// derive the quantization bounds from (set_data zeroed them). Re-set
+		// the heights with real values to build the field.
+		ERR_PRINT_ONCE("PhysX: heightmap contains only NaN heights; the heightfield is not built.");
+		return false;
+	}
+
 	// 1. Prepare PhysX data array
 	// PhysX heightfield grid uses 16-bit samples
 	LocalVector<physx::PxHeightFieldSample> samples;
@@ -190,6 +215,16 @@ bool PhysXHeightMapShape3D::_ensure_physx_height_field() const {
 			int physx_index = row * depth + column; // Swapped iteration alignment
 
 			float h = heights[godot_index];
+
+			// NaN samples (WorldScape3D's hole markers) sit at the field's
+			// lowest finite height -- a pit, since PhysX heightfields have no
+			// hole support (see set_data's bounds comment). Quantization
+			// stays in range and the undefined float->int conversion of a NaN
+			// (which clamped holes to solid ground at the field minimum)
+			// never happens.
+			if (Math::is_nan(h)) {
+				h = min_height;
+			}
 
 			// Quantize height: sample 0 == min_height lands at PxI16 -32768,
 			// max_height at +32767 (see set_data's scale comment).

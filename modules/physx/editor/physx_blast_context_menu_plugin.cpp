@@ -50,6 +50,7 @@
 #include "core/object/class_db.h"
 #include "core/object/object.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/main/node.h"
 #include "scene/resources/texture.h"
@@ -60,7 +61,7 @@ void PhysXBlastFractureMenuPlugin::get_options(const Vector<String> &p_paths) {
 	}
 
 	if (target_slot == CONTEXT_SLOT_SCENE_TREE) {
-		Node *edited_scene = EditorNode::get_singleton()->get_edited_scene();
+		Node *edited_scene = EditorSceneManager::get_singleton()->get_edited_scene();
 		if (!edited_scene) {
 			return;
 		}

@@ -37,6 +37,7 @@
 
 #include "physx_shape_3d.h"
 
+#include "objects/physx_articulation_3d.h"
 #include "objects/physx_shaped_object_3d.h"
 #include "physx_server.h"
 
@@ -80,6 +81,25 @@ bool PhysXShape3D::has_owner(PhysXShapedObject3D *p_owner) const {
 	return owners.has(p_owner);
 }
 
+void PhysXShape3D::add_articulation_owner(PhysXArticulation3D *p_owner) {
+	MutexLock lock(owners_mutex);
+	if (articulation_owners.has(p_owner)) {
+		articulation_owners[p_owner]++;
+	} else {
+		articulation_owners[p_owner] = 1;
+	}
+}
+
+void PhysXShape3D::remove_articulation_owner(PhysXArticulation3D *p_owner) {
+	MutexLock lock(owners_mutex);
+	if (articulation_owners.has(p_owner)) {
+		articulation_owners[p_owner]--;
+		if (articulation_owners[p_owner] <= 0) {
+			articulation_owners.erase(p_owner);
+		}
+	}
+}
+
 int PhysXShape3D::count_owner_shape_references(const void *p_callbacks) const {
 	int refs = 0;
 	MutexLock lock(owners_mutex);
@@ -99,6 +119,11 @@ void PhysXShape3D::_notify_shape_changed() {
 	for (const KeyValue<PhysXShapedObject3D *, int> &E : owners) {
 		// Notify each owning body/area that this shape's geometry changed,
 		// so they can update their attached PxShape instances.
+		E.key->shape_changed(this);
+	}
+	for (const KeyValue<PhysXArticulation3D *, int> &E : articulation_owners) {
+		// Articulation links retry their data-less slots here too (their
+		// shapes attach through PxArticulationLink, not the shared machinery).
 		E.key->shape_changed(this);
 	}
 }

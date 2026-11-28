@@ -68,6 +68,7 @@
 #include "scene/3d/physics/area_3d.h"
 
 #ifdef GODOT_PHYSX_BLAST
+#include "editor/editor_interface.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/inspector/editor_context_menu_plugin.h"
@@ -633,7 +634,7 @@ PhysXEditorPlugin::PhysXEditorPlugin() {
 	// header) since nothing in the editor theme matches its class name.
 	Ref<Texture2D> blast_asset_icon = physx_blast_asset_make_icon();
 	if (blast_asset_icon.is_valid()) {
-		EditorNode::get_singleton()->get_editor_theme()->set_icon("PhysXBlastAsset", EditorStringName(EditorIcons), blast_asset_icon);
+		EditorInterface::get_singleton()->get_editor_theme()->set_icon("PhysXBlastAsset", EditorStringName(EditorIcons), blast_asset_icon);
 	}
 #endif
 

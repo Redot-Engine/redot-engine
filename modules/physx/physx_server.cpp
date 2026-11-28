@@ -39,6 +39,9 @@
 #include <dlfcn.h> // Godot patch: preload libcuda so the GPU runtime's cu* symbols resolve (see the GPU init below).
 #endif
 
+#include <cstdio>
+#include <cstring>
+
 #include "joints/physx_joint_3d.h"
 #include "objects/physx_area_3d.h"
 #include "objects/physx_articulation_3d.h"
@@ -64,6 +67,10 @@
 #include "spaces/physx_filter_shader.h"
 #include "spaces/physx_space_3d.h"
 #include "vehicles/physx_vehicle_server.h"
+
+#include "servers/display/display_server.h"
+#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/rendering_server.h"
 
 #include "PxPhysics.h"
 #include "common/PxTolerancesScale.h"
@@ -125,6 +132,17 @@ void PhysXServer3D::_bind_methods() {
 	ClassDB::bind_static_method("PhysXServer3D", D_METHOD("get_singleton"), &PhysXServer3D::get_singleton);
 	ClassDB::bind_method(D_METHOD("is_gpu_dynamics_enabled"), &PhysXServer3D::is_gpu_dynamics_enabled);
 	ClassDB::bind_method(D_METHOD("get_gpu_device_name"), &PhysXServer3D::get_gpu_device_name);
+	ClassDB::bind_method(D_METHOD("get_gpu_dynamics_status"), &PhysXServer3D::get_gpu_dynamics_status);
+	ClassDB::bind_method(D_METHOD("get_gpu_dynamics_unavailable_reason"), &PhysXServer3D::get_gpu_dynamics_unavailable_reason);
+	ClassDB::bind_method(D_METHOD("rd_compute_available"), &PhysXServer3D::rd_compute_available);
+	BIND_ENUM_CONSTANT(GPU_DYNAMICS_ACTIVE);
+	BIND_ENUM_CONSTANT(GPU_DYNAMICS_SETTING_OFF);
+	BIND_ENUM_CONSTANT(GPU_DYNAMICS_ENHANCED_DETERMINISM);
+	BIND_ENUM_CONSTANT(GPU_DYNAMICS_NO_CUDA_DRIVER);
+	BIND_ENUM_CONSTANT(GPU_DYNAMICS_RUNTIME_MISSING);
+	BIND_ENUM_CONSTANT(GPU_DYNAMICS_COMPUTE_CAPABILITY);
+	BIND_ENUM_CONSTANT(GPU_DYNAMICS_NO_DEVICE);
+	BIND_ENUM_CONSTANT(GPU_DYNAMICS_BUILD_WITHOUT_GPU);
 
 	// Lifecycle.
 	ClassDB::bind_method(D_METHOD("soft_body_set_solver_mode", "soft_body", "mode"), &PhysXServer3D::soft_body_set_solver_mode);
@@ -254,6 +272,16 @@ public:
 		Memory::free_static(ptr, true);
 	}
 };
+// Findings from the PhysXGpu runtime's own device validation, recorded by
+// the error callback while the CUDA context is created: the compute-capability
+// check and the CUDA-driver probes live inside the closed runtime, and the
+// module only sees the messages it reports through this callback. init()
+// composes the final classification from these plus its own decisions.
+static bool gpu_runtime_saw_cc_below_minimum = false;
+static int gpu_runtime_cc_major = 0;
+static int gpu_runtime_cc_minor = 0;
+static bool gpu_runtime_saw_driver_problem = false; // nvcuda/libcuda missing or too old
+
 // Routes PhysX errors/warnings to Godot's logging macros (no-op body in
 // release builds @DASH@ PhysX still requires the object to exist). Debug
 // builds map each error code to the matching Godot log level.
@@ -266,6 +294,18 @@ public:
 			const char *message,
 			const char *file,
 			int line) override {
+		// Classification runs in release builds too (the log body below is
+		// debug-only): the runtime's device-validation findings feed the
+		// GPU-dynamics reason API.
+		if (message != nullptr) {
+			if (strstr(message, "Minimum GPU compute capability") == message &&
+					sscanf(message, "Minimum GPU compute capability %d.%d", &gpu_runtime_cc_major, &gpu_runtime_cc_minor) == 2) {
+				gpu_runtime_saw_cc_below_minimum = true;
+			} else if (strstr(message, "nvcuda.dll") != nullptr ||
+					strstr(message, "CUDA driver version is") != nullptr) {
+				gpu_runtime_saw_driver_problem = true;
+			}
+		}
 #ifdef DEBUG_ENABLED
 		String formatted_message =
 				" in " + String(file) + ", line " + itos(line) + ": " + String(message);
@@ -411,6 +451,46 @@ String PhysXServer3D::get_gpu_device_name() const {
 	}
 #endif
 	return String();
+}
+
+void PhysXServer3D::_classify_gpu_dynamics_failure() {
+	// Called when CUDA-context creation failed: the PhysXGpu runtime has
+	// already reported why through PhysXErrorCallback (the compute-capability
+	// check and the CUDA-driver probes live inside the closed runtime).
+	if (gpu_runtime_saw_cc_below_minimum) {
+		gpu_dynamics_status = GPU_DYNAMICS_COMPUTE_CAPABILITY;
+		gpu_dynamics_unavailable_reason = vformat(
+				"the CUDA device reports compute capability %d.%d, but this PhysX runtime requires %d.%d or newer",
+				gpu_runtime_cc_major, gpu_runtime_cc_minor, 7, 0);
+	} else if (gpu_runtime_saw_driver_problem) {
+		gpu_dynamics_status = GPU_DYNAMICS_NO_CUDA_DRIVER;
+		gpu_dynamics_unavailable_reason = "no usable CUDA driver (nvcuda.dll / libcuda.so.1 missing or too old)";
+	} else {
+		gpu_dynamics_status = GPU_DYNAMICS_NO_DEVICE;
+		gpu_dynamics_unavailable_reason = "no PhysX-capable CUDA device was found";
+	}
+}
+
+bool PhysXServer3D::rd_compute_available() const {
+	// The MPM fluid/granular solvers, the gas solver and Flow's RD device all
+	// require a RenderingDevice; this is their first gate (mirrors
+	// MPMFluidSolver's constructor, without the per-solver shader compile).
+	// Probed once, on demand -- creating a device is too costly for init().
+	if (!rd_compute_probed) {
+		rd_compute_probed = true;
+		rd_compute_available_cache = false;
+		if (DisplayServer::get_singleton() && DisplayServer::get_singleton()->can_create_rendering_device()) {
+			// Same first gate as MPMFluidSolver (device creation; the per-solver
+			// shader compile stays with the solvers). The device is an Object:
+			// created, checked, freed.
+			RenderingDevice *rd = RenderingServer::get_singleton()->create_local_rendering_device();
+			rd_compute_available_cache = rd != nullptr;
+			if (rd != nullptr) {
+				memdelete(rd);
+			}
+		}
+	}
+	return rd_compute_available_cache;
 }
 
 RID PhysXServer3D::space_create() {
@@ -2860,7 +2940,11 @@ void PhysXServer3D::init() {
 	// scene runs the CPU solver with its full worker pool, the same path as
 	// a machine without CUDA. A GPU build without a usable CUDA device falls
 	// back to CPU.
+	gpu_runtime_saw_cc_below_minimum = false;
+	gpu_runtime_saw_driver_problem = false;
 	if (!PhysXProjectSettings::gpu_dynamics) {
+		gpu_dynamics_status = GPU_DYNAMICS_SETTING_OFF;
+		gpu_dynamics_unavailable_reason = "physics/physx_3d/simulation/gpu_dynamics is off";
 		print_line("PhysX: gpu_dynamics is off -> CPU simulation (no CUDA context).");
 	} else if (!PhysXProjectSettings::enhanced_determinism) {
 #if defined(__linux__)
@@ -2873,7 +2957,12 @@ void PhysXServer3D::init() {
 		// simulation.
 		void *cuda_driver = dlopen("libcuda.so.1", RTLD_NOW | RTLD_GLOBAL);
 		if (cuda_driver == nullptr) {
-			WARN_PRINT(vformat("PhysX: libcuda.so.1 could not be loaded (%s); falling back to CPU simulation.", dlerror()));
+			const char *driver_err = dlerror();
+			gpu_dynamics_status = GPU_DYNAMICS_NO_CUDA_DRIVER;
+			gpu_dynamics_unavailable_reason = driver_err != nullptr
+					? vformat("no CUDA driver: libcuda.so.1 could not be loaded (%s)", String::utf8(driver_err))
+					: String("no CUDA driver: libcuda.so.1 could not be loaded");
+			WARN_PRINT(vformat("PhysX: GPU dynamics unavailable (%s) -> CPU simulation.", gpu_dynamics_unavailable_reason));
 		} else {
 			// The shipped layout places the runtime next to the engine binary;
 			// a bare-name dlopen does not search the executable's directory, so
@@ -2894,13 +2983,17 @@ void PhysXServer3D::init() {
 				load_error = load_err != nullptr ? String::utf8(load_err) : String();
 			}
 			if (gpu_runtime == nullptr) {
-				WARN_PRINT(vformat("PhysX: libPhysXGpu_64.so could not be loaded (%s); falling back to CPU simulation.", load_error));
+				gpu_dynamics_status = GPU_DYNAMICS_RUNTIME_MISSING;
+				gpu_dynamics_unavailable_reason = vformat("the PhysXGpu runtime could not be loaded (%s)", load_error);
+				WARN_PRINT(vformat("PhysX: GPU dynamics unavailable (%s) -> CPU simulation.", gpu_dynamics_unavailable_reason));
 			} else {
 				using PxCudaContextManagerCreateFn = physx::PxCudaContextManager *(*)(const physx::PxFoundation &, const physx::PxCudaContextManagerDesc &, physx::PxProfilerCallback *);
 				PxCudaContextManagerCreateFn create_cuda_context =
 						reinterpret_cast<PxCudaContextManagerCreateFn>(dlsym(gpu_runtime, "PxCreateCudaContextManager"));
 				if (create_cuda_context == nullptr) {
-					WARN_PRINT(vformat("PhysX: PxCreateCudaContextManager missing from libPhysXGpu_64.so (%s); falling back to CPU simulation.", dlerror()));
+					gpu_dynamics_status = GPU_DYNAMICS_RUNTIME_MISSING;
+					gpu_dynamics_unavailable_reason = vformat("PxCreateCudaContextManager missing from libPhysXGpu_64.so (%s)", dlerror() != nullptr ? String::utf8(dlerror()) : String());
+					WARN_PRINT(vformat("PhysX: GPU dynamics unavailable (%s) -> CPU simulation.", gpu_dynamics_unavailable_reason));
 				} else {
 					physx::PxCudaContextManagerDesc cuda_desc;
 					px_cuda_context = create_cuda_context(*px_foundation, cuda_desc, PxGetProfilerCallback());
@@ -2909,10 +3002,17 @@ void PhysXServer3D::init() {
 						px_cuda_context = nullptr;
 					}
 					if (px_cuda_context) {
+						gpu_dynamics_status = GPU_DYNAMICS_ACTIVE;
+						gpu_dynamics_unavailable_reason = String();
 						print_line(vformat("PhysX: CUDA context ready on device '%s' -> GPU dynamics available.", px_cuda_context->getDeviceName()));
 						gpu_dynamics_enabled = true;
 					} else {
-						WARN_PRINT("PhysX: no usable CUDA device; falling back to CPU simulation.");
+						// The runtime itself validated the device and reported
+						// why (compute capability, driver) through the error
+						// callback -- name the cause instead of a generic
+						// "no usable CUDA device".
+						_classify_gpu_dynamics_failure();
+						WARN_PRINT(vformat("PhysX: GPU dynamics unavailable (%s) -> CPU simulation. The RenderingDevice-compute systems (MPM fluids, gas, Flow, water) still use the GPU when one is available.", gpu_dynamics_unavailable_reason));
 					}
 				}
 			}
@@ -2926,16 +3026,28 @@ void PhysXServer3D::init() {
 				px_cuda_context = nullptr;
 			}
 			if (px_cuda_context) {
+				gpu_dynamics_status = GPU_DYNAMICS_ACTIVE;
+				gpu_dynamics_unavailable_reason = String();
 				print_line(vformat("PhysX: CUDA context ready on device '%s' -> GPU dynamics available.", px_cuda_context->getDeviceName()));
 				gpu_dynamics_enabled = true;
 			} else {
-				WARN_PRINT("PhysX: no usable CUDA device; falling back to CPU simulation.");
+				// The runtime itself validated the device and reported why
+				// (compute capability, driver) through the error callback --
+				// name the cause instead of a generic "no usable CUDA device".
+				_classify_gpu_dynamics_failure();
+				WARN_PRINT(vformat("PhysX: GPU dynamics unavailable (%s) -> CPU simulation. The RenderingDevice-compute systems (MPM fluids, gas, Flow, water) still use the GPU when one is available.", gpu_dynamics_unavailable_reason));
 			}
 		}
 #endif
 	} else {
+		gpu_dynamics_status = GPU_DYNAMICS_ENHANCED_DETERMINISM;
+		gpu_dynamics_unavailable_reason = "physics/physx_3d/simulation/enhanced_determinism forces the deterministic CPU solver (the GPU solver's scheduling is not deterministic)";
 		print_verbose("PhysX: enhanced_determinism is set -> GPU dynamics disabled (the GPU solver is not deterministic).");
 	}
+#else
+	// CPU-only build (physx_gpu=no): no GPU code compiled in at all.
+	gpu_dynamics_status = GPU_DYNAMICS_BUILD_WITHOUT_GPU;
+	gpu_dynamics_unavailable_reason = "this build was compiled without GPU support (physx_gpu=no)";
 #endif
 
 	// --- Shared CPU dispatcher (one pool for every PxScene) ---

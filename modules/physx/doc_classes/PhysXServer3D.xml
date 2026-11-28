@@ -246,6 +246,18 @@
 				Returns the CUDA device name GPU dynamics runs on (for example [code]NVIDIA GeForce RTX 4080 SUPER[/code]), or an empty [String] when GPU dynamics is unavailable: a CPU-only build, no usable CUDA device, or [code]physics/physx_3d/simulation/enhanced_determinism[/code] forcing the CPU path.
 			</description>
 		</method>
+		<method name="get_gpu_dynamics_status" qualifiers="const">
+			<return type="int" enum="PhysXServer3D.GpuDynamicsStatus" />
+			<description>
+				Returns why GPU dynamics is or is not running on this machine, classified once at startup: the setting, determinism, the CUDA driver, the PhysXGpu runtime, the device's compute capability (PhysX requires compute capability 7.0 or newer), or no device that validated. See [method get_gpu_dynamics_unavailable_reason] for a human-readable sentence, and the class description for which systems fall back where.
+			</description>
+		</method>
+		<method name="get_gpu_dynamics_unavailable_reason" qualifiers="const">
+			<return type="String" />
+			<description>
+				Returns a human-readable sentence naming why GPU dynamics is unavailable on this machine, or an empty [String] when [method get_gpu_dynamics_status] is [constant GPU_DYNAMICS_ACTIVE].
+			</description>
+		</method>
 		<method name="get_singleton" qualifiers="static">
 			<return type="PhysXServer3D" />
 			<description>
@@ -373,6 +385,12 @@
 			<return type="bool" />
 			<description>
 				Returns [code]true[/code] when this platform's PhysX SDK can create the CUDA PBD particle buffer. The SDK's particle buffer factory ships only in the GPU-enabled Windows libraries through PhysX 5.11, so [code]false[/code] means the [PhysXParticleFluid3D] node's [code]Auto[/code] solver rule resolves to its MPM solver and an explicitly pinned PBD fluid stays inert.
+			</description>
+		</method>
+		<method name="rd_compute_available" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] when a [RenderingDevice] capable of running compute shaders exists on this machine -- the requirement of the MPM fluid and granular solvers, the gas solver and the Flow simulation's device. This is the check behind the fallback ladder: GPU dynamics (CUDA) needs compute capability 7.0+, the RenderingDevice-compute systems run on any such device, and full-CPU simulation is the last resort. Probed once, on demand; [code]false[/code] on headless and CPU-rendering builds, which is exactly when those systems no-op.
 			</description>
 		</method>
 		<method name="soft_body_attach_point_to_body">
@@ -597,4 +615,30 @@
 			</description>
 		</method>
 	</methods>
+	<constants>
+		<constant name="GPU_DYNAMICS_ACTIVE" value="0" enum="GpuDynamicsStatus">
+			A CUDA context validated on this machine: GPU dynamics runs.
+		</constant>
+		<constant name="GPU_DYNAMICS_SETTING_OFF" value="1" enum="GpuDynamicsStatus">
+			[code]physics/physx_3d/simulation/gpu_dynamics[/code] is off -- no CUDA context was created.
+		</constant>
+		<constant name="GPU_DYNAMICS_ENHANCED_DETERMINISM" value="2" enum="GpuDynamicsStatus">
+			[code]physics/physx_3d/simulation/enhanced_determinism[/code] is on, which skips CUDA context creation and forces the deterministic CPU solver.
+		</constant>
+		<constant name="GPU_DYNAMICS_NO_CUDA_DRIVER" value="3" enum="GpuDynamicsStatus">
+			No NVIDIA driver, or the CUDA driver ([code]nvcuda.dll[/code] / [code]libcuda.so.1[/code]) is missing or too old.
+		</constant>
+		<constant name="GPU_DYNAMICS_RUNTIME_MISSING" value="4" enum="GpuDynamicsStatus">
+			The PhysXGpu runtime ([code]PhysXGpu_64.dll[/code] / [code]libPhysXGpu_64.so[/code]) could not be loaded.
+		</constant>
+		<constant name="GPU_DYNAMICS_COMPUTE_CAPABILITY" value="5" enum="GpuDynamicsStatus">
+			The CUDA device's compute capability is below the PhysX SDK's minimum (7.0 -- for example a GTX 10-series card). CPU simulation is the only fallback for rigid bodies, cloth and soft bodies; the RenderingDevice-compute systems (MPM fluids, gas, Flow, water) still use the GPU when [method rd_compute_available] is [code]true[/code].
+		</constant>
+		<constant name="GPU_DYNAMICS_NO_DEVICE" value="6" enum="GpuDynamicsStatus">
+			A CUDA driver and the PhysXGpu runtime are present, but no device passed the runtime's validation.
+		</constant>
+		<constant name="GPU_DYNAMICS_BUILD_WITHOUT_GPU" value="7" enum="GpuDynamicsStatus">
+			This build was compiled without GPU support ([code]physx_gpu=no[/code]); no GPU code exists in the binary.
+		</constant>
+	</constants>
 </class>
