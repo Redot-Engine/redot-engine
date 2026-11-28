@@ -45,11 +45,13 @@
 
 #include "core/config/project_settings.h"
 #include "core/object/object.h"
+#include "core/os/thread.h"
 #include "core/templates/hash_map.h"
 #include "servers/physics_3d/physics_server_3d.h"
 #include "servers/rendering/rendering_server.h"
 
 PhysXSoftBody3D::~PhysXSoftBody3D() {
+	pending_rebuilds.erase(this);
 	set_space(nullptr);
 	if (volume) {
 		memdelete(volume);
@@ -146,7 +148,33 @@ void PhysXSoftBody3D::_apply_solver_settings() {
 	solver.settings = s;
 }
 
+void PhysXSoftBody3D::build_pending() {
+	if (pending_rebuilds.is_empty()) {
+		return;
+	}
+	LocalVector<PhysXSoftBody3D *> bodies;
+	for (PhysXSoftBody3D *body : pending_rebuilds) {
+		bodies.push_back(body);
+	}
+	pending_rebuilds.clear();
+	for (PhysXSoftBody3D *body : bodies) {
+		body->rebuild_pending = false;
+		body->_rebuild_from_mesh(body->rebuild_keep_state);
+	}
+}
+
 void PhysXSoftBody3D::_rebuild_from_mesh(bool p_keep_state) {
+	if (mesh.is_valid() && mesh_arrays_of != mesh && !Thread::is_main_thread()) {
+		// With physics/3d/run_on_separate_thread, reading the mesh back from the
+		// RenderingServer here would wait for the main thread, which may itself be
+		// waiting for this thread in sync(). Build in the next flush_queries()
+		// instead; the body keeps its current state until then. A re-seed asked
+		// for meanwhile wins over keeping the state.
+		rebuild_keep_state = rebuild_pending ? (rebuild_keep_state && p_keep_state) : p_keep_state;
+		rebuild_pending = true;
+		pending_rebuilds.insert(this);
+		return;
+	}
 	const bool was_running = p_keep_state && mesh_ready && placed;
 	Vector<Vector3> prev_positions;
 	Vector<Vector3> prev_velocities;
@@ -176,7 +204,11 @@ void PhysXSoftBody3D::_rebuild_from_mesh(bool p_keep_state) {
 		return;
 	}
 
-	Array arrays = RenderingServer::get_singleton()->mesh_surface_get_arrays(mesh, 0);
+	if (mesh_arrays_of != mesh) {
+		mesh_arrays = RenderingServer::get_singleton()->mesh_surface_get_arrays(mesh, 0);
+		mesh_arrays_of = mesh;
+	}
+	const Array &arrays = mesh_arrays;
 	if (arrays.is_empty()) {
 		return;
 	}

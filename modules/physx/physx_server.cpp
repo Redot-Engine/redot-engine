@@ -3240,6 +3240,7 @@ void PhysXServer3D::end_sync() {
 
 void PhysXServer3D::flush_queries() {
 	MutexLock lock(api_mutex);
+	PhysXSoftBody3D::build_pending(); // rebuilds that had to wait for the main thread (run_on_separate_thread)
 	// Dispatch the Area3D monitor callbacks (body_entered / area_entered / ...)
 	// that were queued during the last step's onTrigger. Godot's contract is
 	// that these fire in the flush_queries() window —after sync(), with the

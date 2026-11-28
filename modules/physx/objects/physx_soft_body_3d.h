@@ -84,6 +84,7 @@
 #include "core/templates/hash_set.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/rid.h"
+#include "core/variant/array.h"
 
 class PhysicsServer3DRenderingServerHandler;
 
@@ -96,6 +97,10 @@ public:
 	PhysXSoftBody3D() :
 			PhysXObject3D(OBJECT_TYPE_SOFT_BODY) {}
 	~PhysXSoftBody3D() override;
+
+	// Runs the rebuilds that had to wait for the main thread. Called from
+	// flush_queries(), on the main thread while the physics thread is paused.
+	static void build_pending();
 
 	// --- Space Management (overrides PhysXObject3D pure virtual) ---
 	virtual void set_space(PhysXSpace3D *p_space) override;
@@ -197,6 +202,14 @@ private:
 	bool using_gpu = false;
 
 	RID mesh;
+	// The mesh's arrays, read from the RenderingServer on the main thread (see
+	// _rebuild_from_mesh) and kept for later rebuilds of the same mesh.
+	Array mesh_arrays;
+	RID mesh_arrays_of;
+	// A rebuild asked for off the main thread, waiting for build_pending().
+	bool rebuild_pending = false;
+	bool rebuild_keep_state = false;
+	inline static HashSet<PhysXSoftBody3D *> pending_rebuilds;
 	LocalVector<uint32_t> map_visual_to_physics; // render vertex -> solver vertex
 	uint32_t visual_vertex_count = 0;
 	HashSet<int> pinned_render_points; // survives set_mesh, like the other backends
