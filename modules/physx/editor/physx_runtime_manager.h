@@ -1,0 +1,165 @@
+/**************************************************************************/
+/*  physx_runtime_manager.h                                               */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#pragma once
+
+#include "core/object/class_db.h"
+#include "core/templates/hash_map.h"
+
+// Tracks the PhysX runtime binaries that must sit next to the editor
+// executable (PhysXGpu_64.dll and the Blast DLLs on Windows;
+// libPhysXGpu_64.so on Linux). The editor binary is built with these
+// delay-loaded (Windows) or without a static import (Linux -- the SDK loads
+// the shared object itself), so it starts without them; the module uses this
+// manager to detect the gap and offer the download-and-restart flow.
+//
+// The flow's failure class that existence checks alone cannot see: a file
+// with the RIGHT name but the WRONG content (a leftover from another
+// project, an SDK reinstall, an antivirus restore). On Linux a stale
+// libNvBlastExtShaders.so from LD_LIBRARY_PATH or a system directory shadows
+// the one beside the binary and kills the editor at exec ("undefined symbol:
+// NvBlastExtFalloffSubgraphShader"). The integrity surface below detects it:
+// extract_bundle records the installed files' hashes, the loaded-library
+// diagnostic logs which file each library resolved from, and
+// get_stale_runtime_files()/the editor's integrity probe compare content
+// against the known-good hashes and offer a hash-verified reinstall.
+class PhysXRuntimeManager : public Object {
+	GDCLASS(PhysXRuntimeManager, Object);
+
+public:
+	// Manifest source for the download-and-restart flow. When the Redot team
+	// adopts the runtime repo, only this URL changes.
+	static const char *MANIFEST_URL;
+
+	// Releases page for manual runtime downloads (fallback when the
+	// automatic install fails).
+	static const char *RELEASES_PAGE_URL;
+
+	// The runtime version this editor binary was built and tested against.
+	// The runtime repo must bump its manifest "runtime_version" in lockstep
+	// with this constant (both change together with the vendored SDK under
+	// thirdparty/physx): the updater only offers/adopts bundles whose
+	// runtime_version equals it, because another bundle's libraries cannot
+	// be guaranteed to satisfy this build's delay-imports. A manifest that
+	// disagrees is logged, never installed.
+	static const char *LINKED_RUNTIME_VERSION;
+
+	// Runtime files that must sit next to the editor executable, per
+	// platform. Names only: the directory is always the executable's.
+	static PackedStringArray get_required_runtime_files();
+
+	// The subset of get_required_runtime_files() that is not present in the
+	// executable's directory.
+	static PackedStringArray get_missing_runtime_files();
+
+	// Required files that ARE present but whose content does not match the
+	// known-good hashes -- the manifest parsed this session, or, offline, the
+	// file list the last install wrote (".physx-runtime-files"). Files with
+	// no known expected hash cannot be verified and are not reported.
+	static PackedStringArray get_stale_runtime_files();
+
+	static bool is_runtime_complete();
+
+	// Script-facing stub: the editor plugin's dialog drives the real flow
+	// (manifest -> download -> verify -> extract -> restart). Scripts calling
+	// this get a warning and no install.
+	static Error install_missing_files();
+
+	// --- Install helpers (used by the editor plugin's install flow) ---
+
+	// Parses manifest JSON text and returns the platform bundle dictionary
+	// {url, sha256, size_bytes, files, runtime_version} -- empty Dictionary
+	// when the manifest is missing entries or malformed. runtime_version is
+	// the manifest's human version string (e.g. "5.12.0"); the updater
+	// compares it against the installed-version marker.
+	static Dictionary parse_manifest(const String &p_json_text);
+
+	// Lowercase hex SHA-256 of a file; empty String on failure.
+	static String sha256_file(const String &p_path);
+
+	// Extracts the bundle's manifest-listed files from the zip into
+	// p_target_dir, verifying each file's SHA-256 while writing. Fails
+	// without leaving partial files behind. A file whose target is in use
+	// (Windows: a loaded DLL keeps its name) is kept as a verified
+	// "<name>.part" and recorded in the pending-swap marker written next to
+	// p_target_dir -- only a marker in the editor executable's directory is
+	// applied automatically at startup (extracting elsewhere warns and never
+	// applies); complete_pending_swaps() applies it at the next editor start.
+	// On success the installed files' hashes are also recorded next to them
+	// (".physx-runtime-files") for the offline integrity checks above.
+	static Error extract_bundle(const String &p_zip_path, const Dictionary &p_bundle, const String &p_target_dir);
+
+	// --- Installed-version tracking (the updater) ---
+
+	// The runtime_version recorded next to the DLLs by the last successful
+	// install (".physx-runtime-version"); empty when the runtime predates
+	// versioning or was installed by hand.
+	static String get_installed_runtime_version();
+
+	// Records the installed runtime_version next to the DLLs. No-op for an
+	// empty version (a manifest without the field leaves the marker alone);
+	// a failure (read-only install directory) is reported, not swallowed.
+	static void write_runtime_version_marker(const String &p_version);
+
+	// The file list an install recorded next to the libraries
+	// (".physx-runtime-files": {runtime_version, files: {name: sha256}}) --
+	// the offline source of expected hashes for get_stale_runtime_files() and
+	// the loaded-library diagnostic. Empty Dictionary when no install through
+	// this flow has happened (e.g. a repo-staged editor).
+	static Dictionary get_installed_file_list();
+
+	// Feeds the session's manifest file hashes (name -> sha256) into the
+	// integrity surface: they take precedence over the installed file list
+	// until the next manifest is parsed. Called by the editor plugin after a
+	// version check; a manifest whose runtime_version disagrees with
+	// LINKED_RUNTIME_VERSION must not be fed here.
+	static void set_manifest_file_hashes(const Dictionary &p_bundle);
+
+	// Prints one line per loaded runtime library: which file the loader
+	// actually resolved it from (the F-36 shadowing evidence), plus its hash
+	// compared against p_expected (or the installed file list) when known.
+	// Safe to call from any thread; hashes files, so the editor plugin runs
+	// it on its integrity probe rather than the main thread.
+	static void log_loaded_runtime_libraries(const HashMap<String, String> &p_expected = HashMap<String, String>());
+
+	// Applies any pending-swap entries recorded by extract_bundle (verified
+	// "<name>.part" files whose target was in use). Runs at editor startup,
+	// before any physics has had a chance to load the DLLs; a file that is
+	// still locked stays pending for the next start. Reads the marker beside
+	// the executable only; entries are re-validated on read (the marker is
+	// self-written, but a corrupt or hand-edited line must not aim a rename
+	// outside the executable's directory).
+	static void complete_pending_swaps();
+
+protected:
+	static void _bind_methods();
+};

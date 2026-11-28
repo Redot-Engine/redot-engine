@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<coreProperties xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.openxmlformats.org/package/2006/metadata/core-properties">
+  <dc:creator>Redot  Engine contributors</dc:creator>
+  <dc:description>MSBuild .NET Sdk for Redot  projects.</dc:description>
+  <dc:identifier>Redot.NET.Sdk</dc:identifier>
+  <version>26.2.0</version>
+  <keywords>MSBuildSdk</keywords>
+  <lastModifiedBy>NuGet.Build.Tasks.Pack, Version=6.11.2.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35;.NET Standard 2.0</lastModifiedBy>
+</coreProperties>

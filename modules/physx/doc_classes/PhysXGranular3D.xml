@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXGranular3D" inherits="PhysXParticleFluid3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		A GPU granular volume simulated by the PhysX physics backend -- sand, gravel or snow.
+	</brief_description>
+	<description>
+		Fills [member PhysXParticleFluid3D.spawn_region_size] (or streams via [member PhysXParticleFluid3D.emitting]) with particles that behave as grains rather than a liquid: they pile up, hold a slope up to [member friction], and get plowed and cratered by bodies moving through them. Everything else -- emission, [member PhysXParticleFluid3D.mpm_colliders] / [member PhysXParticleFluid3D.mpm_auto_colliders], the domain, the [MultiMesh] render, the [RID] lifecycle -- is inherited from [PhysXParticleFluid3D].
+		There is no isosurface; grains are always drawn as the sphere [MultiMesh], with [member GeometryInstance3D.material_override] applied.
+		The [b]MPM[/b] compute solver is the one that holds a real angle of repose -- PhysX's PBD particle friction cannot pile -- so [member PhysXParticleFluid3D.solver] set to [code]Auto[/code] always resolves to MPM here (which also runs on any GPU, no CUDA needed). Choose [code]PBD (CUDA)[/code] explicitly only for a pure pour or cascade where the grains stay in motion and never need to hold a shape.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="density" type="float" setter="set_density" getter="get_density" default="900.0">
+			Bulk density of the medium in kg/m³ -- the "weight" of the grains. It scales how hard a body has to work to plough through: light powder snow is around [code]300[/code], dry sand around [code]1500[/code], wet or packed sand higher. It does not change the angle of repose (that is [member friction]) or how fast a pile settles.
+		</member>
+		<member name="friction" type="float" setter="set_friction" getter="get_friction" default="35.0">
+			Internal friction angle in degrees -- the steepest slope a pile holds. The continuum discretisation loses a few degrees to free-surface creep, so set this a little above the angle of repose you actually want (dry sand is ~34, gravel ~45).
+		</member>
+		<member name="grain_cohesion" type="float" setter="set_grain_cohesion" getter="get_grain_cohesion" default="0.0">
+			[code]0[/code] is dry sand. Small values pack the grains like wet sand or snow, letting a pile hold a steeper face and a light object rest on top instead of sinking.
+		</member>
+		<member name="hardness" type="float" setter="set_hardness" getter="get_hardness" default="150000.0">
+			Young's modulus of the grains, in pascals. Softer settles mushier and is more numerically forgiving; stiffer resists deformation but can jitter. The solver already forces extra substeps for granular.
+		</member>
+	</members>
+</class>

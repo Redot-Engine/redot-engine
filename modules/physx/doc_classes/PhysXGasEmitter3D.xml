@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXGasEmitter3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		A placement marker for one [PhysXGas3D] injection point, provided by the PhysX module.
+	</brief_description>
+	<description>
+		Add one (or several) of these as a child somewhere in the scene, then list their paths in [member PhysXGas3D.emitters] -- the way a [CollisionShape3D] describes a shape without simulating anything itself, this node only describes an injection point; [PhysXGas3D] reads its properties directly each step. Its own global position is the emitter's world position.
+		Loosely mirrors NVIDIA Flow's per-emitter parameter blocks ([code]NvFlowEmitterSphereParams[/code] / [code]NvFlowEmitterBoxParams[/code]) at a fraction of the scope: velocity/[member divergence]/density/size, like Flow's own fields of the same name, but no combustion channels (temperature/fuel/burn -- [PhysXGas3D] has no such channels to feed yet) and no per-emitter couple rates (this solver hard-injects rather than blending toward a target).
+		[b]v1 scope:[/b] [member shape] [constant SHAPE_BOX] is axis-aligned only -- this node's own rotation is not yet honored for the box test (it is honored for [member velocity], which is rotated by this node's orientation, letting a box or sphere emitter aim its jet).
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="density" type="float" setter="set_density" getter="get_density" default="1.0">
+			Density injected each step (clamped up to at least this, never down -- the emitter tops a cell up, it does not overwrite a denser one).
+		</member>
+		<member name="divergence" type="float" setter="set_divergence" getter="get_divergence" default="0.0">
+			Outward-radial speed (m/s) from this node's position, added on top of [member velocity] -- an explosion/burst emitter wants every cell pushed away from center, not all pushed the same direction. Matches NVIDIA Flow's own [member divergence] field.
+		</member>
+		<member name="enabled" type="bool" setter="set_enabled" getter="is_enabled" default="true">
+			Disables the emitter without removing it from [member PhysXGas3D.emitters].
+		</member>
+		<member name="radius" type="float" setter="set_radius" getter="get_radius" default="0.22">
+			Sphere radius in meters, used when [member shape] is [constant SHAPE_SPHERE].
+		</member>
+		<member name="shape" type="int" setter="set_shape" getter="get_shape" enum="PhysXGasEmitter3D.Shape" default="0">
+			[constant SHAPE_SPHERE] (uses [member radius]) or [constant SHAPE_BOX] (uses [member size], axis-aligned -- see the class description).
+		</member>
+		<member name="size" type="Vector3" setter="set_size" getter="get_size" default="Vector3(0.44, 0.44, 0.44)">
+			Box full size in meters (halved internally), used when [member shape] is [constant SHAPE_BOX].
+		</member>
+		<member name="swirl" type="float" setter="set_swirl" getter="get_swirl" default="0.0">
+			Tangential speed (m/s) around world +Y through this node's position -- directly authors rotation instead of relying on vorticity confinement to amplify whatever incidental curl the injection jitter happens to seed.
+		</member>
+		<member name="velocity" type="Vector3" setter="set_velocity" getter="get_velocity" default="Vector3(0, 1.4, 0)">
+			Injected velocity each step, in this node's local space (rotated, not scaled, by its global orientation -- orient the node to aim the jet). A small per-cell random jitter scaled by its magnitude is added on top; a perfectly symmetric emitter gives vorticity confinement nothing to amplify, so a little injected asymmetry is what seeds any swirl.
+		</member>
+	</members>
+	<constants>
+		<constant name="SHAPE_SPHERE" value="0" enum="Shape">
+			A spherical injection region ([member radius]).
+		</constant>
+		<constant name="SHAPE_BOX" value="1" enum="Shape">
+			An axis-aligned box injection region ([member size]).
+		</constant>
+	</constants>
+</class>

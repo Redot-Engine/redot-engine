@@ -91,6 +91,14 @@ if env["builtin_embree"]:
     if env["arch"] == "x86_64" and env.msvc:
         env_thirdparty.Append(CPPDEFINES=["__SSE3__", "__SSSE3__", "__SSE4_1__", "__SSE4_2__"])
 
+    if env["arch"] == "x86_64" and not env.msvc:
+        # Embree's ISA dispatch must stay on the SSE2 baseline: AVX macros
+        # switch on ISA paths whose objects this module does not build, and
+        # `bvh.cpp` then skips the BVHN<4> instantiation -- the link fails.
+        # Disable AVX explicitly so a global `-march` at or above x86-64-v3
+        # (e.g., a distro compiler default) cannot enable them.
+        env_thirdparty.Append(CXXFLAGS=["-mno-avx", "-mno-avx2", "-mno-avx512f"])
+
     if env["platform"] == "web":
         env_thirdparty.Append(CXXFLAGS=["-msimd128"])
 

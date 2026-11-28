@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXChunkEmitter3D" inherits="GeometryInstance3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		A general-purpose burst of small rigid-body chunks, provided by the PhysX module.
+	</brief_description>
+	<description>
+		Call [method spawn_at] for a one-off burst of small chunks -- impact debris (a bullet hit, an explosion, a footstep), an exploding crate, a rockslide, confetti that actually collides -- anything that wants many small solid things flying and settling for real. Bias the burst toward a surface with its [code]direction[/code] argument set to the surface normal, or pass [member spread_degrees] of [code]180[/code] for an omnidirectional explosion. Turn on [member emitting] instead for a steady stream from the node's own position (hail, falling debris).
+		The chunks are real [PhysicsServer3D] rigid bodies, not a particle effect, so they land on slopes, pile up, and collide with (or are blocked by) the rest of the world through the normal [member collision_layer] / [member collision_mask] rules. Drawn as a single [MultiMesh], with no per-chunk node.
+		The chunks are created through the generic [PhysicsServer3D] RID API, so this works on any 3D physics backend. On this module, with a [code]physx_gpu=yes[/code] build and a CUDA device, they ride the same GPU rigid-body dynamics as the rest of the scene automatically -- the whole space is GPU-accelerated, not individual actors -- which is what makes a high [member chunk_count] / [member max_active] affordable; lower them on the CPU path (or another backend), the same way PhysX-era games scaled their debris counts down without a supporting GPU.
+		[member max_active] is a hard budget shared by every chunk this emitter has spawned, burst or continuous: once it is reached, the oldest chunks are freed to make room. [member lifetime] additionally recycles a chunk after it has been alive that long, even under budget, so chunks do not linger forever.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="clear">
+			<return type="void" />
+			<description>
+				Immediately frees every active chunk.
+			</description>
+		</method>
+		<method name="get_active_chunk_count" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the number of chunks currently alive.
+			</description>
+		</method>
+		<method name="spawn_at">
+			<return type="void" />
+			<param index="0" name="world_position" type="Vector3" />
+			<param index="1" name="direction" type="Vector3" />
+			<param index="2" name="count" type="int" default="-1" />
+			<description>
+				Bursts [param count] chunks (or [member chunk_count] when [param count] is negative) from [param world_position], scattered within a [member spread_degrees] cone around [param direction] -- pass a surface normal for an impact, or use a wide [member spread_degrees] for a non-directional burst.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="angular_damp" type="float" setter="set_angular_damp" getter="get_angular_damp" default="0.0">
+		</member>
+		<member name="bounce" type="float" setter="set_bounce" getter="get_bounce" default="0.0">
+		</member>
+		<member name="chunk_count" type="int" setter="set_chunk_count" getter="get_chunk_count" default="14">
+			Chunks spawned per [method spawn_at] call, unless overridden by its [code]count[/code] argument.
+		</member>
+		<member name="chunk_mesh" type="Mesh" setter="set_chunk_mesh" getter="get_chunk_mesh">
+			Mesh drawn for each chunk, shared by every instance via one [MultiMesh]. Defaults to a unit box or sphere matching [member chunk_shape] when unset. [member chunk_size_min] / [member chunk_size_max] scale it directly (they don't resize the mesh's own geometry), so author a custom mesh close to 1 meter across for its visual size to line up with the physical chunk size. Give it a look with [member GeometryInstance3D.material_override] -- every chunk shares the same material.
+		</member>
+		<member name="chunk_shape" type="int" setter="set_chunk_shape" getter="get_chunk_shape" enum="PhysXChunkEmitter3D.ChunkShape" default="0">
+			Collision shape (and default [member chunk_mesh]) used for every chunk.
+		</member>
+		<member name="chunk_size_max" type="float" setter="set_chunk_size_max" getter="get_chunk_size_max" default="0.16">
+			Upper bound of a chunk's random size, in meters (edge length for [constant SHAPE_BOX], diameter for [constant SHAPE_SPHERE]).
+		</member>
+		<member name="chunk_size_min" type="float" setter="set_chunk_size_min" getter="get_chunk_size_min" default="0.06">
+			Lower bound of a chunk's random size, in meters.
+		</member>
+		<member name="collision_layer" type="int" setter="set_collision_layer" getter="get_collision_layer" default="1">
+			Physics layers the chunks occupy.
+		</member>
+		<member name="collision_mask" type="int" setter="set_collision_mask" getter="get_collision_mask" default="1">
+			Physics layers the chunks collide with.
+		</member>
+		<member name="density" type="float" setter="set_density" getter="get_density" default="1200.0">
+			Chunk density in kg/m³, used with each chunk's random size to derive its mass.
+		</member>
+		<member name="emission_direction" type="Vector3" setter="set_emission_direction" getter="get_emission_direction" default="Vector3(0, 1, 0)">
+			World-space direction chunks are biased toward while [member emitting], within a [member spread_degrees] cone.
+		</member>
+		<member name="emission_rate" type="float" setter="set_emission_rate" getter="get_emission_rate" default="10.0">
+			Chunks spawned per second while [member emitting].
+		</member>
+		<member name="emitting" type="bool" setter="set_emitting" getter="is_emitting" default="false">
+			When [code]true[/code], continuously spawns chunks from the node's own position at [member emission_rate], instead of (or alongside) calling [method spawn_at] for one-off bursts.
+		</member>
+		<member name="friction" type="float" setter="set_friction" getter="get_friction" default="0.5">
+		</member>
+		<member name="impulse_max" type="float" setter="set_impulse_max" getter="get_impulse_max" default="8.0">
+			Upper bound of a chunk's initial speed, in m/s.
+		</member>
+		<member name="impulse_min" type="float" setter="set_impulse_min" getter="get_impulse_min" default="3.0">
+			Lower bound of a chunk's initial speed, in m/s.
+		</member>
+		<member name="lifetime" type="float" setter="set_lifetime" getter="get_lifetime" default="5.0">
+			Seconds a chunk lives before it is recycled, even if [member max_active] has not been reached.
+		</member>
+		<member name="linear_damp" type="float" setter="set_linear_damp" getter="get_linear_damp" default="0.0">
+		</member>
+		<member name="max_active" type="int" setter="set_max_active" getter="get_max_active" default="200">
+			Hard cap on chunks alive at once, across every burst and continuous emission from this emitter. Once reached, the oldest chunks are freed to make room for new ones.
+		</member>
+		<member name="shrink_time" type="float" setter="set_shrink_time" getter="get_shrink_time" default="0.0">
+		</member>
+		<member name="spin_impulse" type="float" setter="set_spin_impulse" getter="get_spin_impulse" default="6.0">
+			Upper bound of a chunk's random initial angular velocity, in rad/s.
+		</member>
+		<member name="spread_degrees" type="float" setter="set_spread_degrees" getter="get_spread_degrees" default="55.0">
+			Half-angle, in degrees, of the cone chunks fly out in around the burst direction. [code]180[/code] scatters them in every direction.
+		</member>
+	</members>
+	<constants>
+		<constant name="SHAPE_BOX" value="0" enum="ChunkShape">
+			Chunks are boxes.
+		</constant>
+		<constant name="SHAPE_SPHERE" value="1" enum="ChunkShape">
+			Chunks are spheres.
+		</constant>
+	</constants>
+</class>
